@@ -4789,14 +4789,187 @@ public function contractor_accept_job(Request $request, $id)
  *
  * @return array{success: bool, payment_link: string|null, invoice_number: string|null}
  */
-private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster)
+// private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster)
+// {
+//     // 1. Get contractor's rate card for this site's state
+//     $rate = DB::table('contractor_chargerates')
+//         ->where('user_id', $contractor->id)
+//         ->where('state', $updatedRoster->state)
+//         ->first();
+
+//     if (!$rate) {
+//         Log::warning('No ContractorChargeRate found', [
+//             'contractor_id' => $contractor->id,
+//             'state' => $updatedRoster->state,
+//         ]);
+//         return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
+//     }
+
+//     // 2. Split the shift into day/night/weekend/PH buckets
+//     $hours = getShiftHours($updatedRoster->start, $updatedRoster->end);
+
+//     $bucketRateMap = [
+//         'morning'          => 'def_metro_mon_to_fri_day_rate',
+//         'night'            => 'def_metro_mon_to_fri_night_rate',
+//         'saturday_morning' => 'def_metro_sat_day_rate',
+//         'saturday_night'   => 'def_metro_sat_night_rate',
+//         'sunday_morning'   => 'def_metro_sun_day_rate',
+//         'sunday_night'     => 'def_metro_sun_night_rate',
+//         'ph_morning'       => 'def_metro_pub_holi_day_rate',
+//         'ph_night'         => 'def_metro_pub_holi_night_rate',
+//     ];
+
+//     $baseTotal = 0.0;
+//     $totalHours = 0.0;
+
+//     foreach ($bucketRateMap as $bucketKey => $rateColumn) {
+//         $bucketHours = (float) ($hours[$bucketKey] ?? 0);
+//         if ($bucketHours <= 0) {
+//             continue;
+//         }
+//         $baseTotal  += $bucketHours * (float) $rate->{$rateColumn};
+//         $totalHours += $bucketHours;
+//     }
+
+//     // 3. Add 15% service fee
+//     $serviceFee = round($baseTotal * 0.15, 2);
+//     $grandTotal = round($baseTotal + $serviceFee, 2);
+
+//     if ($grandTotal <= 0) {
+//         Log::warning('Invoice grand total is zero, skipping payment link', [
+//             'roster_id' => $updatedRoster->id,
+//         ]);
+//         return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
+//     }
+
+//     // 4. Get client details
+//     $client = DB::table('users')->where('id', $updatedRoster->created_by)->first();
+
+//     // 5. Build invoice number
+//     $invoiceNumber = 'INV-' . $updatedRoster->id . '-' . now()->format('Ymd His');
+
+//     // 6. Create Stripe product/price/payment link
+//     \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+
+//     try {
+//         $product = \Stripe\Product::create([
+//             'name' => "Invoice {$invoiceNumber} - " . ($updatedRoster->address ?? 'Job Shift'),
+//         ]);
+
+//         $price = \Stripe\Price::create([
+//             'product'     => $product->id,
+//             'unit_amount' => (int) round($grandTotal * 100), // cents
+//             'currency'    => 'aud',
+//         ]);
+
+//         $paymentLink = \Stripe\PaymentLink::create([
+//             'line_items' => [
+//                 ['price' => $price->id, 'quantity' => 1],
+//             ],
+//             'payment_intent_data' => [
+//                 'capture_method' => 'manual', // authorize/hold only — capture happens later, after shift completion
+//                 'metadata' => [
+//                     'roster_id'      => $updatedRoster->id,
+//                     'contractor_id'  => $contractor->id,
+//                     'invoice_number' => $invoiceNumber,
+//                 ],
+//             ],
+//             'metadata' => [
+//                 'roster_id'      => $updatedRoster->id,
+//                 'contractor_id'  => $contractor->id,
+//                 'invoice_number' => $invoiceNumber,
+//             ],
+//             'after_completion' => [
+//                 'type' => 'redirect',
+//                 'redirect' => ['url' => 'https://staging.app.staffoo.com.au/my-job-applications?roster_id=' . $updatedRoster->id],
+//             ],
+//         ]);
+//     } catch (\Exception $e) {
+//         Log::error('Stripe payment link creation failed', ['error' => $e->getMessage()]);
+//         return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
+//     }
+
+//     // 7. Build PDF invoice (contractor-branded)
+//     $invoiceData = [
+//         'invoice_number'    => $invoiceNumber,
+//         'date'              => now()->format('d M Y'),
+//         'client_name'       => $client->name ?? 'Client',
+//         'client_email'      => $client->email ?? '',
+//         'payment_intent_id' => $paymentLink->id,
+//         'payment_option'    => 'full',
+//         'location'          => $updatedRoster->address ?? 'N/A',
+//         'shifts' => [[
+//             'start'          => \Carbon\Carbon::parse($updatedRoster->start)->format('d M Y g:i A'),
+//             'end'            => \Carbon\Carbon::parse($updatedRoster->end)->format('d M Y g:i A'),
+//             'numberOfGuards' => 1,
+//             'hours'          => $totalHours,
+//             'amount'         => $baseTotal,
+//         ]],
+//         'base_total'     => $baseTotal,
+//         'discount'       => 0,
+//         'service_fee'    => $serviceFee,
+//         'grand_total'    => $grandTotal,
+//         'amount_charged' => $grandTotal,
+//         'balance'        => 0,
+//         // contractor branding
+//         'contractor_name' => $contractor->contractor->company_name ?? $contractor->name,
+//         'contractor_abn'  => $contractor->contractor->abn ?? 'N/A',
+//     ];
+
+//     try {
+//         $invoiceService = new ContractorInvoiceService();
+//         $pdfBytes = $invoiceService->generatePdf($invoiceData);
+//     } catch (\Exception $e) {
+//         Log::error('Invoice PDF generation failed', ['error' => $e->getMessage()]);
+//         return ['success' => false, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
+//     }
+
+//     // 8. Save link/invoice number + breakdown on roster
+//     // (invoice_meta lets the webhook rebuild an accurate Transaction row later,
+//     //  since Stripe only sends back the charged amount in cents, not the breakdown)
+//     DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
+//         'invoice_filename'   => $invoiceNumber,
+//         'payment_intent_id' => $paymentLink->url,
+//         'payment_status'   => 'pending',
+//         'invoice_meta'     => json_encode([
+//             'base_total'   => $baseTotal,
+//             'discount'     => 0,
+//             'service_fee'  => $serviceFee,
+//             'grand_total'  => $grandTotal,
+//             'currency'     => 'aud',
+//         ]),
+//     ]);
+
+//     // 9. Email client with PDF + pay link
+//     // Pay Now in the email points to our own redirect gate, NOT the raw
+//     // Stripe link directly — this is what stops repeated clicks from
+//     // creating duplicate holds (see Stripeweebhookcontroller).
+//     $wrappedPayLink = config('app.url') . '/emails/pay/' . $updatedRoster->id;
+
+//     if (!empty($client->email)) {
+//         try {
+//             Mail::to($client->email)->send(new ContractorInvoiceMail(
+//                 $client->name ?? 'Client',
+//                 $pdfBytes,
+//                 $invoiceNumber,
+//                 $wrappedPayLink,
+//                 $contractor->contractor->company_name ?? $contractor->name
+//             ));
+//         } catch (\Exception $e) {
+//             Log::error('Invoice email send failed', ['error' => $e->getMessage()]);
+//         }
+//     }
+
+//     return ['success' => true, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
+// }
+rivate function generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster)
 {
     // 1. Get contractor's rate card for this site's state
     $rate = DB::table('contractor_chargerates')
         ->where('user_id', $contractor->id)
         ->where('state', $updatedRoster->state)
         ->first();
-
+ 
     if (!$rate) {
         Log::warning('No ContractorChargeRate found', [
             'contractor_id' => $contractor->id,
@@ -4804,10 +4977,10 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
         ]);
         return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
     }
-
+ 
     // 2. Split the shift into day/night/weekend/PH buckets
     $hours = getShiftHours($updatedRoster->start, $updatedRoster->end);
-
+ 
     $bucketRateMap = [
         'morning'          => 'def_metro_mon_to_fri_day_rate',
         'night'            => 'def_metro_mon_to_fri_night_rate',
@@ -4818,10 +4991,10 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
         'ph_morning'       => 'def_metro_pub_holi_day_rate',
         'ph_night'         => 'def_metro_pub_holi_night_rate',
     ];
-
+ 
     $baseTotal = 0.0;
     $totalHours = 0.0;
-
+ 
     foreach ($bucketRateMap as $bucketKey => $rateColumn) {
         $bucketHours = (float) ($hours[$bucketKey] ?? 0);
         if ($bucketHours <= 0) {
@@ -4830,38 +5003,38 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
         $baseTotal  += $bucketHours * (float) $rate->{$rateColumn};
         $totalHours += $bucketHours;
     }
-
+ 
     // 3. Add 15% service fee
     $serviceFee = round($baseTotal * 0.15, 2);
     $grandTotal = round($baseTotal + $serviceFee, 2);
-
+ 
     if ($grandTotal <= 0) {
         Log::warning('Invoice grand total is zero, skipping payment link', [
             'roster_id' => $updatedRoster->id,
         ]);
         return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
     }
-
+ 
     // 4. Get client details
     $client = DB::table('users')->where('id', $updatedRoster->created_by)->first();
-
+ 
     // 5. Build invoice number
     $invoiceNumber = 'INV-' . $updatedRoster->id . '-' . now()->format('Ymd His');
-
+ 
     // 6. Create Stripe product/price/payment link
     \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
-
+ 
     try {
         $product = \Stripe\Product::create([
             'name' => "Invoice {$invoiceNumber} - " . ($updatedRoster->address ?? 'Job Shift'),
         ]);
-
+ 
         $price = \Stripe\Price::create([
             'product'     => $product->id,
             'unit_amount' => (int) round($grandTotal * 100), // cents
             'currency'    => 'aud',
         ]);
-
+ 
         $paymentLink = \Stripe\PaymentLink::create([
             'line_items' => [
                 ['price' => $price->id, 'quantity' => 1],
@@ -4888,8 +5061,29 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
         Log::error('Stripe payment link creation failed', ['error' => $e->getMessage()]);
         return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
     }
-
+ 
     // 7. Build PDF invoice (contractor-branded)
+    $site = DB::table('sites')->where('id', $updatedRoster->site_id)->first();
+ 
+    $guard = null;
+    if (!empty($updatedRoster->assigned_to)) {
+        $guard = DB::table('users')->where('id', $updatedRoster->assigned_to)->first();
+    }
+ 
+    $contractorAddressParts = array_filter([
+        $contractor->address ?? null,
+        $contractor->city ?? null,
+        $contractor->state ?? null,
+        $contractor->country ?? null,
+    ]);
+ 
+    $clientAddressParts = array_filter([
+        $client->address ?? null,
+        $client->city ?? null,
+        $client->state ?? null,
+        $client->country ?? null,
+    ]);
+ 
     $invoiceData = [
         'invoice_number'    => $invoiceNumber,
         'date'              => now()->format('d M Y'),
@@ -4899,23 +5093,39 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
         'payment_option'    => 'full',
         'location'          => $updatedRoster->address ?? 'N/A',
         'shifts' => [[
+            'description'    => 'Licensed Static Security Guard',
+            'site_name'      => $site->site_name ?? null,
+            'guard_id'       => $guard->staffo_id ?? null,
+            'date'           => \Carbon\Carbon::parse($updatedRoster->start)->format('d/m/Y'),
             'start'          => \Carbon\Carbon::parse($updatedRoster->start)->format('d M Y g:i A'),
             'end'            => \Carbon\Carbon::parse($updatedRoster->end)->format('d M Y g:i A'),
             'numberOfGuards' => 1,
             'hours'          => $totalHours,
+            'rate'           => $totalHours > 0 ? round($baseTotal / $totalHours, 2) : 0,
             'amount'         => $baseTotal,
         ]],
-        'base_total'     => $baseTotal,
-        'discount'       => 0,
-        'service_fee'    => $serviceFee,
-        'grand_total'    => $grandTotal,
-        'amount_charged' => $grandTotal,
-        'balance'        => 0,
-        // contractor branding
-        'contractor_name' => $contractor->contractor->company_name ?? $contractor->name,
-        'contractor_abn'  => $contractor->contractor->abn ?? 'N/A',
+        'base_total'       => $baseTotal,
+        'discount_percent' => 0,
+        'discount'         => 0,
+        'service_fee'      => $serviceFee,
+        'grand_total'      => $grandTotal,
+        'amount_charged'   => $grandTotal,
+        'balance'          => 0,
+        'payment_status'   => 'PENDING', // this PDF is generated before the client pays
+ 
+        // contractor (service provider) branding
+        'contractor_name'    => $contractor->contractor->company_name ?? $contractor->name,
+        'contractor_abn'     => $contractor->contractor->abn ?? 'N/A',
+        'contractor_license' => $contractor->contractor->abn ?? 'N/A',
+        'contractor_address' => implode(', ', $contractorAddressParts),
+        'facilitated_by'     => 'Staffoo (Capital Services Pty Ltd)',
+ 
+        // client (billed to) details
+        'client_abn'     => 'N/A',
+        'client_address' => implode(', ', $clientAddressParts),
+        'client_attn'    => 'N/A',
     ];
-
+ 
     try {
         $invoiceService = new ContractorInvoiceService();
         $pdfBytes = $invoiceService->generatePdf($invoiceData);
@@ -4923,13 +5133,13 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
         Log::error('Invoice PDF generation failed', ['error' => $e->getMessage()]);
         return ['success' => false, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
     }
-
+ 
     // 8. Save link/invoice number + breakdown on roster
     // (invoice_meta lets the webhook rebuild an accurate Transaction row later,
     //  since Stripe only sends back the charged amount in cents, not the breakdown)
     DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
-        'invoice_filename'   => $invoiceNumber,
-        'payment_intent_id' => $paymentLink->url,
+        'invoice_number'   => $invoiceNumber,
+        'payment_link_url' => $paymentLink->url,
         'payment_status'   => 'pending',
         'invoice_meta'     => json_encode([
             'base_total'   => $baseTotal,
@@ -4939,16 +5149,16 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
             'currency'     => 'aud',
         ]),
     ]);
-
+ 
     // 9. Email client with PDF + pay link
     // Pay Now in the email points to our own redirect gate, NOT the raw
     // Stripe link directly — this is what stops repeated clicks from
-    // creating duplicate holds (see Stripeweebhookcontroller).
-    $wrappedPayLink = config('app.url') . '/emails/pay/' . $updatedRoster->id;
-
+    // creating duplicate holds (see PaymentRedirectController).
+    $wrappedPayLink = config('app.url') . '/invoice/pay/' . $updatedRoster->id;
+ 
     if (!empty($client->email)) {
         try {
-            Mail::to($client->email)->send(new ContractorInvoiceMail(
+            Mail::to($client->email)->send(new InvoiceMail(
                 $client->name ?? 'Client',
                 $pdfBytes,
                 $invoiceNumber,
@@ -4959,7 +5169,7 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
             Log::error('Invoice email send failed', ['error' => $e->getMessage()]);
         }
     }
-
+ 
     return ['success' => true, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
 }
 

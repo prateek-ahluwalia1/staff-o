@@ -72,8 +72,9 @@ class InvoiceService
 
         $baseTotal  = '$' . number_format((float) $d['base_total'],     2);
         $discount   = '$' . number_format((float) $d['discount'],       2);
-        $baseFinalTotal = '$' . number_format((float) $d['service_fee'] + (float) $d['base_total'], 2);
+        $discountedsubtotal = '$' . number_format((float) $d['base_total'] - (float) $d['discount'], 2);
         $serviceFee = '$' . number_format((float) $d['service_fee'],    2);
+        $total = '$' . number_format((float) $d['service_fee'] + $discountedsubtotal,    2);
         $grandTotal = '$' . number_format((float) $d['grand_total'],    2);
         $amtCharged = '$' . number_format((float) $d['amount_charged'], 2);
         $balance    = '$' . number_format((float) $d['balance'],        2);
@@ -152,11 +153,12 @@ class InvoiceService
         $html .= "<div class='section-title'>Payment Breakdown</div>";
         $html .= "<div class='table-wrap'><table class='tt'>";
         $html .= "<tr><td class='lbl'>Subtotal</td><td class='amt'>{$baseTotal}</td></tr>";
-        $html .= "<tr><td class='lbl'>GST (10%)</td><td class='amt'>{$serviceFee}</td></tr>";
-        $html .= "<tr class='grand'><td class='lbl'>Total Amount</td><td class='amt'>{$baseFinalTotal}</td></tr>";
         $html .= "<tr><td class='lbl'>{$discountLabel}</td><td class='amt' style='color:#D97706;'>- {$discount}</td></tr>";
+        $html .= "<tr class='grand'><td class='lbl'>Discounted Subtotal</td><td class='amt'>{$discountedsubtotal}</td></tr>";
+        $html .= "<tr><td class='lbl'>GST (10%)</td><td class='amt'>{$serviceFee}</td></tr>";
+        $html .= "<tr class='grand'><td class='lbl'>Total</td><td class='amt'>{$total}</td></tr>";
         $html .= "<tr class='charged'><td class='lbl'>Amount Charged Now</td><td class='amt'>{$amtCharged}</td></tr>";
-        $html .= "<tr class='balance'><td class='lbl'>Balance Remaining</td><td class='amt'>{$balance}</td></tr>";
+        $html .= "<tr class='balance'><td class='lbl'>Due</td><td class='amt'>{$balance}</td></tr>";
         $html .= "</table></div>";
 
         $html .= "<div class='grey-line'></div>";

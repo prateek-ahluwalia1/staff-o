@@ -74,7 +74,7 @@ class InvoiceService
         $discount   = '$' . number_format((float) $d['discount'],       2);
         $discountedsubtotal = '$' . number_format((float) $d['base_total'] - (float) $d['discount'], 2);
         $serviceFee = '$' . number_format((float) $d['service_fee'],    2);
-        $total = '$' . number_format((float) $d['service_fee'] + $discountedsubtotal,    2);
+        $total = '$' . number_format(floatval($d['service_fee']) + floatval($discountedsubtotal), 2);
         $grandTotal = '$' . number_format((float) $d['grand_total'],    2);
         $amtCharged = '$' . number_format((float) $d['amount_charged'], 2);
         $balance    = '$' . number_format((float) $d['balance'],        2);

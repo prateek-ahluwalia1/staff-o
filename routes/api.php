@@ -260,6 +260,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-guard-leaves/{guard_id}', [LeaveManagementController::class, 'getGuardLeave']);
 
     Route::get('user-transactions/{user}', [JobRosterController::class, 'getUserTransactions']);
+    Route::get('client-transactions/', [JobRosterController::class, 'getClientTransactions']);
 
  
     // Notifications

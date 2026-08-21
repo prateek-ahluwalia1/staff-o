@@ -3563,6 +3563,85 @@ private function sendStaffActivationNotification(User $user): void
         ], 200);
     }
 
+    public function getClientTransactions(Request $request)
+    {
+        // Validate request
+        $request->validate([
+            'user_id' => 'nullable|exists:users,id',
+            'per_page' => 'nullable|integer|min:1|max:100',
+            'page' => 'nullable|integer|min:1'
+        ]);
+
+        // Set pagination limit (default 15)
+        $perPage = $request->per_page ?? 15;
+
+        // Build query
+        $query = Transaction::orderBy('created_at', 'desc');
+
+        // Apply user filter if user_id is provided
+        if ($request->has('user_id') && !empty($request->user_id)) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // Paginate results
+        $transactions = $query->paginate($perPage);
+
+        // Check if transactions exist
+        if ($transactions->isEmpty()) {
+            return response()->json([
+                'message' => 'No transactions found' . ($request->has('user_id') ? ' for this user' : ''),
+                'data' => [],
+                'pagination' => [
+                    'total' => 0,
+                    'per_page' => $perPage,
+                    'current_page' => 1,
+                    'last_page' => 1
+                ]
+            ], 200);
+        }
+
+        // Add invoice_filename to each transaction
+        $transactions->getCollection()->transform(function ($transaction) {
+            $jobRosterIds = is_string($transaction->job_roster_id) 
+                ? json_decode($transaction->job_roster_id, true) 
+                : $transaction->job_roster_id;
+            
+            $firstJobRosterId = is_array($jobRosterIds) && count($jobRosterIds) > 0 
+                ? $jobRosterIds[0] 
+                : null;
+            
+            $invoiceFilename = null;
+            if ($firstJobRosterId) {
+                $jobRoster = JobRoster::where('id', $firstJobRosterId)
+                    ->select('invoice_filename')
+                    ->first();
+                
+                $invoiceFilename = $jobRoster ? $jobRoster->invoice_filename : null;
+            }
+            
+            $transaction->invoice_filename = $invoiceFilename;
+            
+            return $transaction;
+        });
+
+        // Prepare response with pagination metadata
+        return response()->json([
+            'message' => 'Transactions retrieved successfully',
+            'data' => $transactions->items(),
+            'pagination' => [
+                'total' => $transactions->total(),
+                'per_page' => $transactions->perPage(),
+                'current_page' => $transactions->currentPage(),
+                'last_page' => $transactions->lastPage(),
+                'from' => $transactions->firstItem(),
+                'to' => $transactions->lastItem()
+            ],
+            'filters' => [
+                'user_id' => $request->user_id ?? null
+            ]
+        ], 200);
+    }
+
     public function generateQR(Request $request, $roster_id)
     {
         $now = Carbon::now();

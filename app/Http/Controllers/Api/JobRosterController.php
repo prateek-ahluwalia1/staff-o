@@ -5139,7 +5139,7 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     //  since Stripe only sends back the charged amount in cents, not the breakdown)
     DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
         'invoice_filename'   => $invoiceNumber,
-        'payment_link_url' => $paymentLink->url,
+        'payment_intent_id' => $paymentLink->url,
         'payment_status'   => 'pending',
         'invoice_meta'     => json_encode([
             'base_total'   => $baseTotal,

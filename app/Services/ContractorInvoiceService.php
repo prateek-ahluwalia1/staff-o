@@ -61,7 +61,7 @@ class ContractorInvoiceService
 
             $subLine = '';
             if ($site || $guardRef) {
-                $subLine = "<div class='shift-sub'>Site: {$site}" . ($guardRef ? " (Guard ID: #{$guardRef})" : '') . "</div>";
+                $subLine = "<div class='shift-sub'>Site: {$site}</div>";
             }
 
             $shiftRows .= "

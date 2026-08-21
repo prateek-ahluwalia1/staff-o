@@ -4697,7 +4697,7 @@ public function contractor_accept_job(Request $request, $id)
         // ============ INVOICE + STRIPE PAYMENT LINK ============
         // Only runs when a guard was assigned AND the site requires contractor invoicing
         $invoiceResult = null;
-        if ($updatedRoster->contractor_invoice == 0) {
+        if ($updatedRoster->contractor_invoice == 0 && $updatedRoster->payment_intent_id == null) {
             $invoiceResult = $this->generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster);
 
             // If invoicing is required, job stays pending until payment clears via webhook

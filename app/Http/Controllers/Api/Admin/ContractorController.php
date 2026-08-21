@@ -337,6 +337,7 @@ private function isDocumentValid($document): bool
             'phone' => $data['phone'] ?? null,
             'abn' => $request->abn ?? null,
             'acn' => $request->acn ?? null,
+            'security_license_no' => $request->security_license_no ?? null,
         ]);
 
         // Create document entries from categories
@@ -500,6 +501,7 @@ private function isDocumentValid($document): bool
                 'phone' => $data['phone'] ?? $user->contractor->phone,
                 'abn' => $request->abn ?? $user->contractor->abn,
                 'acn' => $request->acn ?? $user->contractor->acn,
+                'security_license_no' => $request->security_license_no ?? $user->contractor->security_license_no,
 
             ]);
         }

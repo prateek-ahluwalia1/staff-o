@@ -5876,7 +5876,10 @@ public function list_charge_rate_requests(Request $request)
     }
 
     if ($request->has('user_id') && !empty($request->user_id)) {
-        $query->where('charge_rate_requests.user_id', $request->user_id);
+        $user = User::where('id', $request->user_id)->first();
+        if($user->user_type != 'admin'){
+         $query->where('charge_rate_requests.user_id', $request->user_id);
+        }
     }
 
     $requests = $query->orderBy('charge_rate_requests.created_at', 'desc')->get();

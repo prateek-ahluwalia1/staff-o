@@ -341,6 +341,8 @@ export default function EditProfile() {
       missing.push("Address");
     if (userType === "staff" && !staff.security_license_no)
       missing.push("Security License No");
+    if (userType === "contractor" && !contractor.security_license_no)
+      missing.push("Security Master License No");
     if (userType === "contractor" && !contractor.company_name)
       missing.push("Company Name");
     return missing;
@@ -413,7 +415,7 @@ export default function EditProfile() {
           : (d.coordinates || staff.coordinates || contractor.coordinates || business.coordinates || ""),
       gender: staff.gender || contractor.gender || d.gender || "",
       staff_document_type: staff.staff_document_type || "",
-      security_license_no: staff.security_license_no || "",
+      security_license_no: staff.security_license_no || contractor.security_license_no || "",
       date_of_birth: isoToDisplay(d.date_of_birth || staff.date_of_birth || ""),
       company_name:
         userType === "admin"

@@ -364,6 +364,30 @@ export default function ProfileForm({
                     />
                   </div>
                 </div>
+
+                {userType === "contractor" && (
+                  <div className="col-md-6">
+                    <label htmlFor="security_license_no" className="form-label fw-bold text-dark small mb-1">
+                      Security Master License No. <span className="text-danger">*</span>
+                    </label>
+                    <div className="input-group">
+                      <span className="input-group-text bg-light border text-muted">
+                        <i className="fa-solid fa-id-card"></i>
+                      </span>
+                      <input
+                        type="text"
+                        className="form-control border bg-light ps-2 shadow-none"
+                        id="security_license_no"
+                        placeholder="12345678-01"
+                        value={formData.security_license_no || ""}
+                        onChange={onChange}
+                        required
+                        style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="col-12">
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <label className="form-label fw-bold text-dark small mb-0">

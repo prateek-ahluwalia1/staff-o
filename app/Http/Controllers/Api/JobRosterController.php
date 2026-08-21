@@ -4962,7 +4962,7 @@ public function contractor_accept_job(Request $request, $id)
 
 //     return ['success' => true, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
 // }
-rivate function generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster)
+private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster)
 {
     // 1. Get contractor's rate card for this site's state
     $rate = DB::table('contractor_chargerates')

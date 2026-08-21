@@ -182,7 +182,6 @@ class ContractorInvoiceService
         $html .= "<td>";
         $html .= "<div class='party-label'>BILLED TO (CLIENT)</div>";
         $html .= "<div class='party-name'>{$clientName}</div>";
-        $html .= "<div class='party-line'>ABN: {$clientAbn}</div>";
         $html .= "<div class='party-line'>Attn: {$clientAttn}</div>";
         $html .= "<div class='party-line'>{$clientAddress}</div>";
         $html .= "</td>";

@@ -262,7 +262,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('user-transactions/{user}', [JobRosterController::class, 'getUserTransactions']);
     Route::get('client-transactions/', [JobRosterController::class, 'getClientTransactions']);
 
- 
     // Notifications
     Route::prefix('notifications')->group(function () {
         Route::get('/user/{userId}', [NotificationController::class, 'getUserNotifications']);

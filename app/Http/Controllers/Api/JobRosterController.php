@@ -5875,6 +5875,10 @@ public function list_charge_rate_requests(Request $request)
         $query->where('charge_rate_requests.status', 'pending');
     }
 
+    if ($request->has('user_id') && !empty($request->user_id)) {
+        $query->where('charge_rate_requests.user_id', $request->user_id);
+    }
+
     $requests = $query->orderBy('charge_rate_requests.created_at', 'desc')->get();
 
     return response()->json([

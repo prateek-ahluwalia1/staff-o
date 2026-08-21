@@ -5127,7 +5127,6 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     ];
  
     try {
-        ini_set('memory_limit', '512M');
         $invoiceService = new ContractorInvoiceService();
         $pdfBytes = $invoiceService->generatePdf($invoiceData);
     } catch (\Exception $e) {

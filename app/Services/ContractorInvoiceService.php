@@ -53,6 +53,7 @@ class ContractorInvoiceService
      */
     public function generatePdf(array $data): string
     {
+        ini_set('memory_limit', '512M');
         $pdf = Pdf::loadHTML($this->buildHtml($data))->setPaper('a4', 'portrait');
         return $pdf->output();
     }

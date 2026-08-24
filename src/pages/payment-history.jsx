@@ -106,12 +106,11 @@ export default function PaymentHistory() {
     isAuth: true,
   });
 
-  const fetchId = isAdmin && selectedCustomerId ? selectedCustomerId : loggedInUserId;
+  const fetchUrl = isAdmin
+    ? `api/client-transactions?page=${currentPage}${selectedCustomerId ? `&user_id=${selectedCustomerId}` : ""}`
+    : `api/user-transactions/${loggedInUserId}`;
 
-  const { data: paymentData, loading, error } = useFetch(
-    fetchId ? `api/user-transactions/${fetchId}` : null,
-    { isAuth: true }
-  );
+  const { data: paymentData, loading, error } = useFetch(fetchUrl, { isAuth: true });
 
   const { data: historyDataResponse, loading: historyLoading, error: historyError } = useFetch(
     historyTxId ? `api/admin/invoice/history/${historyTxId}` : null,
@@ -131,7 +130,20 @@ export default function PaymentHistory() {
     }));
   }, [customersList]);
 
-  const transactions = paymentData?.data || [];
+  const isArrayData = Array.isArray(paymentData?.data);
+  const transactions = isArrayData ? paymentData.data : (paymentData?.data?.data || []);
+  const totalPages = isArrayData
+    ? Math.ceil(transactions.length / itemsPerPage)
+    : (paymentData?.data?.last_page || 1);
+  const totalItems = isArrayData
+    ? transactions.length
+    : (paymentData?.data?.total || 0);
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentTransactions = isArrayData
+    ? transactions.slice(indexOfFirstItem, indexOfLastItem)
+    : transactions;
 
   const invoiceHistory = Array.isArray(historyDataResponse?.data)
     ? historyDataResponse.data
@@ -144,11 +156,6 @@ export default function PaymentHistory() {
   const displayTitle = isAdmin && selectedCustomerDetails
     ? `Payment History: ${selectedCustomerDetails.name}`
     : "Payment History";
-
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentTransactions = transactions.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(transactions.length / itemsPerPage);
 
   // --- Handlers ---
   const handleCustomerChange = (selectedOption) => {
@@ -577,13 +584,7 @@ export default function PaymentHistory() {
               </h3>
             </div>
 
-            {isAdmin && !selectedCustomerId ? (
-              <div className="empty-state text-center">
-                <i className="fa-solid fa-hand-pointer d-block"></i>
-                <div className="empty-state-title">Select a client to view transactions</div>
-                <div className="empty-state-sub">Use the dropdown above to get started.</div>
-              </div>
-            ) : loading ? (
+            {loading ? (
               <Loader />
             ) : error ? (
               <div className="alert alert-danger border-0 rounded-3 d-flex align-items-center gap-2 py-3">
@@ -601,6 +602,7 @@ export default function PaymentHistory() {
                   <table className="table-modern">
                     <thead>
                       <tr>
+                        {isAdmin && <th>Client</th>}
                         <th>Date</th>
                         <th>Amount Charged</th>
                         <th>Total Amount</th>
@@ -612,6 +614,11 @@ export default function PaymentHistory() {
                     <tbody>
                       {currentTransactions.map((tx) => (
                         <tr key={tx.id}>
+                          {isAdmin && (
+                            <td style={{ color: "#334155", fontWeight: 500 }}>
+                              {tx.user?.name || tx.client?.name || tx.customer?.name || "-"}
+                            </td>
+                          )}
                           <td style={{ color: "#334155", fontWeight: 500 }}>
                             {formatDate(tx.created_at)}
                           </td>
@@ -676,9 +683,9 @@ export default function PaymentHistory() {
                 {totalPages > 1 && (
                   <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 pt-3 border-top">
                     <span className="text-muted small mb-3 mb-md-0">
-                      Showing <strong>{indexOfFirstItem + 1}</strong> to{" "}
-                      <strong>{Math.min(indexOfLastItem, transactions.length)}</strong> of{" "}
-                      <strong>{transactions.length}</strong> transactions
+                      Showing <strong>{isArrayData ? indexOfFirstItem + 1 : (paymentData?.data?.from || 0)}</strong> to{" "}
+                      <strong>{isArrayData ? Math.min(indexOfLastItem, totalItems) : (paymentData?.data?.to || 0)}</strong> of{" "}
+                      <strong>{totalItems}</strong> transactions
                     </span>
 
                     <div className="d-flex gap-2 flex-wrap justify-content-center">

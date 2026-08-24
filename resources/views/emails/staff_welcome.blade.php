@@ -135,12 +135,9 @@
                 Welcome to Staffoo, {{ $name }}! 👋
             </div>
 
-            @if($user_type == 'staff')
             <div class="message">
-                <p>We're excited to have you on board! Your company <strong>{{ $company_name }}</strong> is registered on Staffoo.</p>
                 <p>Staffoo is your all-in-one security workforce management solution designed to make your work life easier and more efficient.</p>
             </div>
-            @endif
 
             <!-- Account Details -->
             <div class="credentials-box">

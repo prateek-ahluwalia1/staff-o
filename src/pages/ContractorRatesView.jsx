@@ -15,7 +15,7 @@ const STATE_NAME_MAP = {
   act: "Australian Capital Territory", nt: "Northern Territory",
 };
 
-// 5-row grid — day and night rates for weekends are mirrored in the payload
+
 const SLOT_ROWS = [
   { label: "Mon–Fri Day", sub: "06:00–18:00", metro: "metro_mon_to_fri_day_rate", reg: "reg_mon_to_fri_day_rate" },
   { label: "Mon–Fri Night", sub: "18:00–06:00", metro: "metro_mon_to_fri_night_rate", reg: "reg_mon_to_fri_night_rate" },
@@ -56,12 +56,31 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
 
   const { submit, loading: submitting } = useSubmit({ isAuth: true });
 
-  const [selectedId, setSelectedId] = useState(null);
+  const [activeView, setActiveView] = useState(() => selectedStates?.[0] || null);
 
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [viewRequestRates, setViewRequestRates] = useState(null);
   const [activeStateTab, setActiveStateTab] = useState(null);
   const [requestForm, setRequestForm] = useState(() => makeBlankForm(selectedStates));
   const [formErrors, setFormErrors] = useState({});
+
+  const [mainTab, setMainTab] = useState("active");
+  const [requestTab, setRequestTab] = useState("pending");
+
+  const {
+    data: requestsData,
+    loading: requestsLoading,
+  } = useFetch(`api/charge-rate-requests?status=${requestTab}&user_id=${userId}`, {
+    isAuth: true,
+    immediate: true,
+  });
+
+  const rateRequests = useMemo(() => {
+    if (!requestsData) return [];
+    const arr = requestsData?.data ?? requestsData;
+    const reqs = Array.isArray(arr) ? arr : [];
+    return reqs.filter(r => String(r.user_id) === String(userId) || String(r.contractor_id) === String(userId));
+  }, [requestsData, userId]);
 
   const rows = useMemo(() => {
     if (!data) return [];
@@ -69,16 +88,18 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   }, [data]);
 
   useEffect(() => {
-    if (rows.length > 0 && selectedId === null) setSelectedId(rows[0].id);
-  }, [rows, selectedId]);
+    if (selectedStates?.length > 0 && (!activeView || !selectedStates.includes(activeView))) {
+      setActiveView(selectedStates[0]);
+    }
+  }, [selectedStates, activeView]);
 
   const rate = useMemo(
-    () => rows.find((r) => r.id === selectedId) || rows[0],
-    [rows, selectedId]
+    () => rows.find((r) => String(r.state).toLowerCase() === String(activeView).toLowerCase()),
+    [rows, activeView]
   );
 
   // ── Open modal with a blank fresh form ──────────────────────────────────
-  const handleOpenRequestModal = () => {
+  const handleOpenRequestModal = (initialStateTab = null) => {
     const f = makeBlankForm(selectedStates);
     selectedStates.forEach(s => {
       const existingStateRate = rows.find(r => r.state === s);
@@ -96,7 +117,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
       }
     });
     setRequestForm(f);
-    setActiveStateTab(selectedStates[0] || null);
+    setActiveStateTab(initialStateTab && selectedStates.includes(initialStateTab) ? initialStateTab : selectedStates[0] || null);
     setFormErrors({});
     setShowRequestModal(true);
   };
@@ -182,31 +203,63 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
 
     setFormErrors({});
 
-    const ratesPayload = selectedStates.map(stateVal => {
-      const stateObj = {
+    const ratesPayload = [];
+
+    for (const stateVal of selectedStates) {
+      const stateForm = requestForm[stateVal] || {};
+      const originalRate = rows.find(r => r.state === stateVal) || {};
+
+      let stateObj = {
         title: `${STATE_NAME_MAP[stateVal] || stateVal} My Charge Rates`,
         state: stateVal,
       };
 
-      // Auto-mirror night rates for Sat, Sun, Pub Holi
+      let hasChanges = false;
+
       SLOT_ROWS.forEach((row) => {
         const mk = `def_${row.metro}`;
         const rk = `def_${row.reg}`;
-        const stateForm = requestForm[stateVal] || {};
-        stateObj[mk] = stateForm[mk] !== "" && stateForm[mk] !== undefined ? Number(stateForm[mk]) : undefined;
-        stateObj[rk] = stateForm[rk] !== "" && stateForm[rk] !== undefined ? Number(stateForm[rk]) : undefined;
-
-        // Auto-mirror logic
         const metroNight = row.metro.replace("_day_", "_night_");
         const regNight = row.reg.replace("_day_", "_night_");
-        if (metroNight !== row.metro) {
-          stateObj[`def_${metroNight}`] = stateObj[mk];
-          stateObj[`def_${regNight}`] = stateObj[rk];
+
+        const mNightKey = `def_${metroNight}`;
+        const rNightKey = `def_${regNight}`;
+
+        const keysToCheck = [mk, rk];
+
+        // Only auto-mirror for weekend/public holidays (exclude mon_to_fri_day)
+        const shouldMirror = metroNight !== row.metro && !row.metro.includes("mon_to_fri");
+        if (shouldMirror) {
+          keysToCheck.push(mNightKey, rNightKey);
+        }
+
+        let computed = {};
+        computed[mk] = stateForm[mk] !== "" && stateForm[mk] !== undefined && stateForm[mk] !== null ? Number(stateForm[mk]) : undefined;
+        computed[rk] = stateForm[rk] !== "" && stateForm[rk] !== undefined && stateForm[rk] !== null ? Number(stateForm[rk]) : undefined;
+
+        if (shouldMirror) {
+          computed[mNightKey] = computed[mk];
+          computed[rNightKey] = computed[rk];
+        }
+
+        for (const key of keysToCheck) {
+          const originalVal = originalRate[key] !== null && originalRate[key] !== undefined ? Number(originalRate[key]) : 0;
+          if (computed[key] !== originalVal && computed[key] !== undefined) {
+            stateObj[key] = computed[key];
+            hasChanges = true;
+          }
         }
       });
 
-      return stateObj;
-    });
+      if (hasChanges) {
+        ratesPayload.push(stateObj);
+      }
+    }
+
+    if (ratesPayload.length === 0) {
+      toast.info("No rate changes detected. Nothing to submit.");
+      return;
+    }
 
     const finalPayload = {
       user_id: userId,
@@ -228,6 +281,26 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
       }
     } catch (err) {
       console.error(err?.message || "Failed to submit rate update request.");
+    }
+  };
+
+  const handleResubmit = (req) => {
+    const form = makeBlankForm(selectedStates);
+    // Find matching state key in selectedStates (case-insensitive)
+    const s = selectedStates.find(st => st.toLowerCase() === (req.state || "").toLowerCase());
+
+    if (s && form[s]) {
+      SLOT_ROWS.forEach(row => {
+        const mk = `def_${row.metro}`;
+        const rk = `def_${row.reg}`;
+        if (req[mk] !== undefined && req[mk] !== null) form[s][mk] = req[mk];
+        if (req[rk] !== undefined && req[rk] !== null) form[s][rk] = req[rk];
+      });
+      setRequestForm(form);
+      setActiveStateTab(s);
+      setShowRequestModal(true);
+    } else {
+      toast.error("The state for this request is no longer in your active regions.");
     }
   };
 
@@ -345,6 +418,13 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
         .rate-pill .pill-title { font-weight: 800; font-size: 14.5px; color: var(--ink); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .rate-pill .pill-state { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--teal-dark); background: rgba(10,124,110,0.08); padding: 3px 9px; border-radius: 20px; margin-bottom: 10px; }
         .rate-pill.active::after { content: "\\2713"; position: absolute; top: 14px; right: 14px; width: 20px; height: 20px; border-radius: 50%; background: var(--teal); color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: 700; box-shadow: 0 2px 6px rgba(10,124,110,0.3); }
+
+        /* ── Tabs ── */
+        .rate-tabs { display: inline-flex; background: #e2e8f0; border-radius: 12px; padding: 6px; gap: 6px; box-shadow: inset 0 2px 4px rgba(15,23,42,0.05); }
+        .rate-tab { position: relative; border: none; background: transparent; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; color: var(--muted); transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; outline: none; user-select: none; }
+        .rate-tab:hover:not(.active) { color: var(--ink); background: rgba(255,255,255,0.4); }
+        .rate-tab:active { transform: scale(0.96); }
+        .rate-tab.active { background: var(--surface); color: var(--teal-dark); box-shadow: 0 4px 12px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04); }
 
         /* ── Rate card ── */
         .rate-card { background: var(--surface); border-radius: 18px; border: 1px solid var(--line); box-shadow: 0 8px 24px -8px rgba(15,23,42,0.05); overflow: hidden; }
@@ -465,82 +545,210 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
       `}</style>
 
 
-      {/* ── Rates View ── */}
-      {rows.length === 0 ? (
-        <div className="rate-card text-center py-5">
-          <div className="mb-3">
-            <i className="fa fa-folder-open" style={{ fontSize: "3rem", color: "var(--line)" }}></i>
-          </div>
-          <h5 className="fw-bold text-dark mb-2">No Rates Assigned</h5>
-          <p className="text-muted mx-auto mb-4" style={{ maxWidth: "400px" }}>
-            You currently do not have any active rates assigned to your profile. Please request charge rates for states you selected in profile section.
-          </p>
-          <button
-            type="button"
-            className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2"
-            style={{ backgroundColor: "var(--teal)", border: "none" }}
-            onClick={handleOpenRequestModal}
-          >
-            <i className="fa-solid fa-paper-plane"></i> Request Rate Update
-          </button>
+      {/* ── Main Tabs ── */}
+      <div className="d-flex justify-content-end mb-4">
+        <div className="rate-tabs">
+          {[
+            { key: "active", label: "Active Rates", icon: "fa-bolt" },
+            { key: "history", label: "Request History", icon: "fa-history" }
+          ].map(tab => (
+            <button
+              key={tab.key}
+              type="button"
+              className={`rate-tab ${mainTab === tab.key ? "active" : ""}`}
+              onClick={() => setMainTab(tab.key)}
+            >
+              <i className={`fa ${tab.icon} me-2`}></i>{tab.label}
+            </button>
+          ))}
         </div>
-      ) : (
-        <div className="fade-in" style={{ animationDelay: "0.1s" }}>
-          {rows.length > 1 && (
-            <div className="rr-tab-bar w-100 mb-4">
-              {rows.map((r) => (
+      </div>
+
+      {mainTab === "active" && (
+        <>
+          {/* ── Rates View ── */}
+          {selectedStates.length === 0 ? (
+            <div className="rate-card text-center py-5 fade-in">
+              <div className="mb-3">
+                <i className="fa fa-map text-muted" style={{ fontSize: "3rem" }}></i>
+              </div>
+              <h5 className="fw-bold text-dark mb-2">No States Selected</h5>
+              <p className="text-muted mx-auto mb-4" style={{ maxWidth: "400px" }}>
+                You haven't selected any states in your profile. Please update your profile to request charge rates.
+              </p>
+            </div>
+          ) : (
+            <div className="fade-in" style={{ animationDelay: "0.1s" }}>
+              {selectedStates.length > 1 && (
+                <div className="rate-tabs flex-wrap mb-4">
+                  {selectedStates.map((stateVal) => (
+                    <button
+                      key={stateVal}
+                      type="button"
+                      className={`rate-tab justify-content-center ${stateVal === activeView ? "active" : ""}`}
+                      onClick={() => setActiveView(stateVal)}
+                      aria-label={`Select state: ${STATE_NAME_MAP[stateVal] || stateVal}`}
+                    >
+                      <i className="fa fa-map-marker-alt me-2"></i> {STATE_NAME_MAP[stateVal] || stateVal}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {!rate ? (
+                <div className="rate-card text-center py-5 fade-in mt-2">
+                  <div className="mb-3">
+                    <i className="fa fa-folder-open" style={{ fontSize: "3rem", color: "var(--line)" }}></i>
+                  </div>
+                  <h5 className="fw-bold text-dark mb-2">No Rates Assigned</h5>
+                  <p className="text-muted mx-auto mb-4" style={{ maxWidth: "400px" }}>
+                    You currently do not have any active rates assigned for {STATE_NAME_MAP[activeView] || activeView}. Please submit a request.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2"
+                    style={{ backgroundColor: "var(--teal)", border: "none" }}
+                    onClick={() => handleOpenRequestModal(activeView)}
+                  >
+                    <i className="fa-solid fa-paper-plane"></i> Request Rate Update
+                  </button>
+                </div>
+              ) : (
+                <div className="rate-card mt-2 fade-in">
+                  <div className="rate-card-head d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                    <div className="d-flex align-items-center gap-3">
+                      <span className="icon-badge mb-0"><i className="fa fa-clock"></i></span>
+                      <div>
+                        <h6 className="mb-0">My Rates</h6>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2 mt-2 mt-md-0"
+                      style={{ backgroundColor: "var(--teal)", border: "none" }}
+                      onClick={handleOpenRequestModal}
+                    >
+                      <i className="fa-solid fa-paper-plane"></i> Request Rate Update
+                    </button>
+                  </div>
+                  {SLOT_ROWS.map((row) => {
+                    const metroVal = rate ? rate[`def_${row.metro}`] : 0;
+                    const regVal = rate ? rate[`def_${row.reg}`] : 0;
+                    return (
+                      <div className="rate-row" key={row.label}>
+                        <div className="slot-col">
+                          <div className="slot-label">{row.label}</div>
+                          <div className="slot-sub">{row.sub}</div>
+                        </div>
+                        <div className="metro">
+                          <span className="amount-label">Metro</span>
+                          <span className="amount">{fmt(metroVal)}</span>
+                        </div>
+                        <div className="regional">
+                          <span className="amount-label">Regional</span>
+                          <span className="amount">{fmt(regVal)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {mainTab === "history" && (
+        <div className="rate-card p-4 fade-in">
+          <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+            <h5 className="mb-0 fw-bold d-flex align-items-center gap-2 text-dark">
+              <i className="fa fa-history" style={{ color: "var(--teal)" }}></i> Rate Request History
+            </h5>
+            <div className="rate-tabs">
+              {["pending", "approved", "rejected"].map(tab => (
                 <button
-                  key={r.id}
+                  key={tab}
                   type="button"
-                  className={`rr-tab-btn flex-grow-1 justify-content-center ${r.id === rate?.id ? "active" : ""}`}
-                  onClick={() => setSelectedId(r.id)}
-                  aria-label={`Select rate: ${STATE_NAME_MAP[r.state] || r.state}`}
+                  className={`rate-tab ${requestTab === tab ? "active" : ""}`}
+                  onClick={() => setRequestTab(tab)}
                 >
-                  <i className="fa fa-map-marker-alt"></i> {STATE_NAME_MAP[r.state] || r.state}
+                  <i className={`fa ${tab === 'pending' ? 'fa-clock' : tab === 'approved' ? 'fa-check' : 'fa-times'} me-2`}></i>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </button>
               ))}
             </div>
-          )}
-
-          <div className="rate-card mt-2">
-            <div className="rate-card-head d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-              <div className="d-flex align-items-center gap-3">
-                <span className="icon-badge mb-0"><i className="fa fa-clock"></i></span>
-                <div>
-                  <h6 className="mb-0">My Rates</h6>
-                  <span>Metro vs Regional, by time slot — {rate?.title || ""}</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2 mt-2 mt-md-0"
-                style={{ backgroundColor: "var(--teal)", border: "none" }}
-                onClick={handleOpenRequestModal}
-              >
-                <i className="fa-solid fa-paper-plane"></i> Request Rate Update
-              </button>
-            </div>
-            {SLOT_ROWS.map((row) => {
-              const metroVal = rate ? rate[`def_${row.metro}`] : 0;
-              const regVal = rate ? rate[`def_${row.reg}`] : 0;
-              return (
-                <div className="rate-row" key={row.label}>
-                  <div className="slot-col">
-                    <div className="slot-label">{row.label}</div>
-                    <div className="slot-sub">{row.sub}</div>
-                  </div>
-                  <div className="metro">
-                    <span className="amount-label">Metro</span>
-                    <span className="amount">{fmt(metroVal)}</span>
-                  </div>
-                  <div className="regional">
-                    <span className="amount-label">Regional</span>
-                    <span className="amount">{fmt(regVal)}</span>
-                  </div>
-                </div>
-              );
-            })}
           </div>
+
+          {requestsLoading ? (
+            <div className="text-center py-5"><i className="fa fa-spinner fa-spin text-muted fs-4"></i></div>
+          ) : rateRequests.length === 0 ? (
+            <div className="text-center py-5">
+              <i className="fa fa-inbox text-muted mb-3" style={{ fontSize: "2rem" }}></i>
+              <div className="fw-bold text-dark mb-1">No {requestTab} requests</div>
+              <div className="text-muted small">You do not have any {requestTab} rate requests at this time.</div>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table align-middle">
+                <thead>
+                  <tr>
+                    <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}> State</th>
+                    <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Submitted</th>
+                    {requestTab !== "pending" && <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Admin Note</th>}
+                    <th className="text-muted small text-uppercase text-end" style={{ letterSpacing: "0.5px" }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rateRequests.map(req => (
+                    <tr key={req.id} style={{ borderBottom: "1px solid var(--line-soft)" }}>
+                      <td className="py-3">
+                        <div className="fw-bold text-dark">{STATE_NAME_MAP[req.state] || req.state || ""}</div>
+                      </td>
+                      <td className="text-muted small py-3">
+                        {req.created_at ? new Date(req.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                      </td>
+                      {requestTab !== "pending" && (
+                        <td className="text-muted small py-3" style={{ maxWidth: "250px" }}>
+                          {req.review_note ? (
+                            <span className="text-truncate d-inline-block w-100 text-dark" title={req.review_note}>
+                              <i className="fa fa-comment-alt text-teal me-1 opacity-75"></i> {req.review_note}
+                            </span>
+                          ) : "—"}
+                        </td>
+                      )}
+                      <td className="py-3 text-end d-flex justify-content-end align-items-center gap-2">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary rounded-pill fw-bold"
+                          onClick={() => setViewRequestRates(req)}
+                          title="View Rates"
+                        >
+                          <i className="fa fa-eye me-1"></i> View
+                        </button>
+                        {req.status === "approved" ? (
+                          <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-2">Approved</span>
+                        ) : req.status === "rejected" ? (
+                          <>
+                            <span className="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2">Rejected</span>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-teal rounded-pill fw-bold"
+                              onClick={() => handleResubmit(req)}
+                              title="Edit & Resubmit"
+                            >
+                              <i className="fa fa-pencil me-1"></i> Resubmit
+                            </button>
+                          </>
+                        ) : (
+                          <span className="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill px-3 py-2">Pending</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -718,6 +926,93 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                 </div>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {viewRequestRates && createPortal(
+        <div className="modal-overlay-premium" onClick={() => setViewRequestRates(null)}>
+          <div
+            className="modal-content-premium w-100"
+            style={{ maxWidth: "800px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header-premium">
+              <h5>Requested Rates — {STATE_NAME_MAP[viewRequestRates.state] || viewRequestRates.state}</h5>
+              <button type="button" className="modal-close-btn" onClick={() => setViewRequestRates(null)} aria-label="Close modal">
+                <i className="fa fa-times"></i>
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
+              <div className="mb-4 d-flex align-items-center gap-3">
+                <span className={`badge rounded-pill px-3 py-2 border ${viewRequestRates.status === 'approved' ? 'bg-success bg-opacity-10 text-success border-success' :
+                  viewRequestRates.status === 'rejected' ? 'bg-danger bg-opacity-10 text-danger border-danger' :
+                    'bg-warning bg-opacity-10 text-warning border-warning'
+                  }`}>
+                  {viewRequestRates.status === 'approved' ? <i className="fa fa-check-circle me-1"></i> :
+                    viewRequestRates.status === 'rejected' ? <i className="fa fa-times-circle me-1"></i> :
+                      <i className="fa fa-hourglass-half me-1"></i>}
+                  <span className="text-capitalize">{viewRequestRates.status}</span>
+                </span>
+                <span className="text-muted small">
+                  Submitted on {new Date(viewRequestRates.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
+                </span>
+              </div>
+
+              {viewRequestRates.review_note && (
+                <div className="alert bg-light border-0 rounded-3 mb-4 d-flex align-items-start gap-3">
+                  <i className="fa fa-comment-alt text-teal mt-1"></i>
+                  <div>
+                    <div className="fw-bold text-dark small mb-1">Admin Note</div>
+                    <div className="text-secondary small">{viewRequestRates.review_note}</div>
+                  </div>
+                </div>
+              )}
+
+              <div className="rate-card p-0 mb-4 shadow-none border">
+                <div className="d-none d-md-flex align-items-center py-2 px-3 bg-light border-bottom text-muted small fw-bold text-uppercase" style={{ letterSpacing: "0.5px" }}>
+                  <div style={{ flex: "1 1 40%" }}>Time Slot</div>
+                  <div style={{ flex: "1 1 30%" }}>Metro ($)</div>
+                  <div style={{ flex: "1 1 30%" }}>Regional ($)</div>
+                </div>
+                {SLOT_ROWS.map((row) => {
+                  const mk = `def_${row.metro}`;
+                  const rk = `def_${row.reg}`;
+                  const metroVal = viewRequestRates[mk];
+                  const regVal = viewRequestRates[rk];
+
+                  if (metroVal === undefined && regVal === undefined) return null;
+
+                  return (
+                    <div className="d-flex flex-column flex-md-row align-items-md-center py-3 px-3 border-bottom" key={row.label}>
+                      <div style={{ flex: "1 1 40%" }} className="mb-2 mb-md-0">
+                        <div className="fw-bold text-dark">{row.label}</div>
+                        {row.sub && <div className="text-muted small">{row.sub}</div>}
+                      </div>
+                      <div style={{ flex: "1 1 30%" }} className="mb-2 mb-md-0">
+                        <div className="d-md-none text-muted small mb-1">Metro</div>
+                        <div className="fw-bold text-teal">{metroVal !== null && metroVal !== undefined ? fmt(metroVal) : "—"}</div>
+                      </div>
+                      <div style={{ flex: "1 1 30%" }}>
+                        <div className="d-md-none text-muted small mb-1">Regional</div>
+                        <div className="fw-bold text-primary">{regVal !== null && regVal !== undefined ? fmt(regVal) : "—"}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {viewRequestRates.notes && (
+                <div className="mb-2">
+                  <label className="fw-bold small text-muted text-uppercase mb-2" style={{ letterSpacing: "0.5px" }}>My Request Reason</label>
+                  <div className="p-3 bg-light rounded-3 text-secondary small border">
+                    {viewRequestRates.notes}
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>,
         document.body

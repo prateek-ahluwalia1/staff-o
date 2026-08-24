@@ -70,7 +70,7 @@
 
             <!-- Call to Action -->
             <div style="text-align: center; margin: 30px 0;">
-                <a href="https://staffoo.com.au/login" style="display: inline-block; background-color: #0A7C6E; color: #ffffff !important; padding: 14px 35px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+                <a href="https://staffoo.com.au" style="display: inline-block; background-color: #0A7C6E; color: #ffffff !important; padding: 14px 35px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
                     @if($status === 'active')
                         🚀 Go to Dashboard
                     @else

@@ -41,13 +41,9 @@ use Illuminate\Support\Facades\Storage;
 use App\Mail\ContractorJobInvoice;
 use App\Mail\JobSplitNotificationMail;
 use App\Mail\PlatformFeeInvoiceMail;
-use App\Mail\RateUpdateRequestMail;
 use App\Models\ContractorChargeRate;
 use App\Services\PlatformFeeInvoiceService;
-use Maatwebsite\Excel\Excel;
-use Stripe\PaymentLink;
-use Stripe\Price;
-use Stripe\Product;
+use Maatwebsite\Excel\Facades\Excel;
 
 class JobRosterController extends Controller
 {

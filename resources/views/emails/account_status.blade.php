@@ -97,9 +97,9 @@
                 &copy; {{ date('Y') }} Staffoo. All rights reserved.
             </p>
             <div style="margin-top: 15px;">
-                <a href="https://staffoo.com" style="margin: 0 10px; color: #1a237e; text-decoration: none;">Website</a> |
-                <a href="mailto:support@staffoo.com" style="margin: 0 10px; color: #1a237e; text-decoration: none;">Support</a> |
-                <a href="https://staffoo.com/privacy" style="margin: 0 10px; color: #1a237e; text-decoration: none;">Privacy Policy</a>
+                <a href="https://staffoo.com.au" style="margin: 0 10px; color: #1a237e; text-decoration: none;">Website</a> |
+                <a href="mailto:admin@staffoo.com.au" style="margin: 0 10px; color: #1a237e; text-decoration: none;">Support</a> |
+                <a href="https://staffoo.com.au/privacy-policy" style="margin: 0 10px; color: #1a237e; text-decoration: none;">Privacy Policy</a>
             </div>
             <div style="margin-top: 15px; font-size: 12px; color: #999;">
                 This is an automated message, please do not reply directly to this email.

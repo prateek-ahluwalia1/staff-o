@@ -770,7 +770,7 @@ private function updateStaffStatus(User $user, int $newStatus): void
         $user->is_active = $newStatus;
         $user->save();
 
-        if ($newStatus === 1 && $oldStatus != 1) {
+        if ($newStatus == 1 && $oldStatus != 1) {
             $this->sendStaffActivationNotification($user);
         }
     }

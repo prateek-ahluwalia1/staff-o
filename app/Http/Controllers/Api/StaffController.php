@@ -107,7 +107,7 @@ private function calculateProfileCompletion(User $user): int
             $oldStatus = $user->is_active;
             $newStatus = ($baseScore >= $baseWeight && $totalDocPoints >= 100) ? 1 : 0;
 
-           if ($newStatus === 1 && $oldStatus != 1) {
+           if ($newStatus == 1 && $oldStatus != 1) {
                 dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
             } elseif ($newStatus === 0 && $oldStatus != 0) {
                 dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
@@ -117,7 +117,7 @@ private function calculateProfileCompletion(User $user): int
                 $user->is_active = $newStatus;
                 $user->save();
 
-                if ($newStatus === 1 && $oldStatus != 1) {
+                if ($newStatus == 1 && $oldStatus != 1) {
                     $notificationData = [
                         'notification_token' => $user->notification_token,
                         'message'            => "Congratulations! Your account is now active.",
@@ -140,7 +140,7 @@ private function calculateProfileCompletion(User $user): int
             $oldStatus = $user->is_active;
             $newStatus = ($baseScore >= $baseWeight && $hasSecurityLicenseWithExpiry) ? 1 : 0;
 
-            if ($newStatus === 1 && $oldStatus != 1) {
+            if ($newStatus == 1 && $oldStatus != 1) {
                 dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
             } elseif ($newStatus === 0 && $oldStatus != 0) {
                 dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
@@ -170,7 +170,7 @@ private function calculateProfileCompletion(User $user): int
                 $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
             }
 
-                if ($newStatus === 1 && $oldStatus != 1) {
+                if ($newStatus == 1 && $oldStatus != 1) {
                     $notificationData = [
                         'notification_token' => $user->notification_token,
                         'message'            => "Congratulations! Your account is now active.",

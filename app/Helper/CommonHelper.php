@@ -524,7 +524,7 @@ function send_push_notification($data){
             ];
 
             Mail::send('emails.staff_welcome', $data, function ($message) use ($user) {
-                $message->to($user->email, $user->name)
+                $message->to($user->email, $user->name, $user->user_type)
                         ->subject('Your Login Details');
             });
 

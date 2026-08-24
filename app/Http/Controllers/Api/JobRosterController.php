@@ -39,8 +39,10 @@ use App\Services\ContractorInvoiceService;
 use Illuminate\Support\Facades\Storage;
 use App\Mail\ContractorJobInvoice;
 use App\Mail\JobSplitNotificationMail;
+use App\Mail\PlatformFeeInvoiceMail;
 use App\Mail\RateUpdateRequestMail;
 use App\Models\ContractorChargeRate;
+use App\Services\PlatformFeeInvoiceService;
 use Stripe\PaymentLink;
 use Stripe\Price;
 use Stripe\Product;
@@ -6030,5 +6032,193 @@ public function reject_charge_rate_request(Request $request, $id)
         ], 500);
     }
 }
+
+ public function releaseContractorPayout($rosterId)
+    {
+        $roster = DB::table('job_rosters')
+            ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+            ->where('job_rosters.id', $rosterId)
+            ->select('job_rosters.*', 'sites.address')
+            ->first();
+ 
+        if (!$roster) {
+            return response()->json(['success' => false, 'message' => 'Roster not found.'], 200);
+        }
+ 
+        if (empty($roster->payment_intent_id)) {
+            return response()->json(['success' => false, 'message' => 'No payment on file for this roster.'], 200);
+        }
+ 
+        if (!empty($roster->stripe_transfer_id)) {
+            return response()->json(['success' => false, 'message' => 'Payout has already been released for this roster.'], 200);
+        }
+ 
+        $contractor = \App\Models\User::with('contractor')->find($roster->accepted_by);
+ 
+        if (!$contractor || !$contractor->contractor || empty($contractor->contractor->stripe_account_id)) {
+            return response()->json(['success' => false, 'message' => 'Resource partner has no connected Stripe account.'], 200);
+        }
+ 
+        $invoiceMeta = json_decode($roster->invoice_meta ?? '{}', true);
+ 
+        if (empty($invoiceMeta['net_taxable']) || empty($invoiceMeta['total_payable'])) {
+            return response()->json(['success' => false, 'message' => 'Original invoice breakdown not found on roster.'], 200);
+        }
+ 
+        \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+ 
+        try {
+            // 1. Confirm the payment is already captured — do NOT capture here
+            $paymentIntent = \Stripe\PaymentIntent::retrieve($roster->payment_intent_id);
+ 
+            if ($paymentIntent->status !== 'succeeded') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment has not been captured yet — current status: ' . $paymentIntent->status,
+                ], 200);
+            }
+ 
+            $grossCaptured = $paymentIntent->amount_received / 100; // cents -> dollars
+ 
+            // 2. Calculate the platform fee, applied to the net taxable amount
+            //    from the original client invoice (chargeable basis)
+            $chargeableBasis = (float) $invoiceMeta['net_taxable'];
+            $feeRatePercent  = 10.0;
+            $gstPercent      = 10.0;
+ 
+            $feeAmount        = round($chargeableBasis * ($feeRatePercent / 100), 2);
+            $gstAmount        = round($feeAmount * ($gstPercent / 100), 2);
+            $totalFeeDeducted = round($feeAmount + $gstAmount, 2);
+            $netPayout        = round($grossCaptured - $totalFeeDeducted, 2);
+ 
+            if ($netPayout <= 0) {
+                Log::error('Calculated net payout is zero or negative', [
+                    'roster_id' => $roster->id,
+                    'gross_captured' => $grossCaptured,
+                    'total_fee_deducted' => $totalFeeDeducted,
+                ]);
+                return response()->json(['success' => false, 'message' => 'Net payout calculation error.'], 200);
+            }
+ 
+            // 3. Transfer the net payout to the contractor's connected account.
+            //    source_transaction ties the transfer to the already-captured
+            //    charge so it draws from those specific settled funds.
+            //    Idempotency key prevents double payout on retry.
+            $transfer = \Stripe\Transfer::create([
+                'amount'      => (int) round($netPayout * 100), // cents
+                'currency'    => 'aud',
+                'destination' => $contractor->contractor->stripe_account_id,
+                'source_transaction' => $paymentIntent->latest_charge,
+                'metadata' => [
+                    'roster_id'           => $roster->id,
+                    'contractor_id'       => $contractor->id,
+                    'chargeable_basis'    => $chargeableBasis,
+                    'fee_amount_incl_gst' => $totalFeeDeducted,
+                ],
+            ], [
+                'idempotency_key' => 'payout-roster-' . $roster->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Contractor payout failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Payout failed: ' . $e->getMessage()], 200);
+        }
+ 
+        // 4. Build the platform fee invoice number and generate the PDF
+        $feeInvoiceNumber = 'STF-FEE-' . str_pad($roster->id, 4, '0', STR_PAD_LEFT);
+ 
+        $feeInvoiceData = [
+            'fee_invoice_number'   => $feeInvoiceNumber,
+            'date'                 => now()->format('d M Y'),
+            'job_ref'              => $invoiceMeta['invoice_number'] ?? ('STF-' . now()->format('Y') . '-' . str_pad($roster->id, 4, '0', STR_PAD_LEFT) . '-D'),
+            'client_booking_label' => $roster->address ?? 'N/A',
+            'service_label'        => 'Automated Timesheet & Geofence Verification',
+ 
+            'contractor' => [
+                'name'    => $contractor->contractor->company_name ?? $contractor->name,
+                'abn'     => $contractor->contractor->abn ?? 'N/A',
+                'attn'    => $contractor->phone ?? 'Finance Team',
+                'address' => $contractor->address ?? '',
+            ],
+ 
+            'chargeable_basis'   => $chargeableBasis,
+            'fee_rate_percent'   => $feeRatePercent,
+            'fee_amount'         => $feeAmount,
+            'gst_percent'        => $gstPercent,
+            'gst_amount'         => $gstAmount,
+            'total_fee_deducted' => $totalFeeDeducted,
+ 
+            'gross_captured' => $grossCaptured,
+            'net_payout'     => $netPayout,
+        ];
+ 
+        try {
+            $feeInvoiceService = new PlatformFeeInvoiceService();
+            $feePdfBytes = $feeInvoiceService->generatePdf($feeInvoiceData);
+        } catch (\Exception $e) {
+            Log::error('Platform fee invoice PDF generation failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
+            $feePdfBytes = null;
+        }
+ 
+        // 5. Record the payout on the roster
+        DB::table('job_rosters')->where('id', $roster->id)->update([
+            'stripe_transfer_id'      => $transfer->id,
+            'platform_fee_invoice_no' => $feeInvoiceNumber,
+            'net_payout_amount'       => $netPayout,
+            'payout_status'           => 'paid',
+            'payout_meta' => json_encode([
+                'chargeable_basis'   => $chargeableBasis,
+                'fee_rate_percent'   => $feeRatePercent,
+                'fee_amount'         => $feeAmount,
+                'gst_amount'         => $gstAmount,
+                'total_fee_deducted' => $totalFeeDeducted,
+                'gross_captured'     => $grossCaptured,
+                'net_payout'         => $netPayout,
+                'currency'           => 'aud',
+            ]),
+        ]);
+ 
+        // 6. Email the fee invoice to the contractor AND to Staffoo admin
+        if ($feePdfBytes) {
+            $adminAddress = config('mail.staffoo_admin_address', 'admin@staffoo.com.au');
+ 
+            if (!empty($contractor->email)) {
+                try {
+                    Mail::to($contractor->email)
+                        ->cc($adminAddress)
+                        ->send(new PlatformFeeInvoiceMail(
+                            $contractor->contractor->company_name ?? $contractor->name,
+                            $feePdfBytes,
+                            $feeInvoiceNumber,
+                            $netPayout
+                        ));
+                } catch (\Exception $e) {
+                    Log::error('Platform fee invoice email send failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
+                }
+            } else {
+                try {
+                    Mail::to($adminAddress)->send(new PlatformFeeInvoiceMail(
+                        $contractor->contractor->company_name ?? $contractor->name,
+                        $feePdfBytes,
+                        $feeInvoiceNumber,
+                        $netPayout
+                    ));
+                } catch (\Exception $e) {
+                    Log::error('Platform fee invoice admin email send failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
+                }
+            }
+        }
+ 
+        return response()->json([
+            'success' => true,
+            'message' => 'Payout released to resource partner.',
+            'data' => [
+                'transfer_id'        => $transfer->id,
+                'fee_invoice_number' => $feeInvoiceNumber,
+                'gross_captured'     => $grossCaptured,
+                'total_fee_deducted' => $totalFeeDeducted,
+                'net_payout'         => $netPayout,
+            ],
+        ], 200);
+    }
 
 }

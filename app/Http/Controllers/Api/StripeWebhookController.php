@@ -86,11 +86,11 @@ class StripeWebhookController extends Controller
         // Pull back the breakdown we saved when the payment link was created
         $meta = $updatedRoster->invoice_meta ? json_decode($updatedRoster->invoice_meta, true) : [];
 
-        $baseTotal  = $meta['base_total']  ?? 0;
-        $discount   = $meta['discount']    ?? 0;
-        $serviceFee = $meta['service_fee'] ?? 0;
-        $grandTotal = $meta['grand_total'] ?? (($paymentIntent->amount_capturable ?? 0) / 100);
-        $currency   = $meta['currency']    ?? ($paymentIntent->currency ?? 'aud');
+        $baseTotal  = $meta['gross_total']  ?? 0;
+        $discount   = $meta['discount_amount']    ?? 0;
+        $serviceFee = $meta['gst_amount'] ?? 0;
+        $grandTotal = $meta['total_payable'] ?? (($paymentIntent->amount_capturable ?? 0) / 100);
+        $currency   = 'AUD';
 
         // 1. Update the roster — job proceeds now that funds are held,
         // but payment_status is 'held', not 'paid', since capture is a later step

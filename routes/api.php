@@ -198,6 +198,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/roster/qr-code/{roster_id}', [JobRosterController::class, 'generateQR']);
     Route::post('/roster/handover/scan', [JobRosterController::class, 'scanHandover']);
     Route::any('share-invoice',  [JobRosterController::class, 'sendPdfInvoice']);
+    Route::post('release-payout/{rosterId}', [JobRosterController::class, 'releaseContractorPayout']);
+    Route::post('import-contractor-staff/', [JobRosterController::class, 'importStaff']);
 
     Route::any('/asap-jobs/accept/{id}', [JobRosterController::class, 'accept_asap_job'])->name('accept.asap.job');
     Route::any('/contractor/jobs/accept/{id}', [JobRosterController::class, 'contractor_accept_job']);

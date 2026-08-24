@@ -43,8 +43,8 @@
             </div>
         @endif
 
-        <p>Your account is being placed on hold until revised rates are submitted and reviewed.</p><br>
-        <p>You are welcome to resubmit an updated request with revised rates at any time.</p>
+        <p>Your rates has been reviewed by Staffoo and unfortunately is not being approved.</p><br>
+        <p>Please revise your rates and send it back.</p>
 
         <p>Thank you,<br>STAFFOO Team</p>
     </div>

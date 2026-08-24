@@ -68,15 +68,15 @@ class StaffImport implements ToCollection, WithHeadingRow
         $name  = trim((string) ($row['name'] ?? ''));
         $email = trim((string) ($row['email'] ?? ''));
         $phone = trim((string) ($row['phone'] ?? ''));
-
+ 
         if ($name === '' || $email === '' || $phone === '') {
             throw new \Exception('Missing required field(s): name, email, and phone are all required.');
         }
-
+ 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new \Exception("'{$email}' is not a valid email address.");
         }
-
+ 
         if (User::where('email', $email)->exists()) {
             throw new \Exception("Email {$email} is already registered.");
         }

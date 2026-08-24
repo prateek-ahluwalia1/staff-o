@@ -130,18 +130,37 @@ export default function PaymentHistory() {
     }));
   }, [customersList]);
 
-  const isArrayData = Array.isArray(paymentData?.data);
-  const transactions = isArrayData ? paymentData.data : (paymentData?.data?.data || []);
-  const totalPages = isArrayData
-    ? Math.ceil(transactions.length / itemsPerPage)
-    : (paymentData?.data?.last_page || 1);
-  const totalItems = isArrayData
-    ? transactions.length
-    : (paymentData?.data?.total || 0);
+  let transactions = [];
+  let totalPages = 1;
+  let totalItems = 0;
+  let isFrontendPaginated = false;
+  let fromItem = 0;
+  let toItem = 0;
+
+  if (paymentData?.pagination) {
+    transactions = paymentData.data || [];
+    totalPages = paymentData.pagination.last_page || 1;
+    totalItems = paymentData.pagination.total || 0;
+    fromItem = paymentData.pagination.from || 0;
+    toItem = paymentData.pagination.to || 0;
+    isFrontendPaginated = false;
+  } else if (paymentData?.data?.data) {
+    transactions = paymentData.data.data;
+    totalPages = paymentData.data.last_page || 1;
+    totalItems = paymentData.data.total || 0;
+    fromItem = paymentData.data.from || 0;
+    toItem = paymentData.data.to || 0;
+    isFrontendPaginated = false;
+  } else if (Array.isArray(paymentData?.data)) {
+    transactions = paymentData.data;
+    totalPages = Math.ceil(transactions.length / itemsPerPage);
+    totalItems = transactions.length;
+    isFrontendPaginated = true;
+  }
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentTransactions = isArrayData
+  const currentTransactions = isFrontendPaginated
     ? transactions.slice(indexOfFirstItem, indexOfLastItem)
     : transactions;
 
@@ -264,6 +283,37 @@ export default function PaymentHistory() {
       color: "#0A7C6E",
       fontWeight: 500,
     }),
+  };
+
+  const getPaginationRange = (current, total) => {
+    const delta = 1;
+    const range = [];
+    const rangeWithDots = [];
+    let l;
+
+    range.push(1);
+    for (let i = current - delta; i <= current + delta; i++) {
+      if (i > 1 && i < total) {
+        range.push(i);
+      }
+    }
+    if (total > 1) {
+      range.push(total);
+    }
+
+    for (const i of range) {
+      if (l) {
+        if (i - l === 2) {
+          rangeWithDots.push(l + 1);
+        } else if (i - l !== 1) {
+          rangeWithDots.push("...");
+        }
+      }
+      rangeWithDots.push(i);
+      l = i;
+    }
+
+    return rangeWithDots;
   };
 
   return (
@@ -542,46 +592,41 @@ export default function PaymentHistory() {
         </div>
 
         <div className="content-card">
-          {isAdmin && (
-            <div className="p-4 border-bottom" style={{ background: "#f8fafc" }}>
-              <div className="row">
-                <div className="col-md-6 col-lg-4">
-                  <label className="form-label fw-bold text-dark mb-2">
-                    <i className="fa-solid fa-users me-2" style={{ color: "#0A7C6E" }}></i>Select Client
-                  </label>
+          <div className="py-4 px-4">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+              <div className="d-flex align-items-center gap-3">
+                <div
+                  className="rounded-3 d-flex align-items-center justify-content-center"
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    background: "rgba(10,124,110,0.08)",
+                    color: "#0A7C6E",
+                  }}
+                >
+                  <i className="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <h3 className="mb-0 fw-bold" style={{ color: "#1e293b" }}>
+                  Recent Transactions
+                </h3>
+              </div>
+
+              {isAdmin && (
+                <div style={{ minWidth: "260px" }}>
                   <Select
                     options={customerOptions}
                     value={
                       customerOptions.find((o) => o.value === selectedCustomerId) || null
                     }
                     onChange={handleCustomerChange}
-                    placeholder="Choose a client"
+                    placeholder="Filter by client..."
                     isClearable
                     styles={customSelectStyles}
                     className="react-select-container"
                     classNamePrefix="react-select"
                   />
                 </div>
-              </div>
-            </div>
-          )}
-
-          <div className="py-4">
-            <div className="d-flex align-items-center gap-3 mb-4">
-              <div
-                className="rounded-3 d-flex align-items-center justify-content-center"
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  background: "rgba(10,124,110,0.08)",
-                  color: "#0A7C6E",
-                }}
-              >
-                <i className="fa-solid fa-clock-rotate-left"></i>
-              </div>
-              <h3 className="mb-0 fw-bold" style={{ color: "#1e293b" }}>
-                Recent Transactions
-              </h3>
+              )}
             </div>
 
             {loading ? (
@@ -683,8 +728,8 @@ export default function PaymentHistory() {
                 {totalPages > 1 && (
                   <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 pt-3 border-top">
                     <span className="text-muted small mb-3 mb-md-0">
-                      Showing <strong>{isArrayData ? indexOfFirstItem + 1 : (paymentData?.data?.from || 0)}</strong> to{" "}
-                      <strong>{isArrayData ? Math.min(indexOfLastItem, totalItems) : (paymentData?.data?.to || 0)}</strong> of{" "}
+                      Showing <strong>{isFrontendPaginated ? indexOfFirstItem + 1 : fromItem}</strong> to{" "}
+                      <strong>{isFrontendPaginated ? Math.min(indexOfLastItem, totalItems) : toItem}</strong> of{" "}
                       <strong>{totalItems}</strong> transactions
                     </span>
 
@@ -696,15 +741,23 @@ export default function PaymentHistory() {
                       >
                         <i className="fa-solid fa-chevron-left"></i>
                       </button>
-                      {Array.from({ length: totalPages }, (_, i) => (
-                        <button
-                          key={i}
-                          className={`page-btn ${currentPage === i + 1 ? "active" : ""}`}
-                          onClick={() => handlePageChange(i + 1)}
-                        >
-                          {i + 1}
-                        </button>
+                      
+                      {getPaginationRange(currentPage, totalPages).map((page, idx) => (
+                        page === "..." ? (
+                          <span key={`dots-${idx}`} className="d-flex align-items-center justify-content-center" style={{ width: "36px", color: "#64748b", fontWeight: 700 }}>
+                            ...
+                          </span>
+                        ) : (
+                          <button
+                            key={page}
+                            className={`page-btn ${currentPage === page ? "active" : ""}`}
+                            onClick={() => handlePageChange(page)}
+                          >
+                            {page}
+                          </button>
+                        )
                       ))}
+
                       <button
                         className="page-btn"
                         onClick={() => handlePageChange(currentPage + 1)}

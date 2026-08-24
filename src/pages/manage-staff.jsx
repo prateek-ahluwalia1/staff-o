@@ -245,6 +245,7 @@ const ManageStaff = () => {
 
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
+  const { submit: importStaff, loading: importLoading } = useSubmit({ isAuth: true });
 
   // External Security License verification hook
   const { submit: submitSecurityLicense } = useSubmit({
@@ -261,6 +262,11 @@ const ManageStaff = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Import states
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importResult, setImportResult] = useState(null);
 
   // Document states
   const [showDocModal, setShowDocModal] = useState(false);
@@ -779,6 +785,43 @@ const ManageStaff = () => {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const link = document.createElement("a");
+    link.href = "/staff_import_template.xlsx";
+    link.download = "staff_import_template.xlsx";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportStaff = async () => {
+    if (!importFile) {
+      toast.error("Please select a file to import");
+      return;
+    }
+
+    if (!loggedInContractorId) {
+      toast.error("Contractor ID is missing");
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append("user_id", loggedInContractorId);
+    fd.append("file", importFile);
+
+    try {
+      const res = await importStaff("api/import-contractor-staff", fd, { method: "POST" });
+      if (res.success || res.code === 200) {
+        setImportResult(res.data);
+        refetch();
+      } else {
+        toast.error(res.message || "Failed to import staff");
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to import staff");
+    }
+  };
+
   if (loading && staff.length === 0) return <Loader />;
 
   // Title for the document modal – shows the document name exactly as stored
@@ -1057,9 +1100,17 @@ const ManageStaff = () => {
               Team Members
             </h3>
           </div>
-          <button className="btn add-btn px-4" onClick={() => openModal()}>
-            <i className="fa-solid fa-plus me-1"></i> Add Staff
-          </button>
+          <div className="d-flex align-items-center gap-2">
+            <button className="btn btn-outline-primary px-3" onClick={handleDownloadTemplate} title="Download Excel Template" style={{ borderRadius: '50px' }}>
+              <i className="fa-solid fa-download me-1"></i> Sample File
+            </button>
+            <button className="btn btn-outline-success px-3" onClick={() => setIsImportModalOpen(true)} title="Import Staff from Excel" style={{ borderRadius: '50px' }}>
+              <i className="fa-solid fa-upload me-1"></i> Import
+            </button>
+            <button className="btn add-btn px-4" onClick={() => openModal()}>
+              <i className="fa-solid fa-plus me-1"></i> Add Staff
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1562,6 +1613,163 @@ const ManageStaff = () => {
                 {deleteLoading ? "Deleting..." : "Yes, Delete"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {isImportModalOpen && (
+        <div className="confirm-modal-backdrop" onClick={() => {
+          setIsImportModalOpen(false);
+          setImportFile(null);
+          setImportResult(null);
+        }}>
+          <div
+            className="confirm-modal-card"
+            style={{ maxWidth: importResult ? "700px" : "500px", padding: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
+              <span className={`confirm-modal-icon ${importResult ? (importResult.failed_count > 0 ? "bg-warning text-dark" : "bg-success text-white") : "icon-doc"}`}>
+                <i className={`fa-solid ${importResult ? (importResult.failed_count > 0 ? "fa-exclamation-triangle" : "fa-check") : "fa-file-excel"}`}></i>
+              </span>
+              <div>
+                <h5 className="mb-0 fw-bold text-dark">{importResult ? "Import Results" : "Import Staff"}</h5>
+                <div className="small text-muted">
+                  {importResult
+                    ? `${importResult.created_count} created, ${importResult.failed_count} failed.`
+                    : "Upload an excel file to add/update staff"}
+                </div>
+              </div>
+            </div>
+
+            {!importResult ? (
+              <>
+                <div className="px-4 py-4">
+                  <p className="mb-3 text-dark text-center">
+                    Please ensure your file matches the required template format. You can download the sample file first, fill in the details, and upload it here.
+                  </p>
+
+                  <div
+                    className="p-4 border border-2 border-dashed rounded-3 text-center position-relative mb-2"
+                    style={{
+                      backgroundColor: importFile ? "rgba(10, 124, 110, 0.05)" : "#f8fafc",
+                      borderColor: importFile ? "#0A7C6E" : "#cbd5e1",
+                      borderStyle: "dashed",
+                      borderWidth: "2px",
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                    onClick={() => document.getElementById("import-file-upload").click()}
+                  >
+                    <input
+                      id="import-file-upload"
+                      type="file"
+                      className="d-none"
+                      accept=".xlsx, .xls, .csv"
+                      onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    />
+
+                    {importFile ? (
+                      <div>
+                        <i className="fa-solid fa-file-excel fs-1 text-success mb-3"></i>
+                        <h6 className="fw-bold mb-1">{importFile.name}</h6>
+                        <p className="small text-muted mb-0">{(importFile.size / 1024).toFixed(1)} KB • Click to change</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <i className="fa-solid fa-cloud-arrow-up fs-1 text-muted mb-3"></i>
+                        <h6 className="fw-bold mb-1">Click to browse</h6>
+                        <p className="small text-muted mb-0">Supported formats: .xlsx, .xls, .csv</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="px-4 py-3 border-top d-flex justify-content-end gap-2 bg-light">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
+                    onClick={() => {
+                      setIsImportModalOpen(false);
+                      setImportFile(null);
+                    }}
+                    disabled={importLoading}
+                    style={{ minHeight: "44px" }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"
+                    onClick={handleImportStaff}
+                    disabled={importLoading || !importFile}
+                    style={{ minHeight: "44px", minWidth: "150px" }}
+                  >
+                    {importLoading ? (
+                      <><i className="fa-solid fa-spinner fa-spin me-2"></i> Importing...</>
+                    ) : (
+                      <><i className="fa-solid fa-upload me-2"></i> Confirm Import</>
+                    )}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="px-4 py-4" style={{ maxHeight: "500px", overflowY: "auto" }}>
+                  {importResult.failed_count > 0 ? (
+                    <div>
+                      <div className="alert alert-warning mb-4">
+                        <i className="fa-solid fa-circle-exclamation me-2"></i>
+                        <strong>{importResult.failed_count} rows failed to import.</strong> Please fix the errors below and try uploading again.
+                      </div>
+
+                      <div className="table-responsive rounded-3 border">
+                        <table className="table table-sm table-hover mb-0">
+                          <thead className="bg-light">
+                            <tr>
+                              <th style={{ width: "60px", textAlign: "center" }}>Row</th>
+                              <th>Email</th>
+                              <th>Error</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {importResult.failed?.map((fail, idx) => (
+                              <tr key={idx}>
+                                <td className="text-center fw-bold align-middle">{fail.row}</td>
+                                <td className="align-middle text-break">{fail.email || <span className="text-muted fst-italic">Missing</span>}</td>
+                                <td className="text-danger align-middle small">{fail.error}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <div className="d-inline-flex align-items-center justify-content-center bg-success text-white rounded-circle mb-3" style={{ width: "80px", height: "80px" }}>
+                        <i className="fa-solid fa-check fs-1"></i>
+                      </div>
+                      <h4 className="fw-bold">All staff imported successfully!</h4>
+                      <p className="text-muted">{importResult.created_count} new team members have been added.</p>
+                    </div>
+                  )}
+                </div>
+                <div className="px-4 py-3 border-top d-flex justify-content-end bg-light">
+                  <button
+                    type="button"
+                    className="btn btn-primary rounded-pill px-5 fw-bold shadow-sm"
+                    onClick={() => {
+                      setIsImportModalOpen(false);
+                      setImportFile(null);
+                      setImportResult(null);
+                    }}
+                    style={{ minHeight: "44px" }}
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

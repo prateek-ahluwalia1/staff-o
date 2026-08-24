@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Imports\StaffImport;
 use App\Mail\ChargeRateRejectedMail;
 use App\Mail\ChargeRateRequestMail;
 use App\Mail\ContractorInvoiceMail;
@@ -43,6 +44,7 @@ use App\Mail\PlatformFeeInvoiceMail;
 use App\Mail\RateUpdateRequestMail;
 use App\Models\ContractorChargeRate;
 use App\Services\PlatformFeeInvoiceService;
+use Maatwebsite\Excel\Excel;
 use Stripe\PaymentLink;
 use Stripe\Price;
 use Stripe\Product;
@@ -6221,4 +6223,37 @@ public function reject_charge_rate_request(Request $request, $id)
         ], 200);
     }
 
+    public function importStaff(Request $request)
+    {
+        $request->validate([
+            'file'    => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
+            'user_id' => 'required|exists:users,id', // the contractor/company all imported staff belong to
+        ]);
+    
+        try {
+            $import = new StaffImport((int) $request->user_id);
+            Excel::import($import, $request->file('file'));
+    
+            return response()->json([
+                'success' => true,
+                'message' => count($import->created) . ' staff created, ' . count($import->failed) . ' failed.',
+                'code' => 200,
+                'data' => [
+                    'created_count' => count($import->created),
+                    'failed_count'  => count($import->failed),
+                    'created'       => $import->created,
+                    'failed'        => $import->failed,
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Staff import failed', ['error' => $e->getMessage()]);
+    
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process import file.',
+                'code' => 500,
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
 }

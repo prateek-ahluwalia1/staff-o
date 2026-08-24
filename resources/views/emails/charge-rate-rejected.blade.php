@@ -43,7 +43,7 @@
             </div>
         @endif
 
-        <p>Your rates has been reviewed by Staffoo and unfortunately is not being approved.</p><br>
+        <p>Your rates has been reviewed by Staffoo and unfortunately is not being approved.</p>
         <p>Please revise your rates and send it back.</p>
 
         <p>Thank you,<br>STAFFOO Team</p>

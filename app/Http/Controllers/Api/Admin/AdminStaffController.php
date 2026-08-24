@@ -285,7 +285,7 @@ class AdminStaffController extends Controller
 
                      if ($newStatus == 1 && $oldStatus != 1) {
                         dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
-                    } elseif ($newStatus === 0 && $oldStatus != 0) {
+                    } elseif ($newStatus == 0 && $oldStatus != 0) {
                         dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
                     }
                 }
@@ -317,7 +317,7 @@ class AdminStaffController extends Controller
                     
                     if ($newStatus == 1 && $oldStatus != 1) {
                         dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
-                    } elseif ($newStatus === 0 && $oldStatus != 0) {
+                    } elseif ($newStatus == 0 && $oldStatus != 0) {
                         dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
                     }
                 }

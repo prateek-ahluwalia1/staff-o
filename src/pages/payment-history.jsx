@@ -206,6 +206,7 @@ export default function PaymentHistory() {
   const handlePayoutClick = async (tx) => {
     try {
       if (tx.status !== "captured") return; // Safety check
+      if (!tx.accepted_by) return; // Must be accepted by a contractor
 
       let rosterIds = [];
       try {
@@ -754,9 +755,15 @@ export default function PaymentHistory() {
                                   <button
                                     type="button"
                                     className="btn btn-sm btn-outline-premium btn-premium"
-                                    disabled={tx.status !== "captured" || payoutLoading}
+                                    disabled={tx.status !== "captured" || !tx.accepted_by || payoutLoading}
                                     onClick={() => handlePayoutClick(tx)}
-                                    title={tx.status !== "captured" ? "Payout can only be released when status is captured" : "Release Payout"}
+                                    title={
+                                      tx.status !== "captured" 
+                                        ? "Payout can only be released when status is captured" 
+                                        : !tx.accepted_by 
+                                          ? "Payout can only be released when it is accepted by a contractor" 
+                                          : "Release Payout"
+                                    }
                                   >
                                     <i className="fa fa-money-bill-transfer"></i> Payout
                                   </button>

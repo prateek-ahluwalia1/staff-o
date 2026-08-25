@@ -4162,7 +4162,7 @@ private function sendStaffActivationNotification(User $user): void
             $invoiceFilename = null;
             if ($firstJobRosterId) {
                 $jobRoster = JobRoster::where('id', $firstJobRosterId)
-                    ->select('invoice_filename')
+                    ->select('invoice_filename', 'accepted_by')
                     ->first();
                 
                 $invoiceFilename = $jobRoster ? $jobRoster->invoice_filename : null;
@@ -4171,6 +4171,7 @@ private function sendStaffActivationNotification(User $user): void
             // Add both fields to the transaction object
             $transaction->client_name = $clientName;
             $transaction->invoice_filename = $invoiceFilename;
+            $transaction->accepted_by = $jobRoster->accepted_by;
             
             return $transaction;
         });
@@ -6618,7 +6619,7 @@ public function releaseContractorPayout($rosterId)
 
     $invoiceMeta = json_decode($roster->invoice_meta ?? '{}', true);
 
-    if (empty($invoiceMeta['net_taxable']) || empty($invoiceMeta['total_payable'])) {
+    if (empty($invoiceMeta['net_taxable'])) {
         return response()->json(['success' => false, 'message' => 'Original invoice breakdown not found on roster.'], 200);
     }
 

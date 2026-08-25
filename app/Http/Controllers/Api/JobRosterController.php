@@ -6788,23 +6788,29 @@ public function releaseContractorPayout($rosterId)
 public function importStaff(Request $request)
 {
     $request->validate([
-        'file'    => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
-        'user_id' => 'required|exists:users,id', // the contractor/company all imported staff belong to
+        'file'    => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        'user_id' => 'required|exists:users,id',
     ]);
 
     try {
         $import = new StaffImport((int) $request->user_id);
         Excel::import($import, $request->file('file'));
 
+        // Get all failures including validation failures
+        $allFailed = array_merge(
+            $import->failed,
+            $import->getFailures() ?? []
+        );
+
         return response()->json([
             'success' => true,
-            'message' => count($import->created) . ' staff created, ' . count($import->failed) . ' failed.',
+            'message' => count($import->created) . ' staff created, ' . count($allFailed) . ' failed.',
             'code' => 200,
             'data' => [
                 'created_count' => count($import->created),
-                'failed_count'  => count($import->failed),
+                'failed_count'  => count($allFailed),
                 'created'       => $import->created,
-                'failed'        => $import->failed,
+                'failed'        => $allFailed,
             ],
         ], 200);
     } catch (\Exception $e) {

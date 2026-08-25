@@ -16,22 +16,12 @@ use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-/**
- * Bulk staff import — mirrors createStaff()'s logic exactly (same user
- * creation, staff profile, document category assignment based on the
- * company/"Capital Security" branch, induction records, welcome email),
- * just run once per spreadsheet row instead of once per HTTP request.
- *
- * Expected columns (heading row, case-insensitive, spaces become underscores
- * via WithHeadingRow): name, email, phone, gender, address, city, state,
- * country, coordinates, staff_document_type, security_license_no,
- * date_of_birth, origin_country
- */
 class StaffImport implements ToCollection, WithHeadingRow
 {
     public int $companyUserId;
     public array $created = [];
     public array $failed = [];
+    public int $processedRows = 0;
 
     public function __construct(int $companyUserId)
     {
@@ -43,10 +33,34 @@ class StaffImport implements ToCollection, WithHeadingRow
         foreach ($rows as $index => $row) {
             $rowNumber = $index + 2; // +1 for zero-index, +1 for the header row
 
-            // Skip fully blank rows (common at the end of a sheet)
-            if (empty(array_filter($row->toArray()))) {
+            // ============ FIXED: Better empty row detection ============
+            $rowArray = $row->toArray();
+            
+            // Remove null values and empty strings, then check if anything remains
+            $filteredRow = array_filter($rowArray, function ($value) {
+                return $value !== null && $value !== '' && $value !== ' ';
+            });
+            
+            // If after filtering, there's nothing, skip this row
+            if (empty($filteredRow)) {
                 continue;
             }
+            // ============ END FIXED ============
+
+            // ============ NEW: Check if row has at least the minimum required fields ============
+            $hasName = !empty(trim($row['name'] ?? ''));
+            $hasEmail = !empty(trim($row['email'] ?? ''));
+            $hasPhone = !empty(trim($row['phone'] ?? ''));
+            
+            if (!$hasName || !$hasEmail || !$hasPhone) {
+                $this->failed[] = [
+                    'row'   => $rowNumber,
+                    'email' => $row['email'] ?? null,
+                    'error' => 'Missing required field(s): name, email, and phone are all required.',
+                ];
+                continue; // Skip to next row instead of throwing exception
+            }
+            // ============ END NEW ============
 
             DB::beginTransaction();
             try {
@@ -69,9 +83,11 @@ class StaffImport implements ToCollection, WithHeadingRow
         $email = trim((string) ($row['email'] ?? ''));
         $phone = trim((string) ($row['phone'] ?? ''));
  
+        // ============ FIXED: These checks are now redundant but kept for safety ============
         if ($name === '' || $email === '' || $phone === '') {
             throw new \Exception('Missing required field(s): name, email, and phone are all required.');
         }
+        // ============ END FIXED ============
  
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new \Exception("'{$email}' is not a valid email address.");
@@ -85,7 +101,7 @@ class StaffImport implements ToCollection, WithHeadingRow
             ? (generateSecurePassword() ?? 'Temp1234')
             : 'Temp1234';
 
-        // ── Create user (same fields as createStaff) ──────────────────
+        // ── Create user ────────────────────────────────────────────────
         $user = User::create([
             'name'        => $name,
             'email'       => $email,
@@ -117,7 +133,7 @@ class StaffImport implements ToCollection, WithHeadingRow
             'origin_country'         => $row['origin_country'] ?? null,
         ]);
 
-        // ── Documents — same branch logic as createStaff ────────────────
+        // ── Documents ──────────────────────────────────────────────────
         $documentCategories = DocumentCategory::where('document_category', 'contractor_staff')->first(); 
 
         if ($documentCategories) {
@@ -131,7 +147,7 @@ class StaffImport implements ToCollection, WithHeadingRow
             }
         }
 
-        // ── Induction records — identical to createStaff ────────────────
+        // ── Induction records ──────────────────────────────────────────
         $inductions = Questionnaire::all();
         $now = Carbon::now();
         $inductionHistoryData = [];
@@ -163,7 +179,7 @@ class StaffImport implements ToCollection, WithHeadingRow
             DB::table('guard_questionnaire_details')->insert($guardQuestionnaireDetailsData);
         }
 
-        // ── Welcome email (same condition as createStaff: skip for company id 1) ──
+        // ── Welcome email ──────────────────────────────────────────────
         if ($this->companyUserId != 1) {
             try {
                 $this->sendStaffWelcomeEmail($user, $plainPassword);
@@ -208,7 +224,6 @@ class StaffImport implements ToCollection, WithHeadingRow
                 'user_id' => $user->id,
                 'email' => $user->email
             ]);
-            // Don't throw exception - email failure shouldn't stop the registration process
         }
     }
 }

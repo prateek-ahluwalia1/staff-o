@@ -180,9 +180,7 @@ private function calculateProfileCompletion(User $user): int
         $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
     }
  
-    // ============ NEW: states_allowed vs contractor_charge_rates check ============
-    // Contractor must have a rate card for EVERY state in states_allowed.
-    // Empty/missing states_allowed also counts as not valid (forces inactive).
+    // ============ states_allowed vs contractor_charge_rates check ============
     $statesAllowed = $user->states_allowed;
  
     if (is_string($statesAllowed)) {
@@ -203,6 +201,11 @@ private function calculateProfileCompletion(User $user): int
         $missingStates = array_diff($statesAllowed, $ratedStates);
         $statesAllowedValid = empty($missingStates);
     }
+    // ============ END states_allowed check ============
+ 
+    // ============ NEW: Check if required documents exist and are valid ============
+    $hasRequiredDocuments = $this->hasRequiredDocuments($user, $documents);
+    $hasExpiredDocuments = $this->hasExpiredDocuments($documents);
     // ============ END NEW ============
  
     // Contractor activation logic
@@ -211,7 +214,14 @@ private function calculateProfileCompletion(User $user): int
     $labourHireValid = !$labourHireRequired || ($labourHireRequired && $hasLabourHire);
     
     $oldStatus = $user->is_active;
-    $newStatus = ($baseComplete && $hasValidDocuments && $labourHireValid && $statesAllowedValid) ? 1 : 0;
+    $newStatus = (
+        $baseComplete && 
+        $hasValidDocuments && 
+        $labourHireValid && 
+        $statesAllowedValid &&
+        $hasRequiredDocuments &&  // Added: must have all required documents
+        !$hasExpiredDocuments     // Added: must not have expired documents
+    ) ? 1 : 0;
  
     $this->updateUserStatus($user, $newStatus);
 
@@ -224,12 +234,18 @@ private function calculateProfileCompletion(User $user): int
     // Final percentage
     $percentage = (int) round($baseScore + $documentScore);
  
-    // Keep percentage consistent with the activation decision above —
-    // if states_allowed isn't fully covered, don't show 100% even though
-    // base + documents might otherwise sum to it.
+    // Keep percentage consistent with the activation decision
     if (!$statesAllowedValid) {
         $percentage = min($percentage, 99);
     }
+    
+    // ============ NEW: Cap percentage if documents are expired or missing ============
+    if ($hasExpiredDocuments) {
+        $percentage = min($percentage, 85); // Expired documents
+    } elseif (!$hasRequiredDocuments) {
+        $percentage = min($percentage, 90); // Missing required documents
+    }
+    // ============ END NEW ============
  
     return min($percentage, 100);
 }
@@ -250,6 +266,7 @@ private function isDocumentValid($document): bool
         return false;
     }
 
+    // Check if document has required fields
     if (empty($document->document_no)) {
         return false;
     }
@@ -258,14 +275,28 @@ private function isDocumentValid($document): bool
         return false;
     }
 
+    // Check document status (if you have a status field)
+    if (isset($document->status) && $document->status !== 'approved') {
+        return false;
+    }
+
+    // Check document expiration
     if (!empty($document->document_expiry)) {
+        // Handle special case: "current, pending renewal"
         if ($document->document_expiry === 'current, pending renewal') {
             return true;
         }
-        $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
-        return $expiryDate->isFuture();
+        
+        try {
+            $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
+            return $expiryDate->isFuture();
+        } catch (\Exception $e) {
+            // If date parsing fails, treat as invalid
+            return false;
+        }
     }
 
+    // If no expiry date, document is considered valid
     return true;
 }
 

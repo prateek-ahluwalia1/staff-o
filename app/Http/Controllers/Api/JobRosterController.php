@@ -3563,6 +3563,84 @@ private function sendStaffActivationNotification(User $user): void
         ], 200);
     }
 
+    // public function getClientTransactions(Request $request)
+    // {
+    //     // Validate request
+    //     $request->validate([
+    //         'user_id' => 'nullable|exists:users,id',
+    //         'per_page' => 'nullable|integer|min:1|max:100',
+    //         'page' => 'nullable|integer|min:1'
+    //     ]);
+
+    //     // Set pagination limit (default 15)
+    //     $perPage = $request->per_page ?? 15;
+
+    //     // Build query
+    //     $query = Transaction::orderBy('created_at', 'desc');
+
+    //     // Apply user filter if user_id is provided
+    //     if ($request->has('user_id') && !empty($request->user_id)) {
+    //         $query->where('user_id', $request->user_id);
+    //     }
+
+    //     // Paginate results
+    //     $transactions = $query->paginate($perPage);
+
+    //     // Check if transactions exist
+    //     if ($transactions->isEmpty()) {
+    //         return response()->json([
+    //             'message' => 'No transactions found' . ($request->has('user_id') ? ' for this user' : ''),
+    //             'data' => [],
+    //             'pagination' => [
+    //                 'total' => 0,
+    //                 'per_page' => $perPage,
+    //                 'current_page' => 1,
+    //                 'last_page' => 1
+    //             ]
+    //         ], 200);
+    //     }
+
+    //     // Add invoice_filename to each transaction
+    //     $transactions->getCollection()->transform(function ($transaction) {
+    //         $jobRosterIds = is_string($transaction->job_roster_id) 
+    //             ? json_decode($transaction->job_roster_id, true) 
+    //             : $transaction->job_roster_id;
+            
+    //         $firstJobRosterId = is_array($jobRosterIds) && count($jobRosterIds) > 0 
+    //             ? $jobRosterIds[0] 
+    //             : null;
+            
+    //         $invoiceFilename = null;
+    //         if ($firstJobRosterId) {
+    //             $jobRoster = JobRoster::where('id', $firstJobRosterId)
+    //                 ->select('invoice_filename')
+    //                 ->first();
+                
+    //             $invoiceFilename = $jobRoster ? $jobRoster->invoice_filename : null;
+    //         }
+            
+    //         $transaction->invoice_filename = $invoiceFilename;
+            
+    //         return $transaction;
+    //     });
+
+    //     // Prepare response with pagination metadata
+    //     return response()->json([
+    //         'message' => 'Transactions retrieved successfully',
+    //         'data' => $transactions->items(),
+    //         'pagination' => [
+    //             'total' => $transactions->total(),
+    //             'per_page' => $transactions->perPage(),
+    //             'current_page' => $transactions->currentPage(),
+    //             'last_page' => $transactions->lastPage(),
+    //             'from' => $transactions->firstItem(),
+    //             'to' => $transactions->lastItem()
+    //         ],
+    //         'filters' => [
+    //             'user_id' => $request->user_id ?? null
+    //         ]
+    //     ], 200);
+    // }
     public function getClientTransactions(Request $request)
     {
         // Validate request
@@ -3575,8 +3653,9 @@ private function sendStaffActivationNotification(User $user): void
         // Set pagination limit (default 15)
         $perPage = $request->per_page ?? 15;
 
-        // Build query
-        $query = Transaction::orderBy('created_at', 'desc');
+        // Build query with user relationship
+        $query = Transaction::with('user') // Eager load user relationship
+            ->orderBy('created_at', 'desc');
 
         // Apply user filter if user_id is provided
         if ($request->has('user_id') && !empty($request->user_id)) {
@@ -3600,8 +3679,12 @@ private function sendStaffActivationNotification(User $user): void
             ], 200);
         }
 
-        // Add invoice_filename to each transaction
+        // Add invoice_filename and client_name to each transaction
         $transactions->getCollection()->transform(function ($transaction) {
+            // Get client name from user relationship
+            $clientName = $transaction->user ? $transaction->user->name : null;
+            
+            // Existing invoice_filename logic
             $jobRosterIds = is_string($transaction->job_roster_id) 
                 ? json_decode($transaction->job_roster_id, true) 
                 : $transaction->job_roster_id;
@@ -3619,6 +3702,8 @@ private function sendStaffActivationNotification(User $user): void
                 $invoiceFilename = $jobRoster ? $jobRoster->invoice_filename : null;
             }
             
+            // Add both fields to the transaction object
+            $transaction->client_name = $clientName;
             $transaction->invoice_filename = $invoiceFilename;
             
             return $transaction;
@@ -6031,225 +6116,225 @@ public function reject_charge_rate_request(Request $request, $id)
     }
 }
 
- public function releaseContractorPayout($rosterId)
-    {
-        $roster = DB::table('job_rosters')
-            ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
-            ->where('job_rosters.id', $rosterId)
-            ->select('job_rosters.*', 'sites.address')
-            ->first();
- 
-        if (!$roster) {
-            return response()->json(['success' => false, 'message' => 'Roster not found.'], 200);
+public function releaseContractorPayout($rosterId)
+{
+    $roster = DB::table('job_rosters')
+        ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+        ->where('job_rosters.id', $rosterId)
+        ->select('job_rosters.*', 'sites.address')
+        ->first();
+
+    if (!$roster) {
+        return response()->json(['success' => false, 'message' => 'Roster not found.'], 200);
+    }
+
+    if (empty($roster->payment_intent_id)) {
+        return response()->json(['success' => false, 'message' => 'No payment on file for this roster.'], 200);
+    }
+
+    if (!empty($roster->stripe_transfer_id)) {
+        return response()->json(['success' => false, 'message' => 'Payout has already been released for this roster.'], 200);
+    }
+
+    $contractor = \App\Models\User::with('contractor')->find($roster->accepted_by);
+
+    if (!$contractor || !$contractor->contractor || empty($contractor->contractor->stripe_account_id)) {
+        return response()->json(['success' => false, 'message' => 'Resource partner has no connected Stripe account.'], 200);
+    }
+
+    $invoiceMeta = json_decode($roster->invoice_meta ?? '{}', true);
+
+    if (empty($invoiceMeta['net_taxable']) || empty($invoiceMeta['total_payable'])) {
+        return response()->json(['success' => false, 'message' => 'Original invoice breakdown not found on roster.'], 200);
+    }
+
+    \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+
+    try {
+        // 1. Confirm the payment is already captured — do NOT capture here
+        $paymentIntent = \Stripe\PaymentIntent::retrieve($roster->payment_intent_id);
+
+        if ($paymentIntent->status !== 'succeeded') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment has not been captured yet — current status: ' . $paymentIntent->status,
+            ], 200);
         }
- 
-        if (empty($roster->payment_intent_id)) {
-            return response()->json(['success' => false, 'message' => 'No payment on file for this roster.'], 200);
-        }
- 
-        if (!empty($roster->stripe_transfer_id)) {
-            return response()->json(['success' => false, 'message' => 'Payout has already been released for this roster.'], 200);
-        }
- 
-        $contractor = \App\Models\User::with('contractor')->find($roster->accepted_by);
- 
-        if (!$contractor || !$contractor->contractor || empty($contractor->contractor->stripe_account_id)) {
-            return response()->json(['success' => false, 'message' => 'Resource partner has no connected Stripe account.'], 200);
-        }
- 
-        $invoiceMeta = json_decode($roster->invoice_meta ?? '{}', true);
- 
-        if (empty($invoiceMeta['net_taxable']) || empty($invoiceMeta['total_payable'])) {
-            return response()->json(['success' => false, 'message' => 'Original invoice breakdown not found on roster.'], 200);
-        }
- 
-        \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
- 
-        try {
-            // 1. Confirm the payment is already captured — do NOT capture here
-            $paymentIntent = \Stripe\PaymentIntent::retrieve($roster->payment_intent_id);
- 
-            if ($paymentIntent->status !== 'succeeded') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Payment has not been captured yet — current status: ' . $paymentIntent->status,
-                ], 200);
-            }
- 
-            $grossCaptured = $paymentIntent->amount_received / 100; // cents -> dollars
- 
-            // 2. Calculate the platform fee, applied to the net taxable amount
-            //    from the original client invoice (chargeable basis)
-            $chargeableBasis = (float) $invoiceMeta['net_taxable'];
-            $feeRatePercent  = 10.0;
-            $gstPercent      = 10.0;
- 
-            $feeAmount        = round($chargeableBasis * ($feeRatePercent / 100), 2);
-            $gstAmount        = round($feeAmount * ($gstPercent / 100), 2);
-            $totalFeeDeducted = round($feeAmount + $gstAmount, 2);
-            $netPayout        = round($grossCaptured - $totalFeeDeducted, 2);
- 
-            if ($netPayout <= 0) {
-                Log::error('Calculated net payout is zero or negative', [
-                    'roster_id' => $roster->id,
-                    'gross_captured' => $grossCaptured,
-                    'total_fee_deducted' => $totalFeeDeducted,
-                ]);
-                return response()->json(['success' => false, 'message' => 'Net payout calculation error.'], 200);
-            }
- 
-            // 3. Transfer the net payout to the contractor's connected account.
-            //    source_transaction ties the transfer to the already-captured
-            //    charge so it draws from those specific settled funds.
-            //    Idempotency key prevents double payout on retry.
-            $transfer = \Stripe\Transfer::create([
-                'amount'      => (int) round($netPayout * 100), // cents
-                'currency'    => 'aud',
-                'destination' => $contractor->contractor->stripe_account_id,
-                'source_transaction' => $paymentIntent->latest_charge,
-                'metadata' => [
-                    'roster_id'           => $roster->id,
-                    'contractor_id'       => $contractor->id,
-                    'chargeable_basis'    => $chargeableBasis,
-                    'fee_amount_incl_gst' => $totalFeeDeducted,
-                ],
-            ], [
-                'idempotency_key' => 'payout-roster-' . $roster->id,
+
+        $grossCaptured = $paymentIntent->amount_received / 100; // cents -> dollars
+
+        // 2. Calculate the platform fee, applied to the net taxable amount
+        //    from the original client invoice (chargeable basis)
+        $chargeableBasis = (float) $invoiceMeta['net_taxable'];
+        $feeRatePercent  = 10.0;
+        $gstPercent      = 10.0;
+
+        $feeAmount        = round($chargeableBasis * ($feeRatePercent / 100), 2);
+        $gstAmount        = round($feeAmount * ($gstPercent / 100), 2);
+        $totalFeeDeducted = round($feeAmount + $gstAmount, 2);
+        $netPayout        = round($grossCaptured - $totalFeeDeducted, 2);
+
+        if ($netPayout <= 0) {
+            Log::error('Calculated net payout is zero or negative', [
+                'roster_id' => $roster->id,
+                'gross_captured' => $grossCaptured,
+                'total_fee_deducted' => $totalFeeDeducted,
             ]);
-        } catch (\Exception $e) {
-            Log::error('Contractor payout failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Payout failed: ' . $e->getMessage()], 200);
+            return response()->json(['success' => false, 'message' => 'Net payout calculation error.'], 200);
         }
- 
-        // 4. Build the platform fee invoice number and generate the PDF
-        $feeInvoiceNumber = 'STF-FEE-' . str_pad($roster->id, 4, '0', STR_PAD_LEFT);
- 
-        $feeInvoiceData = [
-            'fee_invoice_number'   => $feeInvoiceNumber,
-            'date'                 => now()->format('d M Y'),
-            'job_ref'              => $invoiceMeta['invoice_number'] ?? ('STF-' . now()->format('Y') . '-' . str_pad($roster->id, 4, '0', STR_PAD_LEFT) . '-D'),
-            'client_booking_label' => $roster->address ?? 'N/A',
-            'service_label'        => 'Automated Timesheet & Geofence Verification',
- 
-            'contractor' => [
-                'name'    => $contractor->contractor->company_name ?? $contractor->name,
-                'abn'     => $contractor->contractor->abn ?? 'N/A',
-                'attn'    => $contractor->phone ?? 'Finance Team',
-                'address' => $contractor->address ?? '',
+
+        // 3. Transfer the net payout to the contractor's connected account.
+        //    source_transaction ties the transfer to the already-captured
+        //    charge so it draws from those specific settled funds.
+        //    Idempotency key prevents double payout on retry.
+        $transfer = \Stripe\Transfer::create([
+            'amount'      => (int) round($netPayout * 100), // cents
+            'currency'    => 'aud',
+            'destination' => $contractor->contractor->stripe_account_id,
+            'source_transaction' => $paymentIntent->latest_charge,
+            'metadata' => [
+                'roster_id'           => $roster->id,
+                'contractor_id'       => $contractor->id,
+                'chargeable_basis'    => $chargeableBasis,
+                'fee_amount_incl_gst' => $totalFeeDeducted,
             ],
- 
+        ], [
+            'idempotency_key' => 'payout-roster-' . $roster->id,
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Contractor payout failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
+        return response()->json(['success' => false, 'message' => 'Payout failed: ' . $e->getMessage()], 200);
+    }
+
+    // 4. Build the platform fee invoice number and generate the PDF
+    $feeInvoiceNumber = 'STF-FEE-' . str_pad($roster->id, 4, '0', STR_PAD_LEFT);
+
+    $feeInvoiceData = [
+        'fee_invoice_number'   => $feeInvoiceNumber,
+        'date'                 => now()->format('d M Y'),
+        'job_ref'              => $invoiceMeta['invoice_number'] ?? ('STF-' . now()->format('Y') . '-' . str_pad($roster->id, 4, '0', STR_PAD_LEFT) . '-D'),
+        'client_booking_label' => $roster->address ?? 'N/A',
+        'service_label'        => 'Automated Timesheet & Geofence Verification',
+
+        'contractor' => [
+            'name'    => $contractor->contractor->company_name ?? $contractor->name,
+            'abn'     => $contractor->contractor->abn ?? 'N/A',
+            'attn'    => $contractor->phone ?? 'Finance Team',
+            'address' => $contractor->address ?? '',
+        ],
+
+        'chargeable_basis'   => $chargeableBasis,
+        'fee_rate_percent'   => $feeRatePercent,
+        'fee_amount'         => $feeAmount,
+        'gst_percent'        => $gstPercent,
+        'gst_amount'         => $gstAmount,
+        'total_fee_deducted' => $totalFeeDeducted,
+
+        'gross_captured' => $grossCaptured,
+        'net_payout'     => $netPayout,
+    ];
+
+    try {
+        $feeInvoiceService = new PlatformFeeInvoiceService();
+        $feePdfBytes = $feeInvoiceService->generatePdf($feeInvoiceData);
+    } catch (\Exception $e) {
+        Log::error('Platform fee invoice PDF generation failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
+        $feePdfBytes = null;
+    }
+
+    // 5. Record the payout on the roster
+    DB::table('job_rosters')->where('id', $roster->id)->update([
+        'stripe_transfer_id'      => $transfer->id,
+        'platform_fee_invoice_no' => $feeInvoiceNumber,
+        'net_payout_amount'       => $netPayout,
+        'payout_status'           => 'paid',
+        'payout_meta' => json_encode([
             'chargeable_basis'   => $chargeableBasis,
             'fee_rate_percent'   => $feeRatePercent,
             'fee_amount'         => $feeAmount,
-            'gst_percent'        => $gstPercent,
             'gst_amount'         => $gstAmount,
             'total_fee_deducted' => $totalFeeDeducted,
- 
-            'gross_captured' => $grossCaptured,
-            'net_payout'     => $netPayout,
-        ];
- 
-        try {
-            $feeInvoiceService = new PlatformFeeInvoiceService();
-            $feePdfBytes = $feeInvoiceService->generatePdf($feeInvoiceData);
-        } catch (\Exception $e) {
-            Log::error('Platform fee invoice PDF generation failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
-            $feePdfBytes = null;
-        }
- 
-        // 5. Record the payout on the roster
-        DB::table('job_rosters')->where('id', $roster->id)->update([
-            'stripe_transfer_id'      => $transfer->id,
-            'platform_fee_invoice_no' => $feeInvoiceNumber,
-            'net_payout_amount'       => $netPayout,
-            'payout_status'           => 'paid',
-            'payout_meta' => json_encode([
-                'chargeable_basis'   => $chargeableBasis,
-                'fee_rate_percent'   => $feeRatePercent,
-                'fee_amount'         => $feeAmount,
-                'gst_amount'         => $gstAmount,
-                'total_fee_deducted' => $totalFeeDeducted,
-                'gross_captured'     => $grossCaptured,
-                'net_payout'         => $netPayout,
-                'currency'           => 'aud',
-            ]),
-        ]);
- 
-        // 6. Email the fee invoice to the contractor AND to Staffoo admin
-        if ($feePdfBytes) {
-            $adminAddress = config('mail.staffoo_admin_address', 'admin@staffoo.com.au');
- 
-            if (!empty($contractor->email)) {
-                try {
-                    Mail::to($contractor->email)
-                        ->cc($adminAddress)
-                        ->send(new PlatformFeeInvoiceMail(
-                            $contractor->contractor->company_name ?? $contractor->name,
-                            $feePdfBytes,
-                            $feeInvoiceNumber,
-                            $netPayout
-                        ));
-                } catch (\Exception $e) {
-                    Log::error('Platform fee invoice email send failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
-                }
-            } else {
-                try {
-                    Mail::to($adminAddress)->send(new PlatformFeeInvoiceMail(
+            'gross_captured'     => $grossCaptured,
+            'net_payout'         => $netPayout,
+            'currency'           => 'aud',
+        ]),
+    ]);
+
+    // 6. Email the fee invoice to the contractor AND to Staffoo admin
+    if ($feePdfBytes) {
+        $adminAddress = config('mail.staffoo_admin_address', 'admin@staffoo.com.au');
+
+        if (!empty($contractor->email)) {
+            try {
+                Mail::to($contractor->email)
+                    ->cc($adminAddress)
+                    ->send(new PlatformFeeInvoiceMail(
                         $contractor->contractor->company_name ?? $contractor->name,
                         $feePdfBytes,
                         $feeInvoiceNumber,
                         $netPayout
                     ));
-                } catch (\Exception $e) {
-                    Log::error('Platform fee invoice admin email send failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
-                }
+            } catch (\Exception $e) {
+                Log::error('Platform fee invoice email send failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
+            }
+        } else {
+            try {
+                Mail::to($adminAddress)->send(new PlatformFeeInvoiceMail(
+                    $contractor->contractor->company_name ?? $contractor->name,
+                    $feePdfBytes,
+                    $feeInvoiceNumber,
+                    $netPayout
+                ));
+            } catch (\Exception $e) {
+                Log::error('Platform fee invoice admin email send failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
             }
         }
- 
-        return response()->json([
-            'success' => true,
-            'message' => 'Payout released to resource partner.',
-            'data' => [
-                'transfer_id'        => $transfer->id,
-                'fee_invoice_number' => $feeInvoiceNumber,
-                'gross_captured'     => $grossCaptured,
-                'total_fee_deducted' => $totalFeeDeducted,
-                'net_payout'         => $netPayout,
-            ],
-        ], 200);
     }
 
-    public function importStaff(Request $request)
-    {
-        $request->validate([
-            'file'    => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
-            'user_id' => 'required|exists:users,id', // the contractor/company all imported staff belong to
-        ]);
-    
-        try {
-            $import = new StaffImport((int) $request->user_id);
-            Excel::import($import, $request->file('file'));
-    
-            return response()->json([
-                'success' => true,
-                'message' => count($import->created) . ' staff created, ' . count($import->failed) . ' failed.',
-                'code' => 200,
-                'data' => [
-                    'created_count' => count($import->created),
-                    'failed_count'  => count($import->failed),
-                    'created'       => $import->created,
-                    'failed'        => $import->failed,
-                ],
-            ], 200);
-        } catch (\Exception $e) {
-            Log::error('Staff import failed', ['error' => $e->getMessage()]);
-    
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to process import file.',
-                'code' => 500,
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
-        }
+    return response()->json([
+        'success' => true,
+        'message' => 'Payout released to resource partner.',
+        'data' => [
+            'transfer_id'        => $transfer->id,
+            'fee_invoice_number' => $feeInvoiceNumber,
+            'gross_captured'     => $grossCaptured,
+            'total_fee_deducted' => $totalFeeDeducted,
+            'net_payout'         => $netPayout,
+        ],
+    ], 200);
+}
+
+public function importStaff(Request $request)
+{
+    $request->validate([
+        'file'    => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
+        'user_id' => 'required|exists:users,id', // the contractor/company all imported staff belong to
+    ]);
+
+    try {
+        $import = new StaffImport((int) $request->user_id);
+        Excel::import($import, $request->file('file'));
+
+        return response()->json([
+            'success' => true,
+            'message' => count($import->created) . ' staff created, ' . count($import->failed) . ' failed.',
+            'code' => 200,
+            'data' => [
+                'created_count' => count($import->created),
+                'failed_count'  => count($import->failed),
+                'created'       => $import->created,
+                'failed'        => $import->failed,
+            ],
+        ], 200);
+    } catch (\Exception $e) {
+        Log::error('Staff import failed', ['error' => $e->getMessage()]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to process import file.',
+            'code' => 500,
+            'error' => config('app.debug') ? $e->getMessage() : null,
+        ], 500);
     }
+}
 }

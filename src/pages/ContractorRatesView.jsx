@@ -49,7 +49,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
     [userId]
   );
 
-  const { data, loading, error } = useFetch(endpoint, {
+  const { data, loading, error, refetch: refetchActiveRates } = useFetch(endpoint, {
     isAuth: true,
     immediate: !!endpoint,
   });
@@ -70,6 +70,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   const {
     data: requestsData,
     loading: requestsLoading,
+    refetch: refetchRequests
   } = useFetch(`api/charge-rate-requests?status=${requestTab}&user_id=${userId}`, {
     isAuth: true,
     immediate: true,
@@ -171,36 +172,6 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
       return;
     }
 
-    let newErrors = {};
-    let firstErrorState = null;
-
-    for (const stateVal of selectedStates) {
-      const stateForm = requestForm[stateVal] || {};
-      let stateErrors = {};
-
-      for (const row of SLOT_ROWS) {
-        const mk = `def_${row.metro}`;
-        const rk = `def_${row.reg}`;
-        if (stateForm[mk] === "" || stateForm[mk] === undefined) {
-          stateErrors[mk] = true;
-        }
-        if (stateForm[rk] === "" || stateForm[rk] === undefined) {
-          stateErrors[rk] = true;
-        }
-      }
-
-      if (Object.keys(stateErrors).length > 0) {
-        newErrors[stateVal] = stateErrors;
-        if (!firstErrorState) firstErrorState = stateVal;
-      }
-    }
-
-    if (firstErrorState) {
-      setFormErrors(newErrors);
-      setActiveStateTab(firstErrorState);
-      return;
-    }
-
     setFormErrors({});
 
     const ratesPayload = [];
@@ -244,8 +215,11 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
 
         for (const key of keysToCheck) {
           const originalVal = originalRate[key] !== null && originalRate[key] !== undefined ? Number(originalRate[key]) : 0;
-          if (computed[key] !== originalVal && computed[key] !== undefined) {
-            stateObj[key] = computed[key];
+          const newVal = computed[key] !== undefined ? computed[key] : originalVal;
+          
+          stateObj[key] = newVal;
+          
+          if (newVal !== originalVal) {
             hasChanges = true;
           }
         }
@@ -556,7 +530,11 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
               key={tab.key}
               type="button"
               className={`rate-tab ${mainTab === tab.key ? "active" : ""}`}
-              onClick={() => setMainTab(tab.key)}
+              onClick={() => {
+                setMainTab(tab.key);
+                if (tab.key === "history") refetchRequests();
+                if (tab.key === "active") refetchActiveRates();
+              }}
             >
               <i className={`fa ${tab.icon} me-2`}></i>{tab.label}
             </button>
@@ -671,6 +649,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                   type="button"
                   className={`rate-tab ${requestTab === tab ? "active" : ""}`}
                   onClick={() => setRequestTab(tab)}
+                  style={{ padding: "8px 16px", fontSize: "13px" }}
                 >
                   <i className={`fa ${tab === 'pending' ? 'fa-clock' : tab === 'approved' ? 'fa-check' : 'fa-times'} me-2`}></i>
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}

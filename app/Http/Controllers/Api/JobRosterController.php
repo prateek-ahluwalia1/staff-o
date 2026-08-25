@@ -6618,9 +6618,9 @@ public function releaseContractorPayout($rosterId)
 
     $invoiceMeta = json_decode($roster->invoice_meta ?? '{}', true);
 
-    // if (empty($invoiceMeta['net_taxable']) || empty($invoiceMeta['total_payable'])) {
-    //     return response()->json(['success' => false, 'message' => 'Original invoice breakdown not found on roster.'], 200);
-    // }
+    if (empty($invoiceMeta['net_taxable']) || empty($invoiceMeta['total_payable'])) {
+        return response()->json(['success' => false, 'message' => 'Original invoice breakdown not found on roster.'], 200);
+    }
 
     \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 

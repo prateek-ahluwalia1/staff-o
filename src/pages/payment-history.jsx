@@ -110,7 +110,8 @@ export default function PaymentHistory() {
     ? `api/client-transactions?page=${currentPage}${selectedCustomerId ? `&user_id=${selectedCustomerId}` : ""}`
     : `api/user-transactions/${loggedInUserId}`;
 
-  const { data: paymentData, loading, error } = useFetch(fetchUrl, { isAuth: true });
+  const { data: paymentData, loading, error, refetch } = useFetch(fetchUrl, { isAuth: true });
+  const { submit: payoutSubmit, loading: payoutLoading } = useSubmit({ isAuth: true });
 
   const { data: historyDataResponse, loading: historyLoading, error: historyError } = useFetch(
     historyTxId ? `api/admin/invoice/history/${historyTxId}` : null,
@@ -200,6 +201,38 @@ export default function PaymentHistory() {
     setCurrentEmailInput("");
     setSelectedTx(null);
     setHistoryTxId(null);
+  };
+
+  const handlePayoutClick = async (tx) => {
+    try {
+      if (tx.status !== "captured") return; // Safety check
+
+      let rosterIds = [];
+      try {
+        rosterIds = JSON.parse(tx.job_roster_id);
+      } catch (e) {
+        // Handle case where it might just be a number or string
+        rosterIds = [tx.job_roster_id];
+      }
+
+      if (!rosterIds || rosterIds.length === 0) {
+        toast.error("No job roster ID found for this transaction.");
+        return;
+      }
+
+      const rosterId = rosterIds[0];
+      const res = await payoutSubmit(`api/release-payout/${rosterId}`, {}, { method: "POST" });
+
+      if (res && res.success) {
+        toast.success(res.message || "Payout released successfully!");
+        refetch();
+      } else {
+        console.error(res?.message || res?.errors || "Failed to release payout.");
+      }
+    } catch (err) {
+      console.error(err);
+      console.error("An error occurred while releasing payout.");
+    }
   };
 
   const handleAddEmail = () => {
@@ -466,28 +499,31 @@ export default function PaymentHistory() {
           }
 
           .btn-premium {
-            border-radius: 12px;
+            border-radius: 8px;
             font-weight: 600;
-            padding: 8px 16px;
+            padding: 6px 14px;
             font-size: 13px;
-            transition: all 0.15s;
+            transition: all 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            box-shadow: 0 4px 10px -2px rgba(10,124,110,0.4);
-          }
-          .btn-premium:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 16px -4px rgba(10,124,110,0.5);
+            gap: 6px;
           }
           .btn-outline-premium {
             background: #fff;
             border: 1px solid var(--line);
             color: var(--slate);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
           }
-          .btn-outline-premium:hover {
+          .btn-outline-premium:hover:not(:disabled) {
             background: var(--line-soft);
             border-color: #cbd5e1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          }
+          .btn-outline-premium:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f8fafc;
+            color: #94a3b8;
           }
 
           .page-btn {
@@ -714,6 +750,17 @@ export default function PaymentHistory() {
                                 >
                                   <i className="fa fa-share-nodes"></i> Share
                                 </button>
+                                {isAdmin && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-premium btn-premium"
+                                    disabled={tx.status !== "captured" || payoutLoading}
+                                    onClick={() => handlePayoutClick(tx)}
+                                    title={tx.status !== "captured" ? "Payout can only be released when status is captured" : "Release Payout"}
+                                  >
+                                    <i className="fa fa-money-bill-transfer"></i> Payout
+                                  </button>
+                                )}
                               </div>
                             ) : (
                               <span className="text-muted small fst-italic">No Document</span>
@@ -741,7 +788,7 @@ export default function PaymentHistory() {
                       >
                         <i className="fa-solid fa-chevron-left"></i>
                       </button>
-                      
+
                       {getPaginationRange(currentPage, totalPages).map((page, idx) => (
                         page === "..." ? (
                           <span key={`dots-${idx}`} className="d-flex align-items-center justify-content-center" style={{ width: "36px", color: "#64748b", fontWeight: 700 }}>
@@ -893,14 +940,21 @@ export default function PaymentHistory() {
                     <div className="text-center py-3">
                       <Loader />
                     </div>
-                  ) : historyError ? (
-                    <p className="text-danger small mb-0">
-                      <i className="fa-solid fa-circle-exclamation me-1"></i> Unable to load history.
-                    </p>
-                  ) : invoiceHistory.length === 0 ? (
-                    <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
-                      This document hasn't been shared with anyone yet.
-                    </p>
+                  ) : historyError || invoiceHistory.length === 0 ? (
+                    <div className="text-center py-4 px-3 bg-white rounded-3 border" style={{ borderStyle: "dashed !important", borderColor: "#cbd5e1" }}>
+                      <div 
+                        className="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" 
+                        style={{ width: "46px", height: "46px", backgroundColor: "#f8fafc" }}
+                      >
+                        <i className="fa-regular fa-paper-plane text-muted fs-5"></i>
+                      </div>
+                      <p className="text-dark small mb-1" style={{ textTransform: "none", fontWeight: 600 }}>
+                        No sharing history
+                      </p>
+                      <p className="text-muted small mb-0" style={{ textTransform: "none", opacity: 0.8 }}>
+                        This document hasn't been shared with anyone yet.
+                      </p>
+                    </div>
                   ) : (
                     <ul className="list-group list-group-flush bg-transparent" style={{ maxHeight: "180px", overflowY: "auto" }}>
                       {invoiceHistory.map((item, index) => (

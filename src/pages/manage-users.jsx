@@ -1043,7 +1043,6 @@ const ManageUsers = () => {
     }
   };
 
-  // Build the title for the document modal (exactly as stored, no normalization)
   const docModalTitle = selectedDoc
     ? `Update Document — ${docForm.document_name}`
     : docForm.document_name

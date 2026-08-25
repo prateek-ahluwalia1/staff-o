@@ -815,10 +815,10 @@ const ManageStaff = () => {
         setImportResult(res.data);
         refetch();
       } else {
-        toast.error(res.message || "Failed to import staff");
+        console.error(res.message || "Failed to import staff");
       }
     } catch (err) {
-      toast.error(err.message || "Failed to import staff");
+      console.error(err.message || "Failed to import staff");
     }
   };
 

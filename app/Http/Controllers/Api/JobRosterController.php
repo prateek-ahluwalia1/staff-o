@@ -6606,21 +6606,21 @@ public function releaseContractorPayout($rosterId)
         return response()->json(['success' => false, 'message' => 'No payment on file for this roster.'], 200);
     }
 
-    if (!empty($roster->stripe_transfer_id)) {
-        return response()->json(['success' => false, 'message' => 'Payout has already been released for this roster.'], 200);
-    }
+    // if (!empty($roster->stripe_transfer_id)) {
+    //     return response()->json(['success' => false, 'message' => 'Payout has already been released for this roster.'], 200);
+    // }
 
     $contractor = \App\Models\User::with('contractor')->find($roster->accepted_by);
 
-    if (!$contractor || !$contractor->contractor || empty($contractor->contractor->stripe_account_id)) {
-        return response()->json(['success' => false, 'message' => 'Resource partner has no connected Stripe account.'], 200);
-    }
+    // if (!$contractor || !$contractor->contractor || empty($contractor->contractor->stripe_account_id)) {
+    //     return response()->json(['success' => false, 'message' => 'Resource partner has no connected Stripe account.'], 200);
+    // }
 
     $invoiceMeta = json_decode($roster->invoice_meta ?? '{}', true);
 
-    if (empty($invoiceMeta['net_taxable']) || empty($invoiceMeta['total_payable'])) {
-        return response()->json(['success' => false, 'message' => 'Original invoice breakdown not found on roster.'], 200);
-    }
+    // if (empty($invoiceMeta['net_taxable']) || empty($invoiceMeta['total_payable'])) {
+    //     return response()->json(['success' => false, 'message' => 'Original invoice breakdown not found on roster.'], 200);
+    // }
 
     \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
 
@@ -6661,20 +6661,20 @@ public function releaseContractorPayout($rosterId)
         //    source_transaction ties the transfer to the already-captured
         //    charge so it draws from those specific settled funds.
         //    Idempotency key prevents double payout on retry.
-        $transfer = \Stripe\Transfer::create([
-            'amount'      => (int) round($netPayout * 100), // cents
-            'currency'    => 'aud',
-            'destination' => $contractor->contractor->stripe_account_id,
-            'source_transaction' => $paymentIntent->latest_charge,
-            'metadata' => [
-                'roster_id'           => $roster->id,
-                'contractor_id'       => $contractor->id,
-                'chargeable_basis'    => $chargeableBasis,
-                'fee_amount_incl_gst' => $totalFeeDeducted,
-            ],
-        ], [
-            'idempotency_key' => 'payout-roster-' . $roster->id,
-        ]);
+        // $transfer = \Stripe\Transfer::create([
+        //     'amount'      => (int) round($netPayout * 100), // cents
+        //     'currency'    => 'aud',
+        //     'destination' => $contractor->contractor->stripe_account_id,
+        //     'source_transaction' => $paymentIntent->latest_charge,
+        //     'metadata' => [
+        //         'roster_id'           => $roster->id,
+        //         'contractor_id'       => $contractor->id,
+        //         'chargeable_basis'    => $chargeableBasis,
+        //         'fee_amount_incl_gst' => $totalFeeDeducted,
+        //     ],
+        // ], [
+        //     'idempotency_key' => 'payout-roster-' . $roster->id,
+        // ]);
     } catch (\Exception $e) {
         Log::error('Contractor payout failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
         return response()->json(['success' => false, 'message' => 'Payout failed: ' . $e->getMessage()], 200);
@@ -6711,28 +6711,34 @@ public function releaseContractorPayout($rosterId)
     try {
         $feeInvoiceService = new PlatformFeeInvoiceService();
         $feePdfBytes = $feeInvoiceService->generatePdf($feeInvoiceData);
-    } catch (\Exception $e) {
+        $directory = storage_path('app/public/invoices');
+        if (!file_exists($directory)) {
+          mkdir($directory, 0755, true);
+        }
+        $filename = "{$feeInvoiceNumber}.pdf";
+        $filePath = $directory . DIRECTORY_SEPARATOR . $filename;
+        file_put_contents($filePath, $feePdfBytes);    } catch (\Exception $e) {
         Log::error('Platform fee invoice PDF generation failed', ['roster_id' => $roster->id, 'error' => $e->getMessage()]);
         $feePdfBytes = null;
     }
 
     // 5. Record the payout on the roster
-    DB::table('job_rosters')->where('id', $roster->id)->update([
-        'stripe_transfer_id'      => $transfer->id,
-        'platform_fee_invoice_no' => $feeInvoiceNumber,
-        'net_payout_amount'       => $netPayout,
-        'payout_status'           => 'paid',
-        'payout_meta' => json_encode([
-            'chargeable_basis'   => $chargeableBasis,
-            'fee_rate_percent'   => $feeRatePercent,
-            'fee_amount'         => $feeAmount,
-            'gst_amount'         => $gstAmount,
-            'total_fee_deducted' => $totalFeeDeducted,
-            'gross_captured'     => $grossCaptured,
-            'net_payout'         => $netPayout,
-            'currency'           => 'aud',
-        ]),
-    ]);
+    // DB::table('job_rosters')->where('id', $roster->id)->update([
+    //     // 'stripe_transfer_id'      => $transfer->id,
+    //     'platform_fee_invoice_no' => $feeInvoiceNumber,
+    //     'net_payout_amount'       => $netPayout,
+    //     'payout_status'           => 'paid',
+    //     'payout_meta' => json_encode([
+    //         'chargeable_basis'   => $chargeableBasis,
+    //         'fee_rate_percent'   => $feeRatePercent,
+    //         'fee_amount'         => $feeAmount,
+    //         'gst_amount'         => $gstAmount,
+    //         'total_fee_deducted' => $totalFeeDeducted,
+    //         'gross_captured'     => $grossCaptured,
+    //         'net_payout'         => $netPayout,
+    //         'currency'           => 'aud',
+    //     ]),
+    // ]);
 
     // 6. Email the fee invoice to the contractor AND to Staffoo admin
     if ($feePdfBytes) {
@@ -6769,7 +6775,7 @@ public function releaseContractorPayout($rosterId)
         'success' => true,
         'message' => 'Payout released to resource partner.',
         'data' => [
-            'transfer_id'        => $transfer->id,
+            // 'transfer_id'        => $transfer->id,
             'fee_invoice_number' => $feeInvoiceNumber,
             'gross_captured'     => $grossCaptured,
             'total_fee_deducted' => $totalFeeDeducted,

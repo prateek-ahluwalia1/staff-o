@@ -4171,7 +4171,7 @@ private function sendStaffActivationNotification(User $user): void
             // Add both fields to the transaction object
             $transaction->client_name = $clientName;
             $transaction->invoice_filename = $invoiceFilename;
-            $transaction->accepted_by = $jobRoster->accepted_by;
+            $transaction->accepted_by = $jobRoster->accepted_by ?? null;
             
             return $transaction;
         });

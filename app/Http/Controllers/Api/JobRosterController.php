@@ -6798,8 +6798,7 @@ public function importStaff(Request $request)
 
         // Get all failures including validation failures
         $allFailed = array_merge(
-            $import->failed,
-            $import->getFailures() ?? []
+            $import->failed ?? [],
         );
 
         return response()->json([

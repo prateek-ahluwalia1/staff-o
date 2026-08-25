@@ -25,4 +25,8 @@ class Transaction extends Model
         'balance_payment_intent_id',
         'balance_charged_at',
     ];
+
+    public function user() {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
 }

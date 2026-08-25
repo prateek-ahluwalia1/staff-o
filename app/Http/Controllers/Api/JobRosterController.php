@@ -5538,7 +5538,7 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     $client = DB::table('users')->where('id', $updatedRoster->created_by)->first();
  
     // 5. Build invoice number — e.g. STF-2026-1082-D
-    $invoiceNumber = 'STF-' . now()->format('Y') . '-' . str_pad($updatedRoster->id, 4, '0', STR_PAD_LEFT) . '-D';
+    $invoiceNumber = 'STF-' . now()->format('Y') . '-' . str_pad($updatedRoster->id, 4, '0', STR_PAD_LEFT);
  
     // 6. Create Stripe product/price/payment link
     \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
@@ -5619,6 +5619,14 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     try {
         $invoiceService = new ContractorInvoiceService();
         $pdfBytes = $invoiceService->generatePdf($invoiceData);
+         $directory = storage_path('app/public/invoices');
+         if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+         }
+        $filename = "{$invoiceNumber}.pdf";
+        $filePath = $directory . DIRECTORY_SEPARATOR . $filename;
+        file_put_contents($filePath, $pdfBytes);
+
     } catch (\Exception $e) {
         Log::error('Invoice PDF generation failed', ['error' => $e->getMessage()]);
         return ['success' => false, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
@@ -5628,7 +5636,7 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     // (invoice_meta lets the webhook rebuild an accurate Transaction row later,
     //  since Stripe only sends back the charged amount in cents, not the breakdown)
     DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
-        'invoice_filename'  => $invoiceNumber,
+        'invoice_filename'  => $filename,
         'payment_intent_id' => $paymentLink->url,
         'payment_status'    => 'pending',
         'invoice_meta'      => json_encode([

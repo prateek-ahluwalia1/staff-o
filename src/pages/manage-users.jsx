@@ -1043,8 +1043,6 @@ const ManageUsers = () => {
     }
   };
 
-  if (loading && users.length === 0) return <Loader />;
-
   // Build the title for the document modal (exactly as stored, no normalization)
   const docModalTitle = selectedDoc
     ? `Update Document — ${docForm.document_name}`
@@ -1427,20 +1425,20 @@ const ManageUsers = () => {
       )}
 
       {/* Table card */}
-      <div className="content-card table-responsive" style={{ overflowX: "auto" }}>
-        {loading && users.length > 0 && (
+      <div className="content-card table-responsive position-relative" style={{ overflowX: "auto", minHeight: "300px" }}>
+        {loading && (
           <div
+            className="d-flex align-items-center justify-content-center"
             style={{
               position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "3px",
-              background: "linear-gradient(90deg, transparent, var(--teal), transparent)",
-              zIndex: 10,
-              animation: "loadingBar 1.5s infinite",
+              inset: 0,
+              background: "rgba(255, 255, 255, 0.65)",
+              backdropFilter: "blur(3px)",
+              zIndex: 20,
             }}
-          />
+          >
+            <Loader />
+          </div>
         )}
 
         <table className="table-modern m-0">

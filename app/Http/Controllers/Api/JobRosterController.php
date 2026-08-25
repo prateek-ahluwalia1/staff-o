@@ -2985,23 +2985,18 @@ private function sendStaffActivationNotification(User $user): void
             // APPLY DISCOUNT (ONLY FULL)
             $discount = 0;
 
-            $cleanBaseTotal = (float) str_replace([',', '$'], '', $baseTotal);
-            $feeRaw = $cleanBaseTotal * 0.10;
-            $serviceFee = round($feeRaw, 2);        // Keep as float
-            $displayedFee = number_format($serviceFee, 2); // For display only
-            $baseFinalTotal = round($baseTotal + $serviceFee, 2); // Now works correctly
-
-            // $cleanBaseTotal = (float) str_replace([',', '$'], '', $baseTotal);
-            // $feeRaw = $cleanBaseTotal * 0.10;
-            // $serviceFee = round($feeRaw, 2);
-            // $displayedFee = number_format($serviceFee, 2);
-            // $serviceFee  = $displayedFee;
-            // $baseFinalTotal = round($baseTotal + $serviceFee, 2);
+            $baseFinalTotal = round($baseTotal, 2);
 
             if ($request->payment_option === 'full') {
                 $discount = round($baseFinalTotal * 0.05, 2);
             }
-            $grandTotal = round($baseFinalTotal - $discount, 2);    
+            $grandTotal = round($baseFinalTotal - $discount, 2);  
+            
+            
+            $cleanBaseTotal = (float) str_replace([',', '$'], '', $baseTotal);
+            $feeRaw = ($cleanBaseTotal - $discount) * 0.10;
+            $serviceFee = round($feeRaw, 2);
+            $displayedFee = number_format($serviceFee, 2);
             
             // SPLIT LOGIC (AFTER GST)
             if ($request->payment_option === 'split') {

@@ -12,7 +12,7 @@ class InvoiceService
      * Expected $data keys:
      *  invoice_number, date, client_name, client_email,
      *  payment_intent_id, payment_option,
-     *  shifts  [ {start, end, numberOfGuards, hours, amount} … ],
+     *  shifts  [ {start, end, numberOfGuards, hours, rate, amount} … ]
      *  base_total, discount, service_fee, grand_total, amount_charged, balance
      */
     // public function generatePdf(array $data): string
@@ -45,6 +45,12 @@ class InvoiceService
             $end    = htmlspecialchars($shift['end']);
             $guards = (int) $shift['numberOfGuards'];
             $hours  = (float) $shift['hours'];
+            // NEW: per-hour rate for this shift, falls back to computing it
+            // from amount/hours if not explicitly provided (backward-compatible
+            // with any older $data['shifts'] that don't include 'rate')
+            $rate   = isset($shift['rate'])
+                ? (float) $shift['rate']
+                : ($hours > 0 ? (float) $shift['amount'] / $hours : 0);
             $amount = '$' . number_format((float) $shift['amount'], 2);
 
             $shiftRows .= "
@@ -54,6 +60,7 @@ class InvoiceService
                 <td>{$end}</td>
                 <td style='text-align:center;'>{$guards}</td>
                 <td style='text-align:center;'>{$hours}</td>
+                <td style='text-align:right;'>$" . number_format($rate, 2) . "</td>
                 <td style='text-align:right;'>{$amount}</td>
             </tr>";
         }
@@ -140,11 +147,12 @@ class InvoiceService
         $html .= "<div class='section-title'>Shift Details</div>";
         $html .= "<div class='table-wrap'><table class='st'><thead><tr>";
         $html .= "<th style='width:5%;'>#</th>";
-        $html .= "<th style='width:26%;'>Start Date</th>";
-        $html .= "<th style='width:26%;'>End Date</th>";
-        $html .= "<th style='width:12%;text-align:center;'>Guards</th>";
-        $html .= "<th style='width:14%;text-align:center;'>Hours</th>";
-        $html .= "<th style='width:17%;text-align:right;'>Amount (AUD)</th>";
+        $html .= "<th style='width:22%;'>Start Date</th>";
+        $html .= "<th style='width:22%;'>End Date</th>";
+        $html .= "<th style='width:11%;text-align:center;'>Guards</th>";
+        $html .= "<th style='width:12%;text-align:center;'>Hours</th>";
+        $html .= "<th style='width:14%;text-align:right;'>Rate (AUD)</th>";
+        $html .= "<th style='width:14%;text-align:right;'>Amount (AUD)</th>";
         $html .= "</tr></thead><tbody>{$shiftRows}</tbody></table></div>";
 
         $html .= "<div style='height:10px;'></div><div class='grey-line'></div>";

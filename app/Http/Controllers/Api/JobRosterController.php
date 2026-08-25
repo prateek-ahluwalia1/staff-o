@@ -47,6 +47,270 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class JobRosterController extends Controller
 {
+    // public function jobData(Request $request)
+    // {
+    //     // ─── VALIDATION ──────────────────────────────────────────────────────
+    //     $validator = Validator::make($request->all(), [
+    //         'user_id'                    => 'required|exists:users,id',
+    //         'shifts'                     => 'required|array|min:1',
+    //         'shifts.*.start'             => 'required|date',
+    //         'shifts.*.end'               => 'required|date|after:shifts.*.start',
+    //         'shifts.*.numberOfGuards'    => 'required|integer|min:1',
+    //         'payment_intent_id'          => 'required|string',
+    //     ]);
+    
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'errors'  => $validator->errors(),
+    //         ], 422);
+    //     }
+    
+    //     try {
+    
+    //         $user = User::findOrFail($request->user_id);
+    
+    //         // ─── CREATE / FIND SITE ──────────────────────────────────────────
+    //         [$lat, $lng] = explode(',', $request->coordinates);
+    //         $lat = (float) trim($lat);
+    //         $lng = (float) trim($lng);
+
+    //         $radiusMeters = 30;
+
+    //         $site = Site::get()->first(function ($site) use ($lat, $lng, $radiusMeters) {
+    //             [$siteLat, $siteLng] = array_map('trim', explode(',', $site->coordinates));
+    //             $distance = $this->haversineDistance($lat, $lng, (float) $siteLat, (float) $siteLng);
+    //             return $distance <= $radiusMeters;
+    //         }); 
+
+    //         if (!$site) {
+    //             $addressParts = explode(',', $request->address);
+    //             $firstPart = trim($addressParts[0]);
+
+    //             $site = Site::create([
+    //                 'user_id'          => $user->id,
+    //                 'site_name'        => $firstPart,
+    //                 'site_description' => $request->description,
+    //                 'address'          => $request->address,
+    //                 'signin_radius'    => 300,
+    //                 'coordinates'      => $request->coordinates,
+    //                 'state'            => $request->job_location_state,
+    //             ]);
+    //         }
+    
+    //         // ─── GET DEFAULT ROSTER ──────────────────────────────────────────
+    //         $jobNewRoster = JobNewRoster::find(1);
+    
+    //         if (!$jobNewRoster) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Roster not found.',
+    //             ], 404);
+    //         }
+    
+    //         $paymentIntentId      = $request->payment_intent_id;
+    //         $isAdminOverride      = $paymentIntentId === 'admin_override_no_payment';
+    //         //change here based on level and than calculate rate.
+    //         $chargeRate           = ChargeRate::where('level', $request->job_level)->first();
+    
+    //         $radiusValue          = is_array($request->radius)        ? json_encode($request->radius)        : $request->radius;
+    //         $documentListValue    = is_array($request->document_types) ? json_encode($request->document_types) : $request->document_types;
+    //         $jobInstructionsValue = is_array($request->document_list)  ? json_encode($request->document_list)  : $request->document_list;
+    
+    //         $createdJobIds    = [];
+    //         $invoiceShifts    = [];   // ← collected for the invoice PDF
+    //         $invoiceBaseTotal = 0;    // ← running total for invoice
+    
+    //         // ─── FETCH TRANSACTION TO GET PAYMENT OPTION & AMOUNTS ───────────
+    //         // (only when this is a real Stripe hold, not an admin override)
+    //         $transaction = null;
+    //         if (!$isAdminOverride) {
+    //             $transaction = \App\Models\Transaction::where('payment_intent_id', $paymentIntentId)->first();
+    //         }
+
+    //         foreach ($request->shifts as $shift) {
+    
+    //             $start = dbFormateDateTime($shift['start']);
+    //             $end   = dbFormateDateTime($shift['end']);
+    
+    //             $hours            = getShiftHours($start, $end, 1, 0);
+    //             $guardWorkingHours = calCulateGuardWeekHours($start, $end);
+    
+    //             // ─── BASE AMOUNT PER GUARD ────────────────────────────────
+    //             $jobAmount =
+    //                 ($chargeRate->def_metro_mon_to_fri_day_rate   * ($hours['morning']          ?? 0)) +
+    //                 ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night']             ?? 0)) +
+    //                 ($chargeRate->def_metro_sat_day_rate          * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
+    //                 ($chargeRate->def_metro_sun_day_rate          * (($hours['sunday_morning']   ?? 0) + ($hours['sunday_night']   ?? 0)))+
+    //                 ($chargeRate->def_metro_pub_holi_day_rate     * (($hours['ph_morning'] ?? 0) + ($hours['ph_night'] ?? 0)));
+    
+    //             // $serviceFee  = round($jobAmount * 0.10, 2);
+    //             $cleanBaseTotal = (float) str_replace([',', '$'], '', $jobAmount);
+    //             $feeRaw = $cleanBaseTotal * 0.10;
+    //             $serviceFee = round($feeRaw, 2);
+    //             $displayedFee = number_format($serviceFee, 2);
+    //             $serviceFee  = $displayedFee;
+    //             $totalAmount = round($jobAmount + $serviceFee, 2);
+    
+    //             // ─── COLLECT FOR INVOICE ──────────────────────────────────
+    //             $totalShiftHours = array_sum([
+    //                 $hours['morning']          ?? 0,
+    //                 $hours['night']            ?? 0,
+    //                 $hours['saturday_morning'] ?? 0,
+    //                 $hours['saturday_night']   ?? 0,
+    //                 $hours['sunday_morning']   ?? 0,
+    //                 $hours['sunday_night']     ?? 0,
+    //                 $hours['ph_morning']       ?? 0,
+    //                 $hours['ph_night']         ?? 0,
+    //             ]);
+    
+    //             $invoiceShifts[] = [
+    //                 'start'          => date('d-m-Y', strtotime($start)),
+    //                 'end'            => date('d-m-Y', strtotime($end)),
+    //                 'numberOfGuards' => (int) $shift['numberOfGuards'],
+    //                 'hours'          => round($totalShiftHours, 2),
+    //                 'amount'         => round($jobAmount * $shift['numberOfGuards'], 2),
+    //             ];
+    //             $invoiceBaseTotal += round($jobAmount * $shift['numberOfGuards'], 2);
+    
+    //             for ($i = 0; $i < $shift['numberOfGuards']; $i++) {
+    
+    //                 $roster = [
+    //                     'site_id'          => $site->id,
+    //                     'start'            => $start,
+    //                     'end'              => $end,
+    //                     'job_type'         => $request->job_type,
+    //                     'shift_payable'    => 'yes',
+    //                     'shift_chargeable' => 'yes',
+    //                     'job_status'       => 'pending',
+    //                     'asap'             => 1,
+    //                     'radius'           => $radiusValue,
+    //                     'is_document'      => $request->is_document,
+    //                     'document_list'    => $documentListValue,
+    //                     'description'      => $request->description,
+    //                     'job_level'        => $request->job_level,
+    //                     'publish_status'   => 1,
+    //                     'roster_id'        => $jobNewRoster->id,
+    //                     'job_instrcutions' => $jobInstructionsValue,
+    //                     'created_by'       => $request->user_id,
+    //                     'assigned_to'      => $request->assigned_staff_id ?? null,
+    //                     'notified_users'   => json_encode([]),
+    
+    //                     'payment_intent_id' => $isAdminOverride ? null : $paymentIntentId,
+    //                     'payment_status'    => $isAdminOverride ? 'not_required' : 'held',
+    //                     'payment_captured'  => $isAdminOverride ? 1 : 0,
+    //                     'contractor_invoice' => $request->contractor_invoice,
+    
+    //                     'job_amount'             => $jobAmount,
+    //                     'morning_hours'          => $hours['morning']          ?? 0,
+    //                     'night_hours'            => $hours['night']             ?? 0,
+    //                     'saturday_morning_hours' => $hours['saturday_morning']  ?? 0,
+    //                     'saturday_night_hours'   => $hours['saturday_night']    ?? 0,
+    //                     'sunday_morning_hours'   => $hours['sunday_morning']    ?? 0,
+    //                     'sunday_night_hours'     => $hours['sunday_night']      ?? 0,
+    //                     'ph_morning_hours'       => $hours['ph_morning']        ?? 0,
+    //                     'ph_night_hours'         => $hours['ph_night']          ?? 0,
+    //                     'hours'                  => $totalShiftHours,
+    //                     'created_at'             => now(),
+    //                     'updated_at'             => now()
+    //                 ];
+    
+    //                 $jobId = JobRoster::insertGetId($roster);
+    //                 $createdJobIds[] = $jobId;
+    //                 $createdJob = JobRoster::with('site')->find($jobId);
+    //             }
+    //         }
+    
+    //         if ($request->posting_type == 'broadcast' && !empty($createdJobIds)) {
+    //             // Get the first created job for reference (site, coordinates, etc.)
+    //             $firstJob = JobRoster::with('site')->find($createdJobIds[0]);
+                
+    //             // Send a single consolidated notification for ALL shifts on this site
+    //             $this->sendConsolidatedNotifications(
+    //                 $request->coordinates,
+    //                 $createdJobIds,
+    //                 $request->user_id
+    //             );
+    //         }
+            
+    //         if (!$isAdminOverride) {
+    //             Transaction::where('payment_intent_id', $paymentIntentId)
+    //                 ->update(['job_roster_id' => json_encode($createdJobIds)]);
+
+    //                   // ════════════════════════════════════════════════════════════
+    //           //  SPLIT PAYMENT — capture the first half now job is posted
+    //           // ════════════════════════════════════════════════════════════
+    //             if ($transaction && $transaction->balance > 0) {
+    //                 try {
+    //                     Stripe::setApiKey(config('services.stripe.secret'));
+    
+    //                     $intent = PaymentIntent::retrieve($paymentIntentId);
+    //                     if ($intent->status === 'requires_capture') {
+    //                         $capturedIntent = $intent->capture();
+
+    //                         $chargeId = $capturedIntent->latest_charge ?? null;
+
+    //                         Transaction::where('payment_intent_id', $paymentIntentId)
+    //                          ->update([
+    //                             'status' => 'partially_captured',
+    //                             'charge_id' => $chargeId,
+    //                             'response'  => json_encode($capturedIntent),
+    //                         ]);
+    //                     }
+
+    //                     $this->sendJobInvoice(
+    //                         user:            $user,
+    //                         shifts:          $invoiceShifts,
+    //                         baseTotal:       $invoiceBaseTotal,
+    //                         transaction:     $transaction,
+    //                         invoiceNumber:   'ST-' . rand(100000, 999999),
+    //                         location: $site->site_name ?? null,
+    //                         paymentIntentId: $paymentIntentId,
+    //                     );
+    
+    //                 } catch (\Exception $e) {
+    //                     Log::channel('daily')->error('[Split Payment] First-half capture failed', [
+    //                         'payment_intent_id' => $paymentIntentId,
+    //                         'error'             => $e->getMessage(),
+    //                     ]);
+    //                     return response()->json([
+    //                         'success'            => false,
+    //                         'message'            => 'Jobs created successfully but payment failed.',
+    //                         'total_jobs_created' => count($createdJobIds),
+    //                         'job_ids'            => $createdJobIds,
+    //                         'payment_intent_id'  => $paymentIntentId,
+    //                     ]);
+    //                     // Don't rethrow — job posting still succeeds even if capture fails;
+    //                     // you'll want a way to retry/alert on this in admin.
+    //                 }
+    //             } else {
+    //                 $this->sendJobInvoice(
+    //                     user:             $user,
+    //                     shifts:           $invoiceShifts,
+    //                     baseTotal:        $invoiceBaseTotal,
+    //                     transaction:      $transaction,
+    //                     invoiceNumber:   'ST-' . rand(100000, 999999),
+    //                     location: $site->site_name ?? null,
+    //                     paymentIntentId:  $paymentIntentId,
+    //                 );
+    //             }
+    //         }
+    
+    //         return response()->json([
+    //             'success'            => true,
+    //             'message'            => 'Jobs created successfully with payment hold.',
+    //             'total_jobs_created' => count($createdJobIds),
+    //             'job_ids'            => $createdJobIds,
+    //             'payment_intent_id'  => $paymentIntentId,
+    //         ]);
+    
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
     public function jobData(Request $request)
     {
         // ─── VALIDATION ──────────────────────────────────────────────────────
@@ -74,19 +338,19 @@ class JobRosterController extends Controller
             [$lat, $lng] = explode(',', $request->coordinates);
             $lat = (float) trim($lat);
             $lng = (float) trim($lng);
-
+    
             $radiusMeters = 30;
-
+    
             $site = Site::get()->first(function ($site) use ($lat, $lng, $radiusMeters) {
                 [$siteLat, $siteLng] = array_map('trim', explode(',', $site->coordinates));
                 $distance = $this->haversineDistance($lat, $lng, (float) $siteLat, (float) $siteLng);
                 return $distance <= $radiusMeters;
             }); 
-
+    
             if (!$site) {
                 $addressParts = explode(',', $request->address);
                 $firstPart = trim($addressParts[0]);
-
+    
                 $site = Site::create([
                     'user_id'          => $user->id,
                     'site_name'        => $firstPart,
@@ -127,7 +391,7 @@ class JobRosterController extends Controller
             if (!$isAdminOverride) {
                 $transaction = \App\Models\Transaction::where('payment_intent_id', $paymentIntentId)->first();
             }
-
+    
             foreach ($request->shifts as $shift) {
     
                 $start = dbFormateDateTime($shift['start']);
@@ -165,10 +429,12 @@ class JobRosterController extends Controller
                 ]);
     
                 $invoiceShifts[] = [
-                    'start'          => date('d-m-Y', strtotime($start)),
-                    'end'            => date('d-m-Y', strtotime($end)),
+                    'start'          => date('d-m-Y g:i A', strtotime($start)),
+                    'end'            => date('d-m-Y g:i A', strtotime($end)),
                     'numberOfGuards' => (int) $shift['numberOfGuards'],
                     'hours'          => round($totalShiftHours, 2),
+                    // NEW: effective $/hr rate for this shift, shown in the invoice
+                    'rate'           => $totalShiftHours > 0 ? round($jobAmount / $totalShiftHours, 2) : 0,
                     'amount'         => round($jobAmount * $shift['numberOfGuards'], 2),
                 ];
                 $invoiceBaseTotal += round($jobAmount * $shift['numberOfGuards'], 2);
@@ -236,10 +502,10 @@ class JobRosterController extends Controller
             if (!$isAdminOverride) {
                 Transaction::where('payment_intent_id', $paymentIntentId)
                     ->update(['job_roster_id' => json_encode($createdJobIds)]);
-
-                      // ════════════════════════════════════════════════════════════
-              //  SPLIT PAYMENT — capture the first half now job is posted
-              // ════════════════════════════════════════════════════════════
+    
+                    // ════════════════════════════════════════════════════════════
+            //  SPLIT PAYMENT — capture the first half now job is posted
+            // ════════════════════════════════════════════════════════════
                 if ($transaction && $transaction->balance > 0) {
                     try {
                         Stripe::setApiKey(config('services.stripe.secret'));
@@ -247,17 +513,17 @@ class JobRosterController extends Controller
                         $intent = PaymentIntent::retrieve($paymentIntentId);
                         if ($intent->status === 'requires_capture') {
                             $capturedIntent = $intent->capture();
-
+    
                             $chargeId = $capturedIntent->latest_charge ?? null;
-
+    
                             Transaction::where('payment_intent_id', $paymentIntentId)
-                             ->update([
+                            ->update([
                                 'status' => 'partially_captured',
                                 'charge_id' => $chargeId,
                                 'response'  => json_encode($capturedIntent),
                             ]);
                         }
-
+    
                         $this->sendJobInvoice(
                             user:            $user,
                             shifts:          $invoiceShifts,
@@ -311,7 +577,6 @@ class JobRosterController extends Controller
             ], 500);
         }
     }
-
     private function haversineDistance($lat1, $lng1, $lat2, $lng2)
     {
         $earthRadius = 6371000; // meters
@@ -2913,6 +3178,210 @@ private function sendStaffActivationNotification(User $user): void
             }
         }
 
+    // public function holdPayment(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'shifts'                     => 'required|array|min:1',
+    //         'shifts.*.start'             => 'required|date',
+    //         'shifts.*.end'               => 'required|date',
+    //         'shifts.*.numberOfGuards'    => 'required|integer|min:1',
+
+    //         'user_id'           => 'required|integer|exists:users,id',
+    //         'card_holder_name'  => 'required|string',
+    //         'payment_method_id' => 'required|string|starts_with:pm_',
+
+    //         'payment_option'    => 'required|in:full,split',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'errors'  => $validator->errors(),
+    //         ], 422);
+    //     }
+
+    //     // FIX nested validation
+    //     $validator->after(function ($validator) use ($request) {
+    //         foreach ($request->shifts as $i => $shift) {
+    //             if (strtotime($shift['end']) <= strtotime($shift['start'])) {
+    //                 $validator->errors()->add("shifts.$i.end", "End must be after start");
+    //             }
+    //         }
+    //     });
+
+    //     try {
+
+    //         Stripe::setApiKey(config('services.stripe.secret'));
+
+    //         $chargeRate = ChargeRate::where('level', $request->job_level)->first();
+
+    //         if (!$chargeRate) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Charge rate not found'
+    //             ], 404);
+    //         }
+
+    //         // MULTI SHIFT TOTAL
+    //         $baseTotal = 0;
+    //         $hours_array = [];
+    //         $baseTotal_arr = [];
+    //         foreach ($request->shifts as $shift) {
+
+    //             $start = dbFormateDateTime($shift['start']);
+    //             $end   = dbFormateDateTime($shift['end']);
+
+    //             $hours = getShiftHours($start, $end, 1, 0);
+    //             $shiftAmount =
+    //                 ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
+    //                 ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
+    //                 ($chargeRate->def_metro_sat_day_rate * ($hours['saturday_morning'] ?? 0)) +
+    //                 ($chargeRate->def_metro_sat_night_rate * ($hours['saturday_night'] ?? 0)) +
+    //                 ($chargeRate->def_metro_sun_day_rate * ($hours['sunday_morning'] ?? 0)) +
+    //                 ($chargeRate->def_metro_sun_night_rate * ($hours['sunday_night'] ?? 0)) +
+    //                 ($chargeRate->def_metro_pub_holi_day_rate * ($hours['ph_morning'] ?? 0)) +
+    //                 ($chargeRate->def_metro_pub_holi_night_rate * ($hours['ph_night'] ?? 0));
+                    
+    //             $hours_array[] = $hours;
+    //             $baseTotal_arr[] = $shiftAmount; 
+    //             $baseTotal += round($shiftAmount * $shift['numberOfGuards'], 2);
+    //         }
+
+    //         // APPLY DISCOUNT (ONLY FULL)
+    //         $discount = 0;
+
+    //         $baseFinalTotal = round($baseTotal, 2);
+
+    //         if ($request->payment_option === 'full') {
+    //             $discount = round($baseFinalTotal * 0.05, 2);
+    //         }
+    //         $grandTotal = round($baseFinalTotal - $discount, 2);  
+            
+            
+    //         $cleanBaseTotal = (float) str_replace([',', '$'], '', $baseTotal);
+    //         $feeRaw = ($cleanBaseTotal - $discount) * 0.10;
+    //         $serviceFee = round($feeRaw, 2);
+    //         $displayedFee = number_format($serviceFee, 2);
+            
+    //         // SPLIT LOGIC (AFTER GST)
+    //         if ($request->payment_option === 'split') {
+    //             $amountToCharge = round($grandTotal * 0.5, 2);
+    //             $balance = round($grandTotal - $amountToCharge, 2);
+    //         } else {
+    //             $amountToCharge = $grandTotal;
+    //             $balance = 0;
+    //         }
+    //         // return [$baseTotal, $discount. $discountedTotal, $serviceFee, $grandTotal, $amountToCharge, $hours_array,$baseTotal_arr];
+
+    //         $amountInCents = (int) round($amountToCharge * 100, 2);
+
+    //         // ─── USER / CUSTOMER ──────────────────────
+    //         $user = User::findOrFail($request->user_id);
+
+    //         if (!$user->stripe_customer_id) {
+    //             $customer = Customer::create([
+    //                 'name'  => $request->card_holder_name,
+    //                 'email' => $user->email,
+    //                 'metadata' => [
+    //                     'user_id' => $user->id
+    //                 ]
+    //             ]);
+
+    //             $user->stripe_customer_id = $customer->id;
+    //             $user->save();
+    //         }
+
+    //         $customerId = $user->stripe_customer_id;
+
+    //         // ─── PAYMENT METHOD SAFE ATTACH ───────────
+    //         $paymentMethod = PaymentMethod::retrieve($request->payment_method_id);
+
+    //         if ($paymentMethod->customer && $paymentMethod->customer !== $customerId) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Payment method already attached to another customer'
+    //             ], 400);
+    //         }
+
+    //         if (!$paymentMethod->customer) {
+    //             $paymentMethod->attach([
+    //                 'customer' => $customerId
+    //             ]);
+    //         }
+
+    //         // ─── STRIPE INTENT ────────────────────────
+    //         $paymentIntent = PaymentIntent::create([
+    //             'amount'         => $amountInCents,
+    //             'currency'       => 'aud',
+    //             'customer'       => $customerId,
+    //             'payment_method' => $request->payment_method_id,
+    //             'automatic_payment_methods' => [
+    //                 'enabled' => true,
+    //                 'allow_redirects' => 'never',
+    //             ],
+    //             'confirm'        => true,
+    //             'capture_method' => 'manual',
+    //         ]);
+
+    //         // ─── SAVE TRANSACTION (UNCHANGED STRUCTURE + NEW FIELDS) ───
+    //         Transaction::create([
+    //             'user_id'           => $user->id,
+    //             'job_roster_id'     => $request->job_id ?? null,
+    //             'payment_intent_id' => $paymentIntent->id,
+    
+    //             'amount'            => $baseTotal,
+    //             'discount'          => $discount,
+    //             'service_fee'       => $displayedFee,
+    //             'total_amount'      => $grandTotal,
+    
+    //             'amount_charged'    => $amountToCharge,
+    //             'balance'           => $balance,
+    
+    //             // NEW fields
+    //             'payment_option'    => $request->payment_option,
+    //             'balance_status'    => $request->payment_option === 'split' ? 'pending' : null,
+    
+    //             'currency'          => 'AUD',
+    //             'status'            => 'held',
+    //             'response'          => json_encode($paymentIntent),
+    //         ]);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Payment held successfully',
+
+    //             'payment' => [
+    //                 'payment_intent_id' => $paymentIntent->id,
+    //                 'status'            => $paymentIntent->status,
+    //                 'amount_cents'      => $amountInCents,
+    //                 'amount'            => $amountToCharge,
+    //                 'total_amount'      => $grandTotal,
+    //                 'service_fee'       => $serviceFee,
+    //                 'discount'          => $discount,
+    //                 'balance'           => $balance,
+    //                 'currency'          => 'AUD',
+    //             ]
+    //         ]);
+
+    //     } catch (\Stripe\Exception\CardException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Card declined: ' . $e->getMessage(),
+    //         ], 402);
+
+    //     } catch (\Stripe\Exception\ApiErrorException $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Stripe error: ' . $e->getMessage(),
+    //         ], 500);
+
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Server error: ' . $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
     public function holdPayment(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -2920,21 +3389,21 @@ private function sendStaffActivationNotification(User $user): void
             'shifts.*.start'             => 'required|date',
             'shifts.*.end'               => 'required|date',
             'shifts.*.numberOfGuards'    => 'required|integer|min:1',
-
+    
             'user_id'           => 'required|integer|exists:users,id',
             'card_holder_name'  => 'required|string',
             'payment_method_id' => 'required|string|starts_with:pm_',
-
+    
             'payment_option'    => 'required|in:full,split',
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'errors'  => $validator->errors(),
             ], 422);
         }
-
+    
         // FIX nested validation
         $validator->after(function ($validator) use ($request) {
             foreach ($request->shifts as $i => $shift) {
@@ -2943,29 +3412,29 @@ private function sendStaffActivationNotification(User $user): void
                 }
             }
         });
-
+    
         try {
-
+    
             Stripe::setApiKey(config('services.stripe.secret'));
-
+    
             $chargeRate = ChargeRate::where('level', $request->job_level)->first();
-
+    
             if (!$chargeRate) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Charge rate not found'
                 ], 404);
             }
-
+    
             // MULTI SHIFT TOTAL
             $baseTotal = 0;
             $hours_array = [];
             $baseTotal_arr = [];
             foreach ($request->shifts as $shift) {
-
+    
                 $start = dbFormateDateTime($shift['start']);
                 $end   = dbFormateDateTime($shift['end']);
-
+    
                 $hours = getShiftHours($start, $end, 1, 0);
                 $shiftAmount =
                     ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
@@ -2981,24 +3450,26 @@ private function sendStaffActivationNotification(User $user): void
                 $baseTotal_arr[] = $shiftAmount; 
                 $baseTotal += round($shiftAmount * $shift['numberOfGuards'], 2);
             }
-
-            // APPLY DISCOUNT (ONLY FULL)
+    
+            // ── Subtotal ──────────────────────────────────────────────────
+            $baseFinalTotal = round($baseTotal, 2); // Subtotal
+    
+            // ── Discount (5%, full payment only) ────────────────────────────
             $discount = 0;
-
-            $baseFinalTotal = round($baseTotal, 2);
-
             if ($request->payment_option === 'full') {
                 $discount = round($baseFinalTotal * 0.05, 2);
             }
-            $grandTotal = round($baseFinalTotal - $discount, 2);  
-            
-            
-            $cleanBaseTotal = (float) str_replace([',', '$'], '', $baseTotal);
-            $feeRaw = ($cleanBaseTotal - $discount) * 0.10;
-            $serviceFee = round($feeRaw, 2);
-            $displayedFee = number_format($serviceFee, 2);
-            
-            // SPLIT LOGIC (AFTER GST)
+    
+            // ── Discounted Subtotal ──────────────────────────────────────
+            $discountedSubtotal = round($baseFinalTotal - $discount, 2);
+    
+            // ── GST (10% of discounted subtotal) ─────────────────────────
+            $serviceFee = round($discountedSubtotal * 0.10, 2);
+    
+            // ── TRUE Total — this is the fix: was missing "+ $serviceFee" ──
+            $grandTotal = round($discountedSubtotal + $serviceFee, 2);
+    
+            // ── SPLIT LOGIC (based on the now-correct, GST-inclusive grandTotal) ──
             if ($request->payment_option === 'split') {
                 $amountToCharge = round($grandTotal * 0.5, 2);
                 $balance = round($grandTotal - $amountToCharge, 2);
@@ -3006,13 +3477,12 @@ private function sendStaffActivationNotification(User $user): void
                 $amountToCharge = $grandTotal;
                 $balance = 0;
             }
-            // return [$baseTotal, $discount. $discountedTotal, $serviceFee, $grandTotal, $amountToCharge, $hours_array,$baseTotal_arr];
-
-            $amountInCents = (int) round($amountToCharge * 100, 2);
-
+    
+            $amountInCents = (int) round($amountToCharge * 100);
+    
             // ─── USER / CUSTOMER ──────────────────────
             $user = User::findOrFail($request->user_id);
-
+    
             if (!$user->stripe_customer_id) {
                 $customer = Customer::create([
                     'name'  => $request->card_holder_name,
@@ -3021,29 +3491,29 @@ private function sendStaffActivationNotification(User $user): void
                         'user_id' => $user->id
                     ]
                 ]);
-
+    
                 $user->stripe_customer_id = $customer->id;
                 $user->save();
             }
-
+    
             $customerId = $user->stripe_customer_id;
-
+    
             // ─── PAYMENT METHOD SAFE ATTACH ───────────
             $paymentMethod = PaymentMethod::retrieve($request->payment_method_id);
-
+    
             if ($paymentMethod->customer && $paymentMethod->customer !== $customerId) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Payment method already attached to another customer'
                 ], 400);
             }
-
+    
             if (!$paymentMethod->customer) {
                 $paymentMethod->attach([
                     'customer' => $customerId
                 ]);
             }
-
+    
             // ─── STRIPE INTENT ────────────────────────
             $paymentIntent = PaymentIntent::create([
                 'amount'         => $amountInCents,
@@ -3057,17 +3527,17 @@ private function sendStaffActivationNotification(User $user): void
                 'confirm'        => true,
                 'capture_method' => 'manual',
             ]);
-
-            // ─── SAVE TRANSACTION (UNCHANGED STRUCTURE + NEW FIELDS) ───
+    
+            // ─── SAVE TRANSACTION (now with correct, GST-inclusive values) ───
             Transaction::create([
                 'user_id'           => $user->id,
                 'job_roster_id'     => $request->job_id ?? null,
                 'payment_intent_id' => $paymentIntent->id,
     
-                'amount'            => $baseTotal,
+                'amount'            => $baseFinalTotal,  // Subtotal
                 'discount'          => $discount,
-                'service_fee'       => $displayedFee,
-                'total_amount'      => $grandTotal,
+                'service_fee'       => $serviceFee,      // stored as a real float now, not a formatted string
+                'total_amount'      => $grandTotal,      // now correctly includes GST
     
                 'amount_charged'    => $amountToCharge,
                 'balance'           => $balance,
@@ -3080,36 +3550,38 @@ private function sendStaffActivationNotification(User $user): void
                 'status'            => 'held',
                 'response'          => json_encode($paymentIntent),
             ]);
-
+    
             return response()->json([
                 'success' => true,
                 'message' => 'Payment held successfully',
-
+    
                 'payment' => [
                     'payment_intent_id' => $paymentIntent->id,
                     'status'            => $paymentIntent->status,
                     'amount_cents'      => $amountInCents,
                     'amount'            => $amountToCharge,
-                    'total_amount'      => $grandTotal,
-                    'service_fee'       => $serviceFee,
+                    'subtotal'          => $baseFinalTotal,
                     'discount'          => $discount,
+                    'discounted_subtotal' => $discountedSubtotal,
+                    'service_fee'       => $serviceFee,
+                    'total_amount'      => $grandTotal,
                     'balance'           => $balance,
                     'currency'          => 'AUD',
                 ]
             ]);
-
+    
         } catch (\Stripe\Exception\CardException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Card declined: ' . $e->getMessage(),
             ], 402);
-
+    
         } catch (\Stripe\Exception\ApiErrorException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Stripe error: ' . $e->getMessage(),
             ], 500);
-
+    
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -3117,7 +3589,6 @@ private function sendStaffActivationNotification(User $user): void
             ], 500);
         }
     }
-
     //Guards Payslips
     public function uploadPayslips(Request $request)
     {

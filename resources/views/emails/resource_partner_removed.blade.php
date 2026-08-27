@@ -63,7 +63,7 @@
         }
         .action-button {
             display: inline-block;
-            background: #1a237e;
+            background: #777;
             color: #ffffff !important;
             padding: 12px 30px;
             text-decoration: none;
@@ -141,26 +141,16 @@
                 <p>If you have any questions or need immediate assistance, please don't hesitate to contact our support team.</p>
             </div>
 
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{{ url('/jobs/' . $job_id) }}" class="action-button">
-                    View Job Details
-                </a>
-            </div>
-
             <div class="message">
-                <p>Thank you for your continued trust in {{ $company_name ?? 'Staffoo' }}.</p>
+                <p>Thank you for your continued trust in Staffoo.</p>
                 <p>Best regards,<br>
-                <strong>{{ $company_name ?? 'Staffoo' }} Team</strong></p>
+                <strong>Staffoo Team</strong></p>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="footer">
-            <p>&copy; {{ date('Y') }} {{ $company_name ?? 'Staffoo' }}. All rights reserved.</p>
-            <p>
-                <a href="{{ url('/') }}">Website</a> | 
-                <a href="mailto:support@staffoo.com.au">Support</a>
-            </p>
+            <p>&copy; {{ date('Y') }} Staffoo. All rights reserved.</p>
         </div>
     </div>
 </body>

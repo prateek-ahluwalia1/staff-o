@@ -142,12 +142,6 @@
                 </ul>
             </div>
 
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{{ url('/admin/jobs/' . $job_id) }}" class="action-button">
-                    View Job in Admin Panel
-                </a>
-            </div>
-
             <div class="message">
                 <p>Please ensure this issue is resolved promptly to maintain client satisfaction.</p>
                 <p>If you need assistance, contact the support team.</p>
@@ -155,17 +149,13 @@
 
             <div class="message">
                 <p>Best regards,<br>
-                <strong>{{ $company_name ?? 'Staffoo' }} System</strong></p>
+                <strong>Staffoo Team</strong></p>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="footer">
-            <p>&copy; {{ date('Y') }} {{ $company_name ?? 'Staffoo' }}. All rights reserved.</p>
-            <p>
-                <a href="{{ url('/admin') }}">Admin Dashboard</a> | 
-                <a href="mailto:support@staffoo.com.au">Support</a>
-            </p>
+            <p>&copy; {{ date('Y') }} Staffoo. All rights reserved.</p>
         </div>
     </div>
 </body>

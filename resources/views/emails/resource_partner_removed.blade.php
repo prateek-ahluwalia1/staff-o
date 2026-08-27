@@ -114,6 +114,10 @@
                 <p>Please do not make any payment for this job at this time. We are currently working on assigning a new resource partner to your job.</p>
             </div>
 
+            <div class="alert-box">
+                <p><strong>⚠️ Reason:</strong></p>
+                <p>{{ $reason }}</p>
+            </div>
             <!-- Job Details -->
             <div class="job-details">
                 <h3 style="margin-top: 0; color: #1a237e;">Job Details</h3>

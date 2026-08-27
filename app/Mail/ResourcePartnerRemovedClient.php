@@ -36,6 +36,7 @@ class ResourcePartnerRemovedClient extends Mailable
             'resource_partner_name' => $resourcePartner ? $resourcePartner->name : 'Resource Partner',
             'start_date' => $job->start ? Carbon::parse($job->start)->format('d/m/Y H:i') : 'Not specified',
             'end_date' => $job->end ? Carbon::parse($job->end)->format('d/m/Y H:i') : 'Not specified',
+            'reason' => $job->reason ?? null,
             'removed_at' => Carbon::now()->format('d/m/Y H:i'),
             'company_logo' => asset('images/logo.png'),
             'company_name' => config('app.name', 'Staffoo')

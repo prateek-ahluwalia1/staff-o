@@ -74,135 +74,6 @@ class AdminStaffController extends Controller
         ]);
     }
 
-    // Updated calculateProfileCompletion function
-    // private function calculateProfileCompletion(User $user): int
-    // {
-    //     $baseWeight = 50;
-    //     $documentWeight = 50;
-
-    //     $baseFields = ['name', 'email', 'user_type'];
-        
-    //     $staffFields = ['tfn_form', 'super_form', 'onboarding_form'];
-        
-    //     $allBaseFields = $baseFields;
-    //     if ($user->user_type === 'staff' && $user->user_id == 1) {
-    //         $allBaseFields = array_merge($baseFields, $staffFields);
-    //     }
-        
-    //     // Calculate base score
-    //     $filledBase = 0;
-    //     foreach ($allBaseFields as $field) {
-    //         if (in_array($field, ['tfn_form', 'super_form', 'onboarding_form'])) {
-    //             if ($user->staff && !empty($user->staff->{$field})) {
-    //                 $filledBase++;
-    //             }
-    //         } else {
-    //             if (!empty($user->{$field})) {
-    //                 $filledBase++;
-    //             }
-    //         }
-    //     }
-        
-    //     $baseScore = ($filledBase / count($allBaseFields)) * $baseWeight;
-    //     $documents = $user->documents ?? collect();
-    //     $documentScore = 0;
-
-    //     if ($user->user_type === 'staff') {
-    //         if($user->user_id == 1) {
-    //             // Admin staff with full document requirements
-    //             $documentPoints = [
-    //                 'passport'              => 70,
-    //                 'citizen_ship'          => 70,
-    //                 'medicare'              => 25,
-    //                 'birth_certificate'     => 25,
-    //                 'security_license'      => 40,
-    //                 'driver_license_front'  => 70,
-    //                 'driver_license_back'   => 0,
-    //                 'working_with_children' => 0,
-    //                 'first_aid'             => 0,
-    //                 'cpr'                   => 0,
-    //                 'visa'                  => 0,
-    //             ];
-
-    //             $totalDocPoints = 0;
-
-    //             foreach ($documents as $document) {
-    //                 $docName = strtolower(str_replace(' ', '_', $document->document_name));
-
-    //                 $hasFile = !empty($document->file);
-    //                 $hasValidExpiry = false;
-
-    //                 if (!empty($document->document_expiry)) {
-    //                     if ($document->document_expiry === 'current, pending renewal') {
-    //                         $hasValidExpiry = true;
-    //                     } else {
-    //                         $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
-    //                         $hasValidExpiry = $expiryDate->isFuture();
-    //                     }
-    //                 }
-
-    //                 if ($hasFile && $hasValidExpiry) {
-    //                     $totalDocPoints += $documentPoints[$docName] ?? 0;
-    //                 }
-    //             }
-
-    //             $documentScore = min(($totalDocPoints / 100) * $documentWeight, $documentWeight);
-    //             $totalScore = $baseScore + $documentScore;
-    //             $oldStatus = $user->is_active;
-    //             $newStatus = ($baseScore >= $baseWeight && $totalDocPoints >= 100) ? 1 : 0;
-
-    //             if ($user->is_active !== $newStatus) {
-    //                 $user->is_active = $newStatus;
-    //                 $user->save();
-
-    //                 if ($newStatus === 1 && $oldStatus != 1) {
-    //                     $this->sendActivationNotification($user);
-    //                 }
-    //             }
-    //         } else {
-    //             // Regular staff with security license and first aid
-    //             $securityLicenseDoc = $documents->firstWhere('document_type', 'security_license');
-    //             // $firstAidDoc = $documents->firstWhere('document_type', 'first_aid');
-                
-    //             // Check if documents are valid (have future expiry dates)
-    //             $hasValidSecurityLicense = $this->isDocumentValid($securityLicenseDoc);
-    //             // $hasValidFirstAid = $this->isDocumentValid($firstAidDoc);
-                
-    //             // Calculate document score based on all documents
-    //             $totalDocuments = $documents->count();
-    //             if ($totalDocuments > 0) {
-    //                 $filledDocuments = $documents->filter(function ($doc) {
-    //                     return $this->isDocumentValid($doc);
-    //                 })->count();
-                    
-    //                 $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
-    //             }
-                
-    //             $oldStatus = $user->is_active;
-    //             // For regular staff: needs base score complete AND both security license AND first aid valid
-    //             $newStatus = ($baseScore >= $baseWeight && 
-    //                         $hasValidSecurityLicense) ? 1 : 0;
-
-    //             if ($user->is_active !== $newStatus) {
-    //                 $user->is_active = $newStatus;
-    //                 $user->save();
-                    
-    //                 if ($newStatus === 1 && $oldStatus != 1) {
-    //                     $this->sendActivationNotification($user);
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     // Final percentage
-    //     if (in_array($user->user_type, ['contractor', 'staff'])) {
-    //         $percentage = (int) round($baseScore + $documentScore);
-    //     } else {
-    //         $percentage = (int) round($baseScore + 50);
-    //     }
-
-    //     return min($percentage, 100);
-    // }
     private function calculateProfileCompletion(User $user): int
     {
         $baseWeight = 50;
@@ -647,9 +518,7 @@ class AdminStaffController extends Controller
 
             DB::commit();
 
-            if($user->user_id != 1){
             $this->sendStaffWelcomeEmail($user, $plainPassword);
-            }
 
             return response()->json([
                 'success' => true,

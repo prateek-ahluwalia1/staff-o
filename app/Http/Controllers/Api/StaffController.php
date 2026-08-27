@@ -1085,18 +1085,44 @@ private function calculateProfileCompletion(User $user): int
                             
                             foreach ($documentTypes as $key => $value) {
                                 // Check if document already exists
-                                $existingDoc = Document::where('user_id', $user->id)
-                                    ->where('document_category', $categoryKey)
-                                    ->where('document_type', $key)
-                                    ->first();
+                                $sharedDocumentTypes = [
+                                    'asic_report',
+                                    'security_industry_membership_certificate',
+                                    'public_liability',
+                                ];
                                 
-                                if (!$existingDoc) {
-                                    // Create new document
+                                if (in_array($key, $sharedDocumentTypes, true)) {
+                                    // Look for an existing copy of this exact document type, uploaded
+                                    // under any category/state, that actually has a file attached.
+                                    $existingDoc = Document::where('user_id', $user->id)
+                                        ->where('document_type', $key)
+                                        ->whereNotNull('file')
+                                        ->first();
+                                
+                                    if ($existingDoc) {
+                                        Document::create([
+                                            'user_id'           => $user->id,
+                                            'document_category' => $categoryKey,
+                                            'document_type'     => $key,
+                                            'document_name'     => $value,
+                                            'document_no'       => $existingDoc->document_no,
+                                            'document_expiry'   => $existingDoc->document_expiry,
+                                            'file'              => $existingDoc->file,
+                                        ]);
+                                    } else {
+                                        Document::create([
+                                            'user_id'           => $user->id,
+                                            'document_category' => $categoryKey,
+                                            'document_type'     => $key,
+                                            'document_name'     => $value,
+                                        ]);
+                                    }
+                                } else {
                                     Document::create([
-                                        'user_id' => $user->id,
+                                        'user_id'           => $user->id,
                                         'document_category' => $categoryKey,
-                                        'document_type' => $key,
-                                        'document_name' => $value
+                                        'document_type'     => $key,
+                                        'document_name'     => $value,
                                     ]);
                                 }
                                 

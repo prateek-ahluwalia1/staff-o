@@ -4859,7 +4859,7 @@ private function sendStaffActivationNotification(User $user): void
         // Build the query
         $query = JobRoster::whereBetween('start', [$start, $end])
             ->where('roster_id', $roster_id)
-            ->orderBy('start', 'desc')
+            ->orderBy('created_at', 'desc')
             ->with([
                 'site', 'rosterActivity',
                 'guards.staff', 'customer.customer', 'contractor.contractor',

@@ -1084,36 +1084,56 @@ private function calculateProfileCompletion(User $user): int
                             $documentTypes = json_decode($category->document_type, true) ?? [];
                             
                             foreach ($documentTypes as $key => $value) {
-                                // Check if document already exists
                                 $existingDoc = Document::where('user_id', $user->id)
                                     ->where('document_category', $categoryKey)
                                     ->where('document_type', $key)
                                     ->first();
                                 
                                 if (!$existingDoc) {
-
-                                    $defaultDoc = Document::where('user_id', $user->id)
-                                    ->where('document_type', $key)
-                                    ->first();
-                                    // Create new document
-                                    if($defaultDoc && $key = 'asic_report')
-                                    {
-                                        Document::create([
-                                            'user_id' => $user->id,
-                                            'document_category' => $categoryKey,
-                                            'document_type' => $key,
-                                            'document_name' => $value,
-                                            'document_no' => $defaultDoc->document_no,
-                                            'document_expiry' => $defaultDoc->document_expiry,
-                                            'file' => $defaultDoc->file,
-                                        ]);
+                                    // Define default document types
+                                    $defaultDocumentTypes = [
+                                        'asic_report',
+                                        'security_industry_membership_certificate',
+                                        'public_liability'
+                                    ];
+                                    
+                                    // Check if this is a default document type
+                                    $isDefaultType = in_array($key, $defaultDocumentTypes);
+                                    
+                                    if ($isDefaultType) {
+                                        // Get the default document (from contractor_document category)
+                                        $defaultDoc = Document::where('user_id', $user->id)
+                                            ->where('document_type', $key)
+                                            ->where('document_category', 'contractor_document')
+                                            ->first();
+                                        
+                                        if ($defaultDoc) {
+                                            // Copy all data from default document
+                                            Document::create([
+                                                'user_id' => $user->id,
+                                                'document_category' => $categoryKey,
+                                                'document_type' => $key,
+                                                'document_name' => $value,
+                                                'document_no' => $defaultDoc->document_no,
+                                                'document_expiry' => $defaultDoc->document_expiry,
+                                                'file' => $defaultDoc->file,
+                                            ]);
+                                        } else {
+                                            // Default document doesn't exist, create without data
+                                            Document::create([
+                                                'user_id' => $user->id,
+                                                'document_category' => $categoryKey,
+                                                'document_type' => $key,
+                                                'document_name' => $value,
+                                            ]);
+                                        }
                                     } else {
+                                        // Non-default document - create without copying data
                                         Document::create([
                                             'user_id' => $user->id,
                                             'document_category' => $categoryKey,
                                             'document_type' => $key,
                                             'document_name' => $value,
-
                                         ]);
                                     }
                                 }

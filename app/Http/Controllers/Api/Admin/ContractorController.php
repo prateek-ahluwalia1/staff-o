@@ -180,7 +180,9 @@ private function calculateProfileCompletion(User $user): int
         $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
     }
  
-    // ============ states_allowed vs contractor_charge_rates check ============
+    // ============ NEW: states_allowed vs contractor_charge_rates check ============
+    // Contractor must have a rate card for EVERY state in states_allowed.
+    // Empty/missing states_allowed also counts as not valid (forces inactive).
     $statesAllowed = $user->states_allowed;
  
     if (is_string($statesAllowed)) {
@@ -201,11 +203,6 @@ private function calculateProfileCompletion(User $user): int
         $missingStates = array_diff($statesAllowed, $ratedStates);
         $statesAllowedValid = empty($missingStates);
     }
-    // ============ END states_allowed check ============
- 
-    // ============ NEW: Check if required documents exist and are valid ============
-    $hasRequiredDocuments = $this->hasRequiredDocuments($user, $documents);
-    $hasExpiredDocuments = $this->hasExpiredDocuments($documents);
     // ============ END NEW ============
  
     // Contractor activation logic
@@ -214,14 +211,7 @@ private function calculateProfileCompletion(User $user): int
     $labourHireValid = !$labourHireRequired || ($labourHireRequired && $hasLabourHire);
     
     $oldStatus = $user->is_active;
-    $newStatus = (
-        $baseComplete && 
-        $hasValidDocuments && 
-        $labourHireValid && 
-        $statesAllowedValid &&
-        $hasRequiredDocuments &&  // Added: must have all required documents
-        !$hasExpiredDocuments     // Added: must not have expired documents
-    ) ? 1 : 0;
+    $newStatus = ($baseComplete && $hasValidDocuments && $labourHireValid && $statesAllowedValid) ? 1 : 0;
  
     $this->updateUserStatus($user, $newStatus);
 
@@ -234,43 +224,14 @@ private function calculateProfileCompletion(User $user): int
     // Final percentage
     $percentage = (int) round($baseScore + $documentScore);
  
-    // Keep percentage consistent with the activation decision
+    // Keep percentage consistent with the activation decision above —
+    // if states_allowed isn't fully covered, don't show 100% even though
+    // base + documents might otherwise sum to it.
     if (!$statesAllowedValid) {
         $percentage = min($percentage, 99);
     }
-    
-    // ============ NEW: Cap percentage if documents are expired or missing ============
-    if ($hasExpiredDocuments) {
-        $percentage = min($percentage, 85); // Expired documents
-    } elseif (!$hasRequiredDocuments) {
-        $percentage = min($percentage, 90); // Missing required documents
-    }
-    // ============ END NEW ============
  
     return min($percentage, 100);
-}
-
-private function hasExpiredDocuments($documents): bool
-{
-    return $documents->contains(function ($doc) {
-        // Skip if no expiry date
-        if (empty($doc->document_expiry)) {
-            return false;
-        }
-        
-        // Skip special case
-        if ($doc->document_expiry === 'current, pending renewal') {
-            return false;
-        }
-        
-        try {
-            $expiryDate = \Carbon\Carbon::parse($doc->document_expiry);
-            return $expiryDate->isPast();
-        } catch (\Exception $e) {
-            // If date parsing fails, treat as expired
-            return true;
-        }
-    });
 }
 
 private function updateUserStatus(User $user, int $newStatus): void
@@ -289,7 +250,6 @@ private function isDocumentValid($document): bool
         return false;
     }
 
-    // Check if document has required fields
     if (empty($document->document_no)) {
         return false;
     }
@@ -298,82 +258,15 @@ private function isDocumentValid($document): bool
         return false;
     }
 
-    // Check document status (if you have a status field)
-    if (isset($document->status) && $document->status !== 'approved') {
-        return false;
-    }
-
-    // Check document expiration
     if (!empty($document->document_expiry)) {
-        // Handle special case: "current, pending renewal"
         if ($document->document_expiry === 'current, pending renewal') {
             return true;
         }
-        
-        try {
-            $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
-            return $expiryDate->isFuture();
-        } catch (\Exception $e) {
-            // If date parsing fails, treat as invalid
-            return false;
-        }
+        $expiryDate = \Carbon\Carbon::parse($document->document_expiry);
+        return $expiryDate->isFuture();
     }
 
-    // If no expiry date, document is considered valid
     return true;
-}
-
-private function hasRequiredDocuments(User $user, $documents): bool
-{
-    // Define required document types based on user type
-    $requiredTypes = $this->getRequiredDocumentTypes($user);
-    
-    if (empty($requiredTypes)) {
-        return true; // No required documents means it's valid
-    }
-    
-    // Get all document types the user has (valid ones only)
-    $hasTypes = $documents->filter(function ($doc) {
-        return $this->isDocumentValid($doc);
-    })->pluck('document_type')->unique()->toArray();
-    
-    // Check if all required types are present
-    foreach ($requiredTypes as $requiredType) {
-        if (!in_array($requiredType, $hasTypes)) {
-            return false;
-        }
-    }
-    
-    return true;
-}
-
-private function getRequiredDocumentTypes(User $user): array
-{
-    $required = [];
-    
-    // All contractors need these basic documents
-    if ($user->user_type === 'contractor' || $user->user_type === 'worker') {
-        $required[] = 'identification'; // ID or passport
-        
-        // State-specific requirements
-        $state = strtolower($user->state);
-        
-        if (in_array($state, ['victoria', 'new_south_wales', 'queensland'])) {
-            $required[] = 'white_card';
-        }
-        
-        if (in_array($state, ['victoria', 'queensland'])) {
-            $required[] = 'labour_hire';
-        }
-        
-        // Most states require WWCC and Police Check
-        if (in_array($state, ['victoria', 'new_south_wales', 'queensland', 'south_australia', 'western_australia'])) {
-            $required[] = 'working_with_children';
-            $required[] = 'police_check';
-        }
-    }
-    
-    return $required;
 }
 
     /**

@@ -6839,14 +6839,14 @@ public function removeAcceptedBy(Request $request, $jobId)
         }
 
         // ============ CHECK 1: Authorization ============
-        $user = $request->user_id;
-        if (!$this->canRemoveAcceptedBy($user, $job)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are not authorized to remove resource partner from this job.',
-                'code' => 403
-            ], 403);
-        }
+        // $user = $request->user_id;
+        // if (!$this->canRemoveAcceptedBy($user, $job)) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => 'You are not authorized to remove resource partner from this job.',
+        //         'code' => 403
+        //     ], 403);
+        // }
 
         // ============ CHECK 2: Job must have accepted_by ============
         if (is_null($job->accepted_by)) {
@@ -6888,8 +6888,8 @@ public function removeAcceptedBy(Request $request, $jobId)
 
         // ============ CHECK 4: Start date check (24 hours rule) ============
         // If start date is within 24 hours of current time, cannot remove
-        if ($job->start_date) {
-            $startDate = Carbon::parse($job->start_date);
+        if ($job->start) {
+            $startDate = Carbon::parse($job->start);
             $now = Carbon::now();
             $hoursDifference = $startDate->diffInHours($now);
             
@@ -6901,7 +6901,7 @@ public function removeAcceptedBy(Request $request, $jobId)
                     'code' => 400,
                     'data' => [
                         'job_id' => $job->id,
-                        'start_date' => $job->start_date,
+                        'start_date' => $job->start,
                         'current_time' => $now->toDateTimeString(),
                         'hours_until_start' => $hoursDifference,
                         'can_remove' => false
@@ -6912,14 +6912,14 @@ public function removeAcceptedBy(Request $request, $jobId)
 
         // ============ CHECK 5: Additional check - job already started ============
         // If current time is past start date
-        if ($job->start_date && Carbon::parse($job->start_date)->isPast()) {
+        if ($job->start && Carbon::parse($job->start)->isPast()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Job has already started. You cannot remove resource partner after the job has started.',
                 'code' => 400,
                 'data' => [
                     'job_id' => $job->id,
-                    'start_date' => $job->start_date,
+                    'start_date' => $job->start,
                     'current_time' => Carbon::now()->toDateTimeString()
                 ]
             ], 400);
@@ -6934,7 +6934,7 @@ public function removeAcceptedBy(Request $request, $jobId)
         try {
             // Remove accepted_by and reset status
             $job->accepted_by = null;
-            $job->status = 'pending'; // Reset to pending
+            $job->job_status = 'pending'; // Reset to pending
             $job->save();
 
             // Optional: Create audit log
@@ -6967,7 +6967,7 @@ public function removeAcceptedBy(Request $request, $jobId)
                     'old_accepted_by' => $oldAcceptedBy,
                     'status' => $job->status,
                     'old_status' => $oldStatus,
-                    'start_date' => $job->start_date,
+                    'start_date' => $job->start,
                     'removed_at' => Carbon::now()->toDateTimeString()
                 ]
             ], 200);

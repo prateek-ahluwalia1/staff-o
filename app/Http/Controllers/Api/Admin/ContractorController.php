@@ -250,6 +250,29 @@ private function calculateProfileCompletion(User $user): int
     return min($percentage, 100);
 }
 
+private function hasExpiredDocuments($documents): bool
+{
+    return $documents->contains(function ($doc) {
+        // Skip if no expiry date
+        if (empty($doc->document_expiry)) {
+            return false;
+        }
+        
+        // Skip special case
+        if ($doc->document_expiry === 'current, pending renewal') {
+            return false;
+        }
+        
+        try {
+            $expiryDate = \Carbon\Carbon::parse($doc->document_expiry);
+            return $expiryDate->isPast();
+        } catch (\Exception $e) {
+            // If date parsing fails, treat as expired
+            return true;
+        }
+    });
+}
+
 private function updateUserStatus(User $user, int $newStatus): void
 {
     $oldStatus = $user->is_active;
@@ -298,6 +321,59 @@ private function isDocumentValid($document): bool
 
     // If no expiry date, document is considered valid
     return true;
+}
+
+private function hasRequiredDocuments(User $user, $documents): bool
+{
+    // Define required document types based on user type
+    $requiredTypes = $this->getRequiredDocumentTypes($user);
+    
+    if (empty($requiredTypes)) {
+        return true; // No required documents means it's valid
+    }
+    
+    // Get all document types the user has (valid ones only)
+    $hasTypes = $documents->filter(function ($doc) {
+        return $this->isDocumentValid($doc);
+    })->pluck('document_type')->unique()->toArray();
+    
+    // Check if all required types are present
+    foreach ($requiredTypes as $requiredType) {
+        if (!in_array($requiredType, $hasTypes)) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+private function getRequiredDocumentTypes(User $user): array
+{
+    $required = [];
+    
+    // All contractors need these basic documents
+    if ($user->user_type === 'contractor' || $user->user_type === 'worker') {
+        $required[] = 'identification'; // ID or passport
+        
+        // State-specific requirements
+        $state = strtolower($user->state);
+        
+        if (in_array($state, ['victoria', 'new_south_wales', 'queensland'])) {
+            $required[] = 'white_card';
+        }
+        
+        if (in_array($state, ['victoria', 'queensland'])) {
+            $required[] = 'labour_hire';
+        }
+        
+        // Most states require WWCC and Police Check
+        if (in_array($state, ['victoria', 'new_south_wales', 'queensland', 'south_australia', 'western_australia'])) {
+            $required[] = 'working_with_children';
+            $required[] = 'police_check';
+        }
+    }
+    
+    return $required;
 }
 
     /**

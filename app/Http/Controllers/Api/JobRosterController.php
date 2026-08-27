@@ -5929,6 +5929,219 @@ public function contractor_accept_job(Request $request, $id)
     }
 }
  
+// private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster)
+// {
+//     // 1. Get contractor's rate card for this site's state
+//     $rate = DB::table('contractor_chargerates')
+//         ->where('user_id', $contractor->id)
+//         ->where('state', $updatedRoster->state)
+//         ->first();
+ 
+//     if (!$rate) {
+//         Log::warning('No ContractorChargeRate found', [
+//             'contractor_id' => $contractor->id,
+//             'state' => $updatedRoster->state,
+//         ]);
+//         return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
+//     }
+ 
+//     // 2. Split the shift into day/night/weekend/PH buckets and build per-bucket line items
+//     $hours = getShiftHours($updatedRoster->start, $updatedRoster->end);
+ 
+//     $bucketRateMap = [
+//         'morning'          => 'def_metro_mon_to_fri_day_rate',
+//         'night'            => 'def_metro_mon_to_fri_night_rate',
+//         'saturday_morning' => 'def_metro_sat_day_rate',
+//         'saturday_night'   => 'def_metro_sat_night_rate',
+//         'sunday_morning'   => 'def_metro_sun_day_rate',
+//         'sunday_night'     => 'def_metro_sun_night_rate',
+//         'ph_morning'       => 'def_metro_pub_holi_day_rate',
+//         'ph_night'         => 'def_metro_pub_holi_night_rate',
+//     ];
+ 
+//     $grossSubtotal = 0.0;
+//     $totalHours    = 0.0;
+//     $shiftLines    = [];
+ 
+//     foreach ($bucketRateMap as $bucketKey => $rateColumn) {
+//         $bucketHours = (float) ($hours[$bucketKey] ?? 0);
+//         if ($bucketHours <= 0) {
+//             continue;
+//         }
+//         $bucketRate = (float) $rate->{$rateColumn};
+//         $lineAmount = $bucketHours * $bucketRate;
+ 
+//         $grossSubtotal += $lineAmount;
+//         $totalHours    += $bucketHours;
+ 
+//         $shiftLines[] = [
+//             'description' => $updatedRoster->job_type,
+//             'site'        => $updatedRoster->address ?? 'N/A',
+//             // Swap this for a real badge/reference field on the guard's staff
+//             // record if you have one — falling back to the raw user id for now.
+//             'guard_ref'   => 'SG-' . $updatedRoster->assigned_to,
+//             'date'        => \Carbon\Carbon::parse($updatedRoster->start)->format('d/m/Y'),
+//             'hours'       => $bucketHours,
+//             'rate'        => $bucketRate,
+//             'amount'      => round($lineAmount, 2),
+//         ];
+//     }
+ 
+//     if ($grossSubtotal <= 0) {
+//         Log::warning('Invoice gross subtotal is zero, skipping payment link', [
+//             'roster_id' => $updatedRoster->id,
+//         ]);
+//         return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
+//     }
+ 
+//     // 3. Apply Staffoo platform promotion discount, then GST on the net amount
+//     $discountPercent = 5;
+//     $gstPercent      = 10;
+ 
+//     $discountAmount = round($grossSubtotal * ($discountPercent / 100), 2);
+//     $netTaxable     = round($grossSubtotal - $discountAmount, 2);
+//     $gstAmount      = round($netTaxable * ($gstPercent / 100), 2);
+//     $grandTotal     = round($netTaxable + $gstAmount, 2);
+ 
+//     // 4. Get client details
+//     $client = DB::table('users')->where('id', $updatedRoster->created_by)->first();
+ 
+//     // 5. Build invoice number — e.g. STF-2026-1082-D
+//     $invoiceNumber = 'STF-' . now()->format('Y') . '-' . str_pad($updatedRoster->id, 4, '0', STR_PAD_LEFT);
+ 
+//     // 6. Create Stripe product/price/payment link
+//     \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+ 
+//     try {
+//         $product = \Stripe\Product::create([
+//             'name' => "Invoice {$invoiceNumber} - " . ($updatedRoster->address ?? 'Job Shift'),
+//         ]);
+ 
+//         $price = \Stripe\Price::create([
+//             'product'     => $product->id,
+//             'unit_amount' => (int) round($grandTotal * 100), // cents
+//             'currency'    => 'aud',
+//         ]);
+ 
+//         $paymentLink = \Stripe\PaymentLink::create([
+//             'line_items' => [
+//                 ['price' => $price->id, 'quantity' => 1],
+//             ],
+//             'payment_intent_data' => [
+//                 'capture_method' => 'manual', // authorize/hold only — capture happens later, after shift completion
+//                 'metadata' => [
+//                     'roster_id'      => $updatedRoster->id,
+//                     'contractor_id'  => $contractor->id,
+//                     'invoice_number' => $invoiceNumber,
+//                 ],
+//             ],
+//             'metadata' => [
+//                 'roster_id'      => $updatedRoster->id,
+//                 'contractor_id'  => $contractor->id,
+//                 'invoice_number' => $invoiceNumber,
+//             ],
+//             'after_completion' => [
+//                 'type' => 'redirect',
+//                 'redirect' => ['url' => 'https://staging.app.staffoo.com.au/my-job-applications?roster_id=' . $updatedRoster->id],
+//             ],
+//         ]);
+//     } catch (\Exception $e) {
+//         Log::error('Stripe payment link creation failed', ['error' => $e->getMessage()]);
+//         return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
+//     }
+ 
+//     // 7. Build PDF invoice (contractor-branded)
+//     $invoiceData = [
+//         'invoice_number' => $invoiceNumber,
+//         'date'            => now()->format('d M Y'),
+ 
+//         'contractor' => [
+//             'name'           => $contractor->contractor->company_name ?? $contractor->name,
+//             'abn'            => $contractor->contractor->abn ?? 'N/A',
+//             // These two likely need adding to the `contractors` table if not already there.
+//             'license_number' => $contractor->contractor->security_license_no ?? 'N/A',
+//             'address'        => $contractor->address ?? '',
+//         ],
+//         'client' => [
+//             'name'    => $client->name ?? 'Client',
+//             // These likely need adding to `users` (or a client profile table) if not already there.
+//             'abn'     => $client->abn ?? 'N/A',
+//             'attn'    => $client->billing_contact ?? 'Accounts Payable',
+//             'address' => $client->address ?? '',
+//         ],
+ 
+//         'shifts' => $shiftLines,
+ 
+//         'gross_subtotal'   => round($grossSubtotal, 2),
+//         'discount_percent' => $discountPercent,
+//         'discount_amount'  => $discountAmount,
+//         'net_taxable'      => $netTaxable,
+//         'gst_percent'      => $gstPercent,
+//         'gst_amount'       => $gstAmount,
+//         'total_payable'    => $grandTotal,
+ 
+//         // Set to 'PENDING' at generation time; flip to 'PAID / SECURED' from the
+//         // Stripe webhook once the payment/hold actually clears.
+//         'payment_status' => 'PENDING',
+//     ];
+ 
+//     try {
+//         $invoiceService = new ContractorInvoiceService();
+//         $pdfBytes = $invoiceService->generatePdf($invoiceData);
+//          $directory = storage_path('app/public/invoices');
+//          if (!file_exists($directory)) {
+//             mkdir($directory, 0755, true);
+//          }
+//         $filename = "{$invoiceNumber}.pdf";
+//         $filePath = $directory . DIRECTORY_SEPARATOR . $filename;
+//         file_put_contents($filePath, $pdfBytes);
+
+//     } catch (\Exception $e) {
+//         Log::error('Invoice PDF generation failed', ['error' => $e->getMessage()]);
+//         return ['success' => false, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
+//     }
+ 
+//     // 8. Save link/invoice number + breakdown on roster
+//     // (invoice_meta lets the webhook rebuild an accurate Transaction row later,
+//     //  since Stripe only sends back the charged amount in cents, not the breakdown)
+//     DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
+//         'invoice_filename'  => $filename,
+//         'payment_intent_id' => $paymentLink->url,
+//         'payment_status'    => 'pending',
+//         'invoice_meta'      => json_encode([
+//             'gross_subtotal'   => round($grossSubtotal, 2),
+//             'discount_percent' => $discountPercent,
+//             'discount_amount'  => $discountAmount,
+//             'net_taxable'      => $netTaxable,
+//             'gst_percent'      => $gstPercent,
+//             'gst_amount'       => $gstAmount,
+//             'total_payable'    => $grandTotal,
+//             'currency'         => 'aud',
+//         ]),
+//     ]);
+ 
+//     // 9. Email client with PDF + pay link
+//     // Pay Now in the email points to our own redirect gate, NOT the raw
+//     // Stripe link directly — this is what stops repeated clicks from
+//     // creating duplicate holds (see Stripeweebhookcontroller).
+//     $wrappedPayLink = config('app.url') . '/emails/pay/' . $updatedRoster->id;
+ 
+//     if (!empty($client->email)) {
+//         try {
+//             Mail::to($client->email)->send(new ContractorInvoiceMail(
+//                 $client->name ?? 'Client',
+//                 $pdfBytes,
+//                 $invoiceNumber,
+//                 $wrappedPayLink,
+//                 $contractor->contractor->company_name ?? $contractor->name
+//             ));
+//         } catch (\Exception $e) {
+//             Log::error('Invoice email send failed', ['error' => $e->getMessage()]);
+//         }
+//     }
+ 
+//     return ['success' => true, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
+// }
 private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster)
 {
     // 1. Get contractor's rate card for this site's state
@@ -5948,40 +6161,60 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     // 2. Split the shift into day/night/weekend/PH buckets and build per-bucket line items
     $hours = getShiftHours($updatedRoster->start, $updatedRoster->end);
  
-    $bucketRateMap = [
-        'morning'          => 'def_metro_mon_to_fri_day_rate',
-        'night'            => 'def_metro_mon_to_fri_night_rate',
-        'saturday_morning' => 'def_metro_sat_day_rate',
-        'saturday_night'   => 'def_metro_sat_night_rate',
-        'sunday_morning'   => 'def_metro_sun_day_rate',
-        'sunday_night'     => 'def_metro_sun_night_rate',
-        'ph_morning'       => 'def_metro_pub_holi_day_rate',
-        'ph_night'         => 'def_metro_pub_holi_night_rate',
+    // NEW: Mon-Fri stays split into separate Day/Night rows (labeled accordingly).
+    // Saturday/Sunday/Public Holiday are COMBINED into a single row each (day + night
+    // hours summed together), using the "day" rate column — since night and day
+    // rates are equal for these three, showing them as two rows was redundant.
+    $bucketGroups = [
+        'mon_fri_day'    => ['label' => 'Day',            'hourKeys' => ['morning'],                            'rateColumn' => 'def_metro_mon_to_fri_day_rate'],
+        'mon_fri_night'  => ['label' => 'Night',          'hourKeys' => ['night'],                              'rateColumn' => 'def_metro_mon_to_fri_night_rate'],
+        'saturday'       => ['label' => 'Saturday',       'hourKeys' => ['saturday_morning', 'saturday_night'], 'rateColumn' => 'def_metro_sat_day_rate'],
+        'sunday'         => ['label' => 'Sunday',         'hourKeys' => ['sunday_morning', 'sunday_night'],     'rateColumn' => 'def_metro_sun_day_rate'],
+        'public_holiday' => ['label' => 'Public Holiday', 'hourKeys' => ['ph_morning', 'ph_night'],             'rateColumn' => 'def_metro_pub_holi_day_rate'],
     ];
  
     $grossSubtotal = 0.0;
     $totalHours    = 0.0;
     $shiftLines    = [];
  
-    foreach ($bucketRateMap as $bucketKey => $rateColumn) {
-        $bucketHours = (float) ($hours[$bucketKey] ?? 0);
-        if ($bucketHours <= 0) {
+    // NEW: figure out whether this shift crosses midnight, so buckets with
+    // a night component can show the date they actually fall on instead of
+    // always showing the shift's start date.
+    $rosterStart = \Carbon\Carbon::parse($updatedRoster->start);
+    $rosterEnd   = \Carbon\Carbon::parse($updatedRoster->end);
+    $crossesMidnight = $rosterStart->toDateString() !== $rosterEnd->toDateString();
+ 
+    foreach ($bucketGroups as $group) {
+        $groupHours = 0.0;
+        foreach ($group['hourKeys'] as $hourKey) {
+            $groupHours += (float) ($hours[$hourKey] ?? 0);
+        }
+        if ($groupHours <= 0) {
             continue;
         }
-        $bucketRate = (float) $rate->{$rateColumn};
-        $lineAmount = $bucketHours * $bucketRate;
+ 
+        $bucketRate = (float) $rate->{$group['rateColumn']};
+        $lineAmount = $groupHours * $bucketRate;
  
         $grossSubtotal += $lineAmount;
-        $totalHours    += $bucketHours;
+        $totalHours    += $groupHours;
+ 
+        // NEW: if this bucket includes a "night" component and the shift
+        // spans two calendar days, use the END date — night hours (18:00-06:00)
+        // predominantly land on the day the shift actually finishes, not the
+        // day it started.
+        $hasNightComponent = collect($group['hourKeys'])->contains(fn($k) => str_contains($k, 'night'));
+        $lineDate = ($crossesMidnight && $hasNightComponent) ? $rosterEnd : $rosterStart;
  
         $shiftLines[] = [
-            'description' => 'Licensed Static Security Guard',
+            'description' => $updatedRoster->job_type,
             'site'        => $updatedRoster->address ?? 'N/A',
             // Swap this for a real badge/reference field on the guard's staff
             // record if you have one — falling back to the raw user id for now.
             'guard_ref'   => 'SG-' . $updatedRoster->assigned_to,
-            'date'        => \Carbon\Carbon::parse($updatedRoster->start)->format('d/m/Y'),
-            'hours'       => $bucketHours,
+            'date'        => $lineDate->format('d/m/Y'), // NEW — was always $updatedRoster->start's date before
+            'hours'       => $groupHours,
+            'hours_label' => $group['label'], // rendered as "9.0 (Day)" etc.
             'rate'        => $bucketRate,
             'amount'      => round($lineAmount, 2),
         ];
@@ -6095,7 +6328,7 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
         $filename = "{$invoiceNumber}.pdf";
         $filePath = $directory . DIRECTORY_SEPARATOR . $filename;
         file_put_contents($filePath, $pdfBytes);
-
+ 
     } catch (\Exception $e) {
         Log::error('Invoice PDF generation failed', ['error' => $e->getMessage()]);
         return ['success' => false, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];

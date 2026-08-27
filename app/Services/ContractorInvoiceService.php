@@ -26,6 +26,7 @@ class ContractorInvoiceService
      *          'guard_ref'   => 'SG-4412',   // shown as (Guard ID: #SG-4412)
      *          'date'        => '18/08/2026',
      *          'hours'       => 12.0,
+     *          'hours_label' => 'Day',       // NEW — shown as "12.0 (Day)"; e.g. Day/Night/Saturday/Sunday/Public Holiday
      *          'rate'        => 43.86,       // ex. GST, per hour
      *          'amount'      => 526.32,      // hours * rate
      *      ],
@@ -55,7 +56,11 @@ class ContractorInvoiceService
             $site        = htmlspecialchars($shift['site'] ?? '');
             $guardRef    = htmlspecialchars($shift['guard_ref'] ?? '');
             $date        = htmlspecialchars($shift['date'] ?? '');
-            $hours       = number_format((float) ($shift['hours'] ?? 0), 1);
+
+            // NEW: append the bucket label, e.g. "9.0 (Day)", "6.0 (Saturday)"
+            $hoursLabel = !empty($shift['hours_label']) ? ' (' . htmlspecialchars($shift['hours_label']) . ')' : '';
+            $hours      = number_format((float) ($shift['hours'] ?? 0), 1) . $hoursLabel;
+
             $rate        = '$' . number_format((float) ($shift['rate'] ?? 0), 2);
             $amount      = '$' . number_format((float) ($shift['amount'] ?? 0), 2);
 

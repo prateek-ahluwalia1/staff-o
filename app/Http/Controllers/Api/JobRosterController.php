@@ -6177,14 +6177,29 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     $totalHours    = 0.0;
     $shiftLines    = [];
  
-    // NEW: figure out whether this shift crosses midnight, so buckets with
-    // a night component can show the date they actually fall on instead of
-    // always showing the shift's start date.
     $rosterStart = \Carbon\Carbon::parse($updatedRoster->start);
     $rosterEnd   = \Carbon\Carbon::parse($updatedRoster->end);
-    $crossesMidnight = $rosterStart->toDateString() !== $rosterEnd->toDateString();
  
-    foreach ($bucketGroups as $group) {
+    // NEW (fixed): find the actual Saturday/Sunday calendar date within the
+    // shift's date range, by day-of-week — NOT by guessing via "contains
+    // 'night' in the bucket key" (that was wrong: saturday_night/sunday_night
+    // both contain "night" as a substring, which incorrectly pushed BOTH
+    // rows to the end date instead of each bucket's own actual day).
+    $startDateOnly = $rosterStart->copy()->startOfDay();
+    $endDateOnly   = $rosterEnd->copy()->startOfDay();
+ 
+    $saturdayDate = null;
+    $sundayDate   = null;
+    foreach ([$startDateOnly, $endDateOnly] as $candidateDate) {
+        if ($candidateDate->isSaturday()) {
+            $saturdayDate = $candidateDate;
+        }
+        if ($candidateDate->isSunday()) {
+            $sundayDate = $candidateDate;
+        }
+    }
+ 
+    foreach ($bucketGroups as $groupKey => $group) {
         $groupHours = 0.0;
         foreach ($group['hourKeys'] as $hourKey) {
             $groupHours += (float) ($hours[$hourKey] ?? 0);
@@ -6199,12 +6214,18 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
         $grossSubtotal += $lineAmount;
         $totalHours    += $groupHours;
  
-        // NEW: if this bucket includes a "night" component and the shift
-        // spans two calendar days, use the END date — night hours (18:00-06:00)
-        // predominantly land on the day the shift actually finishes, not the
-        // day it started.
-        $hasNightComponent = collect($group['hourKeys'])->contains(fn($k) => str_contains($k, 'night'));
-        $lineDate = ($crossesMidnight && $hasNightComponent) ? $rosterEnd : $rosterStart;
+        // NEW (fixed): Saturday/Sunday buckets use the matching calendar date
+        // found above. Mon-Fri Day/Night and Public Holiday fall back to the
+        // shift's start date (Public Holiday date-matching would need an
+        // actual holiday calendar lookup, which isn't available here — this
+        // keeps prior behaviour for that case; flag if that needs solving too).
+        if ($groupKey === 'saturday' && $saturdayDate) {
+            $lineDate = $saturdayDate;
+        } elseif ($groupKey === 'sunday' && $sundayDate) {
+            $lineDate = $sundayDate;
+        } else {
+            $lineDate = $rosterStart;
+        }
  
         $shiftLines[] = [
             'description' => $updatedRoster->job_type,
@@ -6212,7 +6233,7 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
             // Swap this for a real badge/reference field on the guard's staff
             // record if you have one — falling back to the raw user id for now.
             'guard_ref'   => 'SG-' . $updatedRoster->assigned_to,
-            'date'        => $lineDate->format('d/m/Y'), // NEW — was always $updatedRoster->start's date before
+            'date'        => $lineDate->format('d/m/Y'),
             'hours'       => $groupHours,
             'hours_label' => $group['label'], // rendered as "9.0 (Day)" etc.
             'rate'        => $bucketRate,

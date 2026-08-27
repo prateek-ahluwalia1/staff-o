@@ -6823,4 +6823,194 @@ public function importStaff(Request $request)
         ], 500);
     }
 }
+
+public function removeAcceptedBy(Request $request, $jobId)
+{
+    try {
+        // Find the job
+        $job = JobRoster::find($jobId);
+        
+        if (!$job) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Job not found.',
+                'code' => 404
+            ], 404);
+        }
+
+        // ============ CHECK 1: Authorization ============
+        $user = auth()->user();
+        if (!$this->canRemoveAcceptedBy($user, $job)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to remove resource partner from this job.',
+                'code' => 403
+            ], 403);
+        }
+
+        // ============ CHECK 2: Job must have accepted_by ============
+        if (is_null($job->accepted_by)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Job does not have an resource partner value to remove.',
+                'code' => 400
+            ], 400);
+        }
+
+        // ============ CHECK 3: Job status check ============
+        // If job status is 'confirmed', cannot remove
+        if ($job->status === 'confirmed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Job status is confirmed. You cannot remove resource partner from a confirmed job.',
+                'code' => 400,
+                'data' => [
+                    'job_id' => $job->id,
+                    'current_status' => $job->status,
+                    'accepted_by' => $job->accepted_by
+                ]
+            ], 400);
+        }
+
+        // Also check if job status is 'completed' or 'cancelled'
+        if (in_array($job->status, ['completed'])) {
+            return response()->json([
+                'success' => false,
+                'message' => "Job status is {$job->status}. You cannot remove resource partner from a {$job->status} job.",
+                'code' => 400,
+                'data' => [
+                    'job_id' => $job->id,
+                    'current_status' => $job->status,
+                    'accepted_by' => $job->accepted_by
+                ]
+            ], 400);
+        }
+
+        // ============ CHECK 4: Start date check (24 hours rule) ============
+        // If start date is within 24 hours of current time, cannot remove
+        if ($job->start_date) {
+            $startDate = Carbon::parse($job->start_date);
+            $now = Carbon::now();
+            $hoursDifference = $startDate->diffInHours($now);
+            
+            // If start date is in the past OR within next 24 hours
+            if ($startDate->isPast() || $hoursDifference <= 24) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot remove resource partner as the job start time is within 24 hours or has already passed.',
+                    'code' => 400,
+                    'data' => [
+                        'job_id' => $job->id,
+                        'start_date' => $job->start_date,
+                        'current_time' => $now->toDateTimeString(),
+                        'hours_until_start' => $hoursDifference,
+                        'can_remove' => false
+                    ]
+                ], 400);
+            }
+        }
+
+        // ============ CHECK 5: Additional check - job already started ============
+        // If current time is past start date
+        if ($job->start_date && Carbon::parse($job->start_date)->isPast()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Job has already started. You cannot remove resource partner after the job has started.',
+                'code' => 400,
+                'data' => [
+                    'job_id' => $job->id,
+                    'start_date' => $job->start_date,
+                    'current_time' => Carbon::now()->toDateTimeString()
+                ]
+            ], 400);
+        }
+
+        // Store old values for logging and response
+        $oldAcceptedBy = $job->accepted_by;
+        $oldStatus = $job->status;
+        
+        // ============ Perform the removal ============
+        DB::beginTransaction();
+        try {
+            // Remove accepted_by and reset status
+            $job->accepted_by = null;
+            $job->status = 'pending'; // Reset to pending
+            $job->save();
+
+            // Optional: Create audit log
+            // $this->createAuditLog($job, 'accepted_by_removed', [
+            //     'old_accepted_by' => $oldAcceptedBy,
+            //     'old_status' => $oldStatus,
+            //     'removed_by' => $user->id
+            // ]);
+
+            DB::commit();
+
+            // Log the action
+            Log::info('resource partner removed from job', [
+                'job_id' => $jobId,
+                'old_accepted_by' => $oldAcceptedBy,
+                'old_status' => $oldStatus,
+                'new_status' => $job->status,
+                'user_id' => auth()->id() ?? null,
+                'user_role' => auth()->user()->user_type ?? null
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'resource partner successfully removed from job.',
+                'code' => 200,
+                'data' => [
+                    'job_id' => $job->id,
+                    'job_title' => $job->title ?? null,
+                    'accepted_by' => null,
+                    'old_accepted_by' => $oldAcceptedBy,
+                    'status' => $job->status,
+                    'old_status' => $oldStatus,
+                    'start_date' => $job->start_date,
+                    'removed_at' => Carbon::now()->toDateTimeString()
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
+    } catch (\Exception $e) {
+        Log::error('Failed to remove accepted_by from job', [
+            'job_id' => $jobId,
+            'user_id' => auth()->id() ?? null,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to remove accepted_by from job.',
+            'code' => 500,
+            'error' => config('app.debug') ? $e->getMessage() : null
+        ], 500);
+    }
+}
+
+private function canRemoveAcceptedBy($user, $job): bool
+{
+    // Admin can always remove
+    if (in_array($user->user_type, ['admin', 'super_admin'])) {
+        return true;
+    }
+
+    // Job creator can remove
+    if ($user->id === $job->created_by) {
+        return true;
+    }
+
+    // The person who accepted the job can remove themselves
+    if ($user->id === $job->accepted_by) {
+        return true;
+    }
+
+    return false;
+}
 }

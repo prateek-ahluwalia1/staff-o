@@ -216,9 +216,9 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
         for (const key of keysToCheck) {
           const originalVal = originalRate[key] !== null && originalRate[key] !== undefined ? Number(originalRate[key]) : 0;
           const newVal = computed[key] !== undefined ? computed[key] : originalVal;
-          
+
           stateObj[key] = newVal;
-          
+
           if (newVal !== originalVal) {
             hasChanges = true;
           }
@@ -673,7 +673,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                   <tr>
                     <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}> State</th>
                     <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Submitted</th>
-                    {requestTab !== "pending" && <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Admin Note</th>}
+                    {requestTab === "rejected" && <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Admin Note</th>}
                     <th className="text-muted small text-uppercase text-end" style={{ letterSpacing: "0.5px" }}>Status</th>
                   </tr>
                 </thead>
@@ -686,7 +686,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                       <td className="text-muted small py-3">
                         {req.created_at ? new Date(req.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                       </td>
-                      {requestTab !== "pending" && (
+                      {requestTab === "rejected" && (
                         <td className="text-muted small py-3" style={{ maxWidth: "250px" }}>
                           {req.review_note ? (
                             <span className="text-truncate d-inline-block w-100 text-dark" title={req.review_note}>

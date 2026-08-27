@@ -6839,7 +6839,7 @@ public function removeAcceptedBy(Request $request, $jobId)
         }
 
         // ============ CHECK 1: Authorization ============
-        $user = auth()->user();
+        $user = $request->user_id;
         if (!$this->canRemoveAcceptedBy($user, $job)) {
             return response()->json([
                 'success' => false,

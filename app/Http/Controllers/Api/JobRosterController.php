@@ -41,6 +41,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Mail\ContractorJobInvoice;
 use App\Mail\JobSplitNotificationMail;
 use App\Mail\PlatformFeeInvoiceMail;
+use App\Mail\ResourcePartnerRemovedAdmin;
+use App\Mail\ResourcePartnerRemovedClient;
 use App\Models\ContractorChargeRate;
 use App\Services\PlatformFeeInvoiceService;
 use Maatwebsite\Excel\Facades\Excel;
@@ -6948,6 +6950,8 @@ public function removeAcceptedBy(Request $request, $jobId)
 
             DB::commit();
 
+            $this->sendResourcePartnerRemovedEmail($job, $oldAcceptedBy);
+
             // Log the action
             Log::info('resource partner removed from job', [
                 'job_id' => $jobId,
@@ -6993,6 +6997,47 @@ public function removeAcceptedBy(Request $request, $jobId)
             'code' => 500,
             'error' => config('app.debug') ? $e->getMessage() : null
         ], 500);
+    }
+}
+
+private function sendResourcePartnerRemovedEmail(JobRoster $job, $oldAcceptedBy): void
+{
+    try {
+        // Get client (job creator)
+        $client = User::find($job->created_by);
+        
+        // Get resource partner who was removed
+        $resourcePartner = User::find($oldAcceptedBy);
+        
+        if (!$client) {
+            Log::warning('Client not found for job', ['job_id' => $job->id]);
+            return;
+        }
+
+        // ============ SEND EMAIL TO CLIENT ============
+        Mail::to($client->email, $client->name)
+            ->send(new ResourcePartnerRemovedClient($job, $client, $resourcePartner));
+
+        Log::info('Resource partner removed email sent to client', [
+            'job_id' => $job->id,
+            'client_email' => $client->email
+        ]);
+
+        // ============ SEND EMAIL TO ADMIN ============
+        Mail::to('admin@staffoo.com.au', 'Staffoo Admin')
+            ->cc('admin@staffoo.com.au')
+            ->send(new ResourcePartnerRemovedAdmin($job, $client, $resourcePartner));
+
+        Log::info('Resource partner removed email sent to admin', [
+            'job_id' => $job->id,
+            'admin_email' => 'admin@staffoo.com.au'
+        ]);
+
+    } catch (\Exception $e) {
+        Log::error('Failed to send resource partner removed email', [
+            'job_id' => $job->id,
+            'error' => $e->getMessage()
+        ]);
     }
 }
 

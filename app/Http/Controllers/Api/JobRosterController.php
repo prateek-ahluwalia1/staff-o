@@ -6939,6 +6939,7 @@ public function removeAcceptedBy(Request $request, $jobId)
             $job->job_status = 'pending';
             $job->payment_intent_id = null;
             $job->invoice_filename = null;
+            $job->reason = $request->reason ?? null;
             $job->save();
 
             // Optional: Create audit log

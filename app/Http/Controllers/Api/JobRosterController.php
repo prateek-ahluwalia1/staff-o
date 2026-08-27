@@ -6934,7 +6934,9 @@ public function removeAcceptedBy(Request $request, $jobId)
         try {
             // Remove accepted_by and reset status
             $job->accepted_by = null;
-            $job->job_status = 'pending'; // Reset to pending
+            $job->job_status = 'pending';
+            $job->payment_intent_id = null;
+            $job->invoice_filename = null;
             $job->save();
 
             // Optional: Create audit log

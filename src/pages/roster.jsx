@@ -392,6 +392,10 @@ export default function RosterPage() {
         const payload = userRole === "admin" ? { roster_id: modal.shift.id, admin_id: userId } : { roster_id: modal.shift.id, guard_id: selectedUserId }
         const endpoint = userRole === "admin" ? `api/asap-jobs/accept/${selectedUserId}` : `api/contractor/jobs/accept/${userId}`
         res = await saveUserAssignment(endpoint, payload, { method: "POST" });
+      } else if (modal.type === "remove_accepted" && modal.shift) {
+        res = await saveUserAssignment(`api/remove-accepted/${modal.shift.id}`, {
+          user_id: userId,
+        }, { method: "PUT" });
       }
       if (res === undefined) return;
       fetchCustomerSites();
@@ -625,6 +629,9 @@ export default function RosterPage() {
                               (userRole === "contractor" && invoiceType === 0 && isConfirmed && shiftDuration <= 12)
                             );
 
+                            // Remove Accepted Button: Shown if pending and accepted_by is set, and user is admin or contractor
+                            const showRemoveButton = isPending && isAccepted && (userRole === "admin" || userRole === "contractor");
+
                             return (
                               <div key={shift.id} className={`vr-shift-card bg-${status}`}>
                                 {hasNote && <div className="vr-note-dot"></div>}
@@ -689,6 +696,11 @@ export default function RosterPage() {
                                   {showAssignButton && (
                                     <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
                                       <i className="fa fa-user-plus"></i>
+                                    </button>
+                                  )}
+                                  {showRemoveButton && (
+                                    <button title="Remove from Job" onClick={() => openModalAction(site, shift, day.dateLabel, "remove_accepted")}>
+                                      <i className="fa-solid fa-user-xmark text-danger"></i>
                                     </button>
                                   )}
                                 </div>
@@ -768,6 +780,40 @@ export default function RosterPage() {
                 disabled={saveLoading}
               >
                 {saveLoading ? "Saving..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modal?.type === "remove_accepted" && (
+        <div className="vr-modal-backdrop" onClick={closeModal}>
+          <div className="vr-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="vr-modal-header">
+              <h3>Remove from Job</h3>
+              <button onClick={closeModal}><i className="fa fa-times"></i></button>
+            </div>
+            <div className="vr-modal-content">
+              <div className="vr-modal-summary" style={{ marginBottom: "20px" }}>
+                <div><strong>Site:</strong> {modal.site.displayName}</div>
+                <div><strong>Date:</strong> {modal.dateStr}</div>
+                <div><strong>Job:</strong> {format(modal.shift.startDate, "HH:mm")} - {format(modal.shift.endDate, "HH:mm")}</div>
+              </div>
+              <p className="mb-0">
+                {userRole === "contractor"
+                  ? "Are you sure you'd like to withdraw yourself from this job? This action cannot be undone."
+                  : "Are you sure you want to remove the Resource Partner from this job? This action cannot be undone."}
+              </p>
+            </div>
+            <div className="vr-modal-footer">
+              <button className="vr-btn-cancel" onClick={closeModal}>Cancel</button>
+              <button
+                className="vr-btn-confirm"
+                style={{ backgroundColor: "#ef4444", borderColor: "#ef4444" }}
+                onClick={handleSave}
+                disabled={saveLoading}
+              >
+                {saveLoading ? "Removing..." : "Remove"}
               </button>
             </div>
           </div>

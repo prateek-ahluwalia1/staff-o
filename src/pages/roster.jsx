@@ -187,6 +187,7 @@ export default function RosterPage() {
   const [weeksToView, setWeeksToView] = useState(1);
   const [editForm, setEditForm] = useState({ startTime: "", endTime: "" });
   const [timeEditError, setTimeEditError] = useState("");
+  const [removeReason, setRemoveReason] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showLegend, setShowLegend] = useState(true);
 
@@ -366,6 +367,7 @@ export default function RosterPage() {
     setModal(null);
     setSelectedUserId("");
     setTimeEditError("");
+    setRemoveReason("");
   };
 
   const handleSave = async () => {
@@ -393,8 +395,13 @@ export default function RosterPage() {
         const endpoint = userRole === "admin" ? `api/asap-jobs/accept/${selectedUserId}` : `api/contractor/jobs/accept/${userId}`
         res = await saveUserAssignment(endpoint, payload, { method: "POST" });
       } else if (modal.type === "remove_accepted" && modal.shift) {
+        if (!removeReason.trim()) {
+          toast.error("Please provide a reason for removal.");
+          return;
+        }
         res = await saveUserAssignment(`api/remove-accepted/${modal.shift.id}`, {
           user_id: userId,
+          reason: removeReason,
         }, { method: "PUT" });
       }
       if (res === undefined) return;
@@ -794,16 +801,26 @@ export default function RosterPage() {
               <button onClick={closeModal}><i className="fa fa-times"></i></button>
             </div>
             <div className="vr-modal-content">
-              <div className="vr-modal-summary" style={{ marginBottom: "20px" }}>
+              <div className="vr-modal-summary" style={{ marginBottom: "15px" }}>
                 <div><strong>Site:</strong> {modal.site.displayName}</div>
                 <div><strong>Date:</strong> {modal.dateStr}</div>
                 <div><strong>Job:</strong> {format(modal.shift.startDate, "HH:mm")} - {format(modal.shift.endDate, "HH:mm")}</div>
               </div>
-              <p className="mb-0">
-                {userRole === "contractor"
+              <p className="mb-2">
+                {userRole === "contractor" 
                   ? "Are you sure you'd like to withdraw yourself from this job? This action cannot be undone."
                   : "Are you sure you want to remove the Resource Partner from this job? This action cannot be undone."}
               </p>
+              <div className="vr-input-group mt-3">
+                <label>Reason for removal <span className="text-danger">*</span></label>
+                <textarea 
+                  className="form-control" 
+                  rows="3" 
+                  placeholder={userRole === "contractor" ? "Please specify why you are withdrawing from this job..." : "Please specify the reason for removal..."}
+                  value={removeReason} 
+                  onChange={(e) => setRemoveReason(e.target.value)}
+                ></textarea>
+              </div>
             </div>
             <div className="vr-modal-footer">
               <button className="vr-btn-cancel" onClick={closeModal}>Cancel</button>

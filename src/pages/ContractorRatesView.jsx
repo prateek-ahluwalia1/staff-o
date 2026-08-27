@@ -524,7 +524,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
         <div className="rate-tabs">
           {[
             { key: "active", label: "Active Rates", icon: "fa-bolt" },
-            { key: "history", label: "Request History", icon: "fa-history" }
+            { key: "history", label: "History", icon: "fa-history" }
           ].map(tab => (
             <button
               key={tab.key}

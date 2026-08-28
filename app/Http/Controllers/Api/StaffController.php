@@ -1104,7 +1104,7 @@ private function calculateProfileCompletion(User $user): int
                                         // Get the default document (from contractor_document category)
                                         $defaultDoc = Document::where('user_id', $user->id)
                                             ->where('document_type', $key)
-                                            ->where('document_category', 'contractor_document')
+                                            // ->where('document_category', 'contractor_document')
                                             ->first();
                                         
                                         if ($defaultDoc) {

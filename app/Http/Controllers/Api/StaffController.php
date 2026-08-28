@@ -2009,7 +2009,12 @@ private function calculateProfileCompletion(User $user): int
     public function updatePolicyAccepted($userId)
     {
         try {
-            $staff = Staff::where('user_id', $userId)->first();
+            $user = User::find($userId);
+            if($user->user_type == 'staff'){
+              $staff = Staff::where('user_id', $userId)->first();
+            }else{
+              $staff = Contractor::where('user_id', $userId)->first();
+            }
             
             if (!$staff) {
                 return response()->json(['success' => false, 'message' => 'Staff not found for this user_id']);
@@ -2020,7 +2025,7 @@ private function calculateProfileCompletion(User $user): int
             
             return response()->json([
                 'success' => true,
-                'message' => 'Staff status updated successfully',
+                'message' => 'Status updated successfully',
                 'data' => $staff
             ]);
             

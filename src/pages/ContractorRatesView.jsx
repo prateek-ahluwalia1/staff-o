@@ -61,6 +61,8 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [viewRequestRates, setViewRequestRates] = useState(null);
   const [activeStateTab, setActiveStateTab] = useState(null);
+  const [modalStates, setModalStates] = useState([]);
+  const [referenceRates, setReferenceRates] = useState({});
   const [requestForm, setRequestForm] = useState(() => makeBlankForm(selectedStates));
   const [formErrors, setFormErrors] = useState({});
 
@@ -98,10 +100,13 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
     [rows, activeView]
   );
 
+
+
   // ── Open modal with a blank fresh form ──────────────────────────────────
-  const handleOpenRequestModal = (initialStateTab = null) => {
-    const f = makeBlankForm(selectedStates);
-    selectedStates.forEach(s => {
+  const handleOpenRequestModal = (initialStateTab = null, forceStates = null) => {
+    const targetStates = forceStates || selectedStates;
+    const f = makeBlankForm(targetStates);
+    targetStates.forEach(s => {
       const existingStateRate = rows.find(r => r.state === s);
       if (existingStateRate) {
         SLOT_ROWS.forEach(row => {
@@ -117,7 +122,16 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
       }
     });
     setRequestForm(f);
-    setActiveStateTab(initialStateTab && selectedStates.includes(initialStateTab) ? initialStateTab : selectedStates[0] || null);
+    
+    const refs = {};
+    targetStates.forEach(s => {
+      const existing = rows.find(r => r.state === s);
+      if (existing) refs[s] = existing;
+    });
+    setReferenceRates(refs);
+
+    setModalStates(targetStates);
+    setActiveStateTab(initialStateTab && targetStates.includes(initialStateTab) ? initialStateTab : targetStates[0] || null);
     setFormErrors({});
     setShowRequestModal(true);
   };
@@ -152,7 +166,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
     const currentRates = requestForm[activeStateTab];
     setRequestForm(prev => {
       const next = { ...prev };
-      selectedStates.forEach(s => {
+      modalStates.forEach(s => {
         if (s !== activeStateTab) {
           next[s] = { ...currentRates };
         }
@@ -162,22 +176,81 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
     toast.success("Rates copied to all other states!");
   };
 
+  const validateStateTab = (stateVal) => {
+    let isValid = true;
+    const errors = {};
+    const stateForm = requestForm[stateVal] || {};
+    SLOT_ROWS.forEach(row => {
+      const mk = `def_${row.metro}`;
+      const rk = `def_${row.reg}`;
+      if (stateForm[mk] === "" || stateForm[mk] === undefined || stateForm[mk] === null) {
+        errors[mk] = true;
+        isValid = false;
+      }
+      if (stateForm[rk] === "" || stateForm[rk] === undefined || stateForm[rk] === null) {
+        errors[rk] = true;
+        isValid = false;
+      }
+    });
+    if (!isValid) {
+      setFormErrors(prev => ({ ...prev, [stateVal]: errors }));
+    } else {
+      setFormErrors(prev => {
+        const next = { ...prev };
+        delete next[stateVal];
+        return next;
+      });
+    }
+    return isValid;
+  };
+
+  const handleNextState = () => {
+    if (validateStateTab(activeStateTab)) {
+      const currentIndex = modalStates.indexOf(activeStateTab);
+      if (currentIndex < modalStates.length - 1) {
+        setActiveStateTab(modalStates[currentIndex + 1]);
+      }
+    } else {
+      toast.error("Please fill in all rate values before proceeding.");
+    }
+  };
+
   // ── Submit ───────────────────────────────────────────────────────────────
   const handleRequestSubmit = async (e) => {
     e.preventDefault();
 
-    if (!selectedStates || selectedStates.length === 0) {
+    if (!modalStates || modalStates.length === 0) {
       toast.error("You must have selected states in your profile before requesting rates.");
       return;
     }
 
-    setFormErrors({});
+    // If they press Enter while not on the last tab, treat it as a "Next" action instead of validating all states
+    const isLastTab = modalStates.indexOf(activeStateTab) === modalStates.length - 1;
+    if (!isLastTab) {
+      handleNextState();
+      return;
+    }
+
+    let allValid = true;
+    let firstInvalidState = null;
+    modalStates.forEach(s => {
+      if (!validateStateTab(s)) {
+        allValid = false;
+        if (!firstInvalidState) firstInvalidState = s;
+      }
+    });
+
+    if (!allValid) {
+      toast.error("Please fill in all missing rate values before submitting.");
+      setActiveStateTab(firstInvalidState);
+      return;
+    }
 
     const ratesPayload = [];
 
-    for (const stateVal of selectedStates) {
+    for (const stateVal of modalStates) {
       const stateForm = requestForm[stateVal] || {};
-      const originalRate = rows.find(r => r.state === stateVal) || {};
+      const originalRate = referenceRates[stateVal] || {};
 
       let stateObj = {
         title: `${STATE_NAME_MAP[stateVal] || stateVal} My Charge Rates`,
@@ -258,23 +331,25 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   };
 
   const handleResubmit = (req) => {
-    const form = makeBlankForm(selectedStates);
-    // Find matching state key in selectedStates (case-insensitive)
-    const s = selectedStates.find(st => st.toLowerCase() === (req.state || "").toLowerCase());
+    const s = selectedStates.find(st => st.toLowerCase() === (req.state || "").toLowerCase()) || req.state;
+    const form = makeBlankForm([s]);
 
-    if (s && form[s]) {
+    if (form[s]) {
       SLOT_ROWS.forEach(row => {
         const mk = `def_${row.metro}`;
         const rk = `def_${row.reg}`;
         if (req[mk] !== undefined && req[mk] !== null) form[s][mk] = req[mk];
         if (req[rk] !== undefined && req[rk] !== null) form[s][rk] = req[rk];
       });
-      setRequestForm(form);
-      setActiveStateTab(s);
-      setShowRequestModal(true);
-    } else {
-      toast.error("The state for this request is no longer in your active regions.");
     }
+
+    setRequestForm(form);
+    setReferenceRates({ [s]: req });
+    setModalStates([s]);
+    setActiveStateTab(s);
+    setFormErrors({});
+    setViewRequestRates(null);
+    setShowRequestModal(true);
   };
 
   // ── Guards ───────────────────────────────────────────────────────────────
@@ -556,80 +631,121 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
             </div>
           ) : (
             <div className="fade-in" style={{ animationDelay: "0.1s" }}>
-              {selectedStates.length > 1 && (
-                <div className="rate-tabs flex-wrap mb-4">
-                  {selectedStates.map((stateVal) => (
-                    <button
-                      key={stateVal}
-                      type="button"
-                      className={`rate-tab justify-content-center ${stateVal === activeView ? "active" : ""}`}
-                      onClick={() => setActiveView(stateVal)}
-                      aria-label={`Select state: ${STATE_NAME_MAP[stateVal] || stateVal}`}
-                    >
-                      <i className="fa fa-map-marker-alt me-2"></i> {STATE_NAME_MAP[stateVal] || stateVal}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {(() => {
+                const missingStates = selectedStates.filter(
+                  (s) => !rows.find((r) => String(r.state).toLowerCase() === String(s).toLowerCase())
+                );
+                return (
+                  <>
+                    {missingStates.length > 0 && (
+                      <div className="alert d-flex flex-column flex-md-row align-items-center justify-content-between mb-4 shadow-sm border-0" style={{ borderRadius: "14px", backgroundColor: "#fffbe6", color: "#856404", padding: "16px 20px" }}>
+                        <div className="d-flex align-items-center gap-3 mb-3 mb-md-0">
+                          <i className="fa fa-exclamation-triangle fs-4 text-warning"></i>
+                          <div>
+                            <strong>Rates Missing!</strong>
+                            <div className="small mt-1">Rates for <strong>{missingStates.map(s => STATE_NAME_MAP[s] || s).join(", ")}</strong> are missing. Please request rates to continue.</div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn fw-bold px-4 py-2 shadow-sm"
+                          style={{ backgroundColor: "#ffc107", color: "#000", borderRadius: "8px", whiteSpace: "nowrap" }}
+                          onClick={() => handleOpenRequestModal(missingStates[0], missingStates)}
+                        >
+                          Request Rates
+                        </button>
+                      </div>
+                    )}
 
-              {!rate ? (
-                <div className="rate-card text-center py-5 fade-in mt-2">
-                  <div className="mb-3">
-                    <i className="fa fa-folder-open" style={{ fontSize: "3rem", color: "var(--line)" }}></i>
-                  </div>
-                  <h5 className="fw-bold text-dark mb-2">No Rates Assigned</h5>
-                  <p className="text-muted mx-auto mb-4" style={{ maxWidth: "400px" }}>
-                    You currently do not have any active rates assigned for {STATE_NAME_MAP[activeView] || activeView}. Please submit a request.
-                  </p>
-                  <button
-                    type="button"
-                    className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2"
-                    style={{ backgroundColor: "var(--teal)", border: "none" }}
-                    onClick={() => handleOpenRequestModal(activeView)}
-                  >
-                    <i className="fa-solid fa-paper-plane"></i> Request Rate Update
-                  </button>
-                </div>
-              ) : (
-                <div className="rate-card mt-2 fade-in">
-                  <div className="rate-card-head d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
-                    <div className="d-flex align-items-center gap-3">
-                      <span className="icon-badge mb-0"><i className="fa fa-clock"></i></span>
-                      <div>
-                        <h6 className="mb-0">My Rates</h6>
+                    {selectedStates.length > 1 && (
+                      <div className="rate-tabs flex-wrap mb-4">
+                        {selectedStates.map((stateVal) => {
+                          const isMissing = missingStates.includes(stateVal);
+                          return (
+                            <button
+                              key={stateVal}
+                              type="button"
+                              className={`rate-tab justify-content-center position-relative ${stateVal === activeView ? "active" : ""}`}
+                              style={isMissing && stateVal !== activeView ? { color: "#ef4444" } : {}}
+                              onClick={() => setActiveView(stateVal)}
+                              aria-label={`Select state: ${STATE_NAME_MAP[stateVal] || stateVal}`}
+                            >
+                              <i className="fa fa-map-marker-alt me-2"></i> {STATE_NAME_MAP[stateVal] || stateVal}
+                              {isMissing && (
+                                <span 
+                                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                                  style={{ fontSize: "0.6rem", padding: "0.35em 0.65em", border: "2px solid #e2e8f0", zIndex: 2 }}
+                                >
+                                  Missing
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2 mt-2 mt-md-0"
-                      style={{ backgroundColor: "var(--teal)", border: "none" }}
-                      onClick={handleOpenRequestModal}
-                    >
-                      <i className="fa-solid fa-paper-plane"></i> Request Rate Update
-                    </button>
-                  </div>
-                  {SLOT_ROWS.map((row) => {
-                    const metroVal = rate ? rate[`def_${row.metro}`] : 0;
-                    const regVal = rate ? rate[`def_${row.reg}`] : 0;
-                    return (
-                      <div className="rate-row" key={row.label}>
-                        <div className="slot-col">
-                          <div className="slot-label">{row.label}</div>
-                          <div className="slot-sub">{row.sub}</div>
+                    )}
+
+                    {!rate ? (
+                      <div className="rate-card text-center py-5 fade-in mt-2">
+                        <div className="mb-3">
+                          <i className="fa fa-folder-open" style={{ fontSize: "3rem", color: "var(--line)" }}></i>
                         </div>
-                        <div className="metro">
-                          <span className="amount-label">Metro</span>
-                          <span className="amount">{fmt(metroVal)}</span>
-                        </div>
-                        <div className="regional">
-                          <span className="amount-label">Regional</span>
-                          <span className="amount">{fmt(regVal)}</span>
-                        </div>
+                        <h5 className="fw-bold text-dark mb-2">No Rates Assigned</h5>
+                        <p className="text-muted mx-auto mb-4" style={{ maxWidth: "400px" }}>
+                          You currently do not have any active rates assigned for {STATE_NAME_MAP[activeView] || activeView}. Please submit a request.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2"
+                          style={{ backgroundColor: "var(--teal)", border: "none" }}
+                          onClick={() => handleOpenRequestModal(activeView)}
+                        >
+                          <i className="fa-solid fa-paper-plane"></i> Request Rate Update
+                        </button>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    ) : (
+                      <div className="rate-card mt-2 fade-in">
+                        <div className="rate-card-head d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                          <div className="d-flex align-items-center gap-3">
+                            <span className="icon-badge mb-0"><i className="fa fa-clock"></i></span>
+                            <div>
+                              <h6 className="mb-0">My Rates for {STATE_NAME_MAP[activeView] || activeView}</h6>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2 mt-2 mt-md-0"
+                            style={{ backgroundColor: "var(--teal)", border: "none" }}
+                            onClick={() => handleOpenRequestModal(activeView)}
+                          >
+                            <i className="fa-solid fa-paper-plane"></i> Request Rate Update
+                          </button>
+                        </div>
+                        {SLOT_ROWS.map((row) => {
+                          const metroVal = rate ? rate[`def_${row.metro}`] : 0;
+                          const regVal = rate ? rate[`def_${row.reg}`] : 0;
+                          return (
+                            <div className="rate-row" key={row.label}>
+                              <div className="slot-col">
+                                <div className="slot-label">{row.label}</div>
+                                <div className="slot-sub">{row.sub}</div>
+                              </div>
+                              <div className="metro">
+                                <span className="amount-label">Metro</span>
+                                <span className="amount">{fmt(metroVal)}</span>
+                              </div>
+                              <div className="regional">
+                                <span className="amount-label">Regional</span>
+                                <span className="amount">{fmt(regVal)}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
         </>
@@ -731,9 +847,8 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
               </button>
             </div>
 
-            {/* Scrollable Body */}
             <form
-              onSubmit={handleRequestSubmit}
+              onSubmit={(e) => e.preventDefault()}
               style={{ display: "flex", flexDirection: "column", overflow: "hidden", flex: 1 }}
             >
               <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 20px" }}>
@@ -744,7 +859,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                     <div style={{ fontSize: "12.5px" }}>
                       <i className="fa fa-map-marked-alt"></i> Select State to Enter Rates
                     </div>
-                    {selectedStates.length > 1 && activeStateTab && (
+                    {modalStates.length > 1 && activeStateTab && (
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-primary"
@@ -757,9 +872,9 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                     )}
                   </div>
 
-                  {selectedStates.length > 0 ? (
+                  {modalStates.length > 0 ? (
                     <div className="rr-tab-bar w-100 mb-1">
-                      {selectedStates.map(s => (
+                      {modalStates.map(s => (
                         <button
                           key={s}
                           type="button"
@@ -773,7 +888,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                   ) : (
                     <div className="text-muted text-center py-3">No states selected in profile. Please select states in Personal Information to proceed.</div>
                   )}
-                  {selectedStates.length > 0 && (
+                  {modalStates.length > 0 && (
                     <p className="text-muted mt-2 mb-0 text-center" style={{ fontSize: "12.5px" }}>
                       You are currently editing rates for <strong>{STATE_NAME_MAP[activeStateTab] || activeStateTab}</strong>
                     </p>
@@ -811,6 +926,10 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                                       value={currentForm[metroKey] ?? ""}
                                       onChange={handleRequestFormChange}
                                       onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          return;
+                                        }
                                         if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
                                       }}
                                     />
@@ -833,6 +952,10 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                                       value={currentForm[regKey] ?? ""}
                                       onChange={handleRequestFormChange}
                                       onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          return;
+                                        }
                                         if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
                                       }}
                                     />
@@ -872,19 +995,25 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                   Your request will be reviewed by the Staffoo admin team.
                 </div>
                 <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                  <button type="submit" className="rr-btn-submit" disabled={submitting || selectedStates.length === 0}>
-                    {submitting ? (
-                      <>
-                        <span className="spinner-border" role="status" aria-hidden="true" style={{ width: "14px", height: "14px", borderWidth: "2px" }}></span>
-                        Submitting…
-                      </>
-                    ) : (
-                      <>
-                        <i className="fa-solid fa-paper-plane"></i>
-                        Save and Submit
-                      </>
-                    )}
-                  </button>
+                  {modalStates.indexOf(activeStateTab) < modalStates.length - 1 ? (
+                    <button type="button" className="rr-btn-submit" onClick={handleNextState}>
+                      Next State <i className="fa-solid fa-arrow-right ms-2"></i>
+                    </button>
+                  ) : (
+                    <button type="button" className="rr-btn-submit" onClick={handleRequestSubmit} disabled={submitting || modalStates.length === 0}>
+                      {submitting ? (
+                        <>
+                          <span className="spinner-border" role="status" aria-hidden="true" style={{ width: "14px", height: "14px", borderWidth: "2px" }}></span>
+                          Submitting…
+                        </>
+                      ) : (
+                        <>
+                          <i className="fa-solid fa-paper-plane"></i>
+                          Save and Submit
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </form>

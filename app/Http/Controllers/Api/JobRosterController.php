@@ -6687,8 +6687,6 @@ public function list_charge_rate_requests(Request $request)
 
     if ($request->has('status') && !empty($request->status)) {
         $query->where('charge_rate_requests.status', $request->status);
-    } else {
-        $query->where('charge_rate_requests.status', 'pending');
     }
 
     if ($request->has('user_id') && !empty($request->user_id)) {

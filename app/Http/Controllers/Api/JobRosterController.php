@@ -4268,12 +4268,12 @@ private function sendStaffActivationNotification(User $user): void
 
         // Date Range
         $start = $request->has('start') && $request->start != ''
-            ? dbFormate($request->start) . ' 00:00:00'  // Changed from '00:00' to '00:00:00'
-            : Carbon::now()->startOfWeek()->format('Y-m-d 00:00:00');
+            ? dbFormate($request->start) . ' 00:00'
+            : Carbon::now()->startOfWeek()->format('Y-m-d 00:00');
 
         $end = $request->has('end') && $request->end != ''
-            ? dbFormate($request->end) . ' 23:59:59'    // Changed from '23:59' to '23:59:59'
-            : Carbon::now()->endOfWeek()->format('Y-m-d 23:59:59');
+            ? dbFormate($request->end) . ' 23:59'
+            : Carbon::now()->endOfWeek()->format('Y-m-d 23:59');
 
         $roster_id = $request->roster_id;
 
@@ -4311,8 +4311,9 @@ private function sendStaffActivationNotification(User $user): void
             ->toArray();
 
         // Build the query
-        $query = JobRoster::whereBetween('start', [$start, $end])
-            ->where('roster_id', $roster_id)
+        $query = JobRoster::where('roster_id', $roster_id)
+            ->whereDate('start', '>=', Carbon::parse($start)->toDateString())
+            ->whereDate('start', '<=', Carbon::parse($end)->toDateString())
             ->orderBy('created_at', 'desc')
             ->with([
                 'site', 'rosterActivity',

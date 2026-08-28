@@ -65,13 +65,12 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   const [formErrors, setFormErrors] = useState({});
 
   const [mainTab, setMainTab] = useState("active");
-  const [requestTab, setRequestTab] = useState("pending");
 
   const {
     data: requestsData,
     loading: requestsLoading,
     refetch: refetchRequests
-  } = useFetch(`api/charge-rate-requests?status=${requestTab}&user_id=${userId}`, {
+  } = useFetch(`api/charge-rate-requests?user_id=${userId}`, {
     isAuth: true,
     immediate: true,
   });
@@ -524,7 +523,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
         <div className="rate-tabs">
           {[
             { key: "active", label: "Active Rates", icon: "fa-bolt" },
-            { key: "history", label: "History", icon: "fa-history" }
+            { key: "history", label: "Archived History", icon: "fa-history" }
           ].map(tab => (
             <button
               key={tab.key}
@@ -642,20 +641,6 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
             <h5 className="mb-0 fw-bold d-flex align-items-center gap-2 text-dark">
               <i className="fa fa-history" style={{ color: "var(--teal)" }}></i> Rate Request History
             </h5>
-            <div className="rate-tabs">
-              {["pending", "approved", "rejected"].map(tab => (
-                <button
-                  key={tab}
-                  type="button"
-                  className={`rate-tab ${requestTab === tab ? "active" : ""}`}
-                  onClick={() => setRequestTab(tab)}
-                  style={{ padding: "8px 16px", fontSize: "13px" }}
-                >
-                  <i className={`fa ${tab === 'pending' ? 'fa-clock' : tab === 'approved' ? 'fa-check' : 'fa-times'} me-2`}></i>
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
           </div>
 
           {requestsLoading ? (
@@ -663,8 +648,8 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
           ) : rateRequests.length === 0 ? (
             <div className="text-center py-5">
               <i className="fa fa-inbox text-muted mb-3" style={{ fontSize: "2rem" }}></i>
-              <div className="fw-bold text-dark mb-1">No {requestTab} requests</div>
-              <div className="text-muted small">You do not have any {requestTab} rate requests at this time.</div>
+              <div className="fw-bold text-dark mb-1">No requests</div>
+              <div className="text-muted small">You do not have any rate requests in your history.</div>
             </div>
           ) : (
             <div className="table-responsive">
@@ -673,7 +658,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                   <tr>
                     <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}> State</th>
                     <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Submitted</th>
-                    {requestTab === "rejected" && <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Admin Note</th>}
+                    <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Admin Note</th>
                     <th className="text-muted small text-uppercase text-end" style={{ letterSpacing: "0.5px" }}>Status</th>
                   </tr>
                 </thead>
@@ -686,15 +671,13 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                       <td className="text-muted small py-3">
                         {req.created_at ? new Date(req.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                       </td>
-                      {requestTab === "rejected" && (
-                        <td className="text-muted small py-3" style={{ maxWidth: "250px" }}>
-                          {req.review_note ? (
-                            <span className="text-truncate d-inline-block w-100 text-dark" title={req.review_note}>
-                              <i className="fa fa-comment-alt text-teal me-1 opacity-75"></i> {req.review_note}
-                            </span>
-                          ) : "—"}
-                        </td>
-                      )}
+                      <td className="text-muted small py-3" style={{ maxWidth: "250px" }}>
+                        {req.review_note ? (
+                          <span className="text-truncate d-inline-block w-100 text-dark" title={req.review_note}>
+                            <i className="fa fa-comment-alt text-teal me-1 opacity-75"></i> {req.review_note}
+                          </span>
+                        ) : "—"}
+                      </td>
                       <td className="py-3 text-end d-flex justify-content-end align-items-center gap-2">
                         <button
                           type="button"

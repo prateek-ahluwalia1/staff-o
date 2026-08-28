@@ -80,7 +80,7 @@ const getExpiryStatus = (dateString) => {
 };
 
 /* ── One document row: name + status badges, number, expiry, file action, edit ── */
-function DocRowActions({ doc, onAddFile }) {
+function DocRowActions({ doc, onAddFile, showDocErrors }) {
   const hasFile = Boolean(doc.file);
   return (
     <div className="d-flex align-items-center gap-2 flex-wrap">
@@ -95,7 +95,7 @@ function DocRowActions({ doc, onAddFile }) {
           <i className="fa fa-eye"></i> View
         </a>
       ) : (
-        <button type="button" className="pill-btn upload-btn" onClick={() => onAddFile(doc)} title="Add main document">
+        <button type="button" className={`pill-btn upload-btn ${showDocErrors ? 'shake-red' : ''}`} onClick={() => onAddFile(doc)} title="Add main document">
           <i className="fa fa-cloud-arrow-up"></i> Upload
         </button>
       )}
@@ -138,7 +138,7 @@ function DocNameCell({ doc }) {
 }
 
 // Renders one desktop table + mobile card set for a given list of docs.
-function DocumentSectionBody({ docs, onAddFile }) {
+function DocumentSectionBody({ docs, onAddFile, showDocErrors }) {
   return (
     <>
       {/* Desktop Table */}
@@ -160,7 +160,7 @@ function DocumentSectionBody({ docs, onAddFile }) {
                   <td><DocNameCell doc={doc} /></td>
                   <td><span className="doc-number">{doc.document_no || "—"}</span></td>
                   <td style={{ color: "#334155", fontWeight: 500 }}>{formatAUSDate(doc.document_expiry)}</td>
-                  <td><DocRowActions doc={doc} onAddFile={onAddFile} /></td>
+                  <td><DocRowActions doc={doc} onAddFile={onAddFile} showDocErrors={showDocErrors} /></td>
                   <td style={{ textAlign: "center" }}>
                     <button type="button" className="action-btn" onClick={() => onAddFile(doc)} title="Edit document">
                       <i className="fa fa-pencil"></i>
@@ -205,7 +205,7 @@ function DocumentSectionBody({ docs, onAddFile }) {
                       </div>
                     </div>
 
-                    <DocRowActions doc={doc} onAddFile={onAddFile} />
+                    <DocRowActions doc={doc} onAddFile={onAddFile} showDocErrors={showDocErrors} />
                   </div>
                 </div>
               </div>
@@ -244,7 +244,7 @@ function StateGroupHeader({ label, uploaded, total, expanded, onToggle }) {
   );
 }
 
-export default function DocumentTable({ documents, onAddFile, userType }) {
+export default function DocumentTable({ documents, onAddFile, userType, showDocErrors }) {
   const processedDocuments = useMemo(() => {
     if (!documents) return [];
     return [...documents].sort((a, b) => {
@@ -544,14 +544,14 @@ export default function DocumentTable({ documents, onAddFile, userType }) {
                   expanded={expanded}
                   onToggle={() => toggleGroup(group.category)}
                 />
-                {expanded && <DocumentSectionBody docs={group.docs} onAddFile={onAddFile} />}
+                {expanded && <DocumentSectionBody docs={group.docs} onAddFile={onAddFile} showDocErrors={showDocErrors} />}
               </div>
             );
           })
         ) : (
           <div className="text-center text-muted py-5" style={{ textTransform: "none" }}>
             <i className="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
-            No states selected yet — choose your operating states above to see required documents.
+            No states selected yet. Select your operating states from previous step to view the required documents.
           </div>
         )}
       </div>
@@ -565,7 +565,7 @@ export default function DocumentTable({ documents, onAddFile, userType }) {
         <h3>Documents</h3>
         <p>All documents associated with your profile.</p>
       </div>
-      <DocumentSectionBody docs={processedDocuments} onAddFile={onAddFile} />
+      <DocumentSectionBody docs={processedDocuments} onAddFile={onAddFile} showDocErrors={showDocErrors} />
     </div>
   );
 }

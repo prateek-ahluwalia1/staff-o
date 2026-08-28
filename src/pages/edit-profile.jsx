@@ -303,6 +303,8 @@ export default function EditProfile() {
   const [showCoverJobsModal, setShowCoverJobsModal] = useState(false);
 
   const [showDocModal, setShowDocModal] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
+  const [showDocErrors, setShowDocErrors] = useState(false);
   const [initialStatesAllowed, setInitialStatesAllowed] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyingDoc, setVerifyingDoc] = useState(false);
@@ -329,25 +331,24 @@ export default function EditProfile() {
     profileData?.data?.phone_verified
   );
 
-  const getMissingFields = (d) => {
-    if (!d) return [];
+  const getMissingFields = (data) => {
+    if (!data) return [];
     const missing = [];
-    const staff = d.staff || {};
-    const contractor = d.contractor || staff.contractor || {};
-    if (!d.name) missing.push("Name");
-    if (!d.email) missing.push("Email");
-    if (!(staff.phone || contractor.phone || d.phone)) missing.push("Phone");
-    if (!(d.address || staff.address || contractor.address))
-      missing.push("Address");
-    if (userType === "staff" && !staff.security_license_no)
+    if (!data.name) missing.push("Name");
+    if (!data.email) missing.push("Email");
+    if (!data.phone) missing.push("Phone");
+    if (!data.address) missing.push("Address");
+    if (userType === "staff" && !data.security_license_no)
       missing.push("Security License No");
-    if (userType === "contractor" && !contractor.security_license_no)
+    if (userType === "contractor" && !data.security_license_no)
       missing.push("Security Master License No");
-    if (userType === "contractor" && !contractor.company_name)
+    if (userType === "contractor" && !data.company_name)
       missing.push("Company Name");
+    if ((userType === "contractor" || userType === "admin") && (!data.states_allowed || data.states_allowed.length === 0))
+      missing.push("States You Operate In");
     return missing;
   };
-  const missingFields = getMissingFields(userdata?.data);
+  const missingFields = getMissingFields(formData);
 
   useEffect(() => {
     if (!profileData?.data) return;
@@ -1128,6 +1129,38 @@ export default function EditProfile() {
     </>
   );
 
+  const isPersonalComplete = missingFields.length === 0;
+  const isDocumentsComplete = filteredDocuments.length > 0 && filteredDocuments.every(doc => doc.file || doc.file_path);
+
+  const handleTabClick = (targetTab) => {
+    if (targetTab === "personal") {
+      setActiveTab(targetTab);
+      return;
+    }
+
+    if (!isPersonalComplete) {
+      setShowErrors(false);
+      setTimeout(() => setShowErrors(true), 10);
+      setActiveTab("personal");
+      return;
+    }
+
+    if (targetTab === "onboarding" || targetTab === "rates") {
+      if (!isDocumentsComplete) {
+        setShowDocErrors(false);
+        setTimeout(() => setShowDocErrors(true), 10);
+        setActiveTab("documents");
+        return;
+      }
+    }
+
+    if (targetTab === "cards") {
+      setIsAddingCard(false);
+    }
+
+    setActiveTab(targetTab);
+  };
+
   return (
     <div className="dashboard-main">
       <style>{`
@@ -1148,6 +1181,21 @@ export default function EditProfile() {
           --line-soft: #f1f5f9;
           --surface: #ffffff;
           --canvas: #f8fafc;
+        }
+        @keyframes shakeRed {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          50% { transform: translateX(5px); }
+          75% { transform: translateX(-5px); }
+        }
+        .shake-red {
+          animation: shakeRed 0.4s ease-in-out;
+          border-color: var(--danger) !important;
+        }
+        .tab-btn.shake-red {
+          background-color: var(--danger) !important;
+          border-color: var(--danger) !important;
+          color: white !important;
         }
         .profile-hero-inner {
           display: flex;
@@ -1291,7 +1339,7 @@ export default function EditProfile() {
       {/* Tabs */}
       <div className="tabs-modern">
         <button
-          className={`tab-btn ${activeTab === "personal" ? "active" : "inactive"}`}
+          className={`tab-btn ${activeTab === "personal" ? "active" : "inactive"} ${showErrors && !isPersonalComplete ? "shake-red" : ""}`}
           onClick={() => setActiveTab("personal")}
         >
           {userType === "admin" ? "Business Information" : "Personal Information"}
@@ -1299,15 +1347,15 @@ export default function EditProfile() {
         {userType === "customer" && (
           <button
             className={`tab-btn ${activeTab === "cards" ? "active" : "inactive"}`}
-            onClick={() => { setActiveTab("cards"); setIsAddingCard(false); }}
+            onClick={() => handleTabClick("cards")}
           >
             Payment Details
           </button>
         )}
         {userType !== "customer" && (
           <button
-            className={`tab-btn ${activeTab === "documents" ? "active" : "inactive"}`}
-            onClick={() => setActiveTab("documents")}
+            className={`tab-btn ${activeTab === "documents" ? "active" : "inactive"} ${showDocErrors && !isDocumentsComplete ? "shake-red" : ""}`}
+            onClick={() => handleTabClick("documents")}
           >
             Documents
           </button>
@@ -1315,7 +1363,7 @@ export default function EditProfile() {
         {userType === "contractor" && (
           <button
             className={`tab-btn ${activeTab === "rates" ? "active" : "inactive"}`}
-            onClick={() => setActiveTab("rates")}
+            onClick={() => handleTabClick("rates")}
           >
             My Rates
           </button>
@@ -1323,7 +1371,7 @@ export default function EditProfile() {
         {(userType === "staff" && (userdata?.data?.user_id === 1 || userdata?.user_id === 1)) && (
           <button
             className={`tab-btn ${activeTab === "onboarding" ? "active" : "inactive"}`}
-            onClick={() => setActiveTab("onboarding")}
+            onClick={() => handleTabClick("onboarding")}
           >
             Verification Forms
           </button>
@@ -1336,6 +1384,7 @@ export default function EditProfile() {
           formData={formData}
           submitText={hasStatesChanged ? "Next" : "Save Changes"}
           showPhoneOtp={true}
+          showErrors={showErrors}
           onChange={(e) => {
             const { id, name, value } = e.target;
             const fieldId = id || name;
@@ -1518,6 +1567,7 @@ export default function EditProfile() {
           <DocumentTable
             documents={filteredDocuments}
             userType={userType}
+            showDocErrors={showDocErrors}
             onAddFile={(doc) => {
               setSelectedDoc(doc);
               const displayName = doc.document_name || doc.document_type || "";

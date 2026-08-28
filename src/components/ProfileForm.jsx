@@ -21,6 +21,7 @@ export default function ProfileForm({
   profileImageUrl = null,
   forceShowAllStaffFields = false,
   submitText = "Save Changes",
+  showErrors = false,
 }) {
   const { userdata } = useSelector((state) => state.auth);
   const parseDisplayDate = (str) => {
@@ -146,7 +147,7 @@ export default function ProfileForm({
                   </span>
                   <input
                     type="text"
-                    className="form-control border bg-light ps-2 shadow-none"
+                    className={`form-control border bg-light ps-2 shadow-none ${showErrors && !formData.name ? 'shake-red' : ''}`}
                     id="name"
                     placeholder="John Doe"
                     value={formData.name || ""}
@@ -175,7 +176,7 @@ export default function ProfileForm({
                   </span>
                   <input
                     type="email"
-                    className="form-control border bg-light ps-2 shadow-none"
+                    className={`form-control border bg-light ps-2 shadow-none ${showErrors && !formData.email ? 'shake-red' : ''}`}
                     id="email"
                     placeholder="user@example.com"
                     value={formData.email || ""}
@@ -217,8 +218,7 @@ export default function ProfileForm({
                     </span>
                     <input
                       type="tel"
-                      className={`form-control border bg-light ps-2 shadow-none ${isPhoneVerified ? "text-success fw-bold" : ""
-                        }`}
+                      className={`form-control border bg-light ps-2 shadow-none ${isPhoneVerified ? "text-success fw-bold" : ""} ${showErrors && !formData.phone ? 'shake-red' : ''}`}
                       id="phone"
                       placeholder="+61 400 000 000"
                       value={formData.phone || ""}
@@ -256,7 +256,7 @@ export default function ProfileForm({
                     </span>
                     <input
                       type="tel"
-                      className="form-control border bg-light ps-2 shadow-none"
+                      className={`form-control border bg-light ps-2 shadow-none ${showErrors && !formData.phone ? 'shake-red' : ''}`}
                       id="phone"
                       placeholder="+61 400 000 000"
                       value={formData.phone || ""}
@@ -285,7 +285,7 @@ export default function ProfileForm({
                     </span>
                     <input
                       type="text"
-                      className="form-control border bg-light ps-2 shadow-none"
+                      className={`form-control border bg-light ps-2 shadow-none ${showErrors && !formData.company_name ? 'shake-red' : ''}`}
                       id="company_name"
                       placeholder="Tech Solutions Pty Ltd"
                       value={formData.company_name || ""}
@@ -376,7 +376,7 @@ export default function ProfileForm({
                       </span>
                       <input
                         type="text"
-                        className="form-control border bg-light ps-2 shadow-none"
+                        className={`form-control border bg-light ps-2 shadow-none ${showErrors && !formData.security_license_no ? 'shake-red' : ''}`}
                         id="security_license_no"
                         placeholder="12345678-01"
                         value={formData.security_license_no || ""}
@@ -391,14 +391,14 @@ export default function ProfileForm({
                 <div className="col-12">
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <label className="form-label fw-bold text-dark small mb-0">
-                      States You Operate In
+                      Select States <span className="text-danger">*</span>
                     </label>
                     <span className="state-count-badge">
                       {(formData.states_allowed || []).length} of {CONTRACTOR_STATE_OPTIONS.length} selected
                     </span>
                   </div>
 
-                  <div className="state-picker-grid">
+                  <div className={`state-picker-grid ${showErrors && (!formData.states_allowed || formData.states_allowed.length === 0) ? "shake-red border rounded p-1" : ""}`}>
                     {CONTRACTOR_STATE_OPTIONS.map((state) => {
                       const isSelected = (formData.states_allowed || []).includes(state.code);
                       return (
@@ -601,7 +601,7 @@ export default function ProfileForm({
                     </span>
                     <input
                       type="text"
-                      className="form-control border bg-light ps-2 shadow-none"
+                      className={`form-control border bg-light ps-2 shadow-none ${showErrors && !formData.security_license_no ? 'shake-red' : ''}`}
                       id="security_license_no"
                       placeholder="12345678-01"
                       value={formData.security_license_no || ""}
@@ -793,7 +793,7 @@ export default function ProfileForm({
                 </span>
                 <input
                   type="text"
-                  className="form-control border bg-light ps-2 shadow-none"
+                  className={`form-control border bg-light ps-2 shadow-none ${showErrors && !formData.address ? 'shake-red' : ''}`}
                   id="address"
                   placeholder="Start typing your address to auto-fill..."
                   value={formData.address || ""}

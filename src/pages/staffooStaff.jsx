@@ -248,11 +248,15 @@ const StaffooStaff = () => {
         date_of_birth: "", origin_country: "",
     }), []);
     const [formData, setFormData] = useState(defaultFormState);
+    const [showErrors, setShowErrors] = useState(false);
+    const [showDocErrors, setShowDocErrors] = useState(false);
 
     const staffDocuments = useMemo(() => {
         if (!editingUser) return [];
         return editingUser.documents || editingUser.staff?.documents || [];
     }, [editingUser]);
+
+    const isDocumentsComplete = staffDocuments.length > 0 && staffDocuments.every(doc => doc.file || doc.file_path);
 
     const passportDoc = useMemo(() => {
         if (!staffDocuments) return null;
@@ -263,6 +267,42 @@ const StaffooStaff = () => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value, ...(id === "address" ? { coordinates: "", city: "", state: "", country: "" } : {}) }));
     }, []);
+
+    const getMissingPersonalFields = useCallback(() => {
+        const missing = [];
+        if (!formData.name) missing.push("name");
+        if (!formData.email) missing.push("email");
+        if (!formData.phone) missing.push("phone");
+        if (!formData.address) missing.push("address");
+        if (!formData.security_license_no) missing.push("security_license_no");
+        return missing;
+    }, [formData]);
+
+    const handleTabClick = (tab) => {
+        if (tab === "personal") {
+            setActiveModalTab(tab);
+            return;
+        }
+        
+        const missing = getMissingPersonalFields();
+        if (missing.length > 0) {
+            setShowErrors(false);
+            setTimeout(() => setShowErrors(true), 10);
+            toast.error("Please fill in all required personal information first.");
+            return;
+        }
+
+        if (tab === "onboarding") {
+            if (!isDocumentsComplete) {
+                setShowDocErrors(false);
+                setTimeout(() => setShowDocErrors(true), 10);
+                toast.error("Please upload all required documents first.");
+                return;
+            }
+        }
+        
+        setActiveModalTab(tab);
+    };
 
     useEffect(() => {
         if (apiResponse?.success && apiResponse?.guards) {
@@ -523,6 +563,16 @@ const StaffooStaff = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const missing = getMissingPersonalFields();
+
+        if (missing.length > 0) {
+            setShowErrors(false);
+            setTimeout(() => setShowErrors(true), 10);
+            toast.error("Please fill in all required fields.");
+            return;
+        }
+
         if (formData.phone && formData.phone.trim() !== "") {
             const phoneRegex = /^(?:\+?61|0)[2-478](?:[\s]*\d){8}$/;
             if (!phoneRegex.test(formData.phone)) { toast.error("Please enter a valid Australian phone number."); return; }
@@ -745,17 +795,18 @@ const StaffooStaff = () => {
                         </div>
                         <div className="flex-grow-1 overflow-auto px-4 py-4" onScroll={() => { if (document.activeElement?.id === "address") document.activeElement.blur(); }}>
                             <div className="modal-tabs-container mb-4" style={{ background: "#f3f4f6", padding: 4, borderRadius: 12, display: "inline-flex", flexWrap: "wrap", gap: 4 }}>
-                                <button type="button" className={`btn ${activeModalTab === "personal" ? "btn-dark" : "btn-light"} border-0`} onClick={() => setActiveModalTab("personal")} style={{ borderRadius: 8, fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}>Personal Information</button>
+                                <button type="button" className={`btn ${activeModalTab === "personal" ? "btn-dark" : "btn-light"} ${showErrors && getMissingPersonalFields().length > 0 ? "shake-red" : ""} border-0`} onClick={() => handleTabClick("personal")} style={{ borderRadius: 8, fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}>Personal Information</button>
                                 {editingUser && (
                                     <>
-                                        <button type="button" className={`btn ${activeModalTab === "documents" ? "btn-dark" : "btn-light"} border-0`} onClick={() => setActiveModalTab("documents")} style={{ borderRadius: 8, fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}>Documents</button>
-                                        <button type="button" className={`btn ${activeModalTab === "onboarding" ? "btn-dark" : "btn-light"} border-0`} onClick={() => setActiveModalTab("onboarding")} style={{ borderRadius: 8, fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}>Verification Forms</button>
+                                        <button type="button" className={`btn ${activeModalTab === "documents" ? "btn-dark" : "btn-light"} ${showDocErrors && !isDocumentsComplete ? "shake-red" : ""} border-0`} onClick={() => handleTabClick("documents")} style={{ borderRadius: 8, fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}>Documents</button>
+                                        <button type="button" className={`btn ${activeModalTab === "onboarding" ? "btn-dark" : "btn-light"} border-0`} onClick={() => handleTabClick("onboarding")} style={{ borderRadius: 8, fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}>Verification Forms</button>
                                     </>
                                 )}
                             </div>
 
                             {activeModalTab === "personal" ? (
                                 <ProfileForm
+                                    showErrors={showErrors}
                                     forceShowAllStaffFields={true}
                                     profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
                                     formData={{ ...formData, abn: "", acn: "", company_name: "" }}
@@ -773,7 +824,7 @@ const StaffooStaff = () => {
                                     <div className="d-flex justify-content-between align-items-center mb-4">
                                         <div><h6 className="fw-bold mb-1">Documents</h6><p className="text-muted small mb-0">Upload and manage staff documents.</p></div>
                                     </div>
-                                    <DocumentTable documents={staffDocuments} userType="staff" onAddFile={openDocumentModal} />
+                                    <DocumentTable documents={staffDocuments} userType="staff" onAddFile={openDocumentModal} showDocErrors={showDocErrors} />
                                 </div>
                             ) : (
                                 <div><StaffOnboardingForms submit={submit} userId={editingUser?.id} contractorId={1} /></div>
@@ -787,7 +838,7 @@ const StaffooStaff = () => {
                                 </button>
                             )}
                             {activeModalTab === "documents" && (
-                                <button type="button" className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" onClick={() => setActiveModalTab("onboarding")} style={{ minHeight: 44 }}>
+                                <button type="button" className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" onClick={() => handleTabClick("onboarding")} style={{ minHeight: 44 }}>
                                     Next: Verification Forms
                                 </button>
                             )}

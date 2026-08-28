@@ -9,7 +9,6 @@ import ProfileForm from "../components/ProfileForm";
 import { apiURL } from "../utils/exports";
 import Select from "react-select";
 import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
-
 const STATE_MAP = {
   'Victoria': 'vic',
   'New South Wales': 'nsw',
@@ -262,6 +261,7 @@ const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
 };
 
 const ManageUsers = () => {
+  const [showErrors, setShowErrors] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -302,6 +302,7 @@ const ManageUsers = () => {
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [showDocErrors, setShowDocErrors] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeModalTab, setActiveModalTab] = useState("personal");
   const [editingUser, setEditingUser] = useState(null);
@@ -373,6 +374,8 @@ const ManageUsers = () => {
     return docs;
   }, [editingUser, activeTab, formData.states_allowed]);
 
+  const isDocumentsComplete = documents.length > 0 && documents.every(doc => doc.file || doc.file_path);
+
   const handleProfileFormChange = useCallback((e) => {
     const { id, value } = e.target;
     setFormData(prev => ({
@@ -381,6 +384,49 @@ const ManageUsers = () => {
       ...(id === "address" ? { coordinates: "", city: "", state: "", country: "" } : {}),
     }));
   }, []);
+
+  const getMissingPersonalFields = useCallback(() => {
+    const missing = [];
+    if (!formData.name) missing.push("name");
+    if (!formData.email) missing.push("email");
+    if (!formData.phone) missing.push("phone");
+    if (!formData.address) missing.push("address");
+
+    if (activeTab === "sub_contractor") {
+      if (!formData.company_name) missing.push("company_name");
+      if (!formData.security_license_no) missing.push("security_license_no");
+      if (!formData.states_allowed || formData.states_allowed.length === 0) missing.push("states_allowed");
+    } else if (activeTab === "staff") {
+      if (!formData.security_license_no) missing.push("security_license_no");
+    }
+    return missing;
+  }, [formData, activeTab]);
+
+  const handleTabClick = (tab) => {
+    if (tab === "personal") {
+      setActiveModalTab(tab);
+      return;
+    }
+
+    const missing = getMissingPersonalFields();
+    if (missing.length > 0) {
+      setShowErrors(false);
+      setTimeout(() => setShowErrors(true), 10);
+      toast.error("Please fill in all required personal information first.");
+      return;
+    }
+
+    if (tab === "onboarding" || tab === "rates") {
+      if (!isDocumentsComplete) {
+        setShowDocErrors(false);
+        setTimeout(() => setShowDocErrors(true), 10);
+        toast.error("Please upload all required documents first.");
+        return;
+      }
+    }
+
+    setActiveModalTab(tab);
+  };
 
   const handleTabChange = (role) => {
     if (role === activeTab) return;
@@ -882,6 +928,15 @@ const ManageUsers = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const missing = getMissingPersonalFields();
+
+    if (missing.length > 0) {
+      setShowErrors(false);
+      setTimeout(() => setShowErrors(true), 10);
+      toast.error("Please fill in all required fields.");
+      return;
+    }
 
     if (formData.phone && formData.phone.trim() !== "") {
       const phoneRegex = /^(?:\+?61|0)[2-478](?:[\s]*\d){8}$/;
@@ -1656,26 +1711,29 @@ const ManageUsers = () => {
               <div className="modal-tabs-container mb-4" style={{ background: "#f3f4f6", padding: "4px", borderRadius: "12px", display: "inline-flex", flexWrap: "wrap", gap: "4px" }}>
                 <button
                   type="button"
-                  className={`btn ${activeModalTab === "personal" ? "btn-dark" : "btn-light"} border-0`}
-                  onClick={() => setActiveModalTab("personal")}
+                  className={`btn ${activeModalTab === "personal" ? "btn-dark" : "btn-light"} ${showErrors && getMissingPersonalFields().length > 0 ? "shake-red" : ""} border-0`}
+                  onClick={() => handleTabClick("personal")}
                   style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
                 >
                   Personal Information
                 </button>
                 {(activeTab === "staff" || activeTab === "sub_contractor") && editingUser && (
-                  <button
-                    type="button"
-                    className={`btn ${activeModalTab === "documents" ? "btn-dark" : "btn-light"} border-0`}
-                    onClick={() => setActiveModalTab("documents")}
-                    style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
-                  >
-                    Documents
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className={`btn ${activeModalTab === "documents" ? "btn-dark" : "btn-light"} ${showDocErrors && !isDocumentsComplete ? "shake-red" : ""} border-0`}
+                      onClick={() => handleTabClick("documents")}
+                      style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
+                    >
+                      Documents
+                    </button>
+                  </>
                 )}
               </div>
 
               {activeModalTab === "personal" ? (
                 <ProfileForm
+                  showErrors={showErrors}
                   profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
                   formData={{
                     name: formData.name,
@@ -1712,10 +1770,17 @@ const ManageUsers = () => {
                 />
               ) : activeModalTab === "documents" ? (
                 <div>
+                  <div className="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                      <h6 className="fw-bold mb-1">Documents</h6>
+                      <p className="text-muted small mb-0">Upload and manage user documents.</p>
+                    </div>
+                  </div>
                   <DocumentTable
                     documents={documents}
                     userType={activeTab === "sub_contractor" ? "contractor" : activeTab}
                     onAddFile={openDocumentModal}
+                    showDocErrors={showDocErrors}
                   />
                 </div>
               ) : null}

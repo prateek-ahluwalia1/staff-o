@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Imports\StaffImport;
+use App\Mail\ChargeRateApprovedMail;
 use App\Mail\ChargeRateRejectedMail;
 use App\Mail\ChargeRateRequestMail;
 use App\Mail\ContractorInvoiceMail;
@@ -5559,6 +5560,7 @@ public function request_charge_rate(Request $request)
                 'effective_from' => $rateEntry['effective_from'] ?? null,
                 'review_note'    => $request->notes ?? null,
                 'status'         => 'pending',
+                'is_submitted'   => $request->is_submitted, 
                 'created_at'     => now(),
                 'updated_at'     => now(),
             ];
@@ -5583,15 +5585,30 @@ public function request_charge_rate(Request $request)
         // Email admin — fixed recipient, one email covering every state in this submission
         $adminEmails = ['admin@staffoo.com.au','shahbazkhan062@gmail.com'];
  
-        try {
-            Mail::to($adminEmails)->send(new ChargeRateRequestMail(
-                $contractor->name ?? 'Contractor',
-                $contractor->email ?? '',
-                $emailStateBlocks,
-                $request->notes
-            ));
-        } catch (\Exception $e) {
-            Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
+        if($request->is_submited == 1)
+        {
+            try 
+            {
+                $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
+                    foreach ($admins as $a) {
+                        $notification_data = [
+                            'message' => 'Charge rate request submitted.',
+                            'title' => 'Charge Rate Request',
+                            'notification_token' => $a->notification_token,
+                            'page' => 'my-job-applications',
+                        ];
+                        send_push_notification($notification_data);
+                    }
+
+                    Mail::to($adminEmails)->send(new ChargeRateRequestMail(
+                        $contractor->name ?? 'Contractor',
+                        $contractor->email ?? '',
+                        $emailStateBlocks,
+                        $request->notes
+                    ));
+            } catch (\Exception $e) {
+                Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
+            }
         }
  
         return response()->json([
@@ -5633,7 +5650,7 @@ public function list_charge_rate_requests(Request $request)
         }
     }
 
-    $requests = $query->orderBy('charge_rate_requests.created_at', 'desc')->get();
+    $requests = $query->where('charge_rate_requests.is_submitted', 1)->orderBy('charge_rate_requests.created_at', 'desc')->get();
 
     return response()->json([
         'success' => true,
@@ -5697,6 +5714,57 @@ public function accept_charge_rate_request(Request $request, $id)
             'reviewed_at'               => now(),
             'contractor_charge_rate_id' => $charge_rate->id,
         ]);
+
+          // ============ NEW: notify the CONTRACTOR their request was approved ============
+        $contractor = DB::table('users')->where('id', $rateRequest->user_id)->first();
+ 
+        if ($contractor) {
+            // Email
+            if (!empty($contractor->email)) {
+                try {
+                    Mail::to($contractor->email)->send(new ChargeRateApprovedMail(
+                        $contractor->name ?? 'Contractor',
+                        $rateRequest->title,
+                        $rateRequest->state,
+                        $rateRequest->effective_from
+                    ));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send charge rate approval email', [
+                        'charge_rate_request_id' => $id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+ 
+            // Push notification
+            if (!empty($contractor->notification_token)) {
+                try {
+                    send_push_notification([
+                        'message' => "Your charge rate request for " . strtoupper($rateRequest->state) . " has been approved.",
+                        'title' => 'Charge Rate Approved',
+                        'notification_token' => $contractor->notification_token,
+                        'page' => 'charge-rates',
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send charge rate approval push notification', [
+                        'charge_rate_request_id' => $id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+        // ============ END NEW ============
+
+        $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
+        foreach ($admins as $a) {
+            $notification_data = [
+                'message' => 'Charge rate request submitted.',
+                'title' => 'Charge Rate Request',
+                'notification_token' => $a->notification_token,
+                'page' => 'my-job-applications',
+            ];
+            send_push_notification($notification_data);
+        }
 
         return response()->json([
             'success' => true,

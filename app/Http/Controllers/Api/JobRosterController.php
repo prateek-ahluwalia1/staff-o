@@ -5648,7 +5648,9 @@ public function list_charge_rate_requests(Request $request)
     if ($request->has('user_id') && !empty($request->user_id)) {
         $user = User::where('id', $request->user_id)->first();
         if($user->user_type != 'admin'){
-         $query->where('charge_rate_requests.user_id', $request->user_id)->where('charge_rate_requests.is_submitted', 1);
+         $query->where('charge_rate_requests.user_id', $request->user_id);
+        }else{
+         $query->where('charge_rate_requests.is_submitted', 1);
         }
     }
 

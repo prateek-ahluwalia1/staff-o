@@ -3866,7 +3866,8 @@ private function sendStaffActivationNotification(User $user): void
                     'created_at' => $job->created_at,
                     'document_list' => $job->document_list,
                     'description' => $job->description,
-                    'contractor_invoice' => $job->contractor_invoice
+                    'contractor_invoice' => $job->contractor_invoice,
+                    'accepted_by' => $job->accepted_by
                 ];
             })->toArray();
 
@@ -5585,7 +5586,7 @@ public function request_charge_rate(Request $request)
         // Email admin — fixed recipient, one email covering every state in this submission
         $adminEmails = ['admin@staffoo.com.au','shahbazkhan062@gmail.com'];
  
-        if($request->is_submited == 1)
+        if($request->is_submitted == 1)
         {
             try 
             {

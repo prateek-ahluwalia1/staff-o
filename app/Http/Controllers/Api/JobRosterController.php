@@ -3867,7 +3867,8 @@ private function sendStaffActivationNotification(User $user): void
                     'document_list' => $job->document_list,
                     'description' => $job->description,
                     'contractor_invoice' => $job->contractor_invoice,
-                    'accepted_by' => $job->accepted_by
+                    'accepted_by' => $job->accepted_by,
+                    'payment_status' => $job->payment_status,
                 ];
             })->toArray();
 

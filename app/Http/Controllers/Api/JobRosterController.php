@@ -6476,7 +6476,7 @@ private function canRemoveAcceptedBy($user, $job): bool
 private function generateAndSendContract($contractor, $rateRequest, $charge_rate): void
 {
     try {
-        $rateFieldLabels = $this->chargeRateEmailFieldLabels(); // reuse the "def_" only label set from earlier
+        $rateFieldLabels = $this->chargeRateFieldLabels(); // reuse the "def_" only label set from earlier
         $rateRows = [];
         foreach ($rateFieldLabels as $column => $label) {
             $rateRows[] = ['label' => $label, 'value' => (float) ($charge_rate->{$column} ?? 0)];

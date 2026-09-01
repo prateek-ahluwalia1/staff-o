@@ -89,7 +89,7 @@ class PlatformFeeInvoiceService
 
         .table-wrap { padding:0 22px; }
         .st { width:100%; border-collapse:collapse; font-size:9px; }
-        .st thead tr { background:#14243D; color:#FFFFFF; }
+        .st thead tr { background:#0A7C6E; color:#FFFFFF; }
         .st thead th { padding:8px 8px; text-align:left; font-size:8.5px; letter-spacing:0.3px; }
         .st tbody td { padding:7px 8px; border-bottom:1px solid #E5E7EB; vertical-align:top; }
         .item-desc { font-weight:bold; color:#111827; }

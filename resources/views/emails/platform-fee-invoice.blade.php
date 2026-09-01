@@ -40,7 +40,7 @@
 
                             <p style="font-size:13px; line-height:1.6; color:#6B7280; margin:0;">
                                 If anything on the invoice looks incorrect, reply to this email or contact
-                                <a href="mailto:accounts@staffoo.com.au" style="color:#0A7C6E;">accounts@staffoo.com.au</a>.
+                                <a href="mailto:admin@staffoo.com.au" style="color:#0A7C6E;">admin@staffoo.com.au</a>.
                             </p>
                         </td>
                     </tr>

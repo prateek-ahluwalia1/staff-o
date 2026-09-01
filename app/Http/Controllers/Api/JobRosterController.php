@@ -5529,18 +5529,121 @@ private function chargeRateFieldLabels(): array
     ];
 }
 
+// public function request_charge_rate(Request $request)
+// {
+//     $request->validate([
+//         'user_id'         => 'required|integer',
+//         'rates'           => 'required|array|min:1',
+//         'rates.*.state'   => 'required|string',
+//         'rates.*.title'   => 'nullable|string',
+//     ]);
+ 
+//     try {
+//         $contractor = DB::table('users')->where('id', $request->user_id)->first();
+ 
+//         if (!$contractor) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Contractor not found.',
+//                 'data' => null,
+//             ], 200);
+//         }
+ 
+//         $rateFieldLabels = $this->chargeRateFieldLabels();
+ 
+//         $requestIds = [];
+//         $emailStateBlocks = []; // for the combined email: one block per state
+ 
+//         foreach ($request->rates as $rateEntry) {
+//             $insertData = [
+//                 'user_id'        => $request->user_id,
+//                 'title'          => $rateEntry['title'] ?? null,
+//                 'state'          => $rateEntry['state'],
+//                 'effective_from' => $rateEntry['effective_from'] ?? null,
+//                 'review_note'    => $request->notes ?? null,
+//                 'status'         => 'pending',
+//                 'is_submitted'   => $request->is_submitted, 
+//                 'created_at'     => now(),
+//                 'updated_at'     => now(),
+//             ];
+ 
+//             $rateRows = []; // for this state's block in the email
+//             foreach ($rateFieldLabels as $column => $label) {
+//                 $value = array_key_exists($column, $rateEntry) ? (float) $rateEntry[$column] : 0;
+//                 $insertData[$column] = $value;
+//                 $rateRows[] = ['label' => $label, 'value' => $value];
+//             }
+ 
+//             $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
+//             $requestIds[] = $requestId;
+ 
+//             $emailStateBlocks[] = [
+//                 'state'    => $rateEntry['state'],
+//                 'title'    => $rateEntry['title'] ?? null,
+//                 'rateRows' => $rateRows,
+//             ];
+//         }
+ 
+//         // Email admin — fixed recipient, one email covering every state in this submission
+//         $adminEmails = ['admin@staffoo.com.au','shahbazkhan062@gmail.com'];
+ 
+//         if($request->is_submitted == 1)
+//         {
+//             try 
+//             {
+//                 $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
+//                     foreach ($admins as $a) {
+//                         $notification_data = [
+//                             'message' => 'Charge rate request submitted.',
+//                             'title' => 'Charge Rate Request',
+//                             'notification_token' => $a->notification_token,
+//                             'page' => 'my-job-applications',
+//                         ];
+//                         send_push_notification($notification_data);
+//                     }
+
+//                     Mail::to($adminEmails)->send(new ChargeRateRequestMail(
+//                         $contractor->name ?? 'Contractor',
+//                         $contractor->email ?? '',
+//                         $emailStateBlocks,
+//                         $request->notes
+//                     ));
+//             } catch (\Exception $e) {
+//                 Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
+//             }
+//         }
+ 
+//         return response()->json([
+//             'success' => true,
+//             'message' => 'Charge rate request submitted for admin review.',
+//             'data' => [
+//                 'charge_rate_request_ids' => $requestIds,
+//                 'status' => 'pending',
+//             ],
+//         ], 200);
+ 
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'An error occurred while submitting the charge rate request.',
+//             'error' => $e->getMessage(),
+//             'trace' => $e->getTraceAsString(),
+//         ], 500);
+//     }
+// }
 public function request_charge_rate(Request $request)
 {
     $request->validate([
         'user_id'         => 'required|integer',
         'rates'           => 'required|array|min:1',
+        'rates.*.id'      => 'nullable|integer|exists:charge_rate_requests,id',
         'rates.*.state'   => 'required|string',
         'rates.*.title'   => 'nullable|string',
     ]);
- 
+
     try {
         $contractor = DB::table('users')->where('id', $request->user_id)->first();
- 
+
         if (!$contractor) {
             return response()->json([
                 'success' => false,
@@ -5548,12 +5651,13 @@ public function request_charge_rate(Request $request)
                 'data' => null,
             ], 200);
         }
- 
+
         $rateFieldLabels = $this->chargeRateFieldLabels();
- 
+
         $requestIds = [];
         $emailStateBlocks = []; // for the combined email: one block per state
- 
+        $isUpdate = false;
+
         foreach ($request->rates as $rateEntry) {
             $insertData = [
                 'user_id'        => $request->user_id,
@@ -5562,66 +5666,81 @@ public function request_charge_rate(Request $request)
                 'effective_from' => $rateEntry['effective_from'] ?? null,
                 'review_note'    => $request->notes ?? null,
                 'status'         => 'pending',
-                'is_submitted'   => $request->is_submitted, 
-                'created_at'     => now(),
+                'is_submitted'   => $request->is_submitted,
                 'updated_at'     => now(),
             ];
- 
+
             $rateRows = []; // for this state's block in the email
             foreach ($rateFieldLabels as $column => $label) {
                 $value = array_key_exists($column, $rateEntry) ? (float) $rateEntry[$column] : 0;
                 $insertData[$column] = $value;
                 $rateRows[] = ['label' => $label, 'value' => $value];
             }
- 
-            $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
-            $requestIds[] = $requestId;
- 
+
+            // Check if we have an ID and should update
+            if (!empty($rateEntry['id'])) {
+                // Update existing record
+                DB::table('charge_rate_requests')
+                    ->where('id', $rateEntry['id'])
+                    ->where('user_id', $request->user_id) // Security: ensure the record belongs to this user
+                    ->update($insertData);
+                
+                $requestIds[] = $rateEntry['id'];
+                $isUpdate = true;
+            } else {
+                // Create new record
+                $insertData['created_at'] = now();
+                $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
+                $requestIds[] = $requestId;
+            }
+
             $emailStateBlocks[] = [
                 'state'    => $rateEntry['state'],
                 'title'    => $rateEntry['title'] ?? null,
                 'rateRows' => $rateRows,
             ];
         }
- 
-        // Email admin — fixed recipient, one email covering every state in this submission
-        $adminEmails = ['admin@staffoo.com.au','shahbazkhan062@gmail.com'];
- 
-        if($request->is_submitted == 1)
-        {
-            try 
-            {
-                $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
-                    foreach ($admins as $a) {
-                        $notification_data = [
-                            'message' => 'Charge rate request submitted.',
-                            'title' => 'Charge Rate Request',
-                            'notification_token' => $a->notification_token,
-                            'page' => 'my-job-applications',
-                        ];
-                        send_push_notification($notification_data);
-                    }
 
-                    Mail::to($adminEmails)->send(new ChargeRateRequestMail(
-                        $contractor->name ?? 'Contractor',
-                        $contractor->email ?? '',
-                        $emailStateBlocks,
-                        $request->notes
-                    ));
+        // Email admin — fixed recipient, one email covering every state in this submission
+        $adminEmails = ['admin@staffoo.com.au', 'shahbazkhan062@gmail.com'];
+
+        if ($request->is_submitted == 1) {
+            try {
+                $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
+                foreach ($admins as $a) {
+                    $notification_data = [
+                        'message' => 'Charge rate request ' . ($isUpdate ? 'updated' : 'submitted') . '.',
+                        'title' => 'Charge Rate Request',
+                        'notification_token' => $a->notification_token,
+                        'page' => 'my-job-applications',
+                    ];
+                    send_push_notification($notification_data);
+                }
+
+                Mail::to($adminEmails)->send(new ChargeRateRequestMail(
+                    $contractor->name ?? 'Contractor',
+                    $contractor->email ?? '',
+                    $emailStateBlocks,
+                    $request->notes,
+                ));
             } catch (\Exception $e) {
                 Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
             }
         }
- 
+
+        $message = $isUpdate 
+            ? 'Charge rate request updated successfully.' 
+            : 'Charge rate request submitted for admin review.';
+
         return response()->json([
             'success' => true,
-            'message' => 'Charge rate request submitted for admin review.',
+            'message' => $message,
             'data' => [
                 'charge_rate_request_ids' => $requestIds,
                 'status' => 'pending',
             ],
         ], 200);
- 
+
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,

@@ -15,6 +15,17 @@ const STATE_NAME_MAP = {
   act: "Australian Capital Territory", nt: "Northern Territory",
 };
 
+const getStateLabel = (s) => {
+  if (!s) return "";
+  const key = String(s).trim();
+  return (
+    STATE_NAME_MAP[key] ||
+    STATE_NAME_MAP[key.toUpperCase()] ||
+    STATE_NAME_MAP[key.toLowerCase()] ||
+    key.toUpperCase()
+  );
+};
+
 
 const SLOT_ROWS = [
   { label: "Mon–Fri Day", sub: "06:00–18:00", metro: "metro_mon_to_fri_day_rate", reg: "reg_mon_to_fri_day_rate" },
@@ -39,6 +50,40 @@ const makeBlankForm = (states = []) => {
   return f;
 };
 
+const normalizeValue = (val) => {
+  if (val === null || val === undefined || val === "") return "";
+  const num = Number(val);
+  if (!isNaN(num)) return num;
+  return String(val).trim();
+};
+
+const checkIfFormChanged = (currentForm, initialForm, states) => {
+  if (!currentForm || !initialForm) return false;
+
+  if (normalizeValue(currentForm.reason) !== normalizeValue(initialForm.reason)) {
+    return true;
+  }
+
+  for (const s of states) {
+    const currentTab = currentForm[s] || {};
+    const initialTab = initialForm[s] || {};
+
+    for (const row of SLOT_ROWS) {
+      const mk = `def_${row.metro}`;
+      const rk = `def_${row.reg}`;
+
+      if (normalizeValue(currentTab[mk]) !== normalizeValue(initialTab[mk])) {
+        return true;
+      }
+      if (normalizeValue(currentTab[rk]) !== normalizeValue(initialTab[rk])) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
 const ContractorRatesView = ({ selectedStates = [] }) => {
   const { userdata } = useSelector((state) => state.auth || {});
   const userId = userdata?.data?.id || userdata?.id;
@@ -54,7 +99,10 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
     immediate: !!endpoint,
   });
 
-  const { submit, loading: submitting } = useSubmit({ isAuth: true });
+  const { submit } = useSubmit({ isAuth: true });
+
+  const [isSavingAndExiting, setIsSavingAndExiting] = useState(false);
+  const [isSavingAndSubmitting, setIsSavingAndSubmitting] = useState(false);
 
   const [activeView, setActiveView] = useState(() => selectedStates?.[0] || null);
 
@@ -64,7 +112,14 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   const [modalStates, setModalStates] = useState([]);
   const [referenceRates, setReferenceRates] = useState({});
   const [requestForm, setRequestForm] = useState(() => makeBlankForm(selectedStates));
+  const [initialFormState, setInitialFormState] = useState(null);
+  const [editingRequestId, setEditingRequestId] = useState(null);
   const [formErrors, setFormErrors] = useState({});
+
+  const hasFormChanged = useMemo(
+    () => checkIfFormChanged(requestForm, initialFormState, modalStates),
+    [requestForm, initialFormState, modalStates]
+  );
 
   const [mainTab, setMainTab] = useState("active");
 
@@ -95,6 +150,17 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
     }
   }, [selectedStates, activeView]);
 
+  useEffect(() => {
+    if (showRequestModal || viewRequestRates) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showRequestModal, viewRequestRates]);
+
   const rate = useMemo(
     () => rows.find((r) => String(r.state).toLowerCase() === String(activeView).toLowerCase()),
     [rows, activeView]
@@ -104,10 +170,10 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
 
   // ── Open modal with a blank fresh form ──────────────────────────────────
   const handleOpenRequestModal = (initialStateTab = null, forceStates = null) => {
-    const targetStates = forceStates || selectedStates;
+    const targetStates = forceStates || (initialStateTab ? [initialStateTab] : selectedStates);
     const f = makeBlankForm(targetStates);
     targetStates.forEach(s => {
-      const existingStateRate = rows.find(r => r.state === s);
+      const existingStateRate = rows.find(r => String(r.state).toLowerCase() === String(s).toLowerCase());
       if (existingStateRate) {
         SLOT_ROWS.forEach(row => {
           const mk = `def_${row.metro}`;
@@ -121,18 +187,33 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
         });
       }
     });
-    setRequestForm(f);
-    
+
+    let existingNotes = "";
+    targetStates.forEach(s => {
+      const existingReq = rateRequests.find(r => String(r.state).toLowerCase() === String(s).toLowerCase());
+      const existingRow = rows.find(r => String(r.state).toLowerCase() === String(s).toLowerCase());
+      if (!existingNotes) {
+        existingNotes = existingReq?.notes || existingReq?.reason || existingReq?.note || existingRow?.notes || existingRow?.reason || existingRow?.note || "";
+      }
+    });
+    f.reason = existingNotes;
+
     const refs = {};
     targetStates.forEach(s => {
-      const existing = rows.find(r => r.state === s);
+      const existing = rows.find(r => String(r.state).toLowerCase() === String(s).toLowerCase());
       if (existing) refs[s] = existing;
     });
     setReferenceRates(refs);
+    setEditingRequestId(null);
+
+    setRequestForm(f);
+    setInitialFormState(JSON.parse(JSON.stringify(f)));
 
     setModalStates(targetStates);
     setActiveStateTab(initialStateTab && targetStates.includes(initialStateTab) ? initialStateTab : targetStates[0] || null);
     setFormErrors({});
+    setIsSavingAndExiting(false);
+    setIsSavingAndSubmitting(false);
     setShowRequestModal(true);
   };
 
@@ -216,117 +297,176 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   };
 
   // ── Submit ───────────────────────────────────────────────────────────────
-  const handleRequestSubmit = async (e) => {
-    e.preventDefault();
+  const handleRequestSubmit = async (e, isSubmitted = 1) => {
+    if (e && typeof e.preventDefault === "function") {
+      e.preventDefault();
+    }
+
+    if (isSavingAndExiting || isSavingAndSubmitting) {
+      return;
+    }
 
     if (!modalStates || modalStates.length === 0) {
       toast.error("You must have selected states in your profile before requesting rates.");
       return;
     }
 
-    // If they press Enter while not on the last tab, treat it as a "Next" action instead of validating all states
+    // If triggered by Enter on input while not on last tab, treat as "Next" action
     const isLastTab = modalStates.indexOf(activeStateTab) === modalStates.length - 1;
-    if (!isLastTab) {
+    if (e && e.type === "keydown" && e.key === "Enter" && !isLastTab) {
       handleNextState();
       return;
     }
 
-    let allValid = true;
-    let firstInvalidState = null;
-    modalStates.forEach(s => {
-      if (!validateStateTab(s)) {
-        allValid = false;
-        if (!firstInvalidState) firstInvalidState = s;
-      }
-    });
+    const isSaveAndExit = isSubmitted === 0;
 
-    if (!allValid) {
-      toast.error("Please fill in all missing rate values before submitting.");
-      setActiveStateTab(firstInvalidState);
-      return;
-    }
-
-    const ratesPayload = [];
-
-    for (const stateVal of modalStates) {
-      const stateForm = requestForm[stateVal] || {};
-      const originalRate = referenceRates[stateVal] || {};
-
-      let stateObj = {
-        title: `${STATE_NAME_MAP[stateVal] || stateVal} My Charge Rates`,
-        state: stateVal,
-      };
-
-      let hasChanges = false;
-
-      SLOT_ROWS.forEach((row) => {
-        const mk = `def_${row.metro}`;
-        const rk = `def_${row.reg}`;
-        const metroNight = row.metro.replace("_day_", "_night_");
-        const regNight = row.reg.replace("_day_", "_night_");
-
-        const mNightKey = `def_${metroNight}`;
-        const rNightKey = `def_${regNight}`;
-
-        const keysToCheck = [mk, rk];
-
-        // Only auto-mirror for weekend/public holidays (exclude mon_to_fri_day)
-        const shouldMirror = metroNight !== row.metro && !row.metro.includes("mon_to_fri");
-        if (shouldMirror) {
-          keysToCheck.push(mNightKey, rNightKey);
-        }
-
-        let computed = {};
-        computed[mk] = stateForm[mk] !== "" && stateForm[mk] !== undefined && stateForm[mk] !== null ? Number(stateForm[mk]) : undefined;
-        computed[rk] = stateForm[rk] !== "" && stateForm[rk] !== undefined && stateForm[rk] !== null ? Number(stateForm[rk]) : undefined;
-
-        if (shouldMirror) {
-          computed[mNightKey] = computed[mk];
-          computed[rNightKey] = computed[rk];
-        }
-
-        for (const key of keysToCheck) {
-          const originalVal = originalRate[key] !== null && originalRate[key] !== undefined ? Number(originalRate[key]) : 0;
-          const newVal = computed[key] !== undefined ? computed[key] : originalVal;
-
-          stateObj[key] = newVal;
-
-          if (newVal !== originalVal) {
-            hasChanges = true;
-          }
-        }
-      });
-
-      if (hasChanges) {
-        ratesPayload.push(stateObj);
-      }
-    }
-
-    if (ratesPayload.length === 0) {
-      toast.info("No rate changes detected. Nothing to submit.");
-      return;
-    }
-
-    const finalPayload = {
-      user_id: userId,
-      rates: ratesPayload,
-    };
-
-    if (requestForm.reason) {
-      finalPayload.notes = requestForm.reason;
+    if (isSaveAndExit) {
+      setIsSavingAndExiting(true);
+    } else {
+      setIsSavingAndSubmitting(true);
     }
 
     try {
+      let allValid = true;
+      let firstInvalidState = null;
+      modalStates.forEach(s => {
+        if (!validateStateTab(s)) {
+          allValid = false;
+          if (!firstInvalidState) firstInvalidState = s;
+        }
+      });
+
+      if (!allValid) {
+        toast.error("Please fill in all missing rate values before submitting.");
+        setActiveStateTab(firstInvalidState);
+        return;
+      }
+
+      const ratesPayload = [];
+
+      for (const stateVal of modalStates) {
+        const stateForm = requestForm[stateVal] || {};
+        const originalRate = referenceRates[stateVal] || {};
+
+        let stateObj = {
+          title: `${getStateLabel(stateVal)} My Charge Rates`,
+          state: stateVal,
+          is_submitted: isSubmitted,
+        };
+
+        if (requestForm.reason) {
+          stateObj.notes = requestForm.reason;
+          stateObj.reason = requestForm.reason;
+        }
+
+        // Set request id ONLY when editing an existing draft request (from History)
+        if (editingRequestId) {
+          stateObj.id = editingRequestId;
+          if (originalRate.id !== undefined && originalRate.id !== null) {
+            stateObj.charge_rate_request_id = originalRate.id;
+          }
+        }
+
+        // Preserve existing active rate identifier for rate update requests
+        const activeRateId = originalRate.contractor_rate_id || originalRate.rate_id || (!editingRequestId ? originalRate.id : null);
+        if (activeRateId !== undefined && activeRateId !== null) {
+          stateObj.contractor_rate_id = activeRateId;
+          stateObj.rate_id = activeRateId;
+        }
+        if (originalRate.charge_rate_request_id !== undefined && originalRate.charge_rate_request_id !== null) {
+          stateObj.charge_rate_request_id = originalRate.charge_rate_request_id;
+        }
+        if (originalRate.state_id !== undefined && originalRate.state_id !== null) {
+          stateObj.state_id = originalRate.state_id;
+        }
+
+        SLOT_ROWS.forEach((row) => {
+          const mk = `def_${row.metro}`;
+          const rk = `def_${row.reg}`;
+          const metroNight = row.metro.replace("_day_", "_night_");
+          const regNight = row.reg.replace("_day_", "_night_");
+
+          const mNightKey = `def_${metroNight}`;
+          const rNightKey = `def_${regNight}`;
+
+          const keysToCheck = [mk, rk];
+
+          // Only auto-mirror for weekend/public holidays (exclude mon_to_fri_day)
+          const shouldMirror = metroNight !== row.metro && !row.metro.includes("mon_to_fri");
+          if (shouldMirror) {
+            keysToCheck.push(mNightKey, rNightKey);
+          }
+
+          let computed = {};
+          computed[mk] = stateForm[mk] !== "" && stateForm[mk] !== undefined && stateForm[mk] !== null ? Number(stateForm[mk]) : undefined;
+          computed[rk] = stateForm[rk] !== "" && stateForm[rk] !== undefined && stateForm[rk] !== null ? Number(stateForm[rk]) : undefined;
+
+          if (shouldMirror) {
+            computed[mNightKey] = computed[mk];
+            computed[rNightKey] = computed[rk];
+          }
+
+          for (const key of keysToCheck) {
+            const originalVal = originalRate[key] !== null && originalRate[key] !== undefined ? Number(originalRate[key]) : 0;
+            const newVal = computed[key] !== undefined ? computed[key] : originalVal;
+
+            stateObj[key] = newVal;
+          }
+        });
+
+        ratesPayload.push(stateObj);
+      }
+
+      const finalPayload = {
+        user_id: userId,
+        rates: ratesPayload,
+        is_submitted: isSubmitted,
+        notes: requestForm.reason || "",
+        reason: requestForm.reason || "",
+      };
+
+      if (editingRequestId) {
+        finalPayload.id = editingRequestId;
+        finalPayload.charge_rate_request_id = editingRequestId;
+      }
+
       const res = await submit("api/request-charge-rate", finalPayload, { method: "POST" });
-      if (res && (res.success || res.code === 200 || res?.data?.charge_rate_request_id)) {
-        toast.success(res.message || "Rate update requests submitted for Admin review!");
+      const isSuccess = res && (
+        res.success === true ||
+        res.code === 200 ||
+        res.status === 200 ||
+        res.status === "success" ||
+        res?.data ||
+        res?.message ||
+        res?.charge_rate_request_id ||
+        res?.data?.charge_rate_request_id
+      );
+
+      if (isSuccess && !res?.error) {
+        toast.success(
+          res.message ||
+            (isSubmitted === 1
+              ? "Rate update requests submitted for Admin review!"
+              : "Rate update saved successfully!")
+        );
         setShowRequestModal(false);
+        setEditingRequestId(null);
         setRequestForm(makeBlankForm(selectedStates));
+        setInitialFormState(null);
+        if (typeof refetchRequests === "function") refetchRequests();
+        if (typeof refetchActiveRates === "function") refetchActiveRates();
       } else {
-        console.error(res?.message || "Failed to submit rate update requests.");
+        toast.error(res?.message || res?.error || "Failed to save rate update requests.");
+        console.error(res?.message || res?.error || "Failed to save rate update requests.");
       }
     } catch (err) {
-      console.error(err?.message || "Failed to submit rate update request.");
+      console.error(err?.message || "Failed to save rate update request.");
+    } finally {
+      if (isSaveAndExit) {
+        setIsSavingAndExiting(false);
+      } else {
+        setIsSavingAndSubmitting(false);
+      }
     }
   };
 
@@ -343,12 +483,21 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
       });
     }
 
+    const noteReason = req.notes || req.reason || req.review_note || req.note || req.admin_notes || "";
+    form.reason = noteReason;
+
     setRequestForm(form);
+    setInitialFormState(JSON.parse(JSON.stringify(form)));
+
     setReferenceRates({ [s]: req });
+    setEditingRequestId(req.id || req.charge_rate_request_id || req.rate_id || null);
+
     setModalStates([s]);
     setActiveStateTab(s);
     setFormErrors({});
     setViewRequestRates(null);
+    setIsSavingAndExiting(false);
+    setIsSavingAndSubmitting(false);
     setShowRequestModal(true);
   };
 
@@ -574,7 +723,10 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
         .rr-btn-cancel { padding: 10px 24px; border-radius: 30px; border: 1.5px solid #dce5f0; background: #fff; font-size: 13.5px; font-weight: 700; color: #4a6080; cursor: pointer; transition: all 0.18s; }
         .rr-btn-cancel:hover { background: #f4f6fa; border-color: #c8d5e8; }
         .rr-btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
-        .rr-btn-submit { padding: 11px 28px; border-radius: 30px; border: none; background: linear-gradient(135deg, #0A7C6E 0%, #0b9b8a 100%); font-size: 13.5px; font-weight: 700; color: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 16px rgba(10,124,110,0.35); transition: all 0.2s; }
+        .rr-btn-secondary { padding: 11px 24px; border-radius: 30px; border: 1.5px solid #0A7C6E; background: #fff; font-size: 13.5px; font-weight: 700; color: #0A7C6E; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-width: 150px; gap: 8px; transition: all 0.2s; }
+        .rr-btn-secondary:hover:not(:disabled) { background: #f0fdf9; box-shadow: 0 4px 14px rgba(10,124,110,0.15); transform: translateY(-1px); }
+        .rr-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .rr-btn-submit { padding: 11px 28px; border-radius: 30px; border: none; background: linear-gradient(135deg, #0A7C6E 0%, #0b9b8a 100%); font-size: 13.5px; font-weight: 700; color: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-width: 170px; gap: 8px; box-shadow: 0 4px 16px rgba(10,124,110,0.35); transition: all 0.2s; }
         .rr-btn-submit:hover:not(:disabled) { box-shadow: 0 6px 22px rgba(10,124,110,0.48); transform: translateY(-1px); }
         .rr-btn-submit:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
 
@@ -643,7 +795,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                           <i className="fa fa-exclamation-triangle fs-4 text-warning"></i>
                           <div>
                             <strong>Rates Missing!</strong>
-                            <div className="small mt-1">Rates for <strong>{missingStates.map(s => STATE_NAME_MAP[s] || s).join(", ")}</strong> are missing. Please request rates to continue.</div>
+                            <div className="small mt-1">Rates for <strong>{missingStates.map(s => getStateLabel(s)).join(", ")}</strong> are missing. Please request rates to continue.</div>
                           </div>
                         </div>
                         <button
@@ -668,9 +820,9 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                               className={`rate-tab justify-content-center position-relative ${stateVal === activeView ? "active" : ""}`}
                               style={isMissing && stateVal !== activeView ? { color: "#ef4444" } : {}}
                               onClick={() => setActiveView(stateVal)}
-                              aria-label={`Select state: ${STATE_NAME_MAP[stateVal] || stateVal}`}
+                              aria-label={`Select state: ${getStateLabel(stateVal)}`}
                             >
-                              <i className="fa fa-map-marker-alt me-2"></i> {STATE_NAME_MAP[stateVal] || stateVal}
+                              <i className="fa fa-map-marker-alt me-2"></i> {getStateLabel(stateVal)}
                               {isMissing && (
                                 <span 
                                   className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
@@ -692,7 +844,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                         </div>
                         <h5 className="fw-bold text-dark mb-2">No Rates Assigned</h5>
                         <p className="text-muted mx-auto mb-4" style={{ maxWidth: "400px" }}>
-                          You currently do not have any active rates assigned for {STATE_NAME_MAP[activeView] || activeView}. Please submit a request.
+                          You currently do not have any active rates assigned for {getStateLabel(activeView)}. Please submit a request.
                         </p>
                         <button
                           type="button"
@@ -709,7 +861,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                           <div className="d-flex align-items-center gap-3">
                             <span className="icon-badge mb-0"><i className="fa fa-clock"></i></span>
                             <div>
-                              <h6 className="mb-0">My Rates for {STATE_NAME_MAP[activeView] || activeView}</h6>
+                              <h6 className="mb-0">My Rates for {getStateLabel(activeView)}</h6>
                             </div>
                           </div>
                           <button
@@ -772,57 +924,86 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
               <table className="table align-middle">
                 <thead>
                   <tr>
-                    <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}> State</th>
+                    <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>State</th>
                     <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Submitted</th>
                     <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Admin Note</th>
-                    <th className="text-muted small text-uppercase text-end" style={{ letterSpacing: "0.5px" }}>Status</th>
+                    <th className="text-muted small text-uppercase text-center" style={{ letterSpacing: "0.5px", width: "115px" }}>Action</th>
+                    <th className="text-muted small text-uppercase text-center" style={{ letterSpacing: "0.5px", width: "115px" }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rateRequests.map(req => (
-                    <tr key={req.id} style={{ borderBottom: "1px solid var(--line-soft)" }}>
-                      <td className="py-3">
-                        <div className="fw-bold text-dark">{STATE_NAME_MAP[req.state] || req.state || ""}</div>
-                      </td>
-                      <td className="text-muted small py-3">
-                        {req.created_at ? new Date(req.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—"}
-                      </td>
-                      <td className="text-muted small py-3" style={{ maxWidth: "250px" }}>
-                        {req.review_note ? (
-                          <span className="text-truncate d-inline-block w-100 text-dark" title={req.review_note}>
-                            <i className="fa fa-comment-alt text-teal me-1 opacity-75"></i> {req.review_note}
-                          </span>
-                        ) : "—"}
-                      </td>
-                      <td className="py-3 text-end d-flex justify-content-end align-items-center gap-2">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-secondary rounded-pill fw-bold"
-                          onClick={() => setViewRequestRates(req)}
-                          title="View Rates"
-                        >
-                          <i className="fa fa-eye me-1"></i> View
-                        </button>
-                        {req.status === "approved" ? (
-                          <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-2">Approved</span>
-                        ) : req.status === "rejected" ? (
-                          <>
-                            <span className="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-3 py-2">Rejected</span>
+                  {rateRequests.map(req => {
+                    const statusLower = String(req.status || "").toLowerCase();
+                    const isApproved = statusLower === "approved";
+                    const isRejected = statusLower === "rejected";
+                    const isDraft = req.is_submitted === 0 || req.is_submitted === "0";
+
+                    return (
+                      <tr key={req.id} style={{ borderBottom: "1px solid var(--line-soft)" }}>
+                        <td className="py-3">
+                          <div className="fw-bold text-dark">{getStateLabel(req.state)}</div>
+                        </td>
+                        <td className="text-muted small py-3">
+                          {req.created_at ? new Date(req.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                        </td>
+                        <td className="text-muted small py-3" style={{ maxWidth: "250px" }}>
+                          {req.review_note ? (
+                            <span className="text-truncate d-inline-block w-100 text-dark" title={req.review_note}>
+                              <i className="fa fa-comment-alt text-teal me-1 opacity-75"></i> {req.review_note}
+                            </span>
+                          ) : "—"}
+                        </td>
+                        <td className="py-3 text-center" style={{ width: "115px" }}>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary rounded-pill fw-bold"
+                            style={{ width: "95px", height: "32px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                            onClick={() => setViewRequestRates(req)}
+                            title="View Rates"
+                          >
+                            <i className="fa fa-eye me-1"></i> View
+                          </button>
+                        </td>
+                        <td className="py-3 text-center" style={{ width: "115px" }}>
+                          {isApproved ? (
+                            <span
+                              className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill fw-bold"
+                              style={{ width: "95px", height: "32px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "0.82rem" }}
+                            >
+                              Approved
+                            </span>
+                          ) : isRejected ? (
                             <button
                               type="button"
                               className="btn btn-sm btn-outline-teal rounded-pill fw-bold"
+                              style={{ width: "95px", height: "32px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                               onClick={() => handleResubmit(req)}
                               title="Edit & Resubmit"
                             >
                               <i className="fa fa-pencil me-1"></i> Resubmit
                             </button>
-                          </>
-                        ) : (
-                          <span className="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill px-3 py-2">Pending</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                          ) : isDraft ? (
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-primary rounded-pill fw-bold"
+                              style={{ width: "95px", height: "32px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                              onClick={() => handleResubmit(req)}
+                              title="Submit Request"
+                            >
+                              <i className="fa fa-paper-plane me-1"></i> Submit
+                            </button>
+                          ) : (
+                            <span
+                              className="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill fw-bold"
+                              style={{ width: "95px", height: "32px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "0.82rem" }}
+                            >
+                              Pending
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -881,7 +1062,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                           className={`rr-tab-btn flex-grow-1 justify-content-center ${activeStateTab === s ? "active" : ""}`}
                           onClick={() => setActiveStateTab(s)}
                         >
-                          <i className="fa fa-map-marker-alt"></i> {STATE_NAME_MAP[s] || s}
+                          <i className="fa fa-map-marker-alt"></i> {getStateLabel(s)}
                         </button>
                       ))}
                     </div>
@@ -995,15 +1176,39 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                   Your request will be reviewed by the Staffoo admin team.
                 </div>
                 <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                  <button
+                    type="button"
+                    className="rr-btn-secondary"
+                    onClick={(e) => handleRequestSubmit(e, 0)}
+                    disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0}
+                  >
+                    {isSavingAndExiting ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" style={{ width: "14px", height: "14px", borderWidth: "2px" }}></span>
+                        Saving…
+                      </>
+                    ) : (
+                      <>
+                        <i className="fa-solid fa-floppy-disk"></i>
+                        Save and Exit
+                      </>
+                    )}
+                  </button>
+
                   {modalStates.indexOf(activeStateTab) < modalStates.length - 1 ? (
-                    <button type="button" className="rr-btn-submit" onClick={handleNextState}>
+                    <button type="button" className="rr-btn-submit" onClick={handleNextState} disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0}>
                       Next State <i className="fa-solid fa-arrow-right ms-2"></i>
                     </button>
                   ) : (
-                    <button type="button" className="rr-btn-submit" onClick={handleRequestSubmit} disabled={submitting || modalStates.length === 0}>
-                      {submitting ? (
+                    <button
+                      type="button"
+                      className="rr-btn-submit"
+                      onClick={(e) => handleRequestSubmit(e, 1)}
+                      disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0}
+                    >
+                      {isSavingAndSubmitting ? (
                         <>
-                          <span className="spinner-border" role="status" aria-hidden="true" style={{ width: "14px", height: "14px", borderWidth: "2px" }}></span>
+                          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" style={{ width: "14px", height: "14px", borderWidth: "2px" }}></span>
                           Submitting…
                         </>
                       ) : (
@@ -1030,7 +1235,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header-premium">
-              <h5>Requested Rates — {STATE_NAME_MAP[viewRequestRates.state] || viewRequestRates.state}</h5>
+              <h5>Requested Rates — {getStateLabel(viewRequestRates.state)}</h5>
               <button type="button" className="modal-close-btn" onClick={() => setViewRequestRates(null)} aria-label="Close modal">
                 <i className="fa fa-times"></i>
               </button>

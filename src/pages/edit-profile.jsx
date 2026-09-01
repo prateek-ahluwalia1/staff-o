@@ -16,6 +16,17 @@ import ContractorRatesView from "./ContractorRatesView";
 import { Link } from "react-router-dom";
 
 const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [open]);
+
   if (!open) return null;
   return (
     <div
@@ -248,6 +259,70 @@ function capitalizeWords(str) {
     .join(' ');
 }
 
+const getExpiryStatus = (dateString) => {
+  if (!dateString) return "no-expiry";
+  let expiry;
+  const ddMatch = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (ddMatch) {
+    const [, d, m, y] = ddMatch;
+    expiry = new Date(y, m - 1, d);
+  } else {
+    const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      const [, y, m, d] = isoMatch;
+      expiry = new Date(y, m - 1, d);
+    } else {
+      expiry = new Date(dateString);
+    }
+  }
+  if (isNaN(expiry.getTime())) return "no-expiry";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = (expiry - today) / (1000 * 60 * 60 * 24);
+  if (diffDays < 0) return "expired";
+  if (diffDays <= 30) return "expiring";
+  return "valid";
+};
+
+const DOC_LABEL_MAP = {
+  passport: "Passport",
+  visa: "Visa",
+  driver_license_front: "Driver License (Front)",
+  driver_license_back: "Driver License (Back)",
+  security_license: "Security License",
+  working_with_children: "Working With Children Check (WWCC)",
+  employment_application: "Employment Application Form",
+  tfn_declaration: "TFN Declaration",
+  superannuation: "Superannuation Form",
+  first_aid: "First Aid Certificate",
+  cpr: "CPR Certificate",
+  vaccination: "Vaccination Certificate",
+  security_master_license: "Security Master License",
+  public_liability: "Public Liability",
+  workcover: "Workcover",
+  security_membership: "Security Industry Membership Certificate",
+  labour_hire: "Labour Hire",
+  asic_report: "ASIC Report",
+};
+
+const STATE_CATEGORY_LABELS_MAP = {
+  contractor_document: "Victoria",
+  nsw_document: "New South Wales",
+  qld_document: "Queensland",
+  tas_document: "Tasmania",
+  wa_document: "Western Australia",
+  sa_document: "South Australia",
+};
+
+const getDocDisplayName = (doc, showStateLabel = false) => {
+  const baseName = DOC_LABEL_MAP[doc.document_type] || doc.document_name || doc.document_type || "Document";
+  const stateLabel = STATE_CATEGORY_LABELS_MAP[doc.document_category];
+  if (showStateLabel && stateLabel) {
+    return `${baseName} (${stateLabel})`;
+  }
+  return baseName;
+};
+
 
 export default function EditProfile() {
   const dispatch = useDispatch();
@@ -305,6 +380,13 @@ export default function EditProfile() {
   const [showDocModal, setShowDocModal] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [showDocErrors, setShowDocErrors] = useState(false);
+  const docErrorRef = useRef(null);
+
+  useEffect(() => {
+    if (showDocErrors && docErrorRef.current) {
+      docErrorRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [showDocErrors]);
   const [initialStatesAllowed, setInitialStatesAllowed] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyingDoc, setVerifyingDoc] = useState(false);
@@ -603,6 +685,61 @@ export default function EditProfile() {
       return true;
     });
   }, [profileData?.data?.documents, profileData?.business?.documents, formData.state, formData.states_allowed, userType]);
+
+  const docValidation = useMemo(() => {
+    const missingDocs = [];
+    const invalidDocs = [];
+
+    if (!filteredDocuments || filteredDocuments.length === 0) {
+      return { isValid: false, missingDocs: [{ name: "Required Documents" }], invalidDocs: [] };
+    }
+
+    const categories = new Set(filteredDocuments.map((d) => d.document_category).filter(Boolean));
+    const showStateLabel = categories.size > 1;
+
+    filteredDocuments.forEach((doc) => {
+      const name = getDocDisplayName(doc, showStateLabel);
+      const hasFile = Boolean(doc.file || doc.file_path);
+
+      if (!hasFile) {
+        missingDocs.push({ id: doc.id || name, name, doc });
+      } else {
+        let isInvalid = false;
+        let reason = "";
+
+        if (doc.document_expiry) {
+          const expiryStatus = getExpiryStatus(doc.document_expiry);
+          if (expiryStatus === "expired") {
+            isInvalid = true;
+            reason = `Expired document (${normalizeToDisplay(doc.document_expiry)})`;
+          }
+        }
+
+        if (
+          !isInvalid &&
+          (doc.status === "rejected" ||
+            doc.status === "invalid" ||
+            doc.status === "error" ||
+            doc.is_valid === false ||
+            doc.invalid ||
+            doc.error)
+        ) {
+          isInvalid = true;
+          reason = doc.error || doc.invalid_reason || doc.notes || "Invalid or incomplete document";
+        }
+
+        if (isInvalid) {
+          invalidDocs.push({ id: doc.id || name, name, reason: reason || "Invalid or incomplete document", doc });
+        }
+      }
+    });
+
+    return {
+      isValid: missingDocs.length === 0 && invalidDocs.length === 0,
+      missingDocs,
+      invalidDocs,
+    };
+  }, [filteredDocuments]);
 
   const handleAvatarUpload = useCallback(
     async (file) => {
@@ -951,17 +1088,10 @@ export default function EditProfile() {
 
   const handleDocNumberChange = (e) => {
     const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-    setDocForm((prev) => {
-      if (prev.document_name === "Visa") {
-        return { ...prev, document_no: value };
-      }
-      return {
-        ...prev,
-        document_no: value,
-        is_verified: false,
-        document_expiry: "",
-      };
-    });
+    setDocForm((prev) => ({
+      ...prev,
+      document_no: value,
+    }));
   };
 
   const handleDocFormChange = async (e) => {
@@ -998,19 +1128,9 @@ export default function EditProfile() {
     if (type === "checkbox") {
       setDocForm((prev) => ({ ...prev, [name]: checked }));
     } else if (name === "document_name") {
-      // Changing the document type mid-form must reset anything tied to the
-      // previous type's verification (esp. show_working_rights, which should
-      // only ever be true for a verified Visa).
       setDocForm((prev) => ({
         ...prev,
         document_name: value,
-        document_no: "",
-        document_expiry: "",
-        is_verified: false,
-        show_working_rights: false,
-        working_rights_file_path: "",
-        working_rights_file_url: "",
-        work_entitlement: "",
       }));
     } else if (type === "file") {
       const file = files[0];
@@ -1130,7 +1250,7 @@ export default function EditProfile() {
   );
 
   const isPersonalComplete = missingFields.length === 0;
-  const isDocumentsComplete = filteredDocuments.length > 0 && filteredDocuments.every(doc => doc.file || doc.file_path);
+  const isDocumentsComplete = docValidation.isValid;
 
   const handleTabClick = (targetTab) => {
     if (targetTab === "personal") {
@@ -1140,15 +1260,28 @@ export default function EditProfile() {
 
     if (!isPersonalComplete) {
       setShowErrors(false);
-      setTimeout(() => setShowErrors(true), 10);
+      setTimeout(() => {
+        setShowErrors(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 10);
       setActiveTab("personal");
       return;
     }
 
-    if (targetTab === "onboarding" || targetTab === "rates") {
-      if (!isDocumentsComplete) {
+    if (targetTab !== "documents" && userType !== "customer") {
+      if (!docValidation.isValid) {
         setShowDocErrors(false);
-        setTimeout(() => setShowDocErrors(true), 10);
+        setTimeout(() => {
+          setShowDocErrors(true);
+          setTimeout(() => {
+            if (docErrorRef.current) {
+              docErrorRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+            } else {
+              window.scrollTo({ top: 200, behavior: "smooth" });
+            }
+          }, 50);
+        }, 10);
+        toast.error("Please upload all required documents before continuing.");
         setActiveTab("documents");
         return;
       }
@@ -1564,6 +1697,60 @@ export default function EditProfile() {
 
       {activeTab === "documents" && userType !== "customer" && (
         <div className="content-card p-4">
+          {showDocErrors && !docValidation.isValid && (
+            <div
+              ref={docErrorRef}
+              className="p-4 rounded-3 mb-4 shadow-sm shake-red"
+              style={{
+                backgroundColor: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderLeft: "5px solid #dc2626",
+                color: "#991b1b",
+              }}
+              role="alert"
+            >
+              <div className="d-flex align-items-start gap-3">
+                <i
+                  className="fa-solid fa-circle-exclamation fs-3 mt-1 flex-shrink-0"
+                  style={{ color: "#dc2626" }}
+                ></i>
+                <div className="w-100">
+                  <h5 className="fw-bold mb-2" style={{ color: "#991b1b", fontSize: "1rem" }}>
+                    Please upload all required documents before continuing.
+                  </h5>
+                  {docValidation.missingDocs.length > 0 && (
+                    <div className="mb-2">
+                      <strong className="d-block mb-1" style={{ fontSize: "0.88rem", color: "#7f1d1d" }}>
+                        Missing documents:
+                      </strong>
+                      <ul className="mb-0 ps-4" style={{ fontSize: "0.85rem", color: "#7f1d1d", listStyleType: "disc" }}>
+                        {docValidation.missingDocs.map((item, idx) => (
+                          <li key={idx} className="mb-1" style={{ listStyleType: "disc" }}>
+                            <strong>{item.name}</strong>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {docValidation.invalidDocs.length > 0 && (
+                    <div>
+                      <strong className="d-block mb-1" style={{ fontSize: "0.88rem", color: "#7f1d1d" }}>
+                        Documents requiring attention:
+                      </strong>
+                      <ul className="mb-0 ps-4" style={{ fontSize: "0.85rem", color: "#7f1d1d", listStyleType: "disc" }}>
+                        {docValidation.invalidDocs.map((item, idx) => (
+                          <li key={idx} className="mb-1" style={{ listStyleType: "disc" }}>
+                            <strong>{item.name}</strong> — {item.reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           <DocumentTable
             documents={filteredDocuments}
             userType={userType}
@@ -1631,11 +1818,11 @@ export default function EditProfile() {
           {userType === "contractor" && (
             <div className="mt-4 text-end">
               <button
-                className="btn px-4 py-2 rounded-pill fw-bold"
+                className="btn px-5 py-2.5 rounded-pill fw-bold"
                 style={{ background: "#0A7C6E", borderColor: "#0A7C6E", color: "white" }}
-                onClick={() => setActiveTab("rates")}
+                onClick={() => handleTabClick("rates")}
               >
-                Proceed to My Rates <i className="fa-solid fa-arrow-right ms-2"></i>
+                <i className="fa-solid fa-arrow-right ms-2 "></i> Next
               </button>
             </div>
           )}
@@ -1762,24 +1949,40 @@ export default function EditProfile() {
               <div className="row g-3">
                 <div className="col-12 col-md-6">
                   <label className="form-label fw-semibold">Upload Working Rights Document <span className="text-danger">*</span></label>
-                  <div className="border rounded p-3 text-center bg-light" style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <label
+                    className="position-relative border rounded p-3 text-center bg-light w-100 d-flex flex-column align-items-center justify-content-center"
+                    style={{ minHeight: "200px", cursor: "pointer" }}
+                  >
                     {docForm.working_rights_file_url ? (
-                      docForm.working_rights_file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                        <img
-                          src={docForm.working_rights_file_url.startsWith("http") ? docForm.working_rights_file_url : `${apiURL}staff_documents/${docForm.working_rights_file_url}`}
-                          alt="Working Rights"
-                          style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }}
-                        />
-                      ) : (
-                        <div className="text-center">
-                          <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
-                          <a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.working_rights_file_url}`} target="_blank" rel="noopener noreferrer">View Uploaded Document</a>
+                      <div className="d-flex flex-column align-items-center w-100">
+                        {docForm.working_rights_file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                          <img
+                            src={docForm.working_rights_file_url.startsWith("http") ? docForm.working_rights_file_url : `${apiURL}staff_documents/${docForm.working_rights_file_url}`}
+                            alt="Working Rights"
+                            style={{ width: "100%", maxHeight: "150px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }}
+                          />
+                        ) : (
+                          <div className="text-center">
+                            <i className="fa-solid fa-file-pdf fa-3x text-muted mb-2"></i>
+                            <div>
+                              <a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.working_rights_file_url}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>View Uploaded Document</a>
+                            </div>
+                          </div>
+                        )}
+                        <div className="mt-2 text-primary text-center">
+                          <div className="fw-semibold small d-flex align-items-center justify-content-center gap-1">
+                            <i className="fa-solid fa-pen-to-square"></i> Click to update/replace document or image
+                          </div>
+                          <div className="text-muted small" style={{ fontSize: "0.75rem" }}>
+                            Click anywhere on this box to select a new file
+                          </div>
                         </div>
-                      )
+                      </div>
                     ) : (
                       <div className="text-center">
-                        <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
-                        <p className="text-muted">Upload your Working Rights document</p>
+                        <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-2"></i>
+                        <p className="fw-semibold text-dark mb-1">Click to upload document or image</p>
+                        <p className="text-muted small mb-0">Click here to select a file</p>
                       </div>
                     )}
                     {uploadLoading && (
@@ -1788,31 +1991,51 @@ export default function EditProfile() {
                         <p className="small mt-1">Uploading...</p>
                       </div>
                     )}
-                  </div>
-                  <input type="file" className="form-control mt-2" onChange={handleDocFormChange} name="working_rights_file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+                    <input type="file" style={{ display: "none" }} onChange={handleDocFormChange} name="working_rights_file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+                  </label>
                 </div>
                 <div className="col-12 col-md-6">
                   <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
-                  <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <label
+                    className="position-relative border rounded p-3 text-center bg-light w-100 d-flex flex-column align-items-center justify-content-center"
+                    style={{ minHeight: "200px", cursor: "pointer" }}
+                  >
                     {docForm.file_url ? (
-                      <>
+                      <div className="d-flex flex-column align-items-center w-100">
                         {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                          <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
+                          <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: "150px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
                         ) : (
                           <div className="text-center">
-                            <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
-                            <a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.file_url}`} target="_blank" rel="noopener noreferrer">View Document</a>
+                            <i className="fa-solid fa-file-pdf fa-3x text-muted mb-2"></i>
+                            <div>
+                              <a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.file_url}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>View Document</a>
+                            </div>
                           </div>
                         )}
-                      </>
+                        <div className="mt-2 text-primary text-center">
+                          <div className="fw-semibold small d-flex align-items-center justify-content-center gap-1">
+                            <i className="fa-solid fa-pen-to-square"></i> Click to update/replace document or image
+                          </div>
+                          <div className="text-muted small" style={{ fontSize: "0.75rem" }}>
+                            Click anywhere on this box to select a new file
+                          </div>
+                        </div>
+                      </div>
                     ) : (
                       <div className="text-center">
-                        <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
-                        <p className="text-muted">Upload document to view preview</p>
+                        <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-2"></i>
+                        <p className="fw-semibold text-dark mb-1">Click to upload document or image</p>
+                        <p className="text-muted small mb-0">Click here to select a file</p>
                       </div>
                     )}
-                  </div>
-                  <input type="file" className="form-control mt-2" onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+                    {uploadLoading && (
+                      <div className="position-absolute top-50 start-50 translate-middle">
+                        <div className="spinner-border text-primary" />
+                        <p className="small mt-1">Uploading...</p>
+                      </div>
+                    )}
+                    <input type="file" style={{ display: "none" }} onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+                  </label>
                 </div>
               </div>
 
@@ -1863,26 +2086,46 @@ export default function EditProfile() {
 
               <div className="mb-3 mt-3">
                 <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
-                <div className="position-relative border rounded p-3 text-center bg-light" style={{ minHeight: "200px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                <label
+                  className="position-relative border rounded p-3 text-center bg-light w-100 d-flex flex-column align-items-center justify-content-center"
+                  style={{ minHeight: "200px", cursor: "pointer", overflow: "hidden" }}
+                >
                   {docForm.file_url ? (
-                    <>
+                    <div className="d-flex flex-column align-items-center w-100">
                       {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                        <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ maxWidth: "100%", maxHeight: "200px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
+                        <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ maxWidth: "100%", maxHeight: "150px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
                       ) : (
                         <div className="text-center">
-                          <i className="fa-solid fa-file-pdf fa-3x text-muted mb-3"></i>
-                          <a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.file_url}`} target="_blank" rel="noopener noreferrer">View Document</a>
+                          <i className="fa-solid fa-file-pdf fa-3x text-muted mb-2"></i>
+                          <div>
+                            <a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.file_url}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>View Document</a>
+                          </div>
                         </div>
                       )}
-                    </>
+                      <div className="mt-2 text-primary text-center">
+                        <div className="fw-semibold small d-flex align-items-center justify-content-center gap-1">
+                          <i className="fa-solid fa-pen-to-square"></i> Click to update/replace document or image
+                        </div>
+                        <div className="text-muted small" style={{ fontSize: "0.75rem" }}>
+                          Click anywhere on this box to select a new file
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <div className="text-center">
-                      <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-3"></i>
-                      <p className="text-muted">Upload document to view preview</p>
+                      <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-2"></i>
+                      <p className="fw-semibold text-dark mb-1">Click to upload document or image</p>
+                      <p className="text-muted small mb-0">Click here to select a file</p>
                     </div>
                   )}
-                </div>
-                <input type="file" className="form-control mt-2" onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+                  {uploadLoading && (
+                    <div className="position-absolute top-50 start-50 translate-middle">
+                      <div className="spinner-border text-primary" />
+                      <p className="small mt-1">Uploading...</p>
+                    </div>
+                  )}
+                  <input type="file" style={{ display: "none" }} onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+                </label>
               </div>
 
               <div className="d-flex gap-2">

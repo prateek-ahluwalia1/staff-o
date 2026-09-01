@@ -5658,14 +5658,23 @@ public function request_charge_rate(Request $request)
         $rateFieldLabels = $this->chargeRateFieldLabels();
 
         $requestIds = [];
-        $emailStateBlocks = []; // for the combined email: one block per state
+        $emailStateBlocks = [];
         $isUpdate = false;
 
         foreach ($request->rates as $rateEntry) {
+            $state = $rateEntry['state'];
+            
+            // Check if there's an existing pending record for this user and state
+            $existingRecord = DB::table('charge_rate_requests')
+                ->where('user_id', $request->user_id)
+                ->where('state', $state)
+                ->where('status', 'pending')
+                ->first();
+
             $insertData = [
                 'user_id'        => $request->user_id,
                 'title'          => $rateEntry['title'] ?? null,
-                'state'          => $rateEntry['state'],
+                'state'          => $state,
                 'effective_from' => $rateEntry['effective_from'] ?? null,
                 'review_note'    => $request->notes ?? null,
                 'status'         => 'pending',
@@ -5673,38 +5682,49 @@ public function request_charge_rate(Request $request)
                 'updated_at'     => now(),
             ];
 
-            $rateRows = []; // for this state's block in the email
+            $rateRows = [];
             foreach ($rateFieldLabels as $column => $label) {
                 $value = array_key_exists($column, $rateEntry) ? (float) $rateEntry[$column] : 0;
                 $insertData[$column] = $value;
                 $rateRows[] = ['label' => $label, 'value' => $value];
             }
 
-            // Check if we have an ID and should update
+            // If an ID is provided in the request, use that
             if (!empty($rateEntry['id'])) {
-                // Update existing record
+                // Update existing record by ID
                 DB::table('charge_rate_requests')
                     ->where('id', $rateEntry['id'])
-                    ->where('user_id', $request->user_id) // Security: ensure the record belongs to this user
+                    ->where('user_id', $request->user_id)
                     ->update($insertData);
                 
                 $requestIds[] = $rateEntry['id'];
                 $isUpdate = true;
-            } else {
-                // Create new record
+            } 
+            // If there's an existing pending record for this state, update it
+            elseif ($existingRecord) {
+                // Update the existing pending record
+                DB::table('charge_rate_requests')
+                    ->where('id', $existingRecord->id)
+                    ->update($insertData);
+                
+                $requestIds[] = $existingRecord->id;
+                $isUpdate = true;
+            } 
+            // Otherwise create a new record
+            else {
                 $insertData['created_at'] = now();
                 $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
                 $requestIds[] = $requestId;
             }
 
             $emailStateBlocks[] = [
-                'state'    => $rateEntry['state'],
+                'state'    => $state,
                 'title'    => $rateEntry['title'] ?? null,
                 'rateRows' => $rateRows,
             ];
         }
 
-        // Email admin — fixed recipient, one email covering every state in this submission
+        // Email admin
         $adminEmails = ['admin@staffoo.com.au', 'shahbazkhan062@gmail.com'];
 
         if ($request->is_submitted == 1) {

@@ -5876,6 +5876,8 @@ public function accept_charge_rate_request(Request $request, $id)
                 }
             }
         }
+
+        $this->generateAndSendContract($contractor, $rateRequest, $charge_rate);
         // ============ END NEW ============
 
         $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();

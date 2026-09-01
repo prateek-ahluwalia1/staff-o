@@ -178,6 +178,11 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
+    Route::post('contracts/{id}/upload', [JobRosterController::class, 'uploadContract']);
+    Route::get('contracts/sign/{token}', [JobRosterController::class, 'getContractByToken']);
+    Route::post('contracts/sign/{token}', [JobRosterController::class, 'signContract']);
+    Route::get('contracts', [JobRosterController::class, 'listContracts']);
+  
     Route::any('job-post', [JobRosterController::class, 'jobData'])->name('job.post');
     Route::post('split-roster-shift', [JobRosterController::class, 'update_shift_breakdown']);
     Route::post('request-charge-rate', [JobRosterController::class, 'request_charge_rate']);

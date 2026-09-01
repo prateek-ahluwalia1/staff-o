@@ -47,6 +47,9 @@ use App\Mail\ResourcePartnerRemovedClient;
 use App\Models\ContractorChargeRate;
 use App\Services\PlatformFeeInvoiceService;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\ContractService;
+use App\Mail\ContractSignatureRequestMail;
+use App\Mail\ContractSignedMail;
 
 class JobRosterController extends Controller
 {   
@@ -6443,4 +6446,322 @@ private function canRemoveAcceptedBy($user, $job): bool
 
     return false;
 }
+
+ //new contract flow
+    /**
+ * Add these methods to your controller. Add these use statements at the top:
+ *
+ *   use App\Services\ContractService;
+ *   use App\Mail\ContractSignatureRequestMail;
+ *   use App\Mail\ContractSignedMail;
+ *   use Illuminate\Support\Facades\Mail;
+ *   use Illuminate\Support\Facades\Log;
+ *   use Illuminate\Support\Str;
+ *
+ * Routes:
+ *   Route::post('contracts/{id}/upload', [YourController::class, 'uploadContract']);
+ *   Route::get('contracts/sign/{token}', [YourController::class, 'getContractByToken']);
+ *   Route::post('contracts/sign/{token}', [YourController::class, 'signContract']);
+ *   Route::get('contracts', [YourController::class, 'listContracts']); // admin view
+ */
+ 
+/**
+ * STEP 1 — call this from accept_charge_rate_request(), right after the
+ * "notify the CONTRACTOR their request was approved" block. Generates the
+ * contract PDF and emails the contractor a link to review + sign it.
+ *
+ * Add this call in accept_charge_rate_request():
+ *   $this->generateAndSendContract($contractor, $rateRequest, $charge_rate);
+ */
+private function generateAndSendContract($contractor, $rateRequest, $charge_rate): void
+{
+    try {
+        $rateFieldLabels = $this->chargeRateEmailFieldLabels(); // reuse the "def_" only label set from earlier
+        $rateRows = [];
+        foreach ($rateFieldLabels as $column => $label) {
+            $rateRows[] = ['label' => $label, 'value' => (float) ($charge_rate->{$column} ?? 0)];
+        }
+ 
+        $contractNumber = 'CTR-' . strtoupper($rateRequest->state) . '-' . str_pad($charge_rate->id, 5, '0', STR_PAD_LEFT);
+        $signingToken   = \Illuminate\Support\Str::random(48);
+ 
+        $pdfData = [
+            'contract_number' => $contractNumber,
+            'date'            => now()->format('d M Y'),
+            'contractor_name' => $contractor->contractor->company_name ?? $contractor->name,
+            'contractor_abn'  => $contractor->contractor->abn ?? 'N/A',
+            'state'           => $rateRequest->state,
+            'title'           => $rateRequest->title,
+            'effective_from'  => $rateRequest->effective_from,
+            'rates'           => $rateRows,
+        ];
+ 
+        $contractService = new ContractService();
+        $pdfBytes = $contractService->generatePdf($pdfData);
+ 
+        $directory = storage_path('app/public/contracts');
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+        $filename = "{$contractNumber}.pdf";
+        file_put_contents($directory . DIRECTORY_SEPARATOR . $filename, $pdfBytes);
+ 
+        $contractId = DB::table('contracts')->insertGetId([
+            'charge_rate_request_id' => $rateRequest->id,
+            'contractor_id'          => $contractor->id,
+            'state'                  => $rateRequest->state,
+            'title'                  => $rateRequest->title,
+            'contract_number'        => $contractNumber,
+            'rate_snapshot'          => json_encode($rateRows),
+            'pdf_path'               => 'contracts/' . $filename,
+            'signing_token'          => $signingToken,
+            'status'                 => 'pending_signature',
+            'created_at'             => now(),
+            'updated_at'             => now(),
+        ]);
+ 
+        // Email contractor the signing link
+        if (!empty($contractor->email)) {
+            $signingLink = config('app.frontend_url') . '/contract/sign?token=' . $signingToken;
+ 
+            Mail::to($contractor->email)->send(new ContractSignatureRequestMail(
+                $contractor->name ?? 'Contractor',
+                $rateRequest->state,
+                $contractNumber,
+                $signingLink
+            ));
+        }
+ 
+    } catch (\Exception $e) {
+        Log::error('Failed to generate/send contract', [
+            'contractor_id' => $contractor->id ?? null,
+            'error' => $e->getMessage(),
+        ]);
+    }
+}
+ 
+/**
+ * STEP 2a (optional) — Admin uploads their own contract PDF instead of the
+ * auto-generated one, for cases where the standard template doesn't fit.
+ * POST /contracts/{id}/upload  (multipart/form-data, field: "file")
+ */
+public function uploadContract(Request $request, $id)
+{
+    $request->validate([
+        'file' => 'required|file|mimes:pdf|max:10240',
+    ]);
+ 
+    $contract = DB::table('contracts')->where('id', $id)->first();
+ 
+    if (!$contract) {
+        return response()->json(['success' => false, 'message' => 'Contract not found.'], 200);
+    }
+ 
+    $directory = storage_path('app/public/contracts');
+    if (!file_exists($directory)) {
+        mkdir($directory, 0755, true);
+    }
+ 
+    $filename = $contract->contract_number . '-admin-upload.pdf';
+    $request->file('file')->move($directory, $filename);
+ 
+    DB::table('contracts')->where('id', $id)->update([
+        'pdf_path'          => 'contracts/' . $filename,
+        'uploaded_by_admin' => true,
+        'uploaded_by'       => auth()->id() ?? $request->input('admin_id'),
+        'updated_at'        => now(),
+    ]);
+ 
+    return response()->json([
+        'success' => true,
+        'message' => 'Contract file uploaded and will be used instead of the auto-generated version.',
+        'data' => ['contract_id' => $id],
+    ], 200);
+}
+ 
+/**
+ * STEP 2b — contractor clicks the emailed link. Frontend calls this to
+ * fetch contract details + PDF URL to display for review before signing.
+ * GET /contracts/sign/{token}
+ */
+public function getContractByToken($token)
+{
+    $contract = DB::table('contracts')->where('signing_token', $token)->first();
+ 
+    if (!$contract) {
+        return response()->json(['success' => false, 'message' => 'Contract not found or link expired.'], 200);
+    }
+ 
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'contract_number' => $contract->contract_number,
+            'state'           => $contract->state,
+            'title'           => $contract->title,
+            'status'          => $contract->status,
+            'pdf_url'         => asset('storage/' . $contract->pdf_path),
+            'already_signed'  => $contract->status === 'signed',
+        ],
+    ], 200);
+}
+ 
+/**
+ * STEP 3 — contractor submits their drawn signature (base64 PNG from a
+ * canvas) plus their printed name.
+ * POST /contracts/sign/{token}
+ * Body: {
+ *   "signature_name": "John Smith",          // printed name
+ *   "signature_image": "data:image/png;base64,iVBORw0KG..."  // canvas.toDataURL('image/png')
+ * }
+ */
+public function signContract(Request $request, $token)
+{
+    $request->validate([
+        'signature_name'  => 'required|string|max:255',
+        'signature_image' => 'required|string', // base64 data URI from the signature pad
+    ]);
+ 
+    $contract = DB::table('contracts')->where('signing_token', $token)->first();
+ 
+    if (!$contract) {
+        return response()->json(['success' => false, 'message' => 'Contract not found or link expired.'], 200);
+    }
+ 
+    if ($contract->status === 'signed') {
+        return response()->json(['success' => false, 'message' => 'This contract has already been signed.'], 200);
+    }
+ 
+    // Decode + validate the signature image
+    $signatureData = $request->signature_image;
+    if (preg_match('/^data:image\/(png|jpeg);base64,/', $signatureData)) {
+        $signatureData = preg_replace('/^data:image\/(png|jpeg);base64,/', '', $signatureData);
+    }
+    $decodedImage = base64_decode($signatureData, true);
+ 
+    if ($decodedImage === false || strlen($decodedImage) < 50) {
+        return response()->json(['success' => false, 'message' => 'Invalid signature image.'], 422);
+    }
+ 
+    $contractor = DB::table('users')->where('id', $contract->contractor_id)->first();
+    $signedAt   = now();
+ 
+    try {
+        // Save the raw signature image file (kept separately for records/audit,
+        // in addition to being embedded in the PDF itself)
+        $signatureDirectory = storage_path('app/public/contracts/signatures');
+        if (!file_exists($signatureDirectory)) {
+            mkdir($signatureDirectory, 0755, true);
+        }
+        $signatureFilename = $contract->contract_number . '-signature.png';
+        file_put_contents($signatureDirectory . DIRECTORY_SEPARATOR . $signatureFilename, $decodedImage);
+ 
+        // Regenerate the PDF WITH the signature image + printed name filled in
+        $rateRows = json_decode($contract->rate_snapshot, true) ?? [];
+ 
+        $pdfData = [
+            'contract_number' => $contract->contract_number,
+            'date'            => \Carbon\Carbon::parse($contract->created_at)->format('d M Y'),
+            'contractor_name' => $contractor->contractor->company_name ?? $contractor->name ?? 'Contractor',
+            'contractor_abn'  => $contractor->contractor->abn ?? 'N/A',
+            'state'           => $contract->state,
+            'title'           => $contract->title,
+            'effective_from'  => null,
+            'rates'           => $rateRows,
+            'signature_name'  => $request->signature_name,
+            'signature_image_base64' => base64_encode($decodedImage), // embedded directly in the PDF
+            'signed_at'       => $signedAt->format('d M Y, g:i A'),
+            'signed_ip'       => $request->ip(),
+        ];
+ 
+        $contractService = new ContractService();
+        $signedPdfBytes = $contractService->generatePdf($pdfData);
+ 
+        $directory = storage_path('app/public/contracts');
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+        $signedFilename = $contract->contract_number . '-signed.pdf';
+        file_put_contents($directory . DIRECTORY_SEPARATOR . $signedFilename, $signedPdfBytes);
+ 
+        DB::table('contracts')->where('id', $contract->id)->update([
+            'status'                => 'signed',
+            'signature_name'        => $request->signature_name,
+            'signature_image_path'  => 'contracts/signatures/' . $signatureFilename,
+            'signed_at'             => $signedAt,
+            'signed_ip'             => $request->ip(),
+            'signed_pdf_path'       => 'contracts/' . $signedFilename,
+            'updated_at'            => now(),
+        ]);
+ 
+        // Email signed copy to contractor
+        if (!empty($contractor->email)) {
+            try {
+                Mail::to($contractor->email)->send(new ContractSignedMail(
+                    $contractor->name ?? 'Contractor',
+                    $contractor->contractor->company_name ?? $contractor->name ?? 'Contractor',
+                    $contract->state,
+                    $contract->contract_number,
+                    $signedPdfBytes
+                ));
+            } catch (\Exception $e) {
+                Log::error('Failed to send signed contract to contractor', ['error' => $e->getMessage()]);
+            }
+        }
+ 
+        // Email signed copy to admin
+        $adminAddress = config('mail.staffoo_admin_address', 'admin@staffoo.com.au');
+        try {
+            Mail::to($adminAddress)->send(new ContractSignedMail(
+                'Admin',
+                $contractor->contractor->company_name ?? $contractor->name ?? 'Contractor',
+                $contract->state,
+                $contract->contract_number,
+                $signedPdfBytes
+            ));
+        } catch (\Exception $e) {
+            Log::error('Failed to send signed contract to admin', ['error' => $e->getMessage()]);
+        }
+ 
+        return response()->json([
+            'success' => true,
+            'message' => 'Contract signed successfully.',
+            'data' => [
+                'contract_number' => $contract->contract_number,
+                'signed_pdf_url'  => asset('storage/contracts/' . $signedFilename),
+            ],
+        ], 200);
+ 
+    } catch (\Exception $e) {
+        Log::error('Failed to sign contract', ['contract_id' => $contract->id, 'error' => $e->getMessage()]);
+        return response()->json(['success' => false, 'message' => 'Failed to process signature: ' . $e->getMessage()], 500);
+    }
+}
+ 
+/**
+ * STEP 4 — Admin views all contracts (with signed copy links where available).
+ * GET /contracts?status=signed  (or omit status for all)
+ */
+public function listContracts(Request $request)
+{
+    $query = DB::table('contracts')
+        ->join('users', 'users.id', '=', 'contracts.contractor_id')
+        ->select('contracts.*', 'users.name as contractor_name', 'users.email as contractor_email');
+ 
+    if ($request->has('status') && !empty($request->status)) {
+        $query->where('contracts.status', $request->status);
+    }
+ 
+    $contracts = $query->orderBy('contracts.created_at', 'desc')->get()->map(function ($c) {
+        $c->pdf_url = $c->pdf_path ? asset('storage/' . $c->pdf_path) : null;
+        $c->signed_pdf_url = $c->signed_pdf_path ? asset('storage/' . $c->signed_pdf_path) : null;
+        return $c;
+    });
+ 
+    return response()->json([
+        'success' => true,
+        'message' => 'Contracts fetched successfully.',
+        'data' => $contracts,
+    ], 200);
+}
+    //end contract flow
 }

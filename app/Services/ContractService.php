@@ -187,28 +187,28 @@ class ContractService
 
         // Header
         $html .= "<div class='header'><table style='width:100%;'><tr>";
-        $html .= "<td><div class='header-title'>Subcontractor Services Agreement</div><div class='header-subtitle'>Issued via Staffoo Platform</div></td>";
+        $html .= "<td><div class='header-title'>Resource Partner Services Agreement</div><div class='header-subtitle'>Issued via Staffoo Platform</div></td>";
         $html .= "<td class='header-meta'>Contract #: {$contractNumber}<br>Date: {$date}</td>";
         $html .= "</tr></table></div>";
 
         // Parties
-        $html .= "<p>This Subcontractor Services Agreement (\"Agreement\") is entered into between "
+        $html .= "<p>This Resource Partner Services Agreement (\"Agreement\") is entered into between "
                . "<strong>Staffoo (Capital Services Pty Ltd)</strong> (\"Staffoo\") and "
-               . "<strong>{$contractorName}</strong> (ABN: {$contractorAbn}) (\"Subcontractor\"), "
+               . "<strong>{$contractorName}</strong> (ABN: {$contractorAbn}) (\"Resource Partner\"), "
                . "for the provision of security services in <strong>{$state}</strong>, effective from {$effectiveFrom}.</p>";
 
-        $html .= "<p>The Subcontractor acknowledges and agrees that it is engaged by Staffoo as an "
-               . "independent <strong>subcontractor</strong>, and not as an employee, agent, or partner of Staffoo. "
-               . "The Subcontractor is responsible for its own tax, superannuation, insurance, and statutory "
+        $html .= "<p>The Resource Partner acknowledges and agrees that it is engaged by Staffoo as an "
+               . "independent <strong>Resource Partner</strong>, and not as an employee, agent, or partner of Staffoo. "
+               . "The Resource Partner is responsible for its own tax, superannuation, insurance, and statutory "
                . "obligations in connection with the services provided under this Agreement.</p>";
 
         // Key terms
         $html .= "<div class='section-title'>Key Terms</div>";
         $html .= "<ul class='clause-list'>";
-        $html .= "<li>The Subcontractor will provide licensed security guarding services within the state of <strong>{$state}</strong> only, unless otherwise agreed in writing.</li>";
-        $html .= "<li>Charge rates payable to the Subcontractor for services rendered in {$state} are set out in the rate schedule below, and reflect the rates approved on Staffoo's platform.</li>";
+        $html .= "<li>The Resource Partner will provide licensed security guarding services within the state of <strong>{$state}</strong> only, unless otherwise agreed in writing.</li>";
+        $html .= "<li>Charge rates payable to the Resource Partner for services rendered in {$state} are set out in the rate schedule below, and reflect the rates approved on Staffoo's platform.</li>";
         $html .= "<li>This Agreement does not guarantee any minimum volume of work; jobs are offered at Staffoo's discretion via the platform.</li>";
-        $html .= "<li>The Subcontractor must maintain all licences, certifications, and insurances required by law to perform the services in {$state}.</li>";
+        $html .= "<li>The Resource Partner must maintain all licences, certifications, and insurances required by law to perform the services in {$state}.</li>";
         $html .= "<li>Either party may terminate this arrangement in accordance with the terms of the Staffoo platform agreement.</li>";
         $html .= "</ul>";
 
@@ -221,7 +221,7 @@ class ContractService
         if ($isSigned) {
             $html .= "<div class='signed-badge'>&#10003; Signed</div>";
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
-            $html .= "<p style='margin-bottom:10px;font-size:10px;'>By signing below, the Subcontractor confirms they have read, understood, "
+            $html .= "<p style='margin-bottom:10px;font-size:10px;'>By signing below, the Resource Partner confirms they have read, understood, "
                    . "and agree to be bound by the terms of this Agreement, including the rate schedule above.</p>";
             if ($signatureImageBase64) {
                 $html .= "<div class='sign-row'><span class='sign-label'>Signature:</span></div>";
@@ -236,7 +236,7 @@ class ContractService
             }
         } else {
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
-            $html .= "<p style='margin-bottom:10px;font-size:10px;'>By signing below, the Subcontractor confirms they have read, understood, "
+            $html .= "<p style='margin-bottom:10px;font-size:10px;'>By signing below, the Resource Partner confirms they have read, understood, "
                    . "and agree to be bound by the terms of this Agreement, including the rate schedule above.</p>";
             $html .= "<div class='sign-row'><span class='sign-label'>Signature:</span><span class='unsigned-line'></span></div>";
             $html .= "<div class='sign-row'><span class='sign-label'>Printed Name:</span><span class='unsigned-line'></span></div>";

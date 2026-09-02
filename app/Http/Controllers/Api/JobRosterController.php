@@ -6502,7 +6502,7 @@ private function generateAndSendContract($contractor, $rateRequest, $charge_rate
             $rateRows[] = ['label' => $label, 'value' => (float) ($charge_rate->{$column} ?? 0)];
         }
  
-        $contractNumber = 'CTR-' . strtoupper($rateRequest->state) . '-' . str_pad($charge_rate->id, 5, '0', STR_PAD_LEFT);
+        $contractNumber = 'CTR-' . strtoupper($rateRequest->state) . '-' . Str::random(6);
         $signingToken   = \Illuminate\Support\Str::random(48);
  
         $pdfData = [

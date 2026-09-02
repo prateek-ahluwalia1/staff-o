@@ -3872,6 +3872,7 @@ private function sendStaffActivationNotification(User $user): void
                     'contractor_invoice' => $job->contractor_invoice,
                     'accepted_by' => $job->accepted_by,
                     'payment_status' => $job->payment_status,
+                    'payment_intent_id' => $job->payment_intent_id,
                 ];
             })->toArray();
 

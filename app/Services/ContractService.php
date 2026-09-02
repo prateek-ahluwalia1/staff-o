@@ -90,10 +90,10 @@ class ContractService
                 $rateHtml .= "
                 <td class='rate-card' width='" . (int)(100 / count($chunk)) . "%'>
                     <div class='rate-title'>" . htmlspecialchars($categoryName) . "</div>
-                    <div class='rate-label'><span class='dot'>&#9679;</span>METRO</div>
+                    <div class='rate-label'><span class='icon-dot'></span>METRO</div>
                     <div class='rate-value'>{$metroValue}</div>
                     <div style='height:6px;'></div>
-                    <div class='rate-label'><span class='tri'>&#9650;</span>REGIONAL</div>
+                    <div class='rate-label'><span class='icon-tri'></span>REGIONAL</div>
                     <div class='rate-value'>{$regionalValue}</div>
                 </td>";
             }
@@ -132,13 +132,14 @@ class ContractService
         .clause-list li { margin-bottom: 6px; }
 
         /* Rate cards — table-based (dompdf does not reliably support flexbox) */
-        .card-row { width: 100%; border-collapse: separate; border-spacing: 8px; margin-bottom: 0; }
+        .card-row { width: 100%; border-collapse: separate; border-spacing: 8px; margin-bottom: 0; page-break-inside: avoid; }
         .rate-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 14px 16px;
             vertical-align: top;
+            page-break-inside: avoid;
         }
         .rate-title {
             font-size: 12.5px;
@@ -153,12 +154,21 @@ class ContractService
             letter-spacing: 0.5px;
             margin-bottom: 2px;
         }
-        .rate-label .dot { color: #0A7C6E; margin-right: 4px; }
-        .rate-label .tri { color: #14243D; margin-right: 4px; }
+        /* CSS-drawn shapes instead of Unicode glyphs — dompdf's DejaVu Sans
+           doesn't reliably render ● / ▲ and falls back to "?" */
+        .icon-dot {
+            display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+            background: #0A7C6E; margin-right: 5px;
+        }
+        .icon-tri {
+            display: inline-block; width: 0; height: 0;
+            border-left: 4px solid transparent; border-right: 4px solid transparent;
+            border-bottom: 6px solid #14243D; margin-right: 5px;
+        }
         .rate-value { font-size: 17px; font-weight: bold; color: #0A7C6E; }
 
         /* Signature */
-        .sign-box { margin-top: 30px; border: 1px solid #d1d5db; border-radius: 6px; padding: 18px 20px; }
+        .sign-box { margin-top: 30px; border: 1px solid #d1d5db; border-radius: 6px; padding: 18px 20px; page-break-inside: avoid; }
         .sign-title { font-size: 12px; font-weight: bold; color: #1a1a2e; margin-bottom: 10px; }
         .sign-row { font-size: 10px; margin-bottom: 8px; }
         .sign-label { color: #6B7280; display: inline-block; width: 110px; }

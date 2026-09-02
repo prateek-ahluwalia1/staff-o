@@ -5532,6 +5532,28 @@ private function chargeRateFieldLabels(): array
     ];
 }
 
+private function chargeRateEmailFieldLabels(): array
+{
+    return [
+        'def_metro_mon_to_fri_day_rate'   => 'Default Metro Mon–Fri Day',
+        'def_reg_mon_to_fri_day_rate'     => 'Default Regional Mon–Fri Day',
+        'def_metro_mon_to_fri_night_rate' => 'Default Metro Mon–Fri Night',
+        'def_reg_mon_to_fri_night_rate'   => 'Default Regional Mon–Fri Night',
+        'def_metro_sat_day_rate'          => 'Default Metro Saturday Day',
+        'def_reg_sat_day_rate'            => 'Default Regional Saturday Day',
+        'def_metro_sat_night_rate'        => 'Default Metro Saturday Night',
+        'def_reg_sat_night_rate'          => 'Default Regional Saturday Night',
+        'def_metro_sun_day_rate'          => 'Default Metro Sunday Day',
+        'def_reg_sun_day_rate'            => 'Default Regional Sunday Day',
+        'def_metro_sun_night_rate'        => 'Default Metro Sunday Night',
+        'def_reg_sun_night_rate'          => 'Default Regional Sunday Night',
+        'def_metro_pub_holi_day_rate'     => 'Default Metro Public Holiday Day',
+        'def_reg_pub_holi_day_rate'       => 'Default Regional Public Holiday Day',
+        'def_metro_pub_holi_night_rate'   => 'Default Metro Public Holiday Night',
+        'def_reg_pub_holi_night_rate'     => 'Default Regional Public Holiday Night',
+    ];
+}
+
 // public function request_charge_rate(Request $request)
 // {
 //     $request->validate([
@@ -6496,7 +6518,7 @@ private function canRemoveAcceptedBy($user, $job): bool
 private function generateAndSendContract($contractor, $rateRequest, $charge_rate): void
 {
     try {
-        $rateFieldLabels = $this->chargeRateFieldLabels(); // reuse the "def_" only label set from earlier
+        $rateFieldLabels = $this->chargeRateEmailFieldLabels(); // reuse the "def_" only label set from earlier
         $rateRows = [];
         foreach ($rateFieldLabels as $column => $label) {
             $rateRows[] = ['label' => $label, 'value' => (float) ($charge_rate->{$column} ?? 0)];

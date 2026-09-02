@@ -5304,7 +5304,7 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
         'invoice_filename'  => $filename,
         'payment_intent_id' => $paymentLink->url,
-        'payment_status'    => 'pending',
+        // 'payment_status'    => 'pending',
         'invoice_meta'      => json_encode([
             'gross_subtotal'   => round($grossSubtotal, 2),
             'discount_percent' => $discountPercent,

@@ -154,8 +154,6 @@ class ContractService
             letter-spacing: 0.5px;
             margin-bottom: 2px;
         }
-        /* CSS-drawn shapes instead of Unicode glyphs — dompdf's DejaVu Sans
-           doesn't reliably render ● / ▲ and falls back to "?" */
         .icon-dot {
             display: inline-block; width: 6px; height: 6px; border-radius: 50%;
             background: #0A7C6E; margin-right: 5px;

@@ -26,7 +26,7 @@
     }
 
     table.job-table { width:100%; border-collapse: collapse; font-size:12.5px; margin-bottom: 8px; }
-    .job-table thead th { background:#D97706; color:#fff; text-align:left; padding:9px 10px; font-size:11.5px; }
+    .job-table thead th { background:#0A7C6E; color:#fff; text-align:left; padding:9px 10px; font-size:11.5px; }
     .job-table tbody td { padding:9px 10px; border-bottom:1px solid #E5E7EB; vertical-align:top; }
     .job-table tbody tr:nth-child(even) { background:#FFFBEB; }
     .job-site { font-weight:bold; color:#111827; }

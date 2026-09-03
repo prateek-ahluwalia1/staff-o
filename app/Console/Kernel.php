@@ -24,9 +24,9 @@ class Kernel extends ConsoleKernel
             ->everyMinute()
             ->withoutOverlapping();
         $schedule->command('timesheet:send-weekly')
-        ->everyMinute()
-        ->withoutOverlapping();
-        $schedule->command('jobs:send-payment-reminders')->everyFifteenMinutes();
+            ->weekly()
+            ->mondays()
+            ->at('08:00');
          // $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);
 
 

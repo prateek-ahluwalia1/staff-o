@@ -26,6 +26,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('timesheet:send-weekly')
         ->everyMinute()
         ->withoutOverlapping();
+        $schedule->command('jobs:send-payment-reminders')->everyFifteenMinutes();
         // $schedule->command('timesheet:send-weekly')
         //     ->weekly()
         //     ->mondays()

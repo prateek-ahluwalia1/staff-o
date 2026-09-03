@@ -63,9 +63,9 @@ class SendJobPaymentReminders extends Command
                     if ($client->notification_token) {
                         $notificationData = [
                             'notification_token' => $client->notification_token,
-                            'message'            => "Reminder: Your payment is due.",
+                            'message'            => "Reminder: Payment is due.",
                             'title'              => 'Due Payment',
-                            'page'               => 'account-verified',
+                            'page'               => 'my-job-applications',
                         ];
 
                         if (function_exists('send_push_notification')) {

@@ -164,7 +164,7 @@ class InvoiceService
         $html .= "<tr><td class='lbl'>{$discountLabel}</td><td class='amt' style='color:#D97706;'>- {$discount}</td></tr>";
         $html .= "<tr class='grand'><td class='lbl'>Discounted Subtotal</td><td class='amt'>{$discountedsubtotal}</td></tr>";
         $html .= "<tr><td class='lbl'>GST (10%)</td><td class='amt'>{$serviceFee}</td></tr>";
-        $html .= "<tr class='grand'><td class='lbl'>Total</td><td class='amt'>{$total}</td></tr>";
+        // $html .= "<tr class='grand'><td class='lbl'>Total</td><td class='amt'>{$total}</td></tr>";
         $html .= "<tr class='charged'><td class='lbl'>Amount Charged Now</td><td class='amt'>{$amtCharged}</td></tr>";
         $html .= "<tr class='balance'><td class='lbl'>Due</td><td class='amt'>{$balance}</td></tr>";
         $html .= "</table></div>";

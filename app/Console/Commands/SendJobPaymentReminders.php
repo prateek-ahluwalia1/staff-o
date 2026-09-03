@@ -60,6 +60,18 @@ class SendJobPaymentReminders extends Command
                     $jobRows,
                     false
                 ));
+                    if ($client->notification_token) {
+                        $notificationData = [
+                            'notification_token' => $client->notification_token,
+                            'message'            => "Reminder: Your payment is due.",
+                            'title'              => 'Due Payment',
+                            'page'               => 'account-verified',
+                        ];
+
+                        if (function_exists('send_push_notification')) {
+                            send_push_notification($notificationData);
+                        }
+                    }
                 $this->info("Sent payment reminder to {$client->email} for " . count($jobRows) . ' job(s).');
             } catch (\Exception $e) {
                 Log::error('Failed to send client payment reminder', [

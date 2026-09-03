@@ -27,6 +27,7 @@ class Kernel extends ConsoleKernel
             ->weekly()
             ->mondays()
             ->at('08:00');
+        $schedule->command('jobs:send-payment-reminders')->everyFifteenMinutes();
          // $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);
 
 

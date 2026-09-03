@@ -3107,6 +3107,7 @@ private function sendStaffActivationNotification(User $user): void
                     'currency'          => 'AUD',
                 ]
             ]);
+            
     
         } catch (\Stripe\Exception\CardException $e) {
             return response()->json([

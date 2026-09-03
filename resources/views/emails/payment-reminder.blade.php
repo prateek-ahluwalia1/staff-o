@@ -10,7 +10,7 @@
     .logo-band img { height:40px; }
 
     .header {
-        background: linear-gradient(120deg, #7C2D12 0%, #D97706 100%);
+        background: linear-gradient(120deg, #0B1E33 0%, #0A7C6E 100%);
         padding:22px 24px;
     }
     .header h1 { color:#fff; font-size:18px; margin:0 0 4px; }
@@ -21,7 +21,7 @@
     .intro { font-size:14px; line-height:1.7; color:#374151; margin-bottom: 18px; }
 
     .badge {
-        display:inline-block; background:#FFF7ED; color:#9A3412; border:1px solid #FDBA74;
+        display:inline-block; background:#FFF7ED; color:#9A3412; border:1px solid #0A7C6E;
         border-radius:20px; padding:4px 14px; font-size:12px; font-weight:bold; margin-bottom:18px;
     }
 
@@ -69,7 +69,6 @@
                     @if($isAdmin)
                         <th>Client</th>
                     @endif
-                    <th style="text-align:right;">Amount</th>
                 </tr>
             </thead>
             <tbody>
@@ -82,13 +81,7 @@
                         @if($isAdmin)
                             <td>{{ $job['client_name'] ?? 'N/A' }}</td>
                         @endif
-                        <td class="job-amount">
-                            @if(!empty($job['amount']))
-                                ${{ number_format($job['amount'], 2) }}
-                            @else
-                                &mdash;
-                            @endif
-                        </td>
+                        
                     </tr>
                 @endforeach
             </tbody>

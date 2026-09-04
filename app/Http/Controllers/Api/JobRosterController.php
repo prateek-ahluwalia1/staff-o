@@ -6566,7 +6566,7 @@ private function generateAndSendContract($contractor, $rateRequest, $charge_rate
  
         // Email contractor the signing link
         if (!empty($contractor->email)) {
-            $signingLink = 'https://staging.app.staffoo.com.au/contracts/sign?token=' . $signingToken;
+            $signingLink = 'http://localhost:3000/contracts/sign?token=' . $signingToken;
  
             Mail::to($contractor->email)->send(new ContractSignatureRequestMail(
                 $contractor->name ?? 'Contractor',

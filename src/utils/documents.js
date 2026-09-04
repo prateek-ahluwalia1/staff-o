@@ -1,6 +1,9 @@
 const DOCUMENT_LABELS = {
     working_with_children: "Working with Children Check",
     white_card: "White Card",
+    msic_card: "MSIC Card",
+    control_room_certificate: "Control Room Certificate",
+    ras_certificate: "RAS Certificate",
 };
 
 export const parseRequiredDocuments = (documentListRaw, isDocumentFlag) => {

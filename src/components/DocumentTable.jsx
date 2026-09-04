@@ -15,7 +15,12 @@ const DOC_CONFIG = {
   first_aid: { label: "First Aid Certificate", sort: 10 },
   cpr: { label: "CPR Certificate", sort: 11 },
   vaccination: { label: "Vaccination Certificate", sort: 12 },
-
+  security_master_license: { label: "Security Master License", sort: 13 },
+  public_liability: { label: "Public Liability", sort: 14 },
+  workcover: { label: "Workcover", sort: 15 },
+  security_membership: { label: "Security Industry Membership Certificate", sort: 16 },
+  labour_hire: { label: "Labour Hire", sort: 17 },
+  asic_report: { label: "ASIC Report", sort: 18 },
 };
 
 const STATE_CATEGORY_ORDER = [
@@ -244,31 +249,182 @@ function StateGroupHeader({ label, uploaded, total, expanded, onToggle }) {
   );
 }
 
+const DEFAULT_STAFF_DOC_TEMPLATES = [
+  { document_name: "Passport", document_type: "passport" },
+  { document_name: "Visa", document_type: "visa" },
+  { document_name: "Driver License Front", document_type: "driver_license_front" },
+  { document_name: "Driver License Back", document_type: "driver_license_back" },
+  { document_name: "Security License", document_type: "security_license" },
+  { document_name: "Working With Children Check", document_type: "working_with_children" },
+  { document_name: "Employment Application Form", document_type: "employment_application" },
+  { document_name: "TFN Declaration", document_type: "tfn_declaration" },
+  { document_name: "Superannuation Form", document_type: "superannuation" },
+  { document_name: "First Aid Certificate", document_type: "first_aid" },
+  { document_name: "CPR Certificate", document_type: "cpr" },
+  { document_name: "Vaccination Certificate", document_type: "vaccination" },
+];
+
+const DEFAULT_CONTRACTOR_DOC_TEMPLATES = [
+  { document_name: "Security Master License", document_type: "security_master_license" },
+  { document_name: "Public Liability", document_type: "public_liability" },
+  { document_name: "Workcover", document_type: "workcover" },
+  { document_name: "Security Industry Membership Certificate", document_type: "security_membership" },
+  { document_name: "Labour Hire", document_type: "labour_hire" },
+  { document_name: "ASIC Report", document_type: "asic_report" },
+];
+
+const normalizeKey = (str) => {
+  if (!str) return "";
+  return String(str).toLowerCase().replace(/[^a-z0-9]/g, "");
+};
+
+const matchDoc = (docA, docB) => {
+  if (!docA || !docB) return false;
+  const keyA_type = normalizeKey(docA.document_type);
+  const keyA_name = normalizeKey(docA.document_name);
+  const keyB_type = normalizeKey(docB.document_type);
+  const keyB_name = normalizeKey(docB.document_name);
+
+  // Check direct matches
+  if (keyA_type && (keyA_type === keyB_type || keyA_type === keyB_name)) return true;
+  if (keyA_name && (keyA_name === keyB_type || keyA_name === keyB_name)) return true;
+
+  // Specific alias mappings
+  const aliases = [
+    ["workingwithchildrencheck", "workingwithchildren", "wwcc"],
+    ["driverlicensefront", "driverlicensefrontside"],
+    ["driverlicenseback", "driverlicensebackside"],
+    ["employmentapplicationform", "employmentapplication"],
+    ["superannuationform", "superannuation"],
+    ["firstaidcertificate", "firstaid"],
+    ["cprcertificate", "cpr"],
+    ["vaccinationcertificate", "vaccination"],
+    ["securitymasterlicense", "securitymasterlicence", "masterlicense"],
+    ["securitylicense", "securitylicence"],
+    ["securityindustrymembershipcertificate", "securitymembership", "securityindustrymembership"],
+    ["labourhire", "labourhirelicense"],
+    ["asicreport", "asic"],
+  ];
+
+  for (const group of aliases) {
+    const aInGroup = group.some((k) => k === keyA_type || k === keyA_name);
+    const bInGroup = group.some((k) => k === keyB_type || k === keyB_name);
+    if (aInGroup && bInGroup) return true;
+  }
+
+  return false;
+};
+
 export default function DocumentTable({ documents, onAddFile, userType, showDocErrors }) {
   const processedDocuments = useMemo(() => {
-    if (!documents) return [];
-    return [...documents].sort((a, b) => {
+    const incomingDocs = Array.isArray(documents) ? documents : [];
+
+    if (userType === "staff") {
+      const usedIds = new Set();
+      const mergedList = DEFAULT_STAFF_DOC_TEMPLATES.map((tmpl) => {
+        const found = incomingDocs.find(
+          (d) => !usedIds.has(d.id || d) && matchDoc(tmpl, d)
+        );
+        if (found) {
+          if (found.id) usedIds.add(found.id);
+          else usedIds.add(found);
+          return {
+            ...found,
+            document_name: found.document_name || tmpl.document_name,
+            document_type: found.document_type || tmpl.document_type,
+          };
+        }
+        return {
+          id: `temp_${tmpl.document_type}`,
+          document_name: tmpl.document_name,
+          document_type: tmpl.document_type,
+          file: null,
+          document_no: "",
+          document_expiry: "",
+        };
+      });
+
+      const extraDocs = incomingDocs.filter(
+        (d) =>
+          !usedIds.has(d.id || d) &&
+          !DEFAULT_STAFF_DOC_TEMPLATES.some((tmpl) => matchDoc(tmpl, d))
+      );
+
+      const fullList = [...mergedList, ...extraDocs];
+      return fullList.sort((a, b) => {
+        const orderA = DOC_CONFIG[a.document_type]?.sort || 99;
+        const orderB = DOC_CONFIG[b.document_type]?.sort || 99;
+        return orderA - orderB;
+      });
+    }
+
+    return [...incomingDocs].sort((a, b) => {
       const orderA = DOC_CONFIG[a.document_type]?.sort || 99;
       const orderB = DOC_CONFIG[b.document_type]?.sort || 99;
       return orderA - orderB;
     });
-  }, [documents]);
+  }, [documents, userType]);
 
   // Contractors: group documents by state (document_category) — each state
   // has its own repeated set of document types (public_liability, workcover, etc).
   const stateGroups = useMemo(() => {
     if (userType !== "contractor" && userType !== "admin") return null;
+    const incomingDocs = Array.isArray(documents) ? documents : [];
+
     const byCategory = {};
-    (documents || []).forEach((doc) => {
+    incomingDocs.forEach((doc) => {
       const cat = doc.document_category || "other";
       if (!byCategory[cat]) byCategory[cat] = [];
       byCategory[cat].push(doc);
     });
-    return STATE_CATEGORY_ORDER.filter((cat) => byCategory[cat]?.length).map((cat) => ({
-      category: cat,
-      label: STATE_CATEGORY_LABELS[cat] || cat,
-      docs: byCategory[cat],
-    }));
+
+    return STATE_CATEGORY_ORDER.filter((cat) => byCategory[cat]?.length).map((cat) => {
+      const catDocs = byCategory[cat] || [];
+      const usedIds = new Set();
+      const mergedCatDocs = DEFAULT_CONTRACTOR_DOC_TEMPLATES.map((tmpl) => {
+        const found = catDocs.find(
+          (d) => !usedIds.has(d.id || d) && matchDoc(tmpl, d)
+        );
+        if (found) {
+          if (found.id) usedIds.add(found.id);
+          else usedIds.add(found);
+          return {
+            ...found,
+            document_name: found.document_name || tmpl.document_name,
+            document_type: found.document_type || tmpl.document_type,
+            document_category: cat,
+          };
+        }
+        return {
+          id: `temp_${cat}_${tmpl.document_type}`,
+          document_name: tmpl.document_name,
+          document_type: tmpl.document_type,
+          document_category: cat,
+          file: null,
+          document_no: "",
+          document_expiry: "",
+        };
+      });
+
+      const extraCatDocs = catDocs.filter(
+        (d) =>
+          !usedIds.has(d.id || d) &&
+          !DEFAULT_CONTRACTOR_DOC_TEMPLATES.some((tmpl) => matchDoc(tmpl, d)) &&
+          (d.document_type || d.document_name)
+      );
+
+      const finalCatDocs = [...mergedCatDocs, ...extraCatDocs].sort((a, b) => {
+        const orderA = DOC_CONFIG[a.document_type]?.sort || 99;
+        const orderB = DOC_CONFIG[b.document_type]?.sort || 99;
+        return orderA - orderB;
+      });
+
+      return {
+        category: cat,
+        label: STATE_CATEGORY_LABELS[cat] || cat,
+        docs: finalCatDocs,
+      };
+    });
   }, [documents, userType]);
 
   const [collapsedGroups, setCollapsedGroups] = useState({});

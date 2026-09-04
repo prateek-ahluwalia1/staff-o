@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { startOfWeek, endOfWeek, format, parse } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -133,9 +135,16 @@ const getPageNumbers = (currentPage, totalPages) => {
 // ---------- Main Component ----------
 
 export default function MyJobApplications() {
+  const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.auth);
+  const { isExpanded } = useSelector((state) => state.sidebar);
   const userId = userdata?.data?.id || userdata?.id;
   const userType = userdata?.data?.user_type || userdata?.user_type;
+  const normalizedUserType = (userType || "").toString().toLowerCase();
+  const isClient =
+    normalizedUserType === "customer" ||
+    normalizedUserType === "client" ||
+    normalizedUserType === "employer";
   const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
 
   // Filters state – now defaults to current week (Monday to Sunday)
@@ -150,8 +159,10 @@ export default function MyJobApplications() {
     lastPage: 1,
   });
 
-  // Modal state
+  // Modal states
   const [selectedApp, setSelectedApp] = useState(null);
+  const [showPaymentAlertModal, setShowPaymentAlertModal] = useState(false);
+  const hasAutoOpenedPaymentModal = useRef(false);
 
   const fetchCustomerSites = useCallback(
     (page = 1) => {
@@ -188,6 +199,25 @@ export default function MyJobApplications() {
     }
   }, [submitData]);
 
+  useEffect(() => {
+    if (!isClient) return;
+    if (submitData?.data && Array.isArray(submitData.data)) {
+      const hasWaitingJobs = submitData.data.some(
+        (shift) =>
+          shift.job_status?.toLowerCase() !== "confirmed" &&
+          shift.job_status?.toLowerCase() !== "completed" &&
+          shift.accepted_by != null &&
+          shift.accepted_by !== "null" &&
+          shift.payment_status !== "required" &&
+          Number(shift.contractor_invoice) !== 1
+      );
+      if (hasWaitingJobs && !hasAutoOpenedPaymentModal.current) {
+        setShowPaymentAlertModal(true);
+        hasAutoOpenedPaymentModal.current = true;
+      }
+    }
+  }, [submitData, isClient]);
+
   const applications = useMemo(() => {
     if (!submitData?.data) return [];
     return submitData.data.map((shift) => {
@@ -207,6 +237,7 @@ export default function MyJobApplications() {
 
       let formattedTime = `${shift.start} - ${shift.end}`;
       let formattedDate = "";
+      let shiftDate = "";
       let timeWindow = "";
       let startDisplay = shift.start || "N/A";
       let endDisplay = shift.end || "N/A";
@@ -215,6 +246,7 @@ export default function MyJobApplications() {
         const eDate = parse(shift.end, "yyyy-MM-dd HH:mm", new Date());
         if (!isNaN(sDate) && !isNaN(eDate)) {
           formattedDate = format(sDate, "dd MMM yyyy");
+          shiftDate = format(sDate, "dd/MM/yyyy");
           timeWindow = `${format(sDate, "HH:mm")} – ${format(eDate, "HH:mm")}`;
           formattedTime = `${format(sDate, "dd/MM/yyyy HH:mm")} to ${format(eDate, "HH:mm")}`;
           startDisplay = format(sDate, "dd MMM yyyy, HH:mm");
@@ -259,10 +291,34 @@ export default function MyJobApplications() {
       const guardProfileImage = shift.guards?.profile_image || null;
       const contractorProfileImage = shift.contractor?.profile_image || null;
 
+      const isContractorInvoice =
+        Number(shift.contractor_invoice) === 1 ||
+        shift.contractor_invoice === 1 ||
+        shift.contractor_invoice === "1";
+
+      let computedStatus = currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1);
+      if (
+        currentStatus !== "confirmed" &&
+        currentStatus !== "completed" &&
+        shift.accepted_by != null &&
+        shift.accepted_by !== "null" &&
+        shift.payment_status !== "required" &&
+        !isContractorInvoice
+      ) {
+        computedStatus = "Waiting for Payment";
+      }
+
+      const paymentIntentId =
+        shift.payment_intent_id ||
+        shift.payment?.payment_intent_id ||
+        shift.rawShift?.payment_intent_id ||
+        null;
+      const jobAmount = shift.job_amount || shift.amount || null;
+
       return {
         rawShift: shift,
         id: shift.id,
-        status: currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1),
+        status: computedStatus,
         statusClass,
         title: shift.site?.site_name || "Unknown Site",
         location: shift.site?.address || "Location TBA",
@@ -274,6 +330,7 @@ export default function MyJobApplications() {
         pillIcon,
         pillText: formattedTime,
         formattedDate,
+        shiftDate: shiftDate || formattedDate || "N/A",
         timeWindow,
         startDisplay,
         endDisplay,
@@ -284,9 +341,15 @@ export default function MyJobApplications() {
         customerProfileImage,
         guardProfileImage,
         contractorProfileImage,
+        payment_intent_id: paymentIntentId,
+        jobAmount,
       };
     });
   }, [submitData]);
+
+  const waitingForPaymentJobs = useMemo(() => {
+    return applications.filter((app) => app.status === "Waiting for Payment");
+  }, [applications]);
 
   const filteredApplications = useMemo(() => {
     if (!searchQuery.trim()) return applications;
@@ -300,6 +363,49 @@ export default function MyJobApplications() {
 
   const openModal = (app) => setSelectedApp(app);
   const closeModal = () => setSelectedApp(null);
+  const handleClosePaymentAlertModal = () => setShowPaymentAlertModal(false);
+
+  // Lock background scroll when either modal is open
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(
+      selectedApp || (isClient && showPaymentAlertModal && waitingForPaymentJobs.length > 0)
+    );
+    if (isAnyModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [selectedApp, showPaymentAlertModal, waitingForPaymentJobs.length, isClient]);
+
+  const handlePayNow = useCallback(
+    (appOrJob) => {
+      const paymentIntentId =
+        appOrJob?.payment_intent_id ||
+        appOrJob?.rawShift?.payment_intent_id ||
+        appOrJob?.rawShift?.payment?.payment_intent_id ||
+        appOrJob?.payment?.payment_intent_id;
+
+      if (!paymentIntentId) {
+        toast.error("Payment link is not available for this job.");
+        return;
+      }
+
+      if (
+        typeof paymentIntentId === "string" &&
+        (paymentIntentId.startsWith("http://") || paymentIntentId.startsWith("https://"))
+      ) {
+        window.location.href = paymentIntentId;
+      } else if (typeof paymentIntentId === "string" && paymentIntentId.startsWith("/")) {
+        navigate(paymentIntentId);
+      } else {
+        window.location.href = paymentIntentId;
+      }
+    },
+    [navigate]
+  );
 
   const rangeLabel = useMemo(() => {
     if (!startDate || !endDate) return "";
@@ -308,11 +414,13 @@ export default function MyJobApplications() {
 
   const handlePageChange = (page) => {
     if (page < 1 || page > pagination.lastPage || page === currentPage) return;
+    hasAutoOpenedPaymentModal.current = false;
     setCurrentPage(page);
     fetchCustomerSites(page);
   };
 
   const handleSearch = () => {
+    hasAutoOpenedPaymentModal.current = false;
     setCurrentPage(1);
     fetchCustomerSites(1);
   };
@@ -551,14 +659,42 @@ export default function MyJobApplications() {
           }
 
           .status-badge {
-            font-size: 11.5px; font-weight: 700; border-radius: 30px; padding: 5px 13px;
-            text-transform: capitalize; display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.2px;
+            font-size: 9.5px;
+            font-weight: 700;
+            border-radius: 20px;
+            padding: 2.5px 7px;
+            text-transform: capitalize;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            letter-spacing: 0.1px;
+            white-space: nowrap;
+            line-height: 1;
+            vertical-align: middle;
+          }
+          .status-badge i {
+            font-size: 6.8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            margin: 0;
+            padding-bottom: 0.2px;
           }
 
           .card-title-text { font-size: 1.05rem; letter-spacing: -0.3px; color: var(--ink); }
 
           .location-text { font-size: 12.5px; color: var(--muted); display: flex; align-items: flex-start; gap: 6px; line-height: 1.4; }
-          .location-text i { color: var(--teal); margin-top: 2px; font-size: 12px; }
+          .location-text i { color: var(--teal); margin-top: 3px; font-size: 12px; flex-shrink: 0; }
+          .location-text span {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+          }
 
           .contractor-badge {
             background: rgba(139, 92, 246, 0.08); color: var(--purple); border: 1px solid rgba(139, 92, 246, 0.22);
@@ -606,13 +742,110 @@ export default function MyJobApplications() {
           .assignee-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--faint); }
           .assignee-name { font-size: 12.5px; color: var(--ink); }
 
+          .card-footer-section {
+            border-top: 1px solid var(--line-soft);
+          }
+
+          .card-actions-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+          }
+
+          .card-actions-group .details-btn,
+          .card-actions-group .pay-now-btn {
+            border-radius: 30px !important;
+            padding: 0 14px !important;
+            font-size: 12.5px !important;
+            font-weight: 700 !important;
+            height: 36px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            white-space: nowrap !important;
+            flex: 1 1 0% !important;
+            width: 100% !important;
+            text-decoration: none !important;
+          }
+
           .details-btn {
-            border-radius: 30px !important; padding: 8px 16px !important; font-size: 12.5px !important; font-weight: 700 !important;
-            height: 36px; background: var(--teal) !important; border-color: var(--teal) !important;
+            background: var(--teal) !important;
+            border: 1px solid var(--teal) !important;
+            color: #fff !important;
             box-shadow: 0 4px 10px -2px rgba(10,124,110,0.4);
             transition: transform 0.15s, box-shadow 0.15s;
           }
-          .details-btn:hover { transform: translateX(1px); box-shadow: 0 6px 14px -2px rgba(10,124,110,0.45); }
+          .details-btn:hover {
+            transform: translateY(-1px);
+            background: var(--teal-dark) !important;
+            border-color: var(--teal-dark) !important;
+            box-shadow: 0 6px 14px -2px rgba(10,124,110,0.45);
+            color: #fff !important;
+          }
+
+          .pay-now-btn {
+            background: #d97706 !important;
+            border: 1px solid #d97706 !important;
+            color: #fff !important;
+            box-shadow: 0 4px 10px -2px rgba(217, 119, 6, 0.4);
+            transition: transform 0.15s, box-shadow 0.15s;
+          }
+          .pay-now-btn:hover {
+            transform: translateY(-1px);
+            background: #b45309 !important;
+            border-color: #b45309 !important;
+            box-shadow: 0 6px 14px -2px rgba(217, 119, 6, 0.5);
+            color: #fff !important;
+          }
+
+          .modal-overlay-premium {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 20, 35, 0.62);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 1.5rem;
+            animation: modalFadeIn 0.25s ease-out;
+          }
+          @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          .modal-content-premium {
+            background: #ffffff;
+            border-radius: 22px;
+            box-shadow: 0 30px 60px -18px rgba(10, 25, 48, 0.5);
+            max-width: 680px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: modalPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+          @keyframes modalPopIn {
+            from { opacity: 0; transform: scale(0.96) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+          }
+          .modal-header-premium::after {
+            content: "";
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(10,124,110,0.5), transparent 70%);
+            pointer-events: none;
+          }
+          .modal-close-btn:hover {
+            background: rgba(255, 255, 255, 0.2) !important;
+          }
 
           .card-footer-row { border-top: 1px solid var(--line-soft); }
 
@@ -695,18 +928,7 @@ export default function MyJobApplications() {
             font-size: 11px; font-weight: 600; margin-right: 4px; margin-bottom: 4px; text-transform: capitalize;
           }
 
-          .card-footer-row {
-  flex-wrap: wrap;
-  row-gap: 10px;
-}
-.card-footer-row > .d-flex.align-items-center.gap-2 {
-  flex: 1 1 140px;
-  min-width: 0; /* lets the truncated name actually shrink */
-}
-.details-btn {
-  flex: 1 1 auto;
-  text-align: center;
-}
+
 
           .modal-footer-custom { background: #fff; border-top: 1px solid var(--line); }
 
@@ -816,8 +1038,11 @@ export default function MyJobApplications() {
           </div>
         </div>
 
-        {/* Cards grid – now 4 columns on XL screens */}
-        <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 application-grid mt-2">
+        {/* Cards grid – 3 columns when sidebar is open, 4 columns when sidebar is closed */}
+        <div
+          className={`row row-cols-1 row-cols-md-2 row-cols-lg-3 ${isExpanded ? "row-cols-xl-3" : "row-cols-xl-4"
+            } g-4 application-grid mt-2`}
+        >
           {filteredApplications.length === 0 ? (
             <div className="col-12 empty-state text-center w-100">
               <i className="fa-solid fa-magnifying-glass-minus d-block"></i>
@@ -845,10 +1070,10 @@ export default function MyJobApplications() {
                     }}
                   ></div>
 
-                  <div className="card-body p-4 pt-4 d-flex flex-column">
-                    <div className="d-flex justify-content-between align-items-start mb-3">
+                  <div className="card-body p-3 pt-4 d-flex flex-column">
+                    <div className="d-flex justify-content-between align-items-center mb-3 gap-2" style={{ minWidth: 0 }}>
                       <span
-                        className={`status-badge ${app.statusClass === "offer"
+                        className={`status-badge flex-shrink-0 ${app.statusClass === "offer"
                           ? "bg-success bg-opacity-10 text-success border border-success border-opacity-25"
                           : "bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25"
                           }`}
@@ -859,15 +1084,15 @@ export default function MyJobApplications() {
                         ></i>
                         {app.status}
                       </span>
-                      <div className="text-muted text-end" style={{ fontSize: "11px", fontWeight: 600 }}>
-                        <i className="fa-regular fa-clock me-1"></i> {app.createdAt}
+                      <div className="text-muted text-end text-nowrap flex-shrink-0" style={{ fontSize: "9.5px", fontWeight: 600 }}>
+                        <i className="fa-regular fa-clock me-1" style={{ fontSize: "9px" }}></i> {app.createdAt}
                       </div>
                     </div>
 
                     <h5 className="card-title fw-bold mb-2 card-title-text">
                       {app.title}
                     </h5>
-                    <div className="location-text mb-3">
+                    <div className="location-text mb-3" title={app.location}>
                       <i className="fa-solid fa-location-dot flex-shrink-0"></i>
                       <span>{app.location}</span>
                     </div>
@@ -902,31 +1127,40 @@ export default function MyJobApplications() {
                       </div>
                     </div>
 
-                    <div className="mt-auto pt-3 card-footer-row d-flex justify-content-between align-items-center">
+                    <div className="mt-auto pt-3 card-footer-section">
                       {userType !== "staff" && (
-                        <div className="d-flex align-items-center gap-2"
-                          style={{ flex: "1 1 140px", minWidth: 0 }}
-                        >
+                        <div className="d-flex align-items-center gap-2 mb-3 assignee-info">
                           <ProfileImage
                             src={app.guardProfileImage}
                             name={app.appliedVia}
-                            size={36}
+                            size={34}
                           />
                           <div className="d-flex flex-column" style={{ minWidth: 0 }}>
                             <span className="assignee-label">Assigned To</span>
-                            <span className="fw-bold text-truncate d-block assignee-name">
+                            <span className="fw-bold pb-2 text-truncate d-block assignee-name">
                               {app.appliedVia}
                             </span>
                           </div>
                         </div>
                       )}
-                      <button
-                        type="button"
-                        className="btn btn-primary-custom btn-sm details-btn flex-shrink-0 ms-2"
-                        onClick={() => openModal(app)}
-                      >
-                        Details
-                      </button>
+                      <div className="card-actions-group d-flex align-items-center gap-2 w-100">
+                        {isClient && app.status === "Waiting for Payment" && (
+                          <button
+                            type="button"
+                            className="btn btn-warning-custom btn-sm pay-now-btn"
+                            onClick={() => handlePayNow(app)}
+                          >
+                            <i className="fa-solid fa-credit-card me-1"></i> Pay Now
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="btn btn-primary-custom btn-sm details-btn"
+                          onClick={() => openModal(app)}
+                        >
+                          Details
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1173,11 +1407,260 @@ export default function MyJobApplications() {
             </div>
 
             <div
-              className="modal-footer-custom d-flex justify-content-end"
+              className="modal-footer-custom d-flex justify-content-end align-items-center gap-2 flex-nowrap"
               style={{ padding: "16px 24px" }}
             >
-              <button onClick={closeModal} className="btn btn-primary-custom px-4 rounded-pill fw-semibold shadow-sm">
+              {isClient && selectedApp.status === "Waiting for Payment" && (
+                <button
+                  type="button"
+                  onClick={() => handlePayNow(selectedApp)}
+                  className="btn btn-warning-custom px-4 rounded-pill fw-semibold shadow-sm text-white pay-now-btn"
+                  style={{ height: "36px", minWidth: "120px" }}
+                >
+                  <i className="fa-solid fa-credit-card me-1"></i> Pay Now
+                </button>
+              )}
+              <button
+                onClick={closeModal}
+                className="btn btn-primary-custom px-4 rounded-pill fw-semibold shadow-sm"
+                style={{ height: "36px", minWidth: "120px" }}
+              >
                 Close Window
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------- PAYMENT ALERT MODAL ---------- */}
+      {isClient && showPaymentAlertModal && waitingForPaymentJobs.length > 0 && (
+        <div
+          className="modal-overlay-premium"
+          onClick={handleClosePaymentAlertModal}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="modal-content-premium"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div
+              className="modal-header-premium"
+              style={{
+                position: "relative",
+                background: "linear-gradient(120deg, #0a1930, #0e2340 70%, #10345a)",
+                padding: "18px 24px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexShrink: 0,
+                overflow: "hidden",
+              }}
+            >
+              <div className="d-flex align-items-center gap-2" style={{ position: "relative", zIndex: 1 }}>
+                <i
+                  className="fa-solid fa-circle-check"
+                  style={{ color: "#34d399", fontSize: "20px" }}
+                ></i>
+                <h3
+                  className="modal-title"
+                  style={{
+                    margin: 0,
+                    fontSize: "19px",
+                    fontWeight: 700,
+                    letterSpacing: "0.2px",
+                    color: "#fff",
+                  }}
+                >
+                  Job Accepted
+                </h3>
+              </div>
+              <button
+                className="modal-close-btn"
+                onClick={handleClosePaymentAlertModal}
+                type="button"
+                style={{
+                  position: "relative",
+                  zIndex: 2,
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "50%",
+                  border: "none",
+                  background: "rgba(255,255,255,0.08)",
+                  color: "#fff",
+                  fontSize: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "background 0.2s, transform 0.2s",
+                  flexShrink: 0,
+                }}
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div
+              className="modal-body"
+              style={{
+                padding: "20px 24px",
+                overflowY: "auto",
+                flex: 1,
+              }}
+            >
+              {/* Info Box */}
+              <div
+                className="p-3 rounded-3 d-flex align-items-start mb-4"
+                style={{
+                  backgroundColor: "#F3F8F7",
+                  border: "1px solid #D8ECE8",
+                }}
+              >
+                <i
+                  className="fa-solid fa-circle-info mt-1 me-3 flex-shrink-0"
+                  style={{
+                    color: "#0A7C6E",
+                    fontSize: "18px",
+                  }}
+                ></i>
+                <div>
+                  <div className="fw-bold text-dark mb-1" style={{ fontSize: "13.5px" }}>
+                    Action Required
+                  </div>
+                  <div className="text-muted" style={{ fontSize: "13px", lineHeight: "1.4" }}>
+                    Your job has been accepted by the Staffoo Resource Partner. Please process the payment.
+                  </div>
+                </div>
+              </div>
+
+              {/* Jobs list */}
+              <div className="d-flex flex-column gap-3">
+                {waitingForPaymentJobs.map((job, idx) => (
+                  <div
+                    key={job.id || idx}
+                    className="p-3 rounded-3 position-relative"
+                    style={{
+                      backgroundColor: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      boxShadow: "0 2px 8px rgba(15, 23, 42, 0.04)",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    {/* Top Row: Job Title & Amount */}
+                    <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
+                      <div>
+                        <h6
+                          className="fw-bold mb-1 text-dark"
+                          style={{ fontSize: "15px", letterSpacing: "-0.2px" }}
+                        >
+                          {job.title}
+                        </h6>
+                        <div
+                          className="text-muted"
+                          style={{ fontSize: "13px", fontWeight: "500" }}
+                        >
+                          {job.role}
+                        </div>
+                      </div>
+                      {job.jobAmount != null && (
+                        <div className="text-end flex-shrink-0">
+                          <div
+                            className="fw-bold"
+                            style={{ fontSize: "16px", color: "#0A7C6E" }}
+                          >
+                            {String(job.jobAmount).startsWith("$")
+                              ? job.jobAmount
+                              : `$${job.jobAmount}`}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Middle Row: Date & Time */}
+                    <div
+                      className="d-flex flex-wrap align-items-center gap-3 my-2 pt-2 pb-1 border-top border-light"
+                      style={{ fontSize: "12.5px" }}
+                    >
+                      <div className="d-flex align-items-center gap-1 text-muted">
+                        <i
+                          className="fa-regular fa-calendar-days"
+                          style={{ color: "#0A7C6E" }}
+                        ></i>
+                        <span className="fw-semibold text-secondary">
+                          {job.shiftDate || job.formattedDate || "Date TBA"}
+                        </span>
+                      </div>
+                      <div className="d-flex align-items-center gap-1 text-muted">
+                        <i
+                          className="fa-regular fa-clock"
+                          style={{ color: "#0A7C6E" }}
+                        ></i>
+                        <span className="fw-semibold text-secondary">
+                          {job.timeWindow || job.pillText || "Time TBA"}
+                        </span>
+                      </div>
+                      {job.hours > 0 && (
+                        <div className="d-flex align-items-center gap-1 text-muted">
+                          <i
+                            className="fa-solid fa-hourglass-half"
+                            style={{ color: "#0A7C6E" }}
+                          ></i>
+                          <span className="fw-semibold text-secondary">
+                            {job.hours} {job.hours === 1 ? "hr" : "hrs"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bottom Row: Details and Pay Now buttons */}
+                    <div className="d-flex justify-content-end align-items-center gap-2 pt-2 border-top border-light flex-nowrap">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary rounded-pill fw-semibold d-inline-flex align-items-center justify-content-center"
+                        style={{ fontSize: "12px", height: "34px", padding: "0 18px", minWidth: "96px" }}
+                        onClick={() => {
+                          setShowPaymentAlertModal(false);
+                          openModal(job);
+                        }}
+                      >
+                        Details
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm rounded-pill fw-bold shadow-sm d-inline-flex align-items-center justify-content-center text-white"
+                        style={{
+                          fontSize: "12px",
+                          height: "34px",
+                          padding: "0 18px",
+                          minWidth: "96px",
+                          backgroundColor: "#0A7C6E",
+                          borderColor: "#0A7C6E",
+                        }}
+                        onClick={() => handlePayNow(job)}
+                      >
+                        <i className="fa-solid fa-credit-card me-1"></i> Pay Now
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div
+              className="modal-footer-premium p-3 bg-light border-top d-flex justify-content-end align-items-center"
+              style={{ borderRadius: "0 0 22px 22px" }}
+            >
+              <button
+                type="button"
+                className="btn btn-secondary px-4 rounded-pill fw-semibold shadow-sm"
+                style={{ fontSize: "13px" }}
+                onClick={handleClosePaymentAlertModal}
+              >
+                Close
               </button>
             </div>
           </div>

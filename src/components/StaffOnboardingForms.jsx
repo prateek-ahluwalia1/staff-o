@@ -1342,7 +1342,26 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             toast.error("Please enter a Security Licence number first.");
             return;
         }
-        if (!staffState) {
+        const STATE_NAME_MAP = {
+            vic: "Victoria",
+            victoria: "Victoria",
+            nsw: "New South Wales",
+            "new south wales": "New South Wales",
+            qld: "Queensland",
+            queensland: "Queensland",
+            tas: "Tasmania",
+            tasmania: "Tasmania",
+            wa: "Western Australia",
+            "western australia": "Western Australia",
+            sa: "South Australia",
+            "south australia": "South Australia",
+            act: "Australian Capital Territory",
+            "australian capital territory": "Australian Capital Territory",
+            nt: "Northern Territory",
+            "northern territory": "Northern Territory",
+        };
+        const resolvedState = STATE_NAME_MAP[(staffState || "").toLowerCase()] || staffState;
+        if (!resolvedState) {
             toast.error("Please add your location first.");
             return;
         }
@@ -1350,7 +1369,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         try {
             const res = await submitSecurityLicense(
                 "api/documents-online-verification-staffoo",
-                { document_type: "Security License", license_number: onboardForm.o_seclic, state: staffState },
+                { document_type: "Security License", license_number: onboardForm.o_seclic, state: resolvedState },
                 { method: "POST" }
             );
             if (res?.success && res?.expiry) {

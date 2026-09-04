@@ -32,20 +32,17 @@ function Footer() {
           {/* For clients */}
           <div className="nh-foot-col">
             <h4>For clients</h4>
-            <Link to="/register">Post a job</Link>
-            <Link to="/login">Browse staff</Link>
-            <Link to="/register">Businesses and agencies</Link>
-            <Link to="/pricing">Pricing</Link>
+            <Link to="/forclients/postajob">Post a job</Link>
+            <Link to="/forclients/howitworks">How it works</Link>
+            <Link to="/client-terms">Client Terms</Link>
           </div>
 
           {/* For staff */}
           <div className="nh-foot-col">
             <h4>For staff</h4>
             <Link to="/forstaff/working-staff">Working on Staffoo</Link>
-            {/* <Link to="/login">Browse jobs</Link> */}
             <Link to="/forstaff/how-to-apply">How to apply</Link>
-            {/* <Link to="/forstaff/working-staff">Licensing &amp; requirements</Link>
-            <Link to="/edit-profile">Staff dashboard</Link> */}
+            <Link to="/staff-terms">Staff Terms</Link>
           </div>
 
           {/* Industries */}
@@ -58,7 +55,7 @@ function Footer() {
             <Link to="/industries/residential-estates">Residential &amp; Estates</Link>
           </div>
 
-          {/* Company */}
+            {/* Company */}
           <div className="nh-foot-col">
             <h4>Company</h4>
             <Link to="/about-us">About</Link>
@@ -66,6 +63,7 @@ function Footer() {
             <Link to="/careers">Careers</Link>
             <Link to="/privacy-policy">Privacy Policy</Link>
             <Link to="/terms-of-use">Terms of Use</Link>
+            <Link to="/partner-terms">Partner Terms</Link>
           </div>
         </div>
 

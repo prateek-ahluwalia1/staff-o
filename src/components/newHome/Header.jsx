@@ -93,6 +93,7 @@ function Header() {
               <div className="nh-dropdown">
                 <NavLink to="/forclients/postajob" onClick={handleLinkClick}>Post a job</NavLink>
                 <NavLink to="/forclients/howitworks" onClick={handleLinkClick}>How it works</NavLink>
+                <NavLink to="/client-terms" onClick={handleLinkClick}>Client Terms</NavLink>
               </div>
             </div>
 
@@ -101,8 +102,7 @@ function Header() {
               <div className="nh-dropdown">
                 <NavLink to="/forstaff/working-staff" onClick={handleLinkClick}>Working on Staffoo</NavLink>
                 <NavLink to="/forstaff/how-to-apply" onClick={handleLinkClick}>How to apply</NavLink>
-                {/* <NavLink to="/forstaff/working-staff" onClick={handleLinkClick}>Licensing &amp; requirements</NavLink>
-                <NavLink to="/edit-profile" onClick={handleLinkClick}>Staff dashboard</NavLink> */}
+                <NavLink to="/staff-terms" onClick={handleLinkClick}>Staff Terms</NavLink>
               </div>
             </div>
 
@@ -261,8 +261,12 @@ function Header() {
 
         {/* Nav links */}
         <div style={{ borderBottom: '1px solid #E4E9E4', paddingBottom: '8px', marginBottom: '8px' }}>
+          <NavLink to="/forclients/postajob" onClick={handleLinkClick}>Post a job</NavLink>
+          <NavLink to="/forclients/howitworks" onClick={handleLinkClick}>How it works</NavLink>
+          <NavLink to="/client-terms" onClick={handleLinkClick}>Client Terms</NavLink>
           <NavLink to="/forstaff/working-staff" onClick={handleLinkClick}>Working on Staffoo</NavLink>
           <NavLink to="/forstaff/how-to-apply" onClick={handleLinkClick}>How to apply</NavLink>
+          <NavLink to="/staff-terms" onClick={handleLinkClick}>Staff Terms</NavLink>
           <NavLink to="/industries/event-crowd-control" onClick={handleLinkClick}>Event &amp; Crowd Control</NavLink>
           <NavLink to="/industries/retail-security" onClick={handleLinkClick}>Retail Security</NavLink>
           <NavLink to="/industries/corporate-office" onClick={handleLinkClick}>Corporate &amp; Office</NavLink>

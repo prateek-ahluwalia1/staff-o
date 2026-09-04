@@ -193,8 +193,12 @@ const RatesList = ({ forcedType } = {}) => {
   const rateRequests = useMemo(() => {
     if (!requestsData) return [];
     const arr = requestsData?.data ?? requestsData;
-    return Array.isArray(arr) ? arr : [];
-  }, [requestsData]);
+    const reqs = Array.isArray(arr) ? arr : [];
+    if (requestTab === "pending") {
+      return reqs.filter((r) => r.is_submitted !== 0 && r.is_submitted !== "0");
+    }
+    return reqs;
+  }, [requestsData, requestTab]);
 
   const adminId = userdata?.data?.id || userdata?.id || null;
 
@@ -1012,8 +1016,10 @@ const RatesList = ({ forcedType } = {}) => {
                       </div>
                       {UI_SLOT_ROWS.map((row) => {
                         const req = reviewRequest.request;
-                        const metroVal = req[`${cat}_${row.metro}`];
-                        const regVal = req[`${cat}_${row.reg}`];
+                        const mKey = `${cat}_${row.metro}`;
+                        const rKey = `${cat}_${row.reg}`;
+                        const metroVal = req[mKey] ?? req[row.metro] ?? req[`def_${row.metro}`];
+                        const regVal = req[rKey] ?? req[row.reg] ?? req[`def_${row.reg}`];
                         return (
                           <div
                             key={row.metro}

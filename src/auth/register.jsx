@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setToken, setUser } from "../store/slices/authSlice";
@@ -9,6 +9,7 @@ import Header from "../components/newHome/Header";
 import { apiURL } from "../utils/exports";
 import { normalizeAuthResponse, extractUserId } from "../utils/authResponseNormalizer";
 import googleIcon from "../assets/images/google-color.svg";
+import { ClientTerms, StaffTerms, ResourcePartnerTerms } from "../pages/terms";
 
 /* ── Design tokens ── */
 const G = "#0A7C6E";
@@ -55,6 +56,8 @@ export default function Register() {
   const validRoles = ["customer", "staff", "contractor"];
 
   const [userType, setUserType] = useState(validRoles.includes(incomingRole) ? incomingRole : "");
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -62,6 +65,17 @@ export default function Register() {
   const [tempGoogleToken, setTempGoogleToken] = useState(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
+
+  useEffect(() => {
+    if (showRoleModal || showVerifyModal || showTermsModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showRoleModal, showVerifyModal, showTermsModal]);
 
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -154,6 +168,14 @@ export default function Register() {
   });
 
   const executeRegistration = async () => {
+    if (!userType) {
+      toast.error("Please select an account type.");
+      return;
+    }
+    if (!agreeTerms) {
+      toast.error("Please agree to the terms and conditions to proceed.");
+      return;
+    }
     setShowRoleModal(false);
     if (pendingAuthAction === "form") {
       const payload = { ...formData, password_confirmation: formData.password, user_type: userType };
@@ -388,12 +410,12 @@ export default function Register() {
 
       {/* ── ROLE SELECTION MODAL ── */}
       {showRoleModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,28,0.5)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,28,0.5)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", overflowY: "auto" }}>
           <div style={{ background: "#fff", border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "40px", maxWidth: "460px", width: "100%", boxShadow: "0 24px 60px rgba(20,24,28,0.15)" }}>
             <h3 style={{ fontFamily: "'Barlow Semi Condensed', sans-serif", fontSize: "24px", fontWeight: 700, color: INK, marginBottom: "8px" }}>Select account type</h3>
             <p style={{ fontSize: "14px", color: TEXT_SEC, marginBottom: "24px" }}>Choose the profile type that best describes you to continue.</p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "24px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: userType ? "16px" : "24px" }}>
               {[
                 { key: "customer", label: "Client", desc: "I want to hire security professionals.", icon: "fa-user-tie" },
                 { key: "staff", label: "Staff", desc: "I am looking for security jobs.", icon: "fa-user-shield" },
@@ -401,7 +423,7 @@ export default function Register() {
               ].map((role) => {
                 const isActive = userType === role.key;
                 return (
-                  <button key={role.key} type="button" onClick={() => setUserType(role.key)}
+                  <button key={role.key} type="button" onClick={() => { setUserType(role.key); setAgreeTerms(false); }}
                     style={{
                       display: "flex", alignItems: "center", gap: "14px",
                       padding: "14px 16px", borderRadius: "12px", cursor: "pointer", textAlign: "left",
@@ -421,13 +443,84 @@ export default function Register() {
               })}
             </div>
 
+            {/* Terms & Conditions Checkbox (Shown only after a role is selected) */}
+            {userType && (
+              <div
+                style={{
+                  marginBottom: "22px",
+                  padding: "12px 14px",
+                  borderRadius: "10px",
+                  background: TINT,
+                  border: `1.5px solid ${agreeTerms ? G : BORDER}`,
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "10px",
+                  transition: "border-color .15s, background .15s",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  id="modal-agree-terms"
+                  checked={agreeTerms}
+                  onChange={(e) => setAgreeTerms(e.target.checked)}
+                  style={{
+                    marginTop: "2px",
+                    width: "17px",
+                    height: "17px",
+                    accentColor: G,
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                />
+                <label
+                  htmlFor="modal-agree-terms"
+                  style={{
+                    fontSize: "13px",
+                    color: INK_SOFT,
+                    lineHeight: 1.45,
+                    cursor: "pointer",
+                    fontFamily: "'Inter', sans-serif",
+                    margin: 0,
+                    userSelect: "none",
+                  }}
+                >
+                  I have read and agree to the{" "}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowTermsModal(true);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      color: G,
+                      fontWeight: 700,
+                      textDecoration: "underline",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      fontSize: "inherit",
+                      display: "inline",
+                    }}
+                  >
+                    {userType === "customer" && "Client Terms & Conditions"}
+                    {userType === "staff" && "Staff Terms & Conditions"}
+                    {userType === "contractor" && "Resource Partner Terms & Conditions"}
+                  </button>
+                  .
+                </label>
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: "12px" }}>
-              <button type="button" onClick={() => { setShowRoleModal(false); setPendingAuthAction(null); setTempGoogleToken(null); }} disabled={loading}
+              <button type="button" onClick={() => { setShowRoleModal(false); setPendingAuthAction(null); setTempGoogleToken(null); setAgreeTerms(false); }} disabled={loading}
                 style={{ flex: 1, padding: "12px", borderRadius: "9px", background: TINT, border: `1.5px solid ${BORDER}`, color: INK_SOFT, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: "14.5px" }}>
                 Cancel
               </button>
-              <button type="button" onClick={executeRegistration} disabled={loading || !userType}
-                style={{ flex: 1, padding: "12px", borderRadius: "9px", background: `linear-gradient(135deg, ${G}, ${G_DARK})`, border: "none", color: "#fff", fontWeight: 600, cursor: (!userType || loading) ? "not-allowed" : "pointer", opacity: (!userType || loading) ? 0.6 : 1, fontFamily: "'Inter', sans-serif", fontSize: "14.5px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+              <button type="button" onClick={executeRegistration} disabled={loading || !userType || !agreeTerms}
+                style={{ flex: 1, padding: "12px", borderRadius: "9px", background: `linear-gradient(135deg, ${G}, ${G_DARK})`, border: "none", color: "#fff", fontWeight: 600, cursor: (!userType || !agreeTerms || loading) ? "not-allowed" : "pointer", opacity: (!userType || !agreeTerms || loading) ? 0.6 : 1, fontFamily: "'Inter', sans-serif", fontSize: "14.5px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                 {loading && <i className="fa-solid fa-spinner fa-spin" />}
                 {loading ? "Processing..." : "Continue"}
               </button>
@@ -436,9 +529,44 @@ export default function Register() {
         </div>
       )}
 
+      {/* ── ROLE TERMS MODAL (OVERLAY ON SAME SCREEN) ── */}
+      {showTermsModal && userType === "customer" && (
+        <ClientTerms
+          isOpen={showTermsModal}
+          onClose={() => setShowTermsModal(false)}
+          onAccept={() => {
+            setAgreeTerms(true);
+            setShowTermsModal(false);
+            toast.success("Client Terms & Conditions accepted.");
+          }}
+        />
+      )}
+      {showTermsModal && userType === "staff" && (
+        <StaffTerms
+          isOpen={showTermsModal}
+          onClose={() => setShowTermsModal(false)}
+          onAccept={() => {
+            setAgreeTerms(true);
+            setShowTermsModal(false);
+            toast.success("Staff Terms & Conditions accepted.");
+          }}
+        />
+      )}
+      {showTermsModal && userType === "contractor" && (
+        <ResourcePartnerTerms
+          isOpen={showTermsModal}
+          onClose={() => setShowTermsModal(false)}
+          onAccept={() => {
+            setAgreeTerms(true);
+            setShowTermsModal(false);
+            toast.success("Resource Partner Terms & Conditions accepted.");
+          }}
+        />
+      )}
+
       {/* ── EMAIL VERIFY MODAL ── */}
       {showVerifyModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,28,0.5)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,28,0.5)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", overflowY: "auto" }}>
           <div style={{ background: "#fff", border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "40px", maxWidth: "440px", width: "100%", boxShadow: "0 24px 60px rgba(20,24,28,0.15)", textAlign: "center" }}>
             <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: G_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
               <i className="fa-solid fa-envelope-open-text" style={{ fontSize: "28px", color: G }} />

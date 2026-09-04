@@ -55,6 +55,9 @@ const Faqs = lazy(() => import("./pages/faqs"));
 const AboutUs = lazy(() => import("./pages/about-us"));
 const TermsOfUse = lazy(() => import("./pages/terms-of-use"));
 const PrivacyPolicy = lazy(() => import("./pages/privacy-policy"));
+const ClientTerms = lazy(() => import("./pages/terms/ClientTerms"));
+const StaffTerms = lazy(() => import("./pages/terms/StaffTerms"));
+const ResourcePartnerTerms = lazy(() => import("./pages/terms/ResourcePartnerTerms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Reports = lazy(() => import("./pages/Reports"));
 const TimeSheet = lazy(() => import("./pages/TimeSheet"));
@@ -613,6 +616,14 @@ function AppContent() {
                 {/* Company */}
                 <Route path="/terms-of-use" element={<ProtectedRoute public><TermsOfUse /></ProtectedRoute>} />
                 <Route path="/privacy-policy" element={<ProtectedRoute public><PrivacyPolicy /></ProtectedRoute>} />
+                <Route path="/terms/client-terms" element={<ProtectedRoute public><ClientTerms /></ProtectedRoute>} />
+                <Route path="/client-terms" element={<ProtectedRoute public><ClientTerms /></ProtectedRoute>} />
+                <Route path="/customer-terms" element={<ProtectedRoute public><ClientTerms /></ProtectedRoute>} />
+                <Route path="/terms/staff-terms" element={<ProtectedRoute public><StaffTerms /></ProtectedRoute>} />
+                <Route path="/staff-terms" element={<ProtectedRoute public><StaffTerms /></ProtectedRoute>} />
+                <Route path="/terms/resource-partner-terms" element={<ProtectedRoute public><ResourcePartnerTerms /></ProtectedRoute>} />
+                <Route path="/resource-partner-terms" element={<ProtectedRoute public><ResourcePartnerTerms /></ProtectedRoute>} />
+                <Route path="/partner-terms" element={<ProtectedRoute public><ResourcePartnerTerms /></ProtectedRoute>} />
                 <Route path="/about-us" element={<ProtectedRoute public><AboutUs /></ProtectedRoute>} />
                 <Route path="/contact-us" element={<ProtectedRoute public><ContactUs /></ProtectedRoute>} />
 

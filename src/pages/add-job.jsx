@@ -1125,7 +1125,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         {isEmbedded ? (
           <>
             {renderEmbeddedAccordion()}
-            <div className="d-flex justify-content-between mt-5 pt-4 border-top">
+            <div className="d-flex justify-content-between mt-2 pt-0 border-top">
               <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>
                 Cancel
               </button>
@@ -1416,7 +1416,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                   </>
                 )}
 
-                {step === 3 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} stateCheckResult={stateCheckResult} priceRange={priceRange} />}    <div className="d-flex justify-content-between mt-5 pt-4 border-top">
+                {step === 3 && !isAdmin && <ReviewStep form={form} rate={breakdown} setStep={setStep} setField={setField} handleConfirm={handleConfirm} isSubmitting={isSubmitting} baseAmount={breakdown?.chargeTotalIncGst || 0} isAdmin={isAdmin} stateCheckResult={stateCheckResult} priceRange={priceRange} />}    <div className="d-flex justify-content-between mt-3 pt-2 border-top">
                   <button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={back} disabled={isSubmitting}>Back</button>
 
                   {step < STEP_TITLES.length - 1 ? (

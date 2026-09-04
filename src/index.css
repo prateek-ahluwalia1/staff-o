@@ -8,7 +8,6 @@ body {
   text-transform: none;
 }
 
-
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
@@ -20,15 +19,22 @@ code {
 
 .react-select__control--is-focused {
   border-color: #0A7C6E !important;
-  box-shadow: 0 0 0 1px #0A7C6E !important;
+  box-shadow: 0 0 0 3px rgba(10, 124, 110, 0.12) !important;
 }
 
 .react-select__option--is-selected {
   background-color: #0A7C6E !important;
+  color: #ffffff !important;
 }
 
-.react-select__option--is-focused {
+.react-select__option--is-focused:not(.react-select__option--is-selected) {
   background-color: #E6F4F2 !important;
+  color: #0A7C6E !important;
+}
+
+.react-select__option--is-selected.react-select__option--is-focused {
+  background-color: #0A7C6E !important;
+  color: #ffffff !important;
 }
 
 .react-select__single-value {
@@ -69,6 +75,10 @@ code {
   box-shadow: 0 0 0px 1000px transparent inset !important;
   transition: background-color 5000s ease-in-out 0s !important;
 }
+:root {
+  --danger: #dc2626;
+}
+
 @keyframes shakeRed {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-5px); }
@@ -77,10 +87,13 @@ code {
 }
 .shake-red {
   animation: shakeRed 0.4s ease-in-out;
-  border-color: var(--danger) !important;
+  border: 1.5px solid #dc2626 !important;
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
 }
 .tab-btn.shake-red {
-  background-color: var(--danger) !important;
-  border-color: var(--danger) !important;
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
   color: white !important;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3) !important;
 }

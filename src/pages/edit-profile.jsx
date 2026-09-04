@@ -388,8 +388,11 @@ export default function EditProfile() {
     }
   }, [showDocErrors]);
   const [initialStatesAllowed, setInitialStatesAllowed] = useState([]);
+  const [initialAdminFormData, setInitialAdminFormData] = useState(null);
+  const [initialPersonalFormData, setInitialPersonalFormData] = useState(null);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyingDoc, setVerifyingDoc] = useState(false);
+  const [dragActiveField, setDragActiveField] = useState(null);
   const [docForm, setDocForm] = useState({
     notes: "",
     no: false,
@@ -413,23 +416,30 @@ export default function EditProfile() {
     profileData?.data?.phone_verified
   );
 
-  const getMissingFields = (data) => {
+  const getMissingFields = useCallback((data) => {
     if (!data) return [];
     const missing = [];
-    if (!data.name) missing.push("Name");
-    if (!data.email) missing.push("Email");
-    if (!data.phone) missing.push("Phone");
+    if (userType !== "admin" && !data.name) missing.push("Name");
+    if (userType !== "admin" && !data.email) missing.push("Email");
+    if (userType !== "admin" && !data.phone) missing.push("Phone");
     if (!data.address) missing.push("Address");
-    if (userType === "staff" && !data.security_license_no)
-      missing.push("Security License No");
+    if (userType === "staff") {
+      if (!data.security_license_no) missing.push("Security License No");
+      const showStaffAdvFields = Number(userdata?.data?.user_id ?? userdata?.user_id ?? 0) > 0;
+      if (showStaffAdvFields) {
+        if (!data.staff_document_type) missing.push("Visa Status");
+        if (!data.date_of_birth) missing.push("Date of Birth");
+        if (!data.origin_country) missing.push("Country of Birth");
+      }
+    }
     if (userType === "contractor" && !data.security_license_no)
       missing.push("Security Master License No");
-    if (userType === "contractor" && !data.company_name)
+    if ((userType === "contractor" || userType === "admin") && !data.company_name)
       missing.push("Company Name");
     if ((userType === "contractor" || userType === "admin") && (!data.states_allowed || data.states_allowed.length === 0))
       missing.push("States You Operate In");
     return missing;
-  };
+  }, [userType, userdata]);
   const missingFields = getMissingFields(formData);
 
   useEffect(() => {
@@ -517,6 +527,50 @@ export default function EditProfile() {
     });
 
     setInitialStatesAllowed(existingStatesAllowed || []);
+
+    if (userType === "admin") {
+      setInitialAdminFormData({
+        company_name: business.name || business.contractor?.company_name || business.company_name || d.company_name || "",
+        abn: business.contractor?.abn || business.abn || d.abn || "",
+        acn: business.contractor?.acn || business.acn || d.acn || "",
+        states_allowed: existingStatesAllowed || [],
+        address: business.address || d.address || "",
+        city: business.city || d.city || "",
+        state: business.state || d.state || "",
+        country: business.country || d.country || "",
+        coordinates: business.coordinates || d.coordinates || "",
+      });
+    }
+
+    setInitialPersonalFormData({
+      name: d.name || "",
+      email: d.email || "",
+      origin_country: staff.origin_country || d.origin_country || "",
+      abn: userType === "admin" ? (business.contractor?.abn || business.abn || d.abn || "") : (d.abn || business.abn || contractor.abn || ""),
+      acn: userType === "admin" ? (business.contractor?.acn || business.acn || d.acn || "") : (d.acn || business.acn || contractor.acn || ""),
+      phone: userType === "admin" ? (business.phone || business.contractor?.phone || d.phone || "") : (staff.phone || contractor.phone || customer.phone || business.phone || d.phone || ""),
+      address: userType === "admin" ? (business.address || d.address || "") : (d.address || staff.address || contractor.address || business.address || ""),
+      city: userType === "admin" ? (business.city || d.city || "") : (d.city || staff.city || contractor.city || business.city || ""),
+      state: userType === "admin" ? (business.state || d.state || "") : (d.state || staff.state || contractor.state || business.state || ""),
+      country: userType === "admin" ? (business.country || d.country || "") : (d.country || staff.country || contractor.country || business.country || ""),
+      coordinates:
+        userType === "admin"
+          ? (business.coordinates || d.coordinates || "")
+          : (d.coordinates || staff.coordinates || contractor.coordinates || business.coordinates || ""),
+      gender: staff.gender || contractor.gender || d.gender || "",
+      staff_document_type: staff.staff_document_type || "",
+      security_license_no: staff.security_license_no || contractor.security_license_no || "",
+      date_of_birth: isoToDisplay(d.date_of_birth || staff.date_of_birth || ""),
+      company_name:
+        userType === "admin"
+          ? (business.name || business.contractor?.company_name || business.company_name || d.company_name || "")
+          : (d.company_name || business.name || business.company_name || contractor.company_name || staff.company_name || customer.company_name || ""),
+      registration_number:
+        d.registration_number ||
+        contractor.registration_number ||
+        staff.registration_number ||
+        "",
+    });
 
     const profileImageUrl =
       userType === "admin"
@@ -773,6 +827,92 @@ export default function EditProfile() {
     return JSON.stringify(initial) !== JSON.stringify(current);
   }, [initialStatesAllowed, formData.states_allowed, userType]);
 
+  const hasAdminFormChanged = useMemo(() => {
+    if (userType !== "admin" || !initialAdminFormData) return false;
+
+    const currentAdminData = {
+      company_name: formData.company_name || "",
+      abn: formData.abn || "",
+      acn: formData.acn || "",
+      states_allowed: [...(formData.states_allowed || [])].sort(),
+      address: formData.address || "",
+      city: formData.city || "",
+      state: formData.state || "",
+      country: formData.country || "",
+      coordinates: formData.coordinates || "",
+    };
+
+    const initialDataNormalized = {
+      company_name: initialAdminFormData.company_name || "",
+      abn: initialAdminFormData.abn || "",
+      acn: initialAdminFormData.acn || "",
+      states_allowed: [...(initialAdminFormData.states_allowed || [])].sort(),
+      address: initialAdminFormData.address || "",
+      city: initialAdminFormData.city || "",
+      state: initialAdminFormData.state || "",
+      country: initialAdminFormData.country || "",
+      coordinates: initialAdminFormData.coordinates || "",
+    };
+
+    return JSON.stringify(currentAdminData) !== JSON.stringify(initialDataNormalized);
+  }, [initialAdminFormData, formData, userType]);
+
+  const hasPersonalFormChanged = useMemo(() => {
+    if (userType === "admin" || userType === "contractor" || !initialPersonalFormData) return false;
+
+    const currentPersonalData = {
+      name: formData.name || "",
+      email: formData.email || "",
+      phone: formData.phone || "",
+      address: formData.address || "",
+      city: formData.city || "",
+      state: formData.state || "",
+      country: formData.country || "",
+      coordinates: formData.coordinates || "",
+      gender: formData.gender || "",
+      origin_country: formData.origin_country || "",
+      staff_document_type: formData.staff_document_type || "",
+      security_license_no: formData.security_license_no || "",
+      date_of_birth: formData.date_of_birth || "",
+      company_name: formData.company_name || "",
+      registration_number: formData.registration_number || "",
+      abn: formData.abn || "",
+      acn: formData.acn || "",
+    };
+
+    const initialPersonalDataNormalized = {
+      name: initialPersonalFormData.name || "",
+      email: initialPersonalFormData.email || "",
+      phone: initialPersonalFormData.phone || "",
+      address: initialPersonalFormData.address || "",
+      city: initialPersonalFormData.city || "",
+      state: initialPersonalFormData.state || "",
+      country: initialPersonalFormData.country || "",
+      coordinates: initialPersonalFormData.coordinates || "",
+      gender: initialPersonalFormData.gender || "",
+      origin_country: initialPersonalFormData.origin_country || "",
+      staff_document_type: initialPersonalFormData.staff_document_type || "",
+      security_license_no: initialPersonalFormData.security_license_no || "",
+      date_of_birth: initialPersonalFormData.date_of_birth || "",
+      company_name: initialPersonalFormData.company_name || "",
+      registration_number: initialPersonalFormData.registration_number || "",
+      abn: initialPersonalFormData.abn || "",
+      acn: initialPersonalFormData.acn || "",
+    };
+
+    return JSON.stringify(currentPersonalData) !== JSON.stringify(initialPersonalDataNormalized);
+  }, [initialPersonalFormData, formData, userType]);
+
+  const submitText = useMemo(() => {
+    if (userType === "admin") {
+      return hasAdminFormChanged ? "Next" : "Save Changes";
+    }
+    if (userType === "contractor") {
+      return hasStatesChanged ? "Next" : "Save Changes";
+    }
+    return hasPersonalFormChanged ? "Next" : "Save Changes";
+  }, [userType, hasAdminFormChanged, hasStatesChanged, hasPersonalFormChanged]);
+
   const handleSubmit = useCallback(
     async (e) => {
       if (e) e.preventDefault();
@@ -780,7 +920,24 @@ export default function EditProfile() {
         toast.error("Unable to update profile. Missing user id.");
         return;
       }
+
+      const missing = getMissingFields(formData);
+      if (missing.length > 0) {
+        setShowErrors(false);
+        setTimeout(() => {
+          setShowErrors(true);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 10);
+        toast.error(`Please complete all required fields: ${missing.join(", ")}`);
+        return;
+      }
+
       if (!formData.address || !formData.city || !formData.state || !formData.country) {
+        setShowErrors(false);
+        setTimeout(() => {
+          setShowErrors(true);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 10);
         toast.error("Please select a valid complete address from the Google Maps suggestions dropdown.");
         return;
       }
@@ -805,12 +962,52 @@ export default function EditProfile() {
       if (res === undefined) return;
       refetch();
 
+      if (userType === "admin") {
+        setInitialAdminFormData({
+          company_name: formData.company_name || "",
+          abn: formData.abn || "",
+          acn: formData.acn || "",
+          states_allowed: formData.states_allowed || [],
+          address: formData.address || "",
+          city: formData.city || "",
+          state: formData.state || "",
+          country: formData.country || "",
+          coordinates: formData.coordinates || "",
+        });
+        if (hasAdminFormChanged) {
+          setActiveTab("documents");
+        }
+      }
+
       if (hasStatesChanged) {
         setInitialStatesAllowed(formData.states_allowed || []);
         setActiveTab("documents");
       }
+
+      if (hasPersonalFormChanged) {
+        setInitialPersonalFormData({
+          name: formData.name || "",
+          email: formData.email || "",
+          phone: formData.phone || "",
+          address: formData.address || "",
+          city: formData.city || "",
+          state: formData.state || "",
+          country: formData.country || "",
+          coordinates: formData.coordinates || "",
+          gender: formData.gender || "",
+          origin_country: formData.origin_country || "",
+          staff_document_type: formData.staff_document_type || "",
+          security_license_no: formData.security_license_no || "",
+          date_of_birth: formData.date_of_birth || "",
+          company_name: formData.company_name || "",
+          registration_number: formData.registration_number || "",
+          abn: formData.abn || "",
+          acn: formData.acn || "",
+        });
+        setActiveTab("documents");
+      }
     },
-    [formData, submit, userId, updateUserId, refetch, hasStatesChanged]
+    [formData, submit, userId, updateUserId, refetch, hasStatesChanged, hasAdminFormChanged, hasPersonalFormChanged, userType, getMissingFields]
   );
 
   const handleClosePhoneModal = () => {
@@ -957,23 +1154,65 @@ export default function EditProfile() {
       return;
     }
 
-    // ---- Security License Verification ----
-    if (docForm.document_name === "Security License") {
-      const staffState = (formData?.state || profileData?.data?.state || userdata?.data?.state || userdata?.state || "").trim();
-      if (!staffState) {
+    // ---- Security License & Security Master License Verification ----
+    if (
+      docForm.document_name === "Security License" ||
+      docForm.document_name === "Security Master License"
+    ) {
+      const STATE_NAME_MAP = {
+        contractor_document: "Victoria",
+        vic: "Victoria",
+        victoria: "Victoria",
+        nsw_document: "New South Wales",
+        nsw: "New South Wales",
+        "new south wales": "New South Wales",
+        qld_document: "Queensland",
+        qld: "Queensland",
+        queensland: "Queensland",
+        tas_document: "Tasmania",
+        tas: "Tasmania",
+        tasmania: "Tasmania",
+        wa_document: "Western Australia",
+        wa: "Western Australia",
+        "western australia": "Western Australia",
+        sa_document: "South Australia",
+        sa: "South Australia",
+        "south australia": "South Australia",
+        act_document: "Australian Capital Territory",
+        act: "Australian Capital Territory",
+        "australian capital territory": "Australian Capital Territory",
+        nt_document: "Northern Territory",
+        nt: "Northern Territory",
+        "northern territory": "Northern Territory",
+      };
+
+      const cat = (docForm.document_category || selectedDoc?.document_category || "").toLowerCase();
+      const rawState = (
+        formData?.state ||
+        profileData?.data?.state ||
+        userdata?.data?.state ||
+        userdata?.state ||
+        ""
+      ).trim();
+
+      const resolvedState = STATE_NAME_MAP[cat] || STATE_NAME_MAP[rawState.toLowerCase()] || rawState;
+
+      if (!resolvedState) {
         toast.error("Please add your location first.");
         return;
       }
 
       setVerifyingDoc(true);
       try {
+        const payload = {
+          document_type: docForm.document_name,
+          license_number: docForm.document_no,
+          state: resolvedState,
+        };
+
         const res = await submitSecurityLicense(
           "api/documents-online-verification-staffoo",
-          {
-            document_type: docForm.document_name,
-            license_number: docForm.document_no,
-            state: staffState,
-          },
+          payload,
           { method: "POST" }
         );
 
@@ -985,7 +1224,7 @@ export default function EditProfile() {
             is_verified: true,
             show_working_rights: false,
           }));
-          toast.success("Security License verified. Expiry date locked.");
+          toast.success(`${docForm.document_name} verified. Expiry date locked.`);
         } else {
           setDocForm((prev) => ({ ...prev, is_verified: false }));
         }
@@ -1091,36 +1330,76 @@ export default function EditProfile() {
     setDocForm((prev) => ({
       ...prev,
       document_no: value,
+      is_verified: false,
+      document_expiry: "",
     }));
+  };
+
+  const uploadDocFile = async (file, name) => {
+    if (!file) return;
+    const MAX_SIZE_MB = 10;
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      toast.error(`File too large. Max ${MAX_SIZE_MB}MB.`);
+      return;
+    }
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("folder", "staff_documents");
+    const res = await uploadFile("api/upload-file", fd, { method: "POST" });
+    if (res?.success) {
+      if (name === "working_rights_file") {
+        setDocForm((prev) => ({
+          ...prev,
+          working_rights_file_path: res.path || res.data?.path || "",
+          working_rights_file_url: res.url || res.data?.url || "",
+        }));
+      } else {
+        setDocForm((prev) => ({
+          ...prev,
+          file_path: res.path || res.data?.path || "",
+          file_url: res.url || res.data?.url || "",
+        }));
+      }
+    }
+  };
+
+  const handleDragOver = (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (dragActiveField !== fieldName) {
+      setDragActiveField(fieldName);
+    }
+  };
+
+  const handleDragLeave = (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActiveField(null);
+  };
+
+  const handleDrop = async (e, fieldName) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActiveField(null);
+    if (e.dataTransfer?.files && e.dataTransfer.files[0]) {
+      await uploadDocFile(e.dataTransfer.files[0], fieldName);
+    }
   };
 
   const handleDocFormChange = async (e) => {
     const { name, value, type, checked, files } = e.target;
 
     if (name === "working_rights_file") {
-      const file = files[0];
-      if (!file) return;
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`File too large. Max 10MB.`);
-        return;
-      }
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("folder", "staff_documents");
-      const res = await uploadFile("api/upload-file", fd, { method: "POST" });
-      if (res?.success) {
-        setDocForm((prev) => ({
-          ...prev,
-          working_rights_file_path: res.path || res.data?.path || "",
-          working_rights_file_url: res.url || res.data?.url || "",
-        }));
-      }
+      const file = files?.[0];
+      if (file) await uploadDocFile(file, "working_rights_file");
       return;
     }
 
     if (
       name === "document_expiry" &&
-      (docForm.document_name === "Security License" || docForm.document_name === "Visa")
+      (docForm.document_name === "Security License" ||
+        docForm.document_name === "Security Master License" ||
+        docForm.document_name === "Visa")
     ) {
       return;
     }
@@ -1133,25 +1412,8 @@ export default function EditProfile() {
         document_name: value,
       }));
     } else if (type === "file") {
-      const file = files[0];
-      const MAX_SIZE_MB = 10;
-      if (file) {
-        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-          toast.error(`File too large. Max ${MAX_SIZE_MB}MB.`);
-          return;
-        }
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("folder", "staff_documents");
-        const res = await uploadFile("api/upload-file", fd, { method: "POST" });
-        if (res?.success) {
-          setDocForm((prev) => ({
-            ...prev,
-            file_path: res.path || res.data?.path || "",
-            file_url: res.url || res.data?.url || "",
-          }));
-        }
-      }
+      const file = files?.[0];
+      if (file) await uploadDocFile(file, name);
     } else {
       setDocForm((prev) => ({ ...prev, [name]: value }));
     }
@@ -1232,7 +1494,7 @@ export default function EditProfile() {
       <label className="form-label fw-semibold">Visa Grant Number <span className="text-danger">*</span></label>
       <input type="text" className="form-control" placeholder="e.g. ABC123456" value={docForm.document_no} onChange={handleDocNumberChange} required />
     </>
-  ) : docForm.document_name === "Security License" ? (
+  ) : (docForm.document_name === "Security License" || docForm.document_name === "Security Master License") ? (
     <>
       <label className="form-label fw-semibold">Document Number <span className="text-danger">*</span></label>
       <div className="input-group">
@@ -1255,6 +1517,11 @@ export default function EditProfile() {
   const handleTabClick = (targetTab) => {
     if (targetTab === "personal") {
       setActiveTab(targetTab);
+      return;
+    }
+
+    if (userType === "admin" && hasAdminFormChanged) {
+      handleSubmit();
       return;
     }
 
@@ -1515,7 +1782,7 @@ export default function EditProfile() {
       {activeTab === "personal" && (
         <ProfileForm
           formData={formData}
-          submitText={hasStatesChanged ? "Next" : "Save Changes"}
+          submitText={submitText}
           showPhoneOtp={true}
           showErrors={showErrors}
           onChange={(e) => {
@@ -1770,6 +2037,7 @@ export default function EditProfile() {
                   file_url: "",
                   document_name: displayName,
                   document_type: doc.document_type || "",   // ← keep original slug
+                  document_category: doc.document_category || "",
                   is_verified: !!doc.document_expiry,
                   working_rights_file_path: doc.working_rights || "",
                   working_rights_file_url: doc.working_rights || "",
@@ -1787,6 +2055,7 @@ export default function EditProfile() {
                   file_url: doc.file || "",
                   document_name: displayName,
                   document_type: doc.document_type || "",   // ← keep original slug
+                  document_category: doc.document_category || "",
                   is_verified: !!doc.document_expiry,
                   working_rights_file_path: doc.working_rights || "",
                   working_rights_file_url: doc.working_rights || "",
@@ -1807,6 +2076,8 @@ export default function EditProfile() {
                 file_path: "",
                 file_url: "",
                 document_name: "",
+                document_type: "",
+                document_category: "",
                 is_verified: false,
                 working_rights_file_path: "",
                 working_rights_file_url: "",
@@ -1822,7 +2093,18 @@ export default function EditProfile() {
                 style={{ background: "#0A7C6E", borderColor: "#0A7C6E", color: "white" }}
                 onClick={() => handleTabClick("rates")}
               >
-                <i className="fa-solid fa-arrow-right ms-2 "></i> Next
+                <i className="fa-solid fa-arrow-right ms-2"></i> Next
+              </button>
+            </div>
+          )}
+          {userType === "staff" && (userdata?.data?.user_id === 1 || userdata?.user_id === 1) && (
+            <div className="mt-4 text-end">
+              <button
+                className="btn px-5 py-2.5 rounded-pill fw-bold"
+                style={{ background: "#0A7C6E", borderColor: "#0A7C6E", color: "white" }}
+                onClick={() => handleTabClick("onboarding")}
+              >
+                <i className="fa-solid fa-arrow-right ms-2"></i> Next
               </button>
             </div>
           )}
@@ -1950,39 +2232,68 @@ export default function EditProfile() {
                 <div className="col-12 col-md-6">
                   <label className="form-label fw-semibold">Upload Working Rights Document <span className="text-danger">*</span></label>
                   <label
-                    className="position-relative border rounded p-3 text-center bg-light w-100 d-flex flex-column align-items-center justify-content-center"
-                    style={{ minHeight: "200px", cursor: "pointer" }}
+                    className="position-relative p-3 text-center w-100 d-flex flex-column align-items-center justify-content-center"
+                    style={{
+                      minHeight: "200px",
+                      cursor: "pointer",
+                      border: dragActiveField === "working_rights_file" ? "2px dashed #0A7C6E" : "2px dashed #cbd5e1",
+                      backgroundColor: dragActiveField === "working_rights_file" ? "#f0fdf4" : "#f8fafc",
+                      borderRadius: "12px",
+                      transition: "all 0.2s ease-in-out",
+                      overflow: "hidden"
+                    }}
+                    onDragOver={(e) => handleDragOver(e, "working_rights_file")}
+                    onDragLeave={(e) => handleDragLeave(e, "working_rights_file")}
+                    onDrop={(e) => handleDrop(e, "working_rights_file")}
                   >
                     {docForm.working_rights_file_url ? (
-                      <div className="d-flex flex-column align-items-center w-100">
+                      <div className="d-flex flex-column align-items-center w-100 p-2">
                         {docForm.working_rights_file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                           <img
                             src={docForm.working_rights_file_url.startsWith("http") ? docForm.working_rights_file_url : `${apiURL}staff_documents/${docForm.working_rights_file_url}`}
                             alt="Working Rights"
-                            style={{ width: "100%", maxHeight: "150px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }}
+                            style={{ width: "100%", maxHeight: "140px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }}
                           />
                         ) : (
-                          <div className="text-center">
-                            <i className="fa-solid fa-file-pdf fa-3x text-muted mb-2"></i>
+                          <div className="text-center py-2">
+                            <i className="fa-solid fa-file-pdf fa-3x text-danger mb-2"></i>
                             <div>
-                              <a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.working_rights_file_url}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>View Uploaded Document</a>
+                              <a style={{ color: "#0A7C6E", fontWeight: "600", fontSize: "0.9rem" }} href={`${apiURL}staff_documents/${docForm.working_rights_file_url}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                                <i className="fa-solid fa-arrow-up-right-from-square me-1" style={{ fontSize: "0.75rem" }}></i>
+                                View Uploaded Document
+                              </a>
                             </div>
                           </div>
                         )}
-                        <div className="mt-2 text-primary text-center">
-                          <div className="fw-semibold small d-flex align-items-center justify-content-center gap-1">
-                            <i className="fa-solid fa-pen-to-square"></i> Click to update/replace document or image
+                        <div className="mt-3 text-center">
+                          <div className="fw-semibold small d-flex align-items-center justify-content-center gap-1" style={{ color: "#0A7C6E" }}>
+                            <i className="fa-solid fa-cloud-arrow-up"></i> Drag & drop or click to replace file
                           </div>
-                          <div className="text-muted small" style={{ fontSize: "0.75rem" }}>
-                            Click anywhere on this box to select a new file
+                          <div className="text-muted small mt-1" style={{ fontSize: "0.75rem" }}>
+                            Select a new file from your computer to update
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="text-center">
-                        <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-2"></i>
-                        <p className="fw-semibold text-dark mb-1">Click to upload document or image</p>
-                        <p className="text-muted small mb-0">Click here to select a file</p>
+                      <div className="text-center p-3 d-flex flex-column align-items-center justify-content-center">
+                        <div
+                          className="d-inline-flex align-items-center justify-content-center mb-2 rounded-circle"
+                          style={{
+                            width: "52px",
+                            height: "52px",
+                            backgroundColor: dragActiveField === "working_rights_file" ? "#DCFCE7" : "#F1F5F9",
+                            color: dragActiveField === "working_rights_file" ? "#15803D" : "#0A7C6E",
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <i className="fa-solid fa-cloud-arrow-up fa-lg"></i>
+                        </div>
+                        <p className="fw-bold text-dark mb-1" style={{ fontSize: "0.925rem" }}>
+                          Drag & drop your file here, or <span style={{ color: "#0A7C6E", textDecoration: "underline" }}>browse</span>
+                        </p>
+                        <p className="text-muted small mb-0" style={{ fontSize: "0.78rem" }}>
+                          Supports PDF, DOC, DOCX, JPG, PNG, WEBP (Max 10MB)
+                        </p>
                       </div>
                     )}
                     {uploadLoading && (
@@ -1997,35 +2308,64 @@ export default function EditProfile() {
                 <div className="col-12 col-md-6">
                   <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
                   <label
-                    className="position-relative border rounded p-3 text-center bg-light w-100 d-flex flex-column align-items-center justify-content-center"
-                    style={{ minHeight: "200px", cursor: "pointer" }}
+                    className="position-relative p-3 text-center w-100 d-flex flex-column align-items-center justify-content-center"
+                    style={{
+                      minHeight: "200px",
+                      cursor: "pointer",
+                      border: dragActiveField === "file_wr" ? "2px dashed #0A7C6E" : "2px dashed #cbd5e1",
+                      backgroundColor: dragActiveField === "file_wr" ? "#f0fdf4" : "#f8fafc",
+                      borderRadius: "12px",
+                      transition: "all 0.2s ease-in-out",
+                      overflow: "hidden"
+                    }}
+                    onDragOver={(e) => handleDragOver(e, "file_wr")}
+                    onDragLeave={(e) => handleDragLeave(e, "file_wr")}
+                    onDrop={(e) => handleDrop(e, "file_wr")}
                   >
                     {docForm.file_url ? (
-                      <div className="d-flex flex-column align-items-center w-100">
+                      <div className="d-flex flex-column align-items-center w-100 p-2">
                         {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                          <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: "150px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
+                          <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: "140px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
                         ) : (
-                          <div className="text-center">
-                            <i className="fa-solid fa-file-pdf fa-3x text-muted mb-2"></i>
+                          <div className="text-center py-2">
+                            <i className="fa-solid fa-file-pdf fa-3x text-danger mb-2"></i>
                             <div>
-                              <a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.file_url}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>View Document</a>
+                              <a style={{ color: "#0A7C6E", fontWeight: "600", fontSize: "0.9rem" }} href={`${apiURL}staff_documents/${docForm.file_url}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                                <i className="fa-solid fa-arrow-up-right-from-square me-1" style={{ fontSize: "0.75rem" }}></i>
+                                View Document
+                              </a>
                             </div>
                           </div>
                         )}
-                        <div className="mt-2 text-primary text-center">
-                          <div className="fw-semibold small d-flex align-items-center justify-content-center gap-1">
-                            <i className="fa-solid fa-pen-to-square"></i> Click to update/replace document or image
+                        <div className="mt-3 text-center">
+                          <div className="fw-semibold small d-flex align-items-center justify-content-center gap-1" style={{ color: "#0A7C6E" }}>
+                            <i className="fa-solid fa-cloud-arrow-up"></i> Drag & drop or click to replace file
                           </div>
-                          <div className="text-muted small" style={{ fontSize: "0.75rem" }}>
-                            Click anywhere on this box to select a new file
+                          <div className="text-muted small mt-1" style={{ fontSize: "0.75rem" }}>
+                            Select a new file from your computer to update
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="text-center">
-                        <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-2"></i>
-                        <p className="fw-semibold text-dark mb-1">Click to upload document or image</p>
-                        <p className="text-muted small mb-0">Click here to select a file</p>
+                      <div className="text-center p-3 d-flex flex-column align-items-center justify-content-center">
+                        <div
+                          className="d-inline-flex align-items-center justify-content-center mb-2 rounded-circle"
+                          style={{
+                            width: "52px",
+                            height: "52px",
+                            backgroundColor: dragActiveField === "file_wr" ? "#DCFCE7" : "#F1F5F9",
+                            color: dragActiveField === "file_wr" ? "#15803D" : "#0A7C6E",
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <i className="fa-solid fa-cloud-arrow-up fa-lg"></i>
+                        </div>
+                        <p className="fw-bold text-dark mb-1" style={{ fontSize: "0.925rem" }}>
+                          Drag & drop your file here, or <span style={{ color: "#0A7C6E", textDecoration: "underline" }}>browse</span>
+                        </p>
+                        <p className="text-muted small mb-0" style={{ fontSize: "0.78rem" }}>
+                          Supports PDF, DOC, DOCX, JPG, PNG, WEBP (Max 10MB)
+                        </p>
                       </div>
                     )}
                     {uploadLoading && (
@@ -2057,7 +2397,7 @@ export default function EditProfile() {
                     <button type="button" className="input-group-text bg-white text-muted border-end-0"
                       onClick={(e) => { e.preventDefault(); const p = document.getElementById("doc_expiry_picker"); if (p) { try { p.showPicker(); } catch (_) { p.focus(); } } }}
                       style={{ cursor: "pointer", zIndex: 10 }}
-                      disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                      disabled={docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa"}
                       title="Open Calendar">
                       <i className="fa-solid fa-calendar-days text-primary"></i>
                     </button>
@@ -2065,7 +2405,7 @@ export default function EditProfile() {
                       style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
                       value={docForm.document_expiry ? (() => { const parts = docForm.document_expiry.split("/"); if (parts.length === 3) { const [d, m, y] = parts; return `${y}-${m}-${d}`; } return ""; })() : ""}
                       onChange={(e) => { const isoDate = e.target.value; if (isoDate) { const [y, m, d] = isoDate.split("-"); setDocForm((prev) => ({ ...prev, document_expiry: `${d}/${m}/${y}` })); } }}
-                      disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                      disabled={docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa"}
                     />
                     <input type="text" className="form-control border-start-0 ps-0" name="document_expiry" placeholder="DD/MM/YYYY"
                       value={docForm.document_expiry}
@@ -2077,8 +2417,8 @@ export default function EditProfile() {
                         setDocForm((prev) => ({ ...prev, document_expiry: value }));
                       }}
                       required maxLength={10} pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                      disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
-                      style={{ backgroundColor: docForm.document_name === "Security License" || docForm.document_name === "Visa" ? "#e9ecef" : "white" }}
+                      disabled={docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa"}
+                      style={{ backgroundColor: docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa" ? "#e9ecef" : "white" }}
                     />
                   </div>
                 </div>
@@ -2087,35 +2427,64 @@ export default function EditProfile() {
               <div className="mb-3 mt-3">
                 <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
                 <label
-                  className="position-relative border rounded p-3 text-center bg-light w-100 d-flex flex-column align-items-center justify-content-center"
-                  style={{ minHeight: "200px", cursor: "pointer", overflow: "hidden" }}
+                  className="position-relative p-3 text-center w-100 d-flex flex-column align-items-center justify-content-center"
+                  style={{
+                    minHeight: "200px",
+                    cursor: "pointer",
+                    border: dragActiveField === "file" ? "2px dashed #0A7C6E" : "2px dashed #cbd5e1",
+                    backgroundColor: dragActiveField === "file" ? "#f0fdf4" : "#f8fafc",
+                    borderRadius: "12px",
+                    transition: "all 0.2s ease-in-out",
+                    overflow: "hidden"
+                  }}
+                  onDragOver={(e) => handleDragOver(e, "file")}
+                  onDragLeave={(e) => handleDragLeave(e, "file")}
+                  onDrop={(e) => handleDrop(e, "file")}
                 >
                   {docForm.file_url ? (
-                    <div className="d-flex flex-column align-items-center w-100">
+                    <div className="d-flex flex-column align-items-center w-100 p-2">
                       {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                        <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ maxWidth: "100%", maxHeight: "150px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
+                        <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ maxWidth: "100%", maxHeight: "140px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
                       ) : (
-                        <div className="text-center">
-                          <i className="fa-solid fa-file-pdf fa-3x text-muted mb-2"></i>
+                        <div className="text-center py-2">
+                          <i className="fa-solid fa-file-pdf fa-3x text-danger mb-2"></i>
                           <div>
-                            <a style={{ color: "#0A7C6E", fontWeight: "bold" }} href={`${apiURL}staff_documents/${docForm.file_url}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>View Document</a>
+                            <a style={{ color: "#0A7C6E", fontWeight: "600", fontSize: "0.9rem" }} href={`${apiURL}staff_documents/${docForm.file_url}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                              <i className="fa-solid fa-arrow-up-right-from-square me-1" style={{ fontSize: "0.75rem" }}></i>
+                              View Document
+                            </a>
                           </div>
                         </div>
                       )}
-                      <div className="mt-2 text-primary text-center">
-                        <div className="fw-semibold small d-flex align-items-center justify-content-center gap-1">
-                          <i className="fa-solid fa-pen-to-square"></i> Click to update/replace document or image
+                      <div className="mt-3 text-center">
+                        <div className="fw-semibold small d-flex align-items-center justify-content-center gap-1" style={{ color: "#0A7C6E" }}>
+                          <i className="fa-solid fa-cloud-arrow-up"></i> Drag & drop or click to replace file
                         </div>
-                        <div className="text-muted small" style={{ fontSize: "0.75rem" }}>
-                          Click anywhere on this box to select a new file
+                        <div className="text-muted small mt-1" style={{ fontSize: "0.75rem" }}>
+                          Select a new file from your computer to update
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center">
-                      <i className="fa-solid fa-cloud-arrow-up fa-3x text-muted mb-2"></i>
-                      <p className="fw-semibold text-dark mb-1">Click to upload document or image</p>
-                      <p className="text-muted small mb-0">Click here to select a file</p>
+                    <div className="text-center p-3 d-flex flex-column align-items-center justify-content-center">
+                      <div
+                        className="d-inline-flex align-items-center justify-content-center mb-2 rounded-circle"
+                        style={{
+                          width: "52px",
+                          height: "52px",
+                          backgroundColor: dragActiveField === "file" ? "#DCFCE7" : "#F1F5F9",
+                          color: dragActiveField === "file" ? "#15803D" : "#0A7C6E",
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        <i className="fa-solid fa-cloud-arrow-up fa-lg"></i>
+                      </div>
+                      <p className="fw-bold text-dark mb-1" style={{ fontSize: "0.925rem" }}>
+                        Drag & drop your file here, or <span style={{ color: "#0A7C6E", textDecoration: "underline" }}>browse</span>
+                      </p>
+                      <p className="text-muted small mb-0" style={{ fontSize: "0.78rem" }}>
+                        Supports PDF, DOC, DOCX, JPG, PNG, WEBP (Max 10MB)
+                      </p>
                     </div>
                   )}
                   {uploadLoading && (

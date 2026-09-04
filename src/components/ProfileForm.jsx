@@ -88,7 +88,7 @@ export default function ProfileForm({
     ) || null;
 
   return (
-    <form id="profile-form" onSubmit={onSubmit} className="w-100">
+    <form id="profile-form" noValidate onSubmit={onSubmit} className="w-100">
       <div className="card border shadow-sm rounded-4 overflow-hidden bg-white">
         {/* Card header – now shows profile image if available */}
         <div
@@ -161,6 +161,11 @@ export default function ProfileForm({
                     style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
                   />
                 </div>
+                {showErrors && !formData.name && (
+                  <div className="text-danger small mt-1">
+                    <i className="fa-solid fa-circle-exclamation me-1"></i>Full name is required.
+                  </div>
+                )}
               </div>
             )}
 
@@ -191,10 +196,16 @@ export default function ProfileForm({
                     }}
                   />
                 </div>
-                {isEdit && (
+                {isEdit ? (
                   <div className="text-muted small mt-1">
                     <i className="fa-solid fa-lock me-1"></i> Email cannot be changed.
                   </div>
+                ) : (
+                  showErrors && !formData.email && (
+                    <div className="text-danger small mt-1">
+                      <i className="fa-solid fa-circle-exclamation me-1"></i>Email address is required.
+                    </div>
+                  )
                 )}
               </div>
             )}
@@ -269,6 +280,11 @@ export default function ProfileForm({
                     />
                   </div>
                 )}
+                {showErrors && !formData.phone && (
+                  <div className="text-danger small mt-1">
+                    <i className="fa-solid fa-circle-exclamation me-1"></i>Phone number is required.
+                  </div>
+                )}
               </div>
             )}
 
@@ -299,6 +315,11 @@ export default function ProfileForm({
                       style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
                     />
                   </div>
+                  {showErrors && !formData.company_name && (
+                    <div className="text-danger small mt-1">
+                      <i className="fa-solid fa-circle-exclamation me-1"></i>Company name is required.
+                    </div>
+                  )}
                 </div>
 
                 <div className="col-md-6">
@@ -385,6 +406,11 @@ export default function ProfileForm({
                         style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
                       />
                     </div>
+                    {showErrors && !formData.security_license_no && (
+                      <div className="text-danger small mt-1">
+                        <i className="fa-solid fa-circle-exclamation me-1"></i>Security Master License No. is required.
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -422,6 +448,11 @@ export default function ProfileForm({
                       );
                     })}
                   </div>
+                  {showErrors && (!formData.states_allowed || formData.states_allowed.length === 0) && (
+                    <div className="text-danger small mt-1">
+                      <i className="fa-solid fa-circle-exclamation me-1"></i>Please select at least one state.
+                    </div>
+                  )}
 
                   <div className="state-picker-hint">
                     <i className="fa-solid fa-circle-info"></i>
@@ -541,7 +572,7 @@ export default function ProfileForm({
 
                     <select
                       required
-                      className="form-select border bg-light shadow-none"
+                      className={`form-select border bg-light shadow-none ${showErrors && !formData.staff_document_type ? 'shake-red' : ''}`}
                       id="staff_document_type"
                       value={selectValue}
                       onChange={(e) => {
@@ -568,6 +599,11 @@ export default function ProfileForm({
                       <option value="visa_485">Visa Subclass 485</option>
                       <option value="other">Other</option>
                     </select>
+                    {showErrors && !formData.staff_document_type && (
+                      <div className="text-danger small mt-1">
+                        <i className="fa-solid fa-circle-exclamation me-1"></i>Visa status is required.
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -578,7 +614,7 @@ export default function ProfileForm({
                     </label>
                     <input
                       type="text"
-                      className="form-control border-primary shadow-sm bg-white"
+                      className={`form-control shadow-sm bg-white ${showErrors && !formData.staff_document_type ? 'shake-red border-danger' : 'border-primary'}`}
                       id="custom_staff_document"
                       placeholder="Enter your Visa Status"
                       value={formData.staff_document_type === "Other (Please specify)" ? "" : formData.staff_document_type}
@@ -588,6 +624,11 @@ export default function ProfileForm({
                       required
                       autoFocus
                     />
+                    {showErrors && !formData.staff_document_type && (
+                      <div className="text-danger small mt-1">
+                        <i className="fa-solid fa-circle-exclamation me-1"></i>Visa status is required.
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -610,6 +651,11 @@ export default function ProfileForm({
                       style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
                     />
                   </div>
+                  {showErrors && !formData.security_license_no && (
+                    <div className="text-danger small mt-1">
+                      <i className="fa-solid fa-circle-exclamation me-1"></i>Security License No. is required.
+                    </div>
+                  )}
                 </div>
 
                 {/* Date of Birth */}
@@ -651,7 +697,7 @@ export default function ProfileForm({
                         }}
                         dateFormat="dd/MM/yyyy"
                         placeholderText="DD/MM/YYYY"
-                        className="form-control border bg-light ps-2 shadow-none"
+                        className={`form-control border bg-light ps-2 shadow-none ${showErrors && !formData.date_of_birth ? 'shake-red' : ''}`}
                         wrapperClassName="flex-grow-1"
                         showYearDropdown
                         scrollableYearDropdown
@@ -661,6 +707,11 @@ export default function ProfileForm({
                         autoComplete="off"
                       />
                     </div>
+                    {showErrors && !formData.date_of_birth && (
+                      <div className="text-danger small mt-1">
+                        <i className="fa-solid fa-circle-exclamation me-1"></i>Date of birth is required.
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -708,75 +759,84 @@ export default function ProfileForm({
                     <label htmlFor="origin_country" className="form-label fw-bold text-dark small mb-1">
                       Country of Birth <span className="text-danger">*</span>
                     </label>
-                    <Select
-                      inputId="origin_country"
-                      options={countryOptions}
-                      value={selectedCountry}
-                      required
-                      onChange={(selectedOption) => {
-                        onChange({
-                          target: {
-                            id: "origin_country",
-                            value: selectedOption ? selectedOption.value : "",
-                          },
-                        });
-                      }}
-                      placeholder="Search country..."
-                      isClearable
-                      isSearchable
-                      styles={{
-                        control: (base, state) => ({
-                          ...base,
-                          minHeight: "42px",
-                          backgroundColor: "#f8f9fa",
-                          borderColor: state.isFocused ? "#0A7C6E" : "transparent",
-                          boxShadow: state.isFocused
-                            ? "0 0 0 2px rgba(10,124,110,0.25)"
-                            : "none",
-                          borderRadius: "0.375rem",
-                          "&:hover": {
-                            borderColor: "#0A7C6E",
-                          },
-                        }),
-                        placeholder: (base) => ({
-                          ...base,
-                          color: "#6c757d",
-                        }),
-                        singleValue: (base) => ({
-                          ...base,
-                          color: "#212529",
-                        }),
-                        menu: (base) => ({
-                          ...base,
-                          borderRadius: "8px",
-                          overflow: "hidden",
-                        }),
-                        option: (base, state) => ({
-                          ...base,
-                          backgroundColor: state.isSelected
-                            ? "#0A7C6E"
-                            : state.isFocused
-                              ? "rgba(10,124,110,0.12)"
-                              : "#fff",
-                          color: state.isSelected ? "#fff" : "#212529",
-                          cursor: "pointer",
-                          ":active": {
-                            backgroundColor: "#0A7C6E",
-                            color: "#fff",
-                          },
-                        }),
-                        dropdownIndicator: (base, state) => ({
-                          ...base,
-                          color: state.isFocused ? "#0A7C6E" : "#6c757d",
-                          "&:hover": { color: "#0A7C6E" },
-                        }),
-                        clearIndicator: (base) => ({
-                          ...base,
-                          color: "#6c757d",
-                          "&:hover": { color: "#0A7C6E" },
-                        }),
-                      }}
-                    />
+                    <div className={`w-100 ${showErrors && !formData.origin_country ? 'shake-red rounded' : ''}`}>
+                      <Select
+                        inputId="origin_country"
+                        options={countryOptions}
+                        value={selectedCountry}
+                        required
+                        onChange={(selectedOption) => {
+                          onChange({
+                            target: {
+                              id: "origin_country",
+                              value: selectedOption ? selectedOption.value : "",
+                            },
+                          });
+                        }}
+                        placeholder="Search country..."
+                        isClearable
+                        isSearchable
+                        styles={{
+                          control: (base, state) => ({
+                            ...base,
+                            minHeight: "42px",
+                            backgroundColor: "#f8f9fa",
+                            borderColor: (showErrors && !formData.origin_country) ? "#dc2626" : state.isFocused ? "#0A7C6E" : "transparent",
+                            boxShadow: (showErrors && !formData.origin_country)
+                              ? "0 0 0 1px #dc2626"
+                              : state.isFocused
+                                ? "0 0 0 2px rgba(10,124,110,0.25)"
+                                : "none",
+                            borderRadius: "0.375rem",
+                            "&:hover": {
+                              borderColor: (showErrors && !formData.origin_country) ? "#dc2626" : "#0A7C6E",
+                            },
+                          }),
+                          placeholder: (base) => ({
+                            ...base,
+                            color: (showErrors && !formData.origin_country) ? "#dc2626" : "#6c757d",
+                          }),
+                          singleValue: (base) => ({
+                            ...base,
+                            color: "#212529",
+                          }),
+                          menu: (base) => ({
+                            ...base,
+                            borderRadius: "8px",
+                            overflow: "hidden",
+                          }),
+                          option: (base, state) => ({
+                            ...base,
+                            backgroundColor: state.isSelected
+                              ? "#0A7C6E"
+                              : state.isFocused
+                                ? "rgba(10,124,110,0.12)"
+                                : "#fff",
+                            color: state.isSelected ? "#fff" : "#212529",
+                            cursor: "pointer",
+                            ":active": {
+                              backgroundColor: "#0A7C6E",
+                              color: "#fff",
+                            },
+                          }),
+                          dropdownIndicator: (base, state) => ({
+                            ...base,
+                            color: state.isFocused ? "#0A7C6E" : "#6c757d",
+                            "&:hover": { color: "#0A7C6E" },
+                          }),
+                          clearIndicator: (base) => ({
+                            ...base,
+                            color: "#6c757d",
+                            "&:hover": { color: "#0A7C6E" },
+                          }),
+                        }}
+                      />
+                    </div>
+                    {showErrors && !formData.origin_country && (
+                      <div className="text-danger small mt-1">
+                        <i className="fa-solid fa-circle-exclamation me-1"></i>Country of birth is required.
+                      </div>
+                    )}
                   </div>
                 )}
               </>
@@ -793,7 +853,7 @@ export default function ProfileForm({
                 </span>
                 <input
                   type="text"
-                  className={`form-control border bg-light ps-2 shadow-none ${showErrors && !formData.address ? 'shake-red' : ''}`}
+                  className={`form-control border bg-light ps-2 shadow-none ${showErrors && (!formData.address || !formData.city || !formData.state || !formData.country) ? 'shake-red' : ''}`}
                   id="address"
                   placeholder="Start typing your address to auto-fill..."
                   value={formData.address || ""}
@@ -804,6 +864,14 @@ export default function ProfileForm({
                   style={{ borderRadius: "0 0.375rem 0.375rem 0" }}
                 />
               </div>
+              {showErrors && (!formData.address || !formData.city || !formData.state || !formData.country) && (
+                <div className="text-danger small mt-1">
+                  <i className="fa-solid fa-circle-exclamation me-1"></i>
+                  {!formData.address
+                    ? "Address is required."
+                    : "Please select a valid complete address from the Google Maps suggestions dropdown."}
+                </div>
+              )}
             </div>
 
             {/* Auto-filled Location Details */}

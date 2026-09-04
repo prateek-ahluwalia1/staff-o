@@ -44,7 +44,11 @@ export default function AttachmentGrid({ previews = [], removeAttachment }) {
                 <button
                   type="button"
                   className="btn btn-sm btn-outline-danger jw-attach-remove"
-                  onClick={() => removeAttachment(i)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    removeAttachment(i);
+                  }}
                 >
                   Remove
                 </button>

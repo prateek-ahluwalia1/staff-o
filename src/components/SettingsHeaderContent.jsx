@@ -215,7 +215,7 @@ export default function SettingsHeaderContent({
           background: rgba(255, 255, 255, 0.08);
           border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 14px;
-          padding: 8px 16px;
+          padding: 4px 8px;
           font-size: 0.875rem;
           font-weight: 600;
           color: rgba(255,255,255,0.9);
@@ -233,6 +233,7 @@ export default function SettingsHeaderContent({
           text-overflow: ellipsis;
           white-space: nowrap;
           max-width: 250px;
+          padding: 5px;
         }
         .sh-verified {
           color: #6ee7d8;
@@ -375,9 +376,9 @@ export default function SettingsHeaderContent({
           </p>
 
           <div className="sh-meta">
-            <span className="sh-meta-item">
+            <span className="sh-meta-item ">
               <i className="fa-solid fa-envelope"></i>
-              <span className="sh-meta-text">{email || "No email"}</span>
+              <span className="sh-meta-text ">{email || "No email"}</span>
             </span>
             <span className="sh-meta-item">
               <i className="fa-solid fa-location-dot"></i>

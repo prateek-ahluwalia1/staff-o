@@ -45,7 +45,7 @@ export default function PriceRangeModal({ open, onClose, priceRange, jobTitle, o
                     <div>
                         <h5 className="fw-bold mb-1">Confirm Estimated Price</h5>
                         <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
-                            This job's final price will fall within the range below.
+                            This job's final price will fall within the estimated range below.
                         </p>
                     </div>
                     <button
@@ -64,10 +64,8 @@ export default function PriceRangeModal({ open, onClose, priceRange, jobTitle, o
                             {fmt(low)} &ndash; {fmt(high)}
                         </span>
                     </div>
-                    <p className="text-muted small text-center mb-0" style={{ textTransform: "none" }}>
-                        No payment is taken now. By accepting, this job will be broadcast to eligible staff
-                        and the final charge will fall within the estimated range above.
-                    </p>
+                    <p className="text-muted small text-left mb-0" style={{ textTransform: "none" }}>
+                        No payment is required at this stage. Once the job is accepted, the final payment invoice will be emailed to you and published in the Portal, where you can complete the payment process.                    </p>
                 </div>
 
                 <div className="px-3 pb-3 pt-2 border-top">

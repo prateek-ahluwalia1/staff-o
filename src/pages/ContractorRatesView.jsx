@@ -26,6 +26,23 @@ const getStateLabel = (s) => {
   );
 };
 
+const normalizeState = (s) => {
+  if (!s) return "";
+  const str = String(s).trim().toLowerCase();
+  for (const [key, name] of Object.entries(STATE_NAME_MAP)) {
+    if (key.toLowerCase() === str || name.toLowerCase() === str) {
+      return key.toLowerCase();
+    }
+  }
+  return str;
+};
+
+const hasExistingRateForState = (stateVal, rowsArray) => {
+  if (!stateVal || !Array.isArray(rowsArray)) return false;
+  const normTarget = normalizeState(stateVal);
+  return rowsArray.some((r) => normalizeState(r?.state) === normTarget);
+};
+
 
 const SLOT_ROWS = [
   { label: "Mon–Fri Day", sub: "06:00–18:00", metro: "metro_mon_to_fri_day_rate", reg: "reg_mon_to_fri_day_rate" },
@@ -107,6 +124,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   const [activeView, setActiveView] = useState(() => selectedStates?.[0] || null);
 
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [modalMode, setModalMode] = useState("update"); // "add" or "update"
   const [viewRequestRates, setViewRequestRates] = useState(null);
   const [activeStateTab, setActiveStateTab] = useState(null);
   const [modalStates, setModalStates] = useState([]);
@@ -123,20 +141,31 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
 
   const [mainTab, setMainTab] = useState("active");
 
+  const historyEndpoint = useMemo(
+    () => (userId ? `api/charge-rate-requests?user_id=${userId}` : null),
+    [userId]
+  );
+
   const {
     data: requestsData,
     loading: requestsLoading,
     refetch: refetchRequests
-  } = useFetch(`api/charge-rate-requests?user_id=${userId}`, {
+  } = useFetch(historyEndpoint, {
     isAuth: true,
-    immediate: true,
+    immediate: !!historyEndpoint,
   });
 
   const rateRequests = useMemo(() => {
     if (!requestsData) return [];
     const arr = requestsData?.data ?? requestsData;
     const reqs = Array.isArray(arr) ? arr : [];
-    return reqs.filter(r => String(r.user_id) === String(userId) || String(r.contractor_id) === String(userId));
+    if (!userId) return reqs;
+    return reqs.filter(r => 
+      String(r.user_id) === String(userId) || 
+      String(r.contractor_id) === String(userId) ||
+      String(r.user?.id) === String(userId) ||
+      (!r.user_id && !r.contractor_id)
+    );
   }, [requestsData, userId]);
 
   const rows = useMemo(() => {
@@ -162,55 +191,105 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   }, [showRequestModal, viewRequestRates]);
 
   const rate = useMemo(
-    () => rows.find((r) => String(r.state).toLowerCase() === String(activeView).toLowerCase()),
+    () => rows.find((r) => normalizeState(r.state) === normalizeState(activeView)),
     [rows, activeView]
   );
 
+  const missingStates = useMemo(() => {
+    return selectedStates.filter(
+      (s) => !rows.some((r) => normalizeState(r.state) === normalizeState(s))
+    );
+  }, [selectedStates, rows]);
 
+  // ── Open Add Rate Modal (Sequential flow for missing states) ─────────────
+  const openAddRateFlow = (initialState = null, customStatesList = null) => {
+    let targetStates = [];
+    if (customStatesList && customStatesList.length > 0) {
+      targetStates = customStatesList.filter((s) => !hasExistingRateForState(s, rows));
+    } else {
+      targetStates = selectedStates.filter((s) => !hasExistingRateForState(s, rows));
+    }
 
-  // ── Open modal with a blank fresh form ──────────────────────────────────
-  const handleOpenRequestModal = (initialStateTab = null, forceStates = null) => {
-    const targetStates = forceStates || (initialStateTab ? [initialStateTab] : selectedStates);
-    const f = makeBlankForm(targetStates);
-    targetStates.forEach(s => {
-      const existingStateRate = rows.find(r => String(r.state).toLowerCase() === String(s).toLowerCase());
-      if (existingStateRate) {
-        SLOT_ROWS.forEach(row => {
-          const mk = `def_${row.metro}`;
-          const rk = `def_${row.reg}`;
-          if (existingStateRate[mk] !== undefined && existingStateRate[mk] !== null) {
-            f[s][mk] = existingStateRate[mk];
-          }
-          if (existingStateRate[rk] !== undefined && existingStateRate[rk] !== null) {
-            f[s][rk] = existingStateRate[rk];
-          }
-        });
+    if (targetStates.length === 0) {
+      toast.info("All selected states already have rates assigned.");
+      return;
+    }
+
+    if (initialState) {
+      const matchIndex = targetStates.findIndex(
+        (s) => normalizeState(s) === normalizeState(initialState)
+      );
+      if (matchIndex > 0) {
+        const item = targetStates.splice(matchIndex, 1)[0];
+        targetStates.unshift(item);
       }
-    });
+    }
+
+    const f = makeBlankForm(targetStates);
+    f.reason = "";
+
+    setModalMode("add");
+    setReferenceRates({});
+    setEditingRequestId(null);
+    setRequestForm(f);
+    setInitialFormState(JSON.parse(JSON.stringify(f)));
+    setModalStates(targetStates);
+    setActiveStateTab(targetStates[0] || null);
+    setFormErrors({});
+    setIsSavingAndExiting(false);
+    setIsSavingAndSubmitting(false);
+    setShowRequestModal(true);
+  };
+
+  // ── Open Request Rate Update Modal (Single state update flow) ───────────
+  const openUpdateRequestFlow = (targetState) => {
+    if (!targetState) return;
+
+    const targetStates = [targetState];
+    const f = makeBlankForm(targetStates);
+
+    const existingRate = rows.find(
+      (r) => normalizeState(r.state) === normalizeState(targetState)
+    );
+    if (existingRate) {
+      SLOT_ROWS.forEach((row) => {
+        const mk = `def_${row.metro}`;
+        const rk = `def_${row.reg}`;
+        const mVal = existingRate[mk] ?? existingRate[row.metro];
+        const rVal = existingRate[rk] ?? existingRate[row.reg];
+        if (mVal !== undefined && mVal !== null) {
+          f[targetState][mk] = mVal;
+        }
+        if (rVal !== undefined && rVal !== null) {
+          f[targetState][rk] = rVal;
+        }
+      });
+    }
 
     let existingNotes = "";
-    targetStates.forEach(s => {
-      const existingReq = rateRequests.find(r => String(r.state).toLowerCase() === String(s).toLowerCase());
-      const existingRow = rows.find(r => String(r.state).toLowerCase() === String(s).toLowerCase());
-      if (!existingNotes) {
-        existingNotes = existingReq?.notes || existingReq?.reason || existingReq?.note || existingRow?.notes || existingRow?.reason || existingRow?.note || "";
-      }
-    });
+    const existingReq = rateRequests.find(
+      (r) => normalizeState(r.state) === normalizeState(targetState)
+    );
+    existingNotes =
+      existingReq?.notes ||
+      existingReq?.reason ||
+      existingReq?.note ||
+      existingRate?.notes ||
+      existingRate?.reason ||
+      existingRate?.note ||
+      "";
     f.reason = existingNotes;
 
     const refs = {};
-    targetStates.forEach(s => {
-      const existing = rows.find(r => String(r.state).toLowerCase() === String(s).toLowerCase());
-      if (existing) refs[s] = existing;
-    });
+    if (existingRate) refs[targetState] = existingRate;
+
+    setModalMode("update");
     setReferenceRates(refs);
     setEditingRequestId(null);
-
     setRequestForm(f);
     setInitialFormState(JSON.parse(JSON.stringify(f)));
-
     setModalStates(targetStates);
-    setActiveStateTab(initialStateTab && targetStates.includes(initialStateTab) ? initialStateTab : targetStates[0] || null);
+    setActiveStateTab(targetState);
     setFormErrors({});
     setIsSavingAndExiting(false);
     setIsSavingAndSubmitting(false);
@@ -242,19 +321,20 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
     }
   };
 
-  const handleCopyToAll = () => {
+  // ── Apply All (Copies current state slot rates to all other states in Add Rate flow) ──
+  const handleApplyAll = () => {
     if (!activeStateTab) return;
-    const currentRates = requestForm[activeStateTab];
-    setRequestForm(prev => {
+    const currentRates = requestForm[activeStateTab] || {};
+    setRequestForm((prev) => {
       const next = { ...prev };
-      modalStates.forEach(s => {
+      modalStates.forEach((s) => {
         if (s !== activeStateTab) {
           next[s] = { ...currentRates };
         }
       });
       return next;
     });
-    toast.success("Rates copied to all other states!");
+    toast.success("Rates applied to all other states!");
   };
 
   const validateStateTab = (stateVal) => {
@@ -352,6 +432,8 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
           title: `${getStateLabel(stateVal)} My Charge Rates`,
           state: stateVal,
           is_submitted: isSubmitted,
+          user_id: userId,
+          contractor_id: userId,
         };
 
         if (requestForm.reason) {
@@ -407,10 +489,12 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
           }
 
           for (const key of keysToCheck) {
-            const originalVal = originalRate[key] !== null && originalRate[key] !== undefined ? Number(originalRate[key]) : 0;
-            const newVal = computed[key] !== undefined ? computed[key] : originalVal;
+            const cleanKey = key.replace(/^def_/, "");
+            const originalVal = originalRate[key] ?? originalRate[cleanKey] ?? 0;
+            const newVal = computed[key] !== undefined ? computed[key] : Number(originalVal || 0);
 
             stateObj[key] = newVal;
+            stateObj[cleanKey] = newVal;
           }
         });
 
@@ -419,6 +503,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
 
       const finalPayload = {
         user_id: userId,
+        contractor_id: userId,
         rates: ratesPayload,
         is_submitted: isSubmitted,
         notes: requestForm.reason || "",
@@ -478,8 +563,10 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
       SLOT_ROWS.forEach(row => {
         const mk = `def_${row.metro}`;
         const rk = `def_${row.reg}`;
-        if (req[mk] !== undefined && req[mk] !== null) form[s][mk] = req[mk];
-        if (req[rk] !== undefined && req[rk] !== null) form[s][rk] = req[rk];
+        const mVal = req[mk] ?? req[row.metro];
+        const rVal = req[rk] ?? req[row.reg];
+        if (mVal !== undefined && mVal !== null) form[s][mk] = mVal;
+        if (rVal !== undefined && rVal !== null) form[s][rk] = rVal;
       });
     }
 
@@ -705,6 +792,15 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
         .rr-input-wrap.metro    .rr-currency-sign { color: #0A7C6E; border-color: rgba(10,124,110,0.2); }
         .rr-input-wrap.regional .rr-currency-sign { color: #4a6fa5; border-color: rgba(74,111,165,0.2); }
         .rr-field { flex: 1; border: none; background: transparent; padding: 0 9px; font-size: 13.5px; font-weight: 700; color: #0a1e3a; height: 36px; outline: none; width: 0; }
+        .rr-field::-webkit-outer-spin-button,
+        .rr-field::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        .rr-field[type=number] {
+          -moz-appearance: textfield;
+          appearance: textfield;
+        }
 
         .rr-input-wrap.has-error { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.12); background: #fffaf9; }
         .rr-input-wrap.has-error:focus-within { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.25); background: #fff; }
@@ -784,9 +880,6 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
           ) : (
             <div className="fade-in" style={{ animationDelay: "0.1s" }}>
               {(() => {
-                const missingStates = selectedStates.filter(
-                  (s) => !rows.find((r) => String(r.state).toLowerCase() === String(s).toLowerCase())
-                );
                 return (
                   <>
                     {missingStates.length > 0 && (
@@ -795,16 +888,16 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                           <i className="fa fa-exclamation-triangle fs-4 text-warning"></i>
                           <div>
                             <strong>Rates Missing!</strong>
-                            <div className="small mt-1">Rates for <strong>{missingStates.map(s => getStateLabel(s)).join(", ")}</strong> are missing. Please request rates to continue.</div>
+                            <div className="small mt-1">Rates for <strong>{missingStates.map(s => getStateLabel(s)).join(", ")}</strong> are missing. Please add rates to continue.</div>
                           </div>
                         </div>
                         <button
                           type="button"
                           className="btn fw-bold px-4 py-2 shadow-sm"
                           style={{ backgroundColor: "#ffc107", color: "#000", borderRadius: "8px", whiteSpace: "nowrap" }}
-                          onClick={() => handleOpenRequestModal(missingStates[0], missingStates)}
+                          onClick={() => openAddRateFlow(missingStates[0], missingStates)}
                         >
-                          Request Rates
+                          Add Rates
                         </button>
                       </div>
                     )}
@@ -844,15 +937,15 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                         </div>
                         <h5 className="fw-bold text-dark mb-2">No Rates Assigned</h5>
                         <p className="text-muted mx-auto mb-4" style={{ maxWidth: "400px" }}>
-                          You currently do not have any active rates assigned for {getStateLabel(activeView)}. Please submit a request.
+                          You currently do not have any active rates assigned for {getStateLabel(activeView)}. Please add your rates.
                         </p>
                         <button
                           type="button"
                           className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2"
                           style={{ backgroundColor: "var(--teal)", border: "none" }}
-                          onClick={() => handleOpenRequestModal(activeView)}
+                          onClick={() => openAddRateFlow(activeView)}
                         >
-                          <i className="fa-solid fa-paper-plane"></i> Request Rate Update
+                          <i className="fa-solid fa-plus"></i> Add Rate
                         </button>
                       </div>
                     ) : (
@@ -868,7 +961,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                             type="button"
                             className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2 mt-2 mt-md-0"
                             style={{ backgroundColor: "var(--teal)", border: "none" }}
-                            onClick={() => handleOpenRequestModal(activeView)}
+                            onClick={() => openUpdateRequestFlow(activeView)}
                           >
                             <i className="fa-solid fa-paper-plane"></i> Request Rate Update
                           </button>
@@ -1021,8 +1114,12 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
           >
             {/* Header */}
             <div className="modal-header-premium">
-              <h5>Request Rate Update</h5>
-              <p>Submit your proposed charge rates for admin review &amp; approval.</p>
+              <h5>{modalMode === "add" ? "Add Rate" : "Request Rate Update"}</h5>
+              <p>
+                {modalMode === "add"
+                  ? "Enter charge rates for states where no rate currently exists."
+                  : "Submit your proposed charge rates for admin review & approval."}
+              </p>
               <button type="button" className="modal-close-btn" onClick={() => setShowRequestModal(false)} aria-label="Close modal">
                 <i className="fa fa-times"></i>
               </button>
@@ -1040,15 +1137,15 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                     <div style={{ fontSize: "12.5px" }}>
                       <i className="fa fa-map-marked-alt"></i> Select State to Enter Rates
                     </div>
-                    {modalStates.length > 1 && activeStateTab && (
+                    {modalMode === "add" && modalStates.length > 1 && activeStateTab && (
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline-primary"
+                        className="btn btn-sm btn-outline-teal"
                         style={{ fontSize: "12px", borderRadius: "20px" }}
-                        onClick={handleCopyToAll}
-                        title="Copy these rates to all other states"
+                        onClick={handleApplyAll}
+                        title="Apply rates to all other states"
                       >
-                        <i className="fa fa-copy"></i> Apply to All States
+                        <i className="fa fa-copy me-1"></i> Apply All
                       </button>
                     )}
                   </div>
@@ -1106,12 +1203,13 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                                       placeholder="0.00"
                                       value={currentForm[metroKey] ?? ""}
                                       onChange={handleRequestFormChange}
+                                      onWheel={(e) => e.target.blur()}
                                       onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                           e.preventDefault();
                                           return;
                                         }
-                                        if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
+                                        if (['e', 'E', '+', '-', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
                                       }}
                                     />
                                   </div>
@@ -1132,12 +1230,13 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                                       placeholder="0.00"
                                       value={currentForm[regKey] ?? ""}
                                       onChange={handleRequestFormChange}
+                                      onWheel={(e) => e.target.blur()}
                                       onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                           e.preventDefault();
                                           return;
                                         }
-                                        if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
+                                        if (['e', 'E', '+', '-', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
                                       }}
                                     />
                                   </div>
@@ -1197,7 +1296,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
 
                   {modalStates.indexOf(activeStateTab) < modalStates.length - 1 ? (
                     <button type="button" className="rr-btn-submit" onClick={handleNextState} disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0}>
-                      Next State <i className="fa-solid fa-arrow-right ms-2"></i>
+                      Next <i className="fa-solid fa-arrow-right ms-2"></i>
                     </button>
                   ) : (
                     <button
@@ -1275,8 +1374,8 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                 {SLOT_ROWS.map((row) => {
                   const mk = `def_${row.metro}`;
                   const rk = `def_${row.reg}`;
-                  const metroVal = viewRequestRates[mk];
-                  const regVal = viewRequestRates[rk];
+                  const metroVal = viewRequestRates[mk] ?? viewRequestRates[row.metro];
+                  const regVal = viewRequestRates[rk] ?? viewRequestRates[row.reg];
 
                   if (metroVal === undefined && regVal === undefined) return null;
 

@@ -11,22 +11,22 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
 
   const JOB_TYPE_OPTIONS = [
     { value: "", label: "Select type" },
-    { label: 'Crowd Controller (Standard venue/event)', value: 'Crowd Controller (Standard venue/event)' },
-    { label: 'Static Security Guard (Gatehouse, warehouse, construction site)', value: 'Static Security Guard (Gatehouse, warehouse, construction site)' },
-    { label: 'Patrol Guard (Foot or routine mobile patrol)', value: 'Patrol Guard (Foot or routine mobile patrol)' },
-    { label: 'Concierge/Front of House Guard', value: 'Concierge/Front of House Guard' },
+    { label: 'Crowd Controller (venue/event)', value: 'Crowd Controller (venue/event)' },
+    { label: 'Static Security Officer (Gatehouse, warehouse, construction site)', value: 'Static Security Officer (Gatehouse, warehouse, construction site)' },
+    { label: 'Patrol Staff (Foot or routine mobile patrol)', value: 'Patrol Staff (Foot or routine mobile patrol)' },
+    // { label: 'Concierge/Front of House Guard', value: 'Concierge/Front of House Guard' },
     { label: 'Security Officer - Monitoring/Control Room (Basic)', value: 'Security Officer - Monitoring/Control Room (Basic)' },
-    { label: 'Guard with a Trained Security Dog', value: 'Guard with a Trained Security Dog' },
-    { label: 'Armed Security Guard (Cash-in-Transit / Low-complexity)', value: 'Armed Security Guard (Cash-in-Transit / Low-complexity)' },
+    { label: 'Security Staff with a Trained Security Dog', value: 'Security Staff with a Trained Security Dog' },
+    { label: 'Armed Security Officer (Cash-in-Transit / Low-complexity)', value: 'Armed Security Officer (Cash-in-Transit / Low-complexity)' },
     { label: 'Control Room Operator (Advanced/Full Systems)', value: 'Control Room Operator (Advanced/Full Systems)' },
     { label: 'Event/Venue Supervisor (Small Team Leader)', value: 'Event/Venue Supervisor (Small Team Leader)' },
     { label: 'Aviation/Maritime Security Protection Officer', value: 'Aviation/Maritime Security Protection Officer' },
     { label: 'Senior Security Supervisor / Shift Supervisor', value: 'Senior Security Supervisor / Shift Supervisor' },
-    { label: 'Mobile Patrol Inspector / Fleet Coordinator', value: 'Mobile Patrol Inspector / Fleet Coordinator' },
+    // { label: 'Mobile Patrol Inspector / Fleet Coordinator', value: 'Mobile Patrol Inspector / Fleet Coordinator' },
     { label: 'Control Room Shift Manager', value: 'Control Room Shift Manager' },
-    { label: 'Security Operations Manager', value: 'Security Operations Manager' },
-    { label: 'Regional Contract Manager', value: 'Regional Contract Manager' },
-    { label: 'Chief Security Instructor / Compliance Auditor', value: 'Chief Security Instructor / Compliance Auditor' },
+    // { label: 'Security Operations Manager', value: 'Security Operations Manager' },
+    // { label: 'Regional Contract Manager', value: 'Regional Contract Manager' },
+    // { label: 'Chief Security Instructor / Compliance Auditor', value: 'Chief Security Instructor / Compliance Auditor' },
     { label: "Others (Custom Entry)", value: "others" },
   ];
 
@@ -81,8 +81,9 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
     <div
       className={`jw-switch-row ${isYes ? "on" : ""}`}
       onClick={() => onToggle(!isYes)}
+      style={{ padding: "10px 14px" }}
     >
-      <div className="jw-switch-row-label">
+      <div className="jw-switch-row-label" style={{ fontSize: "0.82rem" }}>
         {icon && <i className={icon}></i>}
         <span>{label}</span>
       </div>
@@ -95,7 +96,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
   return (
     <div className="mb-2">
       {/* HEADER */}
-      <div className="jw-section-head">
+      <div className="jw-section-head mb-2">
         <div className="jw-section-head-left">
           <span className="jw-icon-badge"><i className="fa-solid fa-list-check"></i></span>
           <div>
@@ -105,55 +106,117 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
         </div>
       </div>
 
-      {/* JOB TYPE + REQUIREMENT SWITCHES – one row on desktop, equal widths */}
-      <div className="jw-card p-3 p-md-4 mb-3">
-        <div className="row g-3">
-          {/* Job Type – 1/3 width on md+ */}
-          <div className="col-12 col-md-4">
-            <label className="form-label small fw-bold text-dark mb-2">
-              Job Type <span className="text-danger">*</span>
-            </label>
-            <Select
-              options={JOB_TYPE_OPTIONS}
-              value={selectedJobTypeOption}
-              onChange={handleJobTypeChange}
-              isClearable
-              placeholder="Select a job type..."
-              classNamePrefix="react-select"
-              styles={{
-                control: (base, state) => ({
-                  ...base,
-                  minHeight: "50px",
-                  borderRadius: "0.6rem",
-                  boxShadow: state.isFocused ? "0 0 0 3px rgba(10,124,110,0.12)" : "none",
-                  borderColor: validationErrors.jobType ? "#dc3545" : (state.isFocused ? "#0A7C6E" : "#dee2e6"),
-                  "&:hover": {
-                    borderColor: state.isFocused ? "#0A7C6E" : "#dee2e6"
-                  }
-                }),
-                option: (base, state) => ({
-                  ...base,
-                  backgroundColor: state.isSelected ? "#0A7C6E" : state.isFocused ? "#e6f2f0" : "white",
-                  color: state.isSelected ? "white" : "#333",
-                  "&:active": { backgroundColor: "#0A7C6E" }
-                })
-              }}
-            />
-            {form.jobType === "others" && (
-              <input
-                type="text"
-                value={form.customJobType || ""}
-                onChange={(e) => handleCustomJobTypeChange(e.target.value)}
-                className="form-control mt-2 shadow-sm"
-                placeholder="Enter custom type..."
-                required
-              />
-            )}
-          </div>
+      {/* JOB DETAILS CARD: JOB TYPE & DOCUMENTS */}
+      <div className="jw-card p-3 mb-2.5">
+        {/* Job Type */}
+        <div className="mb-2.5">
+          <label className="form-label small fw-bold text-dark mb-1">
+            Job Type <span className="text-danger">*</span>
+          </label>
+          <Select
+            options={JOB_TYPE_OPTIONS}
+            value={selectedJobTypeOption}
+            onChange={handleJobTypeChange}
+            isClearable
+            placeholder="Select a job type..."
+            classNamePrefix="react-select"
+            styles={{
+              control: (base, state) => ({
+                ...base,
+                minHeight: "42px",
+                borderRadius: "0.6rem",
+                boxShadow: state.isFocused
+                  ? "0 0 0 3px rgba(10,124,110,0.12)"
+                  : "none",
+                borderColor: validationErrors.jobType
+                  ? "#dc3545"
+                  : state.isFocused
+                    ? "#0A7C6E"
+                    : "#dee2e6",
 
-          {/* WWCC toggle – 1/3 width */}
-          <div className="col-12 col-md-4 d-flex align-items-end">
-            <div className="w-100">
+                "&:hover": {
+                  borderColor: validationErrors.jobType
+                    ? "#dc3545"
+                    : state.isFocused
+                      ? "#0A7C6E"
+                      : "#dee2e6",
+                },
+              }),
+
+              menu: (base) => ({
+                ...base,
+                borderRadius: "0.6rem",
+                boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)",
+                border: "1px solid #e2e8f0",
+                zIndex: 9999,
+                overflow: "hidden",
+              }),
+
+              menuList: (base) => ({
+                ...base,
+                padding: "6px",
+              }),
+
+              option: (base, state) => ({
+                ...base,
+                borderRadius: "0.4rem",
+                margin: "2px 0",
+                padding: "8px 12px",
+                fontSize: "0.875rem",
+                fontWeight: state.isSelected ? "600" : "400",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+
+                // Selected option is solid green; hovered/focused option is soft teal
+                backgroundColor: state.isSelected
+                  ? "#0A7C6E"
+                  : state.isFocused
+                    ? "#e6f2f0"
+                    : "transparent",
+
+                // Selected text is white; hovered text is brand dark green; normal is dark gray
+                color: state.isSelected
+                  ? "#ffffff"
+                  : state.isFocused
+                    ? "#0A7C6E"
+                    : "#333333",
+
+                "&:hover": {
+                  backgroundColor: state.isSelected
+                    ? "#0A7C6E"
+                    : "#e6f2f0",
+
+                  color: state.isSelected
+                    ? "#ffffff"
+                    : "#0A7C6E",
+                },
+
+                "&:active": {
+                  backgroundColor: "#0A7C6E",
+                  color: "#ffffff",
+                },
+              }),
+            }}
+          />
+          {form.jobType === "others" && (
+            <input
+              type="text"
+              value={form.customJobType || ""}
+              onChange={(e) => handleCustomJobTypeChange(e.target.value)}
+              className="form-control mt-2 shadow-sm"
+              placeholder="Enter custom type..."
+              required
+            />
+          )}
+        </div>
+
+        {/* SELECT DOCUMENTS (IF APPLICABLE) */}
+        <div className="pt-2 mt-2 border-top">
+          <label className="form-label small fw-bold text-dark mb-2">
+            Select documents (if applicable)
+          </label>
+          <div className="row g-2">
+            <div className="col-12 col-md-6 col-lg-4">
               <SwitchRow
                 icon="fa-solid fa-child-reaching"
                 label="Working With Children Check Required?"
@@ -161,11 +224,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
                 onToggle={(val) => toggleDocument('working_with_children', val)}
               />
             </div>
-          </div>
-
-          {/* White Card toggle – 1/3 width */}
-          <div className="col-12 col-md-4 d-flex align-items-end">
-            <div className="w-100">
+            <div className="col-12 col-md-6 col-lg-4">
               <SwitchRow
                 icon="fa-regular fa-id-card"
                 label="White Card Required?"
@@ -173,61 +232,116 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
                 onToggle={(val) => toggleDocument('white_card', val)}
               />
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ATTACHMENTS + DESCRIPTION (unchanged) */}
-      <div className="row g-3 g-md-4 mb-2">
-        <div className="col-12 col-md-5 d-flex flex-column">
-          <label className="form-label small fw-bold text-dark mb-2">
-            Attachments <span className="text-muted fw-normal">(Optional context)</span>
-          </label>
-          <input id="attachments-input" type="file" accept="image/*,.pdf,.doc,.docx" multiple onChange={handleFileInputChange} style={{ display: "none" }} />
-          <label
-            htmlFor="attachments-input"
-            className="d-flex flex-column flex-grow-1 align-items-center justify-content-center p-4 w-100 jw-dropzone m-0"
-            style={{ minHeight: "160px" }}
-          >
-            <div className="jw-dropzone-icon">
-              <i className="fa-solid fa-cloud-arrow-up"></i>
+            <div className="col-12 col-md-6 col-lg-4">
+              <SwitchRow
+                icon="fa-solid fa-id-badge"
+                label="MSIC Card Required?"
+                isYes={Array.isArray(form.document_types) && form.document_types.includes('msic_card')}
+                onToggle={(val) => toggleDocument('msic_card', val)}
+              />
             </div>
-            <strong className="text-dark mb-1" style={{ textTransform: "none", fontSize: "0.9rem" }}>Click to upload files</strong>
-            <span className="text-muted" style={{ fontSize: "0.75rem" }}>PNG, JPG, PDF — Max 10MB</span>
-            {attachmentPreviews?.length > 0 && (
-              <span className="jw-chip mt-3">
-                <i className="fa-solid fa-paperclip"></i> {attachmentPreviews.length} file{attachmentPreviews.length > 1 ? "s" : ""} attached
-              </span>
-            )}
-          </label>
-          {fileErrors && <div className="text-danger small mt-2 fw-medium"><i className="fa-solid fa-triangle-exclamation me-1"></i> {fileErrors}</div>}
-        </div>
-
-        <div className="col-12 col-md-7 d-flex flex-column">
-          <div className="d-flex justify-content-between align-items-end mb-2 mt-3 mt-md-0">
-            <label className="form-label small fw-bold text-dark mb-0">Job Description and Tasks</label>
-            <span className={`small fw-medium ${form.description?.length > MAX_DESCRIPTION_LENGTH * 0.9 ? "text-warning" : "text-muted"}`} style={{ fontSize: "0.75rem" }}>
-              {form.description?.length || 0} / {MAX_DESCRIPTION_LENGTH}
-            </span>
+            <div className="col-12 col-md-6 col-lg-4">
+              <SwitchRow
+                icon="fa-solid fa-building-shield"
+                label="Control Room Certificate Required?"
+                isYes={Array.isArray(form.document_types) && form.document_types.includes('control_room_certificate')}
+                onToggle={(val) => toggleDocument('control_room_certificate', val)}
+              />
+            </div>
+            <div className="col-12 col-md-6 col-lg-4">
+              <SwitchRow
+                icon="fa-solid fa-award"
+                label="RAS Certificate Required?"
+                isYes={Array.isArray(form.document_types) && form.document_types.includes('ras_certificate')}
+                onToggle={(val) => toggleDocument('ras_certificate', val)}
+              />
+            </div>
           </div>
-          <textarea
-            value={form.description}
-            onChange={(e) => { if (e.target.value.length <= MAX_DESCRIPTION_LENGTH) setField("description", e.target.value); }}
-            className="form-control shadow-sm flex-grow-1 w-100"
-            placeholder="Briefly describe the responsibilities and any specific tasks..."
-            style={{ resize: "none", borderRadius: "0.75rem", minHeight: "160px" }}
-          />
         </div>
       </div>
 
-      {attachmentPreviews?.length > 0 && (
-        <div className="mt-4 p-3 jw-tint-panel">
-          <div className="d-flex justify-content-between mb-2">
-            <span className="small fw-bold text-dark">Uploaded Files ({attachmentPreviews.length})</span>
+      {/* ATTACHMENTS + DESCRIPTION CARD */}
+      <div className="jw-card p-3 mb-1 mt-2">
+        <div className="row g-3">
+          <div className="col-12 col-md-5 d-flex flex-column">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Job instruction document <span className="text-muted fw-normal">(if applicable)</span>
+            </label>
+            <input id="attachments-input" type="file" accept="image/*,.pdf,.doc,.docx" onChange={handleFileInputChange} style={{ display: "none" }} />
+            <div
+              className="d-flex flex-column flex-grow-1 align-items-center justify-content-center p-2 w-100 jw-dropzone m-0"
+              style={{ height: "125px", overflow: "hidden" }}
+            >
+              {attachmentPreviews?.length > 0 ? (
+                <div className="d-flex flex-column align-items-center justify-content-center w-100 h-100">
+                  {attachmentPreviews[0].type?.startsWith("image/") ? (
+                    <img
+                      src={attachmentPreviews[0].url}
+                      alt={attachmentPreviews[0].name}
+                      style={{ height: "50px", maxWidth: "110px", objectFit: "cover", borderRadius: "8px" }}
+                    />
+                  ) : (
+                    <i className="fa-regular fa-file-lines fa-2x text-primary mb-1"></i>
+                  )}
+                  <span className="small fw-semibold text-dark text-truncate mt-1 px-2" style={{ maxWidth: "180px", fontSize: "0.78rem" }} title={attachmentPreviews[0].name}>
+                    {attachmentPreviews[0].name}
+                  </span>
+                  <div className="d-flex gap-2 mt-1">
+                    <label
+                      htmlFor="attachments-input"
+                      className="btn btn-sm btn-outline-secondary py-0 px-2"
+                      style={{ fontSize: "0.72rem", cursor: "pointer", fontWeight: 600 }}
+                    >
+                      <i className="fa-solid fa-rotate me-1"></i> Change
+                    </label>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger py-0 px-2"
+                      style={{ fontSize: "0.72rem", fontWeight: 600 }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        removeAttachment(0);
+                      }}
+                    >
+                      <i className="fa-solid fa-trash-can me-1"></i> Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label
+                  htmlFor="attachments-input"
+                  className="d-flex flex-column align-items-center justify-content-center w-100 h-100 m-0"
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className="jw-dropzone-icon">
+                    <i className="fa-solid fa-cloud-arrow-up"></i>
+                  </div>
+                  <strong className="text-dark mb-1" style={{ textTransform: "none", fontSize: "0.85rem" }}>Click to upload file</strong>
+                  <span className="text-muted" style={{ fontSize: "0.75rem" }}>PNG, JPG, PDF — Max 10MB</span>
+                </label>
+              )}
+            </div>
+            {fileErrors && <div className="text-danger small mt-2 fw-medium"><i className="fa-solid fa-triangle-exclamation me-1"></i> {fileErrors}</div>}
           </div>
-          <AttachmentGrid previews={attachmentPreviews} removeAttachment={removeAttachment} />
+
+          <div className="col-12 col-md-7 d-flex flex-column">
+            <div className="d-flex justify-content-between align-items-end mb-1 mt-2 mt-md-0">
+              <label className="form-label small fw-bold text-dark mb-0">Job details description</label>
+              <span className={`small fw-medium ${form.description?.length > MAX_DESCRIPTION_LENGTH * 0.9 ? "text-warning" : "text-muted"}`} style={{ fontSize: "0.75rem" }}>
+                {form.description?.length || 0} / {MAX_DESCRIPTION_LENGTH}
+              </span>
+            </div>
+            <textarea
+              value={form.description}
+              onChange={(e) => { if (e.target.value.length <= MAX_DESCRIPTION_LENGTH) setField("description", e.target.value); }}
+              className="form-control shadow-sm flex-grow-1 w-100"
+              placeholder="Briefly describe the responsibilities and any specific tasks..."
+              style={{ resize: "none", borderRadius: "0.75rem", minHeight: "125px", maxHeight: "125px" }}
+            />
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

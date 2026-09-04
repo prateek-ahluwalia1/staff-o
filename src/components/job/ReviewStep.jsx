@@ -52,7 +52,7 @@ function EstimatedRangeCard({ priceRange }) {
 }
 
 export default function ReviewStep({ form, rate, setField, handleConfirm, setStep, isSubmitting, baseAmount, isAdmin, stateCheckResult, priceRange }) {
-  const JOB_TYPE_LABELS = { "event-security": "Event Security", "static-security": "Static Security Guard", "corporate-security": "Corporate Security", "site-patrol": "Site Patrol Security", "others": "Others" };
+  const JOB_TYPE_LABELS = { "event-security": "Event Security", "static-security": "Static Security staff", "corporate-security": "Corporate Security", "site-patrol": "Site Patrol Security", "others": "Others" };
   const jobTypeLabel = form.jobType === "others" && form.customJobType ? form.customJobType : JOB_TYPE_LABELS[form.jobType] || form.jobType || "Security Guard";
 
   // Non-admin + state check false => simplified price-range flow (no Stripe
@@ -236,9 +236,8 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
             <div className="jw-terms-box p-3 mb-4">
               <div className="d-flex align-items-start gap-2">
                 <i className="fa-solid fa-circle-info mt-1" style={{ color: "#0A7C6E" }}></i>
-                <p className="mb-0 small" style={{ textTransform: "none", lineHeight: "1.5" }}>
-                  No payment is collected now. Once you post this job, you'll be asked to accept an
-                  estimated price range and it will always go out as a broadcast job.
+                <p className="mb-0 small " style={{ textTransform: "none", lineHeight: "1.5" }}>
+                  No payment is required at this stage. Once the estimated range is accepted, the job will be broadcast. You will be notified when payment is required.
                 </p>
               </div>
             </div>
@@ -250,7 +249,7 @@ export default function ReviewStep({ form, rate, setField, handleConfirm, setSte
               <div className="d-flex align-items-start gap-2 mb-1">
                 <input id="terms" className="form-check-input mt-1 flex-shrink-0" type="checkbox" style={{ width: "1.1rem", height: "1.1rem", cursor: "pointer" }} checked={form.termsAccepted} onChange={(e) => setField("termsAccepted", e.target.checked)} disabled={isSubmitting} />
                 <label htmlFor="terms" className="form-check-label fw-medium user-select-none text-break" style={{ cursor: "pointer", fontSize: "0.85rem", lineHeight: "1.4" }}>
-                  I agree to the <NavLink to="/terms-of-use" target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none fw-bold">Terms and Conditions</NavLink>
+                  I agree to the <NavLink to="/client-terms" target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none fw-bold">Terms and Conditions</NavLink>
                 </label>
               </div>
               {!isRangeFlow && (

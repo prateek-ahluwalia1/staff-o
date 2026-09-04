@@ -138,6 +138,17 @@ function capitalizeWords(str) {
    Premium Modal Component (inline)
    ────────────────────────────────────────── */
 const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [open]);
+
   if (!open) return null;
   return (
     <div className="modal-overlay-premium" onClick={onClose} role="dialog" aria-modal="true">
@@ -365,9 +376,17 @@ const ManageUsers = () => {
     else if (activeTab === "sub_contractor") docs = editingUser.contractor?.documents || [];
 
     if (activeTab === "sub_contractor") {
-      const allowedCategories = (formData.states_allowed || [])
+      const rawStates = formData.states_allowed || editingUser.states_allowed || [];
+      const allowedCategories = (Array.isArray(rawStates) ? rawStates : [])
         .map((code) => STATE_CATEGORY_MAP[code])
         .filter(Boolean);
+
+      if (docs.length === 0 && allowedCategories.length > 0) {
+        return allowedCategories.map((cat) => ({
+          document_category: cat,
+        }));
+      }
+
       return docs.filter((doc) => allowedCategories.includes(doc.document_category));
     }
 
@@ -405,6 +424,18 @@ const ManageUsers = () => {
   const handleTabClick = (tab) => {
     if (tab === "personal") {
       setActiveModalTab(tab);
+      return;
+    }
+
+    if (!editingUser) {
+      const missing = getMissingPersonalFields();
+      if (missing.length > 0) {
+        setShowErrors(false);
+        setTimeout(() => setShowErrors(true), 10);
+        toast.error("Please fill in all required personal information and click Save & Next first.");
+      } else {
+        toast.info("Please click Save & Next to save personal information before proceeding.");
+      }
       return;
     }
 
@@ -539,6 +570,21 @@ const ManageUsers = () => {
     setEditingUser(null);
   };
 
+  // Lock background scroll when any modal is open
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(
+      isModalOpen || showDocModal || isDeleteModalOpen || showPhoneModal
+    );
+    if (isAnyModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isModalOpen, showDocModal, isDeleteModalOpen, showPhoneModal]);
+
   useEffect(() => {
     if (apiResponse?.success && apiResponse?.data?.data) {
       const fetchedUsers = apiResponse.data.data;
@@ -654,7 +700,8 @@ const ManageUsers = () => {
         file_path: doc.file || "",
         file_url: doc.file || "",
         document_name: doc.document_name || doc.document_type || "",
-        document_type: doc.document_type || "",   // ← add this
+        document_type: doc.document_type || "",
+        document_category: doc.document_category || "",
         is_verified: !!doc.document_expiry,
       });
     } else {
@@ -668,7 +715,8 @@ const ManageUsers = () => {
         file_path: "",
         file_url: "",
         document_name: "",
-        document_type: "",   // ← add this
+        document_type: "",
+        document_category: "",
         is_verified: false,
       });
     }
@@ -695,7 +743,9 @@ const ManageUsers = () => {
 
     if (
       name === "document_expiry" &&
-      (docForm.document_name === "Security License" || docForm.document_name === "Visa")
+      (docForm.document_name === "Security License" ||
+        docForm.document_name === "Security Master License" ||
+        docForm.document_name === "Visa")
     ) {
       return;
     }
@@ -741,23 +791,65 @@ const ManageUsers = () => {
       return;
     }
 
-    // Security License verification
-    if (docForm.document_name === "Security License") {
-      const staffState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
-      if (!staffState) {
+    // Security License & Security Master License verification
+    if (
+      docForm.document_name === "Security License" ||
+      docForm.document_name === "Security Master License"
+    ) {
+      const STATE_NAME_MAP = {
+        contractor_document: "Victoria",
+        vic: "Victoria",
+        victoria: "Victoria",
+        nsw_document: "New South Wales",
+        nsw: "New South Wales",
+        "new south wales": "New South Wales",
+        qld_document: "Queensland",
+        qld: "Queensland",
+        queensland: "Queensland",
+        tas_document: "Tasmania",
+        tas: "Tasmania",
+        tasmania: "Tasmania",
+        wa_document: "Western Australia",
+        wa: "Western Australia",
+        "western australia": "Western Australia",
+        sa_document: "South Australia",
+        sa: "South Australia",
+        "south australia": "South Australia",
+        act_document: "Australian Capital Territory",
+        act: "Australian Capital Territory",
+        "australian capital territory": "Australian Capital Territory",
+        nt_document: "Northern Territory",
+        nt: "Northern Territory",
+        "northern territory": "Northern Territory",
+      };
+
+      const cat = (docForm.document_category || selectedDoc?.document_category || "").toLowerCase();
+      const rawState = (
+        editingUser?.state ||
+        editingUser?.staff?.state ||
+        editingUser?.contractor?.state ||
+        formData?.state ||
+        ""
+      ).trim();
+
+      const resolvedState = STATE_NAME_MAP[cat] || STATE_NAME_MAP[rawState.toLowerCase()] || rawState;
+
+      if (!resolvedState) {
         toast.error("Please add your location first.");
         return;
       }
 
       setVerifyingDoc(true);
       try {
+        const payload = {
+          document_type: docForm.document_name,
+          license_number: docForm.document_no,
+          state: resolvedState,
+        };
+
         const res = await submitSecurityLicense(
           "api/documents-online-verification-staffoo",
-          {
-            document_type: "Security License",
-            license_number: docForm.document_no,
-            state: staffState,
-          },
+          payload,
           { method: "POST" }
         );
         if (res?.success && res?.expiry) {
@@ -767,7 +859,7 @@ const ManageUsers = () => {
             document_expiry: expiryStr,
             is_verified: true,
           }));
-          toast.success("Security License verified. Expiry date locked.");
+          toast.success(`${docForm.document_name} verified. Expiry date locked.`);
         } else {
           setDocForm(prev => ({ ...prev, is_verified: false }));
         }
@@ -853,75 +945,87 @@ const ManageUsers = () => {
       toast.error("Please save the profile first before uploading documents.");
       return;
     }
-    let payload = {
+    const payload = {
       user_id: editingUser.id,
       no: docForm.no,
       exp: docForm.exp,
       document_no: docForm.document_no,
       document_expiry: docForm.document_expiry,
       file: docForm.file_path,
+      document_name: docForm.document_name,
+      document_type: selectedDoc?.document_type || docForm.document_type || "",
+      document_category: selectedDoc?.document_category || docForm.document_category || "",
     };
 
-    if (selectedDoc) {
-      payload = {
-        ...payload,
-        id: selectedDoc.id,
-        document_type: selectedDoc.document_type || docForm.document_type || "",
-        document_name: docForm.document_name,
-      };
-    } else {
-      payload = {
-        ...payload,
-        document_type: "",
-        document_name: docForm.document_name,
-      };
-    }
-
-    const res = await submit(
-      selectedDoc ? "api/guard-update-documents" : "api/guard-add-documents",
-      payload,
-      { method: "POST" }
+    const isExistingRealDoc = Boolean(
+      selectedDoc?.id &&
+      typeof selectedDoc.id === "number" &&
+      !String(selectedDoc.id).startsWith("temp_")
     );
 
-    if (res.success) {
+    if (isExistingRealDoc) {
+      payload.id = selectedDoc.id;
+    }
+
+    const url = isExistingRealDoc
+      ? "api/guard-update-documents"
+      : "api/guard-add-documents";
+
+    const res = await submit(url, payload, { method: "POST" });
+
+    if (res?.success) {
       toast.success("Document saved successfully!");
 
       const savedDoc = res.data?.document || res.data || {};
+      const savedDocId = savedDoc.id || res.id;
+
       setEditingUser((prev) => {
-        const currentDocs = prev?.documents || [];
-        if (selectedDoc) {
-          const updatedDocs = currentDocs.map((d) =>
-            d.id === selectedDoc.id
-              ? {
-                ...d,
-                document_no: docForm.document_no,
-                document_expiry: docForm.document_expiry,
-                file: docForm.file_path || d.file,
-                ...savedDoc,
-              }
-              : d
-          );
-          return { ...prev, documents: updatedDocs };
+        const currentDocs =
+          prev?.documents ||
+          (activeTab === "staff" ? prev?.staff?.documents : prev?.contractor?.documents) ||
+          [];
+        const newDocItem = {
+          id: savedDocId || (isExistingRealDoc ? selectedDoc.id : Date.now()),
+          document_name: docForm.document_name,
+          document_type: payload.document_type,
+          document_category: payload.document_category,
+          document_no: docForm.document_no,
+          document_expiry: docForm.document_expiry,
+          file: docForm.file_path || (selectedDoc?.file ?? ""),
+          ...savedDoc,
+        };
+
+        const existingIndex = currentDocs.findIndex((d) => {
+          if (isExistingRealDoc && d.id === selectedDoc.id) return true;
+          const matchCat = !payload.document_category || d.document_category === payload.document_category;
+          const matchByType = d.document_type && d.document_type === payload.document_type;
+          const matchByName = d.document_name && d.document_name.toLowerCase() === docForm.document_name.toLowerCase();
+          return matchCat && (matchByType || matchByName);
+        });
+
+        let updatedDocs;
+        if (existingIndex !== -1) {
+          updatedDocs = [...currentDocs];
+          updatedDocs[existingIndex] = {
+            ...updatedDocs[existingIndex],
+            ...newDocItem,
+          };
         } else {
-          const newDoc = {
-            id: savedDoc.id || Date.now(),
-            document_name: docForm.document_name,
-            document_no: docForm.document_no,
-            document_expiry: docForm.document_expiry,
-            file: docForm.file_path,
-            ...savedDoc,
-          };
-          return {
-            ...prev,
-            documents: [...currentDocs, newDoc],
-          };
+          updatedDocs = [...currentDocs, newDocItem];
         }
+
+        return {
+          ...prev,
+          documents: updatedDocs,
+          staff: prev?.staff ? { ...prev.staff, documents: updatedDocs } : prev?.staff,
+          contractor: prev?.contractor ? { ...prev.contractor, documents: updatedDocs } : prev?.contractor,
+        };
       });
 
       closeDocumentModal();
       refetch();
     } else {
-      toast.error(res.message || "Failed to save document");
+      toast.error(res?.message || "Failed to save document");
     }
   };
   // ----- END DOCUMENT LOGIC -----
@@ -991,7 +1095,32 @@ const ManageUsers = () => {
         );
         refetch();
 
-        if (editingUser && (activeTab === "staff" || activeTab === "sub_contractor")) {
+        if (activeTab === "staff" || activeTab === "sub_contractor") {
+          const createdUser = res.data?.user || res.data?.guard || res.data?.contractor || res.data || res.user || (res.id ? res : { id: res.data?.id, ...payload });
+          const userToSet = {
+            ...payload,
+            id: createdUser?.id || res.data?.id || res.id,
+            documents: createdUser?.documents || [],
+            staff: createdUser?.staff || {
+              phone: payload.phone,
+              gender: payload.gender,
+              staff_document_type: payload.staff_document_type,
+              security_license_no: payload.security_license_no,
+              date_of_birth: payload.date_of_birth,
+              origin_country: payload.origin_country,
+            },
+            contractor: createdUser?.contractor || {
+              phone: payload.phone,
+              gender: payload.gender,
+              security_license_no: payload.security_license_no,
+              date_of_birth: payload.date_of_birth,
+              company_name: payload.company_name,
+              abn: payload.abn,
+              acn: payload.acn,
+            },
+            ...createdUser,
+          };
+          setEditingUser(userToSet);
           setActiveModalTab("documents");
         } else {
           closeModal();
@@ -1717,7 +1846,7 @@ const ManageUsers = () => {
                 >
                   Personal Information
                 </button>
-                {(activeTab === "staff" || activeTab === "sub_contractor") && editingUser && (
+                {(activeTab === "staff" || activeTab === "sub_contractor") && (
                   <>
                     <button
                       type="button"
@@ -1803,7 +1932,7 @@ const ManageUsers = () => {
                   disabled={submitLoading}
                   style={{ minHeight: "44px" }}
                 >
-                  {submitLoading ? "Saving..." : (editingUser && (activeTab === "staff" || activeTab === "sub_contractor")) ? "Save & Next" : (editingUser ? "Update Profile" : "Create User")}
+                  {submitLoading ? "Saving..." : (activeTab === "staff" || activeTab === "sub_contractor") ? "Save & Next" : (editingUser ? "Update Profile" : "Create User")}
                 </button>
               )}
             </div>
@@ -1846,7 +1975,7 @@ const ManageUsers = () => {
             <label className="form-label fw-semibold">
               Document Number <span className="text-danger">*</span>
             </label>
-            {(docForm.document_name === "Security License" || docForm.document_name === "Visa") ? (
+            {(docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa") ? (
               <div className="input-group">
                 <input
                   type="text"
@@ -1894,7 +2023,7 @@ const ManageUsers = () => {
                   }
                 }}
                 style={{ cursor: "pointer", zIndex: 10 }}
-                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                disabled={docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa"}
                 title="Open Calendar"
               >
                 <i className="fa-solid fa-calendar-days text-primary"></i>
@@ -1926,7 +2055,7 @@ const ManageUsers = () => {
                     }));
                   }
                 }}
-                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                disabled={docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa"}
               />
               <input
                 type="text"
@@ -1950,9 +2079,9 @@ const ManageUsers = () => {
                 required
                 maxLength={10}
                 pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                disabled={docForm.document_name === "Security License" || docForm.document_name === "Visa"}
+                disabled={docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa"}
                 style={{
-                  backgroundColor: docForm.document_name === "Security License" || docForm.document_name === "Visa" ? "#e9ecef" : "white"
+                  backgroundColor: docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa" ? "#e9ecef" : "white"
                 }}
               />
             </div>

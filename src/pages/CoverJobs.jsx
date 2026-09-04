@@ -40,6 +40,7 @@ const getPageNumbers = (currentPage, totalPages) => {
 
 const CoverJobs = () => {
     const { userdata } = useSelector((state) => state.auth);
+    const { isExpanded } = useSelector((state) => state.sidebar);
     const userId = userdata?.data?.id || userdata?.id;
     const userRole = userdata?.data?.user_type || userdata?.user_type;
     const staffContractorId = userRole === 'admin' ? 1 : userId;
@@ -401,7 +402,11 @@ const CoverJobs = () => {
                     <p>{totalJobs} open job{totalJobs !== 1 ? 's' : ''} waiting for you</p>
                 </div>
 
-                <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
+                <div
+                    className={`row row-cols-1 row-cols-md-2 row-cols-lg-3 ${
+                        isExpanded ? "row-cols-xl-3" : "row-cols-xl-4"
+                    } g-4`}
+                >
                     {visibleJobs.length === 0 ? (
                         <div className="col-12">
                             <div className="text-center py-5 bg-white rounded-4 shadow-sm border border-light ">

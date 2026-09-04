@@ -42,6 +42,8 @@ use App\Http\Controllers\Api\StripeWebhookController;
 Route::post('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 Route::get('/email-verification/{email}/{token}', [AuthController::class, 'EmailVerification'])->name('guard.email.verification');
 Route::post('/register/user', [AuthController::class, 'register']);
+Route::get('contracts/sign/{token}', [JobRosterController::class, 'getContractByToken']);
+Route::post('contracts/sign/{token}', [JobRosterController::class, 'signContract']);
 
 Route::any('password-reset', [AuthController::class, 'reset'])->name('password.update');
 Route::any('password-reset-email', [AuthController::class, 'reset_pass_mail']);
@@ -179,8 +181,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     Route::post('contracts/{id}/upload', [JobRosterController::class, 'uploadContract']);
-    Route::get('contracts/sign/{token}', [JobRosterController::class, 'getContractByToken']);
-    Route::post('contracts/sign/{token}', [JobRosterController::class, 'signContract']);
     Route::get('contracts', [JobRosterController::class, 'listContracts']);
   
     Route::any('job-post', [JobRosterController::class, 'jobData'])->name('job.post');

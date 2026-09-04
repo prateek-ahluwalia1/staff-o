@@ -43,7 +43,7 @@
         <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="Staffoo Logo">
     </div>
     <div class="header">
-        <h1>{{ $isAdmin ? 'Payment Reminder Digest' : 'Payment Reminder' }}</h1>
+        <h1>{{ $isAdmin ? 'Payment Reminder' : 'Payment Reminder' }}</h1>
         <p>{{ $isAdmin ? 'Jobs across all clients currently awaiting payment' : 'Action needed on the job(s) below' }}</p>
     </div>
     <div class="body">

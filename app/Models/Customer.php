@@ -16,6 +16,7 @@ class Customer extends Model
         'email_otp',
         'verify_profile',
         'profile_image',
+        'is_policy_accepted',
     ];
 
     /* ======================

@@ -1897,12 +1897,14 @@ class StaffController extends Controller
             $user = User::find($userId);
             if($user->user_type == 'staff'){
               $staff = Staff::where('user_id', $userId)->first();
-            }else{
+            }elseif($user->user_type == 'contractor'){
               $staff = Contractor::where('user_id', $userId)->first();
+            }else{
+              $staff = Customer::where('user_id', $userId)->first();
             }
             
             if (!$staff) {
-                return response()->json(['success' => false, 'message' => 'Staff not found for this user_id']);
+                return response()->json(['success' => false, 'message' => 'User not found for this user_id']);
             }
             
             $staff->is_policy_accepted = 1;

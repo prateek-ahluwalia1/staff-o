@@ -19,8 +19,9 @@ class ContractService
      *      ['state' => 'VIC', 'rates' => [ ... ]],
      *      ...
      *  ]
-     *  One "STATE — Charge Rates" section is rendered per entry, all rate
-     *  cards for that state laid out in a single row.
+     *  One "STATE — Charge Rates" section is rendered per entry — this is how
+     *  every state the contractor has an approved rate card for shows up on
+     *  the single contract, instead of only the state just approved.
      *
      *  Back-compat: a caller can still pass the old single-state shape
      *  (`state` + `rates` at the top level) and it will be treated as a
@@ -74,36 +75,33 @@ class ContractService
     }
 
     /**
-     * Render grouped categories as compact rate cards — ALL categories for
-     * a state on one single row (no chunking/wrapping), width divided
-     * evenly across however many categories exist. Cards just get narrower
-     * as the count grows rather than spilling to a second row.
+     * Render grouped categories as compact rate cards, 4 per row.
      */
     private function renderRateCards(array $categories): string
     {
-        if (empty($categories)) {
-            return '';
+        $categoryChunks = array_chunk($categories, 4, true);
+        $rateHtml = '';
+        foreach ($categoryChunks as $chunk) {
+            $rateHtml .= "<table class='card-row'><tr>";
+            foreach ($chunk as $categoryName => $areas) {
+                $metroValue    = '$' . number_format($areas['Metro'] ?? 0, 2);
+                $regionalValue = '$' . number_format($areas['Regional'] ?? 0, 2);
+
+                $rateHtml .= "
+                <td class='rate-card' width='" . (int)(100 / count($chunk)) . "%'>
+                    <div class='rate-title'>" . htmlspecialchars($categoryName) . "</div>
+                    <div class='rate-label'><span class='icon-dot'></span>METRO</div>
+                    <div class='rate-value'>{$metroValue}</div>
+                    <div style='height:2px;'></div>
+                    <div class='rate-label'><span class='icon-tri'></span>REGIONAL</div>
+                    <div class='rate-value'>{$regionalValue}</div>
+                </td>";
+            }
+            for ($i = count($chunk); $i < 4; $i++) {
+                $rateHtml .= "<td width='" . (int)(100/4) . "%'></td>";
+            }
+            $rateHtml .= "</tr></table>";
         }
-
-        $count = count($categories);
-        $colWidth = (int) floor(100 / $count);
-
-        $rateHtml = "<table class='card-row'><tr>";
-        foreach ($categories as $categoryName => $areas) {
-            $metroValue    = '$' . number_format($areas['Metro'] ?? 0, 2);
-            $regionalValue = '$' . number_format($areas['Regional'] ?? 0, 2);
-
-            $rateHtml .= "
-            <td class='rate-card' width='{$colWidth}%'>
-                <div class='rate-title'>" . htmlspecialchars($categoryName) . "</div>
-                <div class='rate-label'><span class='icon-dot'></span>METRO</div>
-                <div class='rate-value'>{$metroValue}</div>
-                <div style='height:2px;'></div>
-                <div class='rate-label'><span class='icon-tri'></span>REGIONAL</div>
-                <div class='rate-value'>{$regionalValue}</div>
-            </td>";
-        }
-        $rateHtml .= "</tr></table>";
 
         return $rateHtml;
     }
@@ -140,21 +138,20 @@ class ContractService
             $rateSectionsHtml .= $this->renderRateCards($categories);
         }
 
-        // ── CSS ─────────────────────────────────────────────────────────
-        // Header/footer are now `position: fixed` blocks rather than
-        // in-flow content. In dompdf, `position: fixed` coordinates are
-        // measured from the physical page edges (not the content/margin
-        // box), and a fixed element is automatically repeated on EVERY
-        // page — that's what makes the header show up (with the same
-        // padding) on page 2, 3, etc., not just page 1.
-        //
-        // @page's top/bottom margins are sized to match the header/footer
-        // height plus a gap, so normal flowing content never starts under
-        // the header or run into the footer on any page — the same
-        // reserved band applies uniformly across all pages, which is what
-        // gives page 2 the same top padding as page 1.
+        // ── CSS — spacing kept tight throughout. Rate cards are now
+        // deliberately compact (4 per row, smaller type/padding) since a
+        // contract can carry a rate section per approved state and needs to
+        // stay legible without ballooning to many pages. .sign-box still
+        // has page-break-inside:avoid, so if it doesn't fit under the rate
+        // cards it drops to the next page as a whole block. Section blocks
+        // use page-break-inside:avoid so a heading is never orphaned from
+        // its clauses across a page break.
         $css = '
-        @page { margin: 92px 32px 46px 32px; }
+        /* @page margin applies to EVERY page dompdf renders, not just the
+           first — this is what gives page 2+ the same top/side padding as
+           page 1 instead of content butting right up against the paper
+           edge after a page break. */
+        @page { margin: 59pt 42pt; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -163,37 +160,21 @@ class ContractService
             line-height: 1.38;
             background: #ffffff;
         }
-        .wrapper { max-width: 800px; margin: 0 auto; position: relative; }
+        /* Horizontal/vertical spacing comes from @page above, so the
+           wrapper itself carries no extra padding — otherwise page 1 would
+           get double padding (page margin + wrapper padding) while later
+           pages would only get the page margin. */
+        .wrapper { padding: 0; max-width: 800px; margin: 0 auto; position: relative; }
 
-        /* Fixed header — repeats at the top of every page */
-        .pdf-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px 32px 12px 32px;
-            background: #ffffff;
+        /* Header */
+        .header {
+            border-bottom: 3px solid #0A7C6E;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
         }
-        .pdf-header-title-block { float: left; }
-        .pdf-header-meta-block { float: right; text-align: right; }
         .header-title { font-size: 17px; font-weight: bold; color: #1a1a2e; }
         .header-subtitle { font-size: 9.5px; color: #6B7280; margin-top: 2px; }
-        .header-meta { font-size: 9px; color: #6B7280; }
-        .pdf-header-rule { clear: both; border-bottom: 3px solid #0A7C6E; margin-top: 10px; }
-
-        /* Fixed footer — repeats at the bottom of every page */
-        .pdf-footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 10px 32px 16px 32px;
-            font-size: 8.5px;
-            color: #9ca3af;
-            text-align: center;
-            border-top: 1px solid #e5e7eb;
-            background: #ffffff;
-        }
+        .header-meta { font-size: 9px; color: #6B7280; text-align: right; }
 
         /* Content */
         .section-title { font-size: 12.5px; font-weight: bold; color: #0A7C6E; margin: 11px 0 5px; }
@@ -204,30 +185,27 @@ class ContractService
         .clause-list li { margin-bottom: 4px; }
 
         /* Rate cards — table-based (dompdf does not reliably support
-           flexbox). All categories for a state sit in ONE row; width is
-           divided evenly across however many categories exist so the row
-           never wraps. */
+           flexbox). Sized small/compact: 4 per row, tight padding. */
         .card-row { width: 100%; border-collapse: separate; border-spacing: 4px; margin-bottom: 2px; page-break-inside: avoid; }
         .rate-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 5px;
-            padding: 6px 7px;
+            padding: 6px 8px;
             vertical-align: top;
             page-break-inside: avoid;
         }
         .rate-title {
-            font-size: 9px;
+            font-size: 9.5px;
             font-weight: 600;
             color: #0f172a;
             margin-bottom: 3px;
-            white-space: nowrap;
         }
         .rate-label {
-            font-size: 6.2px;
+            font-size: 6.5px;
             font-weight: 600;
             color: #64748b;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.4px;
             margin-bottom: 1px;
         }
         .icon-dot {
@@ -239,7 +217,7 @@ class ContractService
             border-left: 3px solid transparent; border-right: 3px solid transparent;
             border-bottom: 4px solid #14243D; margin-right: 3px;
         }
-        .rate-value { font-size: 10.5px; font-weight: bold; color: #0A7C6E; }
+        .rate-value { font-size: 11px; font-weight: bold; color: #0A7C6E; }
 
         /* Signature */
         .sign-box { margin-top: 16px; border: 1px solid #d1d5db; border-radius: 6px; padding: 14px 16px; page-break-inside: avoid; }
@@ -252,6 +230,10 @@ class ContractService
         }
         .unsigned-line { border-bottom: 1px solid #9ca3af; width: 200px; display: inline-block; height: 16px; }
         .signature-image { height: 50px; max-width: 240px; border-bottom: 1px solid #9ca3af; padding-bottom: 3px; margin-bottom: 5px; }
+        .footer {
+            margin-top: 14px; font-size: 8.5px; color: #9ca3af; text-align: center;
+            border-top: 1px solid #e5e7eb; padding-top: 10px;
+        }
 
         /* Certificate seal — absolutely positioned stamp, top-right corner */
         .seal-wrap {
@@ -264,18 +246,13 @@ class ContractService
         ';
 
         $html  = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><style>{$css}</style></head><body>";
-
-        // Fixed header — repeats on every page
-        $html .= "<div class='pdf-header'>";
-        $html .= "<div class='pdf-header-title-block'><div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div><div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform</div></div>";
-        $html .= "<div class='pdf-header-meta-block'><div class='header-meta'>Contract #: {$contractNumber}<br>Date: {$date}</div></div>";
-        $html .= "<div class='pdf-header-rule'></div>";
-        $html .= "</div>";
-
-        // Fixed footer — repeats on every page
-        $html .= "<div class='pdf-footer'>Staffoo (Capital Services Pty Ltd) — ABN 48 613 317 838</div>";
-
         $html .= "<div class='wrapper'>";
+
+        // Header
+        $html .= "<div class='header'><table style='width:100%;'><tr>";
+        $html .= "<td><div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div><div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot;</div></td>";
+        $html .= "<td class='header-meta'>Contract #: {$contractNumber}<br>Date: {$date}</td>";
+        $html .= "</tr></table></div>";
 
         // Parties
         $html .= "<p>This Resource Partner &amp; Subcontractor Agreement (\"Agreement\") governs the commercial and "
@@ -375,7 +352,7 @@ class ContractService
                . "submit to the exclusive jurisdiction of the courts operating in Victoria.</p>";
         $html .= "</div>";
 
-        // Rate schedule — one single-row section per approved state
+        // Rate schedule — one compact section per approved state
         $html .= $rateSectionsHtml;
 
          // Signature — unchanged
@@ -405,8 +382,8 @@ class ContractService
         }
         $html .= "</div>";
 
-        $html .= "</div>"; // end .wrapper
-        $html .= "</body></html>";
+        $html .= "<div class='footer'>Staffoo (Capital Services Pty Ltd) — ABN 48 613 317 838</div>";
+        $html .= "</div></body></html>";
 
         return $html;
     }

@@ -43,12 +43,6 @@ class ContractService
         }
 
         // ── Group rates into Metro/Regional pairs, keyed by category ──────
-        // Category naming: "Metro"/"Regional" and "Default"/"EBA" prefixes
-        // are stripped off to get the pure category (e.g. "Mon–Fri Day").
-        // Saturday/Sunday/Public Holiday Day+Night are then COLLAPSED into
-        // ONE category each (Day value only, Night dropped) — matching the
-        // 5-card layout in the screenshot. Mon–Fri stays as two separate
-        // categories (Day, Night).
         $categories = [];
         foreach ($d['rates'] as $rate) {
             $label = trim($rate['label']);
@@ -64,10 +58,10 @@ class ContractService
             foreach (['Saturday', 'Sunday', 'Public Holiday'] as $collapsedBase) {
                 if (stripos($category, $collapsedBase) === 0) {
                     if (stripos($category, 'Night') !== false) {
-                        $collapsed = true; // drop Night entries for these three
+                        $collapsed = true;
                         break;
                     }
-                    $category = $collapsedBase; // "Saturday Day" -> "Saturday"
+                    $category = $collapsedBase;
                     break;
                 }
             }
@@ -78,7 +72,8 @@ class ContractService
             $categories[$category][$area] = $value;
         }
 
-        // ── Build the 5-card grid (dompdf-safe: nested tables, no flexbox) ──
+        // ── Build the certificate seal (scalloped red badge, top-right stamp) ──
+        $sealSvg = $this->buildSealSvg();
         $categoryChunks = array_chunk($categories, 3, true);
         $rateHtml = '';
         foreach ($categoryChunks as $chunk) {
@@ -92,67 +87,72 @@ class ContractService
                     <div class='rate-title'>" . htmlspecialchars($categoryName) . "</div>
                     <div class='rate-label'><span class='icon-dot'></span>METRO</div>
                     <div class='rate-value'>{$metroValue}</div>
-                    <div style='height:6px;'></div>
+                    <div style='height:4px;'></div>
                     <div class='rate-label'><span class='icon-tri'></span>REGIONAL</div>
                     <div class='rate-value'>{$regionalValue}</div>
                 </td>";
             }
-            // pad remaining cells so the row keeps equal column widths
             for ($i = count($chunk); $i < 3; $i++) {
                 $rateHtml .= "<td width='" . (int)(100/3) . "%'></td>";
             }
             $rateHtml .= "</tr></table>";
         }
 
+        // ── CSS — spacing tightened throughout so the full document fits on
+        // ONE page. Previously, content was just tall enough to overflow by
+        // a small margin, and since .sign-box has page-break-inside:avoid,
+        // dompdf pushed the ENTIRE signature box to page 2 rather than
+        // splitting it — leaving page 2 almost empty. Compressing margins/
+        // padding here reclaims enough height that everything fits on page 1.
         $css = '
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 11px;
+            font-size: 10.5px;
             color: #1a1a2e;
-            line-height: 1.5;
+            line-height: 1.42;
             background: #ffffff;
         }
-        .wrapper { padding: 30px 35px; max-width: 800px; margin: 0 auto; }
+        .wrapper { padding: 22px 32px; max-width: 800px; margin: 0 auto; position: relative; }
 
         /* Header */
         .header {
             border-bottom: 3px solid #0A7C6E;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
+            padding-bottom: 10px;
+            margin-bottom: 16px;
         }
-        .header-title { font-size: 20px; font-weight: bold; color: #1a1a2e; }
-        .header-subtitle { font-size: 11px; color: #6B7280; margin-top: 2px; }
-        .header-meta { font-size: 10px; color: #6B7280; text-align: right; }
+        .header-title { font-size: 19px; font-weight: bold; color: #1a1a2e; }
+        .header-subtitle { font-size: 10px; color: #6B7280; margin-top: 2px; }
+        .header-meta { font-size: 9.5px; color: #6B7280; text-align: right; }
 
         /* Content */
-        .section-title { font-size: 14px; font-weight: bold; color: #0A7C6E; margin: 20px 0 8px; }
-        p { margin-bottom: 10px; text-align: justify; }
-        .clause-list { margin: 6px 0 16px 20px; }
-        .clause-list li { margin-bottom: 6px; }
+        .section-title { font-size: 13px; font-weight: bold; color: #0A7C6E; margin: 12px 0 6px; }
+        p { margin-bottom: 7px; text-align: justify; }
+        .clause-list { margin: 4px 0 10px 18px; }
+        .clause-list li { margin-bottom: 4px; }
 
         /* Rate cards — table-based (dompdf does not reliably support flexbox) */
-        .card-row { width: 100%; border-collapse: separate; border-spacing: 8px; margin-bottom: 0; page-break-inside: avoid; }
+        .card-row { width: 100%; border-collapse: separate; border-spacing: 6px; margin-bottom: 0; page-break-inside: avoid; }
         .rate-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 14px 16px;
+            border-radius: 7px;
+            padding: 10px 14px;
             vertical-align: top;
             page-break-inside: avoid;
         }
         .rate-title {
-            font-size: 12.5px;
+            font-size: 12px;
             font-weight: 600;
             color: #0f172a;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
         .rate-label {
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: 600;
             color: #64748b;
             letter-spacing: 0.5px;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
         .icon-dot {
             display: inline-block; width: 6px; height: 6px; border-radius: 50%;
@@ -163,27 +163,39 @@ class ContractService
             border-left: 4px solid transparent; border-right: 4px solid transparent;
             border-bottom: 6px solid #14243D; margin-right: 5px;
         }
-        .rate-value { font-size: 17px; font-weight: bold; color: #0A7C6E; }
+        .rate-value { font-size: 15px; font-weight: bold; color: #0A7C6E; }
 
         /* Signature */
-        .sign-box { margin-top: 30px; border: 1px solid #d1d5db; border-radius: 6px; padding: 18px 20px; page-break-inside: avoid; }
-        .sign-title { font-size: 12px; font-weight: bold; color: #1a1a2e; margin-bottom: 10px; }
-        .sign-row { font-size: 10px; margin-bottom: 8px; }
-        .sign-label { color: #6B7280; display: inline-block; width: 110px; }
+        .sign-box { margin-top: 16px; border: 1px solid #d1d5db; border-radius: 6px; padding: 14px 16px; page-break-inside: avoid; }
+        .sign-title { font-size: 11.5px; font-weight: bold; color: #1a1a2e; margin-bottom: 7px; }
+        .sign-row { font-size: 9.5px; margin-bottom: 6px; }
+        .sign-label { color: #6B7280; display: inline-block; width: 105px; }
         .signed-badge {
             display: inline-block; background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7;
-            border-radius: 14px; padding: 3px 12px; font-size: 9px; font-weight: bold; margin-bottom: 12px;
+            border-radius: 14px; padding: 3px 12px; font-size: 9px; font-weight: bold; margin-bottom: 9px;
         }
-        .unsigned-line { border-bottom: 1px solid #9ca3af; width: 200px; display: inline-block; height: 18px; }
-        .signature-image { height: 60px; max-width: 260px; border-bottom: 1px solid #9ca3af; padding-bottom: 4px; margin-bottom: 6px; }
+        .unsigned-line { border-bottom: 1px solid #9ca3af; width: 200px; display: inline-block; height: 16px; }
+        .signature-image { height: 50px; max-width: 240px; border-bottom: 1px solid #9ca3af; padding-bottom: 3px; margin-bottom: 5px; }
         .footer {
-            margin-top: 30px; font-size: 8.5px; color: #9ca3af; text-align: center;
-            border-top: 1px solid #e5e7eb; padding-top: 15px;
+            margin-top: 14px; font-size: 8.5px; color: #9ca3af; text-align: center;
+            border-top: 1px solid #e5e7eb; padding-top: 10px;
+        }
+
+        /* Certificate seal — absolutely positioned stamp, top-right corner */
+        .seal-wrap {
+            position: absolute;
+            top: 14px;
+            right: 28px;
+            width: 90px;
+            height: 90px;
         }
         ';
 
         $html  = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><style>{$css}</style></head><body>";
         $html .= "<div class='wrapper'>";
+
+        // Certificate seal stamp
+        $html .= "<div class='seal-wrap'>{$sealSvg}</div>";
 
         // Header
         $html .= "<div class='header'><table style='width:100%;'><tr>";
@@ -219,9 +231,8 @@ class ContractService
         // Signature
         $html .= "<div class='sign-box'>";
         if ($isSigned) {
-            $html .= "<div class='signed-badge'>&#10003; Signed</div>";
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
-            $html .= "<p style='margin-bottom:10px;font-size:10px;'>By signing below, the Resource Partner confirms they have read, understood, "
+            $html .= "<p style='margin-bottom:8px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "
                    . "and agree to be bound by the terms of this Agreement, including the rate schedule above.</p>";
             if ($signatureImageBase64) {
                 $html .= "<div class='sign-row'><span class='sign-label'>Signature:</span></div>";
@@ -236,7 +247,7 @@ class ContractService
             }
         } else {
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
-            $html .= "<p style='margin-bottom:10px;font-size:10px;'>By signing below, the Resource Partner confirms they have read, understood, "
+            $html .= "<p style='margin-bottom:8px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "
                    . "and agree to be bound by the terms of this Agreement, including the rate schedule above.</p>";
             $html .= "<div class='sign-row'><span class='sign-label'>Signature:</span><span class='unsigned-line'></span></div>";
             $html .= "<div class='sign-row'><span class='sign-label'>Printed Name:</span><span class='unsigned-line'></span></div>";
@@ -248,5 +259,46 @@ class ContractService
         $html .= "</div></body></html>";
 
         return $html;
+    }
+
+    /**
+     * Builds an inline SVG scalloped-edge seal/badge with "STAFFOO" text,
+     * similar to a certification stamp. Returns raw SVG markup (not a data
+     * URI) — inline SVG renders more reliably in dompdf than an <img> with
+     * a base64-encoded SVG source.
+     */
+    private function buildSealSvg(): string
+    {
+        $cx = 45;
+        $cy = 45;
+        $outerR = 42;
+        $innerR = 36;
+        $teeth = 22; // number of scalloped points around the edge
+
+        $points = [];
+        for ($i = 0; $i < $teeth * 2; $i++) {
+            $angle = (M_PI * 2 / ($teeth * 2)) * $i;
+            $r = ($i % 2 === 0) ? $outerR : $innerR;
+            $x = $cx + $r * cos($angle);
+            $y = $cy + $r * sin($angle);
+            $points[] = round($x, 1) . ',' . round($y, 1);
+        }
+        $pointsAttr = implode(' ', $points);
+
+        return "
+        <svg width='90' height='90' viewBox='0 0 90 90' xmlns='http://www.w3.org/2000/svg'>
+            <defs>
+                <linearGradient id='sealGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
+                    <stop offset='0%' stop-color='#DC2626' />
+                    <stop offset='100%' stop-color='#7F1D1D' />
+                </linearGradient>
+            </defs>
+            <polygon points='{$pointsAttr}' fill='url(#sealGrad)' stroke='#7F1D1D' stroke-width='1' />
+            <circle cx='{$cx}' cy='{$cy}' r='30' fill='none' stroke='#FFFFFF' stroke-width='1' stroke-opacity='0.7' />
+            <text x='{$cx}' y='42' text-anchor='middle' font-family='DejaVu Sans, sans-serif'
+                  font-size='11' font-weight='bold' fill='#FFFFFF' letter-spacing='0.5'>STAFFOO</text>
+            <text x='{$cx}' y='55' text-anchor='middle' font-family='DejaVu Sans, sans-serif'
+                  font-size='6' fill='#FCA5A5' letter-spacing='1.5'>CERTIFIED</text>
+        </svg>";
     }
 }

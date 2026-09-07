@@ -109,6 +109,11 @@ class ContractService
         // page-break-inside:avoid so a heading is never orphaned from its
         // clauses across the page break.
         $css = '
+        /* @page margin applies to EVERY page dompdf renders, not just the
+           first — this is what gives page 2 (and any later page) the same
+           top/side padding as page 1 instead of content butting right up
+           against the paper edge after a page break. */
+        @page { margin: 26px 32px; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -117,7 +122,11 @@ class ContractService
             line-height: 1.38;
             background: #ffffff;
         }
-        .wrapper { padding: 22px 32px; max-width: 800px; margin: 0 auto; position: relative; }
+        /* Horizontal/vertical spacing now comes from @page above, so the
+           wrapper itself carries no extra padding — otherwise page 1 would
+           get double padding (page margin + wrapper padding) while later
+           pages would only get the page margin. */
+        .wrapper { padding: 0; max-width: 800px; margin: 0 auto; position: relative; }
 
         /* Header */
         .header {
@@ -209,10 +218,9 @@ class ContractService
         // Parties
         $html .= "<p>This Resource Partner &amp; Subcontractor Agreement (\"Agreement\") governs the commercial and "
                . "operational relationship between <strong>Capital Services Pty Ltd</strong> (ABN 48 613 317 838, "
-               . "trading as \"Staffoo\") and <strong>{$contractorName}</strong> (ABN: {$contractorAbn}) "
-               . "(\"Resource Partner\"), an independent licensed security provider, vendor, or staffing agency "
-               . "accepting shift allocations and providing security personnel through the Staffoo platform in "
-               . "<strong>{$state}</strong>, effective from {$effectiveFrom}.</p>";
+               . "trading as \"Staffoo\") and independent licensed security providers, vendors, and staffing "
+               . "agencies (\"Resource Partner\") accepting shift allocations and providing security personnel "
+               . "through the Staffoo platform.</p>";
 
         // 1. Licensing, Statutory Warranties & Compliance
         $html .= "<div class='section-title'>1. Licensing, Statutory Warranties &amp; Compliance</div>";

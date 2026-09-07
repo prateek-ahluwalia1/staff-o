@@ -227,7 +227,6 @@ class ContractService
         // Signature
         $html .= "<div class='sign-box'>";
         if ($isSigned) {
-            $html .= "<div class='signed-badge'>&#10003; Signed</div>";
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
             $html .= "<p style='margin-bottom:8px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "
                    . "and agree to be bound by the terms of this Agreement, including the rate schedule above.</p>";

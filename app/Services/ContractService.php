@@ -212,6 +212,7 @@ class ContractService
                . "trading as \"Staffoo\") and independent licensed security providers, vendors, and staffing "
                . "agencies (\"Resource Partner\") accepting shift allocations and providing security personnel "
                . "through the Staffoo platform.</p>";
+               
 
         // 1. Licensing, Statutory Warranties & Compliance
         $html .= "<div class='section-title'>1. Licensing, Statutory Warranties &amp; Compliance</div>";

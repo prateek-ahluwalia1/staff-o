@@ -151,7 +151,7 @@ class ContractService
            first — this is what gives page 2+ the same top/side padding as
            page 1 instead of content butting right up against the paper
            edge after a page break. */
-        @page { margin: 7%; }
+        @page { margin: 59pt 42pt; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;

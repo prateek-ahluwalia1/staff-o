@@ -5749,7 +5749,7 @@ public function request_charge_rate(Request $request)
         }
 
         // Email admin
-        $adminEmails = ['admin@staffoo.com.au', 'shahbazkhan062@gmail.com'];
+        $adminEmails = ['admin@staffoo.com.au'];
 
         if ($request->is_submitted == 1) {
             try {

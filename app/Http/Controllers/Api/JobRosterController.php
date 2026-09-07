@@ -6521,23 +6521,40 @@ private function generateAndSendContract($contractor, $rateRequest, $charge_rate
 {
     try {
         $rateFieldLabels = $this->chargeRateEmailFieldLabels(); // reuse the "def_" only label set from earlier
-        $rateRows = [];
-        foreach ($rateFieldLabels as $column => $label) {
-            $rateRows[] = ['label' => $label, 'value' => (float) ($charge_rate->{$column} ?? 0)];
+ 
+        // ── Every approved rate card this contractor has, across all
+        // states — the contract lists all of them, not just $rateRequest's
+        // state. ─────────────────────────────────────────────────────────
+        $allApprovedRates = ContractorChargeRate::where('user_id', $contractor->id)->get();
+ 
+        $stateBlocks = [];
+        foreach ($allApprovedRates as $rateCard) {
+            $rows = [];
+            foreach ($rateFieldLabels as $column => $label) {
+                $rows[] = ['label' => $label, 'value' => (float) ($rateCard->{$column} ?? 0)];
+            }
+            $stateBlocks[] = [
+                'state' => $rateCard->state,
+                'rates' => $rows,
+            ];
         }
  
-        $contractNumber = 'CTR-' . strtoupper($rateRequest->state) . '-' . Str::random(6);
-        $signingToken   = \Illuminate\Support\Str::random(48);
+        // ── One contract per contractor. Reuse it (and its contract
+        // number) if it already exists instead of minting a new one. ─────
+        $existingContract = DB::table('contracts')->where('contractor_id', $contractor->id)->first();
+ 
+        $contractNumber = $existingContract->contract_number
+            ?? ('CTR-' . strtoupper($rateRequest->state) . '-' . Str::random(6));
+        $signingToken = Str::random(48);
  
         $pdfData = [
             'contract_number' => $contractNumber,
             'date'            => now()->format('d M Y'),
             'contractor_name' => $contractor->contractor->company_name ?? $contractor->name,
             'contractor_abn'  => $contractor->contractor->abn ?? 'N/A',
-            'state'           => $rateRequest->state,
             'title'           => $rateRequest->title,
             'effective_from'  => $rateRequest->effective_from,
-            'rates'           => $rateRows,
+            'states'          => $stateBlocks,
         ];
  
         $contractService = new ContractService();
@@ -6550,21 +6567,30 @@ private function generateAndSendContract($contractor, $rateRequest, $charge_rate
         $filename = "{$contractNumber}.pdf";
         file_put_contents($directory . DIRECTORY_SEPARATOR . $filename, $pdfBytes);
  
-        $contractId = DB::table('contracts')->insertGetId([
+        $contractPayload = [
             'charge_rate_request_id' => $rateRequest->id,
             'contractor_id'          => $contractor->id,
             'state'                  => $rateRequest->state,
             'title'                  => $rateRequest->title,
             'contract_number'        => $contractNumber,
-            'rate_snapshot'          => json_encode($rateRows),
+            'rate_snapshot'          => json_encode($stateBlocks),
             'pdf_path'               => 'contracts/' . $filename,
             'signing_token'          => $signingToken,
             'status'                 => 'pending_signature',
-            'created_at'             => now(),
             'updated_at'             => now(),
-        ]);
+        ];
  
-        // Email contractor the signing link
+        if ($existingContract) {
+            DB::table('contracts')->where('id', $existingContract->id)->update($contractPayload);
+            $contractId = $existingContract->id;
+        } else {
+            $contractPayload['created_at'] = now();
+            $contractId = DB::table('contracts')->insertGetId($contractPayload);
+        }
+ 
+        // Email contractor the signing link — always re-sent, since a
+        // rate-set change means the previously signed terms no longer
+        // match the document and the contractor needs to re-accept.
         if (!empty($contractor->email)) {
             $signingLink = 'http://localhost:3000/contracts/sign?token=' . $signingToken;
  

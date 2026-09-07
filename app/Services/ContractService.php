@@ -12,8 +12,20 @@ class ContractService
      * Expected $data keys:
      *  contract_number, date,
      *  contractor_name, contractor_abn,
-     *  state, title, effective_from,
-     *  rates => [ ['label' => 'Default Metro Mon–Fri Day', 'value' => 25.00], ... ]
+     *  title, effective_from,
+     *
+     *  states => [
+     *      ['state' => 'NSW', 'rates' => [ ['label' => 'Default Metro Mon–Fri Day', 'value' => 25.00], ... ]],
+     *      ['state' => 'VIC', 'rates' => [ ... ]],
+     *      ...
+     *  ]
+     *  One "STATE — Charge Rates" section is rendered per entry — this is how
+     *  every state the contractor has an approved rate card for shows up on
+     *  the single contract, instead of only the state just approved.
+     *
+     *  Back-compat: a caller can still pass the old single-state shape
+     *  (`state` + `rates` at the top level) and it will be treated as a
+     *  one-entry `states` list.
      *
      *  Optional (only present once signed):
      *  signature_name, signature_image_base64, signed_at, signed_ip
@@ -24,27 +36,14 @@ class ContractService
         return $pdf->output();
     }
 
-    private function buildHtml(array $d): string
+    /**
+     * Group a flat list of rate rows into Metro/Regional pairs keyed by
+     * category (e.g. "Mon–Fri Day" => ['Metro' => 25.00, 'Regional' => 30.00]).
+     */
+    private function groupRatesByCategory(array $rates): array
     {
-        $contractNumber = htmlspecialchars($d['contract_number']);
-        $date           = htmlspecialchars($d['date']);
-        $contractorName = htmlspecialchars($d['contractor_name']);
-        $contractorAbn  = htmlspecialchars($d['contractor_abn'] ?? 'N/A');
-        $state          = htmlspecialchars(strtoupper($d['state']));
-        $effectiveFrom  = htmlspecialchars($d['effective_from'] ?? 'the date of signing');
-
-        $isSigned      = !empty($d['signature_name']) || !empty($d['signature_image_base64']);
-        $signatureName = htmlspecialchars($d['signature_name'] ?? '');
-        $signedAt      = htmlspecialchars($d['signed_at'] ?? '');
-        $signedIp      = htmlspecialchars($d['signed_ip'] ?? '');
-        $signatureImageBase64 = $d['signature_image_base64'] ?? null;
-        if ($signatureImageBase64 && !str_starts_with($signatureImageBase64, 'data:image')) {
-            $signatureImageBase64 = 'data:image/png;base64,' . $signatureImageBase64;
-        }
-
-        // ── Group rates into Metro/Regional pairs, keyed by category ──────
         $categories = [];
-        foreach ($d['rates'] as $rate) {
+        foreach ($rates as $rate) {
             $label = trim($rate['label']);
             $value = (float) $rate['value'];
 
@@ -72,8 +71,15 @@ class ContractService
             $categories[$category][$area] = $value;
         }
 
-        // ── Build the certificate seal (scalloped red badge, top-right stamp) ──
-        $categoryChunks = array_chunk($categories, 3, true);
+        return $categories;
+    }
+
+    /**
+     * Render grouped categories as compact rate cards, 4 per row.
+     */
+    private function renderRateCards(array $categories): string
+    {
+        $categoryChunks = array_chunk($categories, 4, true);
         $rateHtml = '';
         foreach ($categoryChunks as $chunk) {
             $rateHtml .= "<table class='card-row'><tr>";
@@ -86,29 +92,66 @@ class ContractService
                     <div class='rate-title'>" . htmlspecialchars($categoryName) . "</div>
                     <div class='rate-label'><span class='icon-dot'></span>METRO</div>
                     <div class='rate-value'>{$metroValue}</div>
-                    <div style='height:4px;'></div>
+                    <div style='height:2px;'></div>
                     <div class='rate-label'><span class='icon-tri'></span>REGIONAL</div>
                     <div class='rate-value'>{$regionalValue}</div>
                 </td>";
             }
-            for ($i = count($chunk); $i < 3; $i++) {
-                $rateHtml .= "<td width='" . (int)(100/3) . "%'></td>";
+            for ($i = count($chunk); $i < 4; $i++) {
+                $rateHtml .= "<td width='" . (int)(100/4) . "%'></td>";
             }
             $rateHtml .= "</tr></table>";
         }
 
-        // ── CSS — spacing kept tight throughout. NOTE: the new body content
-        // below (7 clause sections instead of the old 5-bullet "Key Terms"
-        // list) is considerably longer than before, so this will very
-        // likely now spill onto a 2nd page, especially with a large rate
-        // schedule. .sign-box still has page-break-inside:avoid, so if it
-        // doesn't fit under the rate cards it will simply drop to page 2
-        // as a whole block (no longer forced onto page 1 by squeezing
-        // margins — that trick doesn't have enough headroom to absorb this
-        // much extra clause text). Section blocks below use
-        // page-break-inside:avoid so a heading is never orphaned from its
-        // clauses across the page break.
+        return $rateHtml;
+    }
+
+    private function buildHtml(array $d): string
+    {
+        $contractNumber = htmlspecialchars($d['contract_number']);
+        $date           = htmlspecialchars($d['date']);
+        $contractorName = htmlspecialchars($d['contractor_name']);
+        $contractorAbn  = htmlspecialchars($d['contractor_abn'] ?? 'N/A');
+        $effectiveFrom  = htmlspecialchars($d['effective_from'] ?? 'the date of signing');
+
+        $isSigned      = !empty($d['signature_name']) || !empty($d['signature_image_base64']);
+        $signatureName = htmlspecialchars($d['signature_name'] ?? '');
+        $signedAt      = htmlspecialchars($d['signed_at'] ?? '');
+        $signedIp      = htmlspecialchars($d['signed_ip'] ?? '');
+        $signatureImageBase64 = $d['signature_image_base64'] ?? null;
+        if ($signatureImageBase64 && !str_starts_with($signatureImageBase64, 'data:image')) {
+            $signatureImageBase64 = 'data:image/png;base64,' . $signatureImageBase64;
+        }
+
+        // ── One contract, every approved state on it. Accepts the new
+        // multi-state 'states' shape, or falls back to the old single
+        // 'state' + 'rates' shape wrapped into a one-entry list. ──────────
+        $stateBlocks = $d['states'] ?? [
+            ['state' => $d['state'] ?? '', 'rates' => $d['rates'] ?? []],
+        ];
+
+        $rateSectionsHtml = '';
+        foreach ($stateBlocks as $block) {
+            $blockState = htmlspecialchars(strtoupper($block['state'] ?? ''));
+            $categories = $this->groupRatesByCategory($block['rates'] ?? []);
+            $rateSectionsHtml .= "<div class='section-title'>{$blockState} — Charge Rates</div>";
+            $rateSectionsHtml .= $this->renderRateCards($categories);
+        }
+
+        // ── CSS — spacing kept tight throughout. Rate cards are now
+        // deliberately compact (4 per row, smaller type/padding) since a
+        // contract can carry a rate section per approved state and needs to
+        // stay legible without ballooning to many pages. .sign-box still
+        // has page-break-inside:avoid, so if it doesn't fit under the rate
+        // cards it drops to the next page as a whole block. Section blocks
+        // use page-break-inside:avoid so a heading is never orphaned from
+        // its clauses across a page break.
         $css = '
+        /* @page margin applies to EVERY page dompdf renders, not just the
+           first — this is what gives page 2+ the same top/side padding as
+           page 1 instead of content butting right up against the paper
+           edge after a page break. */
+        @page { margin: 26px 32px; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -117,7 +160,11 @@ class ContractService
             line-height: 1.38;
             background: #ffffff;
         }
-        .wrapper { padding: 22px 32px; max-width: 800px; margin: 0 auto; position: relative; }
+        /* Horizontal/vertical spacing comes from @page above, so the
+           wrapper itself carries no extra padding — otherwise page 1 would
+           get double padding (page margin + wrapper padding) while later
+           pages would only get the page margin. */
+        .wrapper { padding: 0; max-width: 800px; margin: 0 auto; position: relative; }
 
         /* Header */
         .header {
@@ -137,39 +184,40 @@ class ContractService
         .clause-list { margin: 4px 0 10px 18px; }
         .clause-list li { margin-bottom: 4px; }
 
-        /* Rate cards — table-based (dompdf does not reliably support flexbox) */
-        .card-row { width: 100%; border-collapse: separate; border-spacing: 6px; margin-bottom: 0; page-break-inside: avoid; }
+        /* Rate cards — table-based (dompdf does not reliably support
+           flexbox). Sized small/compact: 4 per row, tight padding. */
+        .card-row { width: 100%; border-collapse: separate; border-spacing: 4px; margin-bottom: 2px; page-break-inside: avoid; }
         .rate-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 7px;
-            padding: 10px 14px;
+            border-radius: 5px;
+            padding: 6px 8px;
             vertical-align: top;
             page-break-inside: avoid;
         }
         .rate-title {
-            font-size: 12px;
+            font-size: 9.5px;
             font-weight: 600;
             color: #0f172a;
-            margin-bottom: 6px;
+            margin-bottom: 3px;
         }
         .rate-label {
-            font-size: 8.5px;
+            font-size: 6.5px;
             font-weight: 600;
             color: #64748b;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
             margin-bottom: 1px;
         }
         .icon-dot {
-            display: inline-block; width: 6px; height: 6px; border-radius: 50%;
-            background: #0A7C6E; margin-right: 5px;
+            display: inline-block; width: 4px; height: 4px; border-radius: 50%;
+            background: #0A7C6E; margin-right: 3px;
         }
         .icon-tri {
             display: inline-block; width: 0; height: 0;
-            border-left: 4px solid transparent; border-right: 4px solid transparent;
-            border-bottom: 6px solid #14243D; margin-right: 5px;
+            border-left: 3px solid transparent; border-right: 3px solid transparent;
+            border-bottom: 4px solid #14243D; margin-right: 3px;
         }
-        .rate-value { font-size: 15px; font-weight: bold; color: #0A7C6E; }
+        .rate-value { font-size: 11px; font-weight: bold; color: #0A7C6E; }
 
         /* Signature */
         .sign-box { margin-top: 16px; border: 1px solid #d1d5db; border-radius: 6px; padding: 14px 16px; page-break-inside: avoid; }
@@ -212,7 +260,6 @@ class ContractService
                . "trading as \"Staffoo\") and independent licensed security providers, vendors, and staffing "
                . "agencies (\"Resource Partner\") accepting shift allocations and providing security personnel "
                . "through the Staffoo platform.</p>";
-
 
         // 1. Licensing, Statutory Warranties & Compliance
         $html .= "<div class='section-title'>1. Licensing, Statutory Warranties &amp; Compliance</div>";
@@ -305,9 +352,8 @@ class ContractService
                . "submit to the exclusive jurisdiction of the courts operating in Victoria.</p>";
         $html .= "</div>";
 
-        // Rate schedule
-        $html .= "<div class='section-title'>{$state} — Charge Rates</div>";
-        $html .= $rateHtml;
+        // Rate schedule — one compact section per approved state
+        $html .= $rateSectionsHtml;
 
          // Signature — unchanged
         $html .= "<div class='sign-box'>";

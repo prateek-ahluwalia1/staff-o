@@ -73,7 +73,6 @@ class ContractService
         }
 
         // ── Build the certificate seal (scalloped red badge, top-right stamp) ──
-        $sealSvg = $this->buildSealSvg();
         $categoryChunks = array_chunk($categories, 3, true);
         $rateHtml = '';
         foreach ($categoryChunks as $chunk) {
@@ -194,9 +193,6 @@ class ContractService
         $html  = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><style>{$css}</style></head><body>";
         $html .= "<div class='wrapper'>";
 
-        // Certificate seal stamp
-        $html .= "<div class='seal-wrap'>{$sealSvg}</div>";
-
         // Header
         $html .= "<div class='header'><table style='width:100%;'><tr>";
         $html .= "<td><div class='header-title'>Resource Partner Services Agreement</div><div class='header-subtitle'>Issued via Staffoo Platform</div></td>";
@@ -231,6 +227,7 @@ class ContractService
         // Signature
         $html .= "<div class='sign-box'>";
         if ($isSigned) {
+            $html .= "<div class='signed-badge'>&#10003; Signed</div>";
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
             $html .= "<p style='margin-bottom:8px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "
                    . "and agree to be bound by the terms of this Agreement, including the rate schedule above.</p>";
@@ -261,44 +258,4 @@ class ContractService
         return $html;
     }
 
-    /**
-     * Builds an inline SVG scalloped-edge seal/badge with "STAFFOO" text,
-     * similar to a certification stamp. Returns raw SVG markup (not a data
-     * URI) — inline SVG renders more reliably in dompdf than an <img> with
-     * a base64-encoded SVG source.
-     */
-    private function buildSealSvg(): string
-    {
-        $cx = 45;
-        $cy = 45;
-        $outerR = 42;
-        $innerR = 36;
-        $teeth = 22; // number of scalloped points around the edge
-
-        $points = [];
-        for ($i = 0; $i < $teeth * 2; $i++) {
-            $angle = (M_PI * 2 / ($teeth * 2)) * $i;
-            $r = ($i % 2 === 0) ? $outerR : $innerR;
-            $x = $cx + $r * cos($angle);
-            $y = $cy + $r * sin($angle);
-            $points[] = round($x, 1) . ',' . round($y, 1);
-        }
-        $pointsAttr = implode(' ', $points);
-
-        return "
-        <svg width='90' height='90' viewBox='0 0 90 90' xmlns='http://www.w3.org/2000/svg'>
-            <defs>
-                <linearGradient id='sealGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
-                    <stop offset='0%' stop-color='#DC2626' />
-                    <stop offset='100%' stop-color='#7F1D1D' />
-                </linearGradient>
-            </defs>
-            <polygon points='{$pointsAttr}' fill='url(#sealGrad)' stroke='#7F1D1D' stroke-width='1' />
-            <circle cx='{$cx}' cy='{$cy}' r='30' fill='none' stroke='#FFFFFF' stroke-width='1' stroke-opacity='0.7' />
-            <text x='{$cx}' y='42' text-anchor='middle' font-family='DejaVu Sans, sans-serif'
-                  font-size='11' font-weight='bold' fill='#FFFFFF' letter-spacing='0.5'>STAFFOO</text>
-            <text x='{$cx}' y='55' text-anchor='middle' font-family='DejaVu Sans, sans-serif'
-                  font-size='6' fill='#FCA5A5' letter-spacing='1.5'>CERTIFIED</text>
-        </svg>";
-    }
 }

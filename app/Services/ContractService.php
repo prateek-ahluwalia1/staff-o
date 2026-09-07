@@ -97,19 +97,24 @@ class ContractService
             $rateHtml .= "</tr></table>";
         }
 
-        // ── CSS — spacing tightened throughout so the full document fits on
-        // ONE page. Previously, content was just tall enough to overflow by
-        // a small margin, and since .sign-box has page-break-inside:avoid,
-        // dompdf pushed the ENTIRE signature box to page 2 rather than
-        // splitting it — leaving page 2 almost empty. Compressing margins/
-        // padding here reclaims enough height that everything fits on page 1.
+        // ── CSS — spacing kept tight throughout. NOTE: the new body content
+        // below (7 clause sections instead of the old 5-bullet "Key Terms"
+        // list) is considerably longer than before, so this will very
+        // likely now spill onto a 2nd page, especially with a large rate
+        // schedule. .sign-box still has page-break-inside:avoid, so if it
+        // doesn't fit under the rate cards it will simply drop to page 2
+        // as a whole block (no longer forced onto page 1 by squeezing
+        // margins — that trick doesn't have enough headroom to absorb this
+        // much extra clause text). Section blocks below use
+        // page-break-inside:avoid so a heading is never orphaned from its
+        // clauses across the page break.
         $css = '
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 10.5px;
+            font-size: 10px;
             color: #1a1a2e;
-            line-height: 1.42;
+            line-height: 1.38;
             background: #ffffff;
         }
         .wrapper { padding: 22px 32px; max-width: 800px; margin: 0 auto; position: relative; }
@@ -118,14 +123,16 @@ class ContractService
         .header {
             border-bottom: 3px solid #0A7C6E;
             padding-bottom: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
-        .header-title { font-size: 19px; font-weight: bold; color: #1a1a2e; }
-        .header-subtitle { font-size: 10px; color: #6B7280; margin-top: 2px; }
-        .header-meta { font-size: 9.5px; color: #6B7280; text-align: right; }
+        .header-title { font-size: 17px; font-weight: bold; color: #1a1a2e; }
+        .header-subtitle { font-size: 9.5px; color: #6B7280; margin-top: 2px; }
+        .header-meta { font-size: 9px; color: #6B7280; text-align: right; }
 
         /* Content */
-        .section-title { font-size: 13px; font-weight: bold; color: #0A7C6E; margin: 12px 0 6px; }
+        .section-title { font-size: 12.5px; font-weight: bold; color: #0A7C6E; margin: 11px 0 5px; }
+        .clause-block { margin-bottom: 8px; page-break-inside: avoid; }
+        .clause-heading { font-size: 10.2px; font-weight: bold; color: #1a1a2e; margin-bottom: 2px; }
         p { margin-bottom: 7px; text-align: justify; }
         .clause-list { margin: 4px 0 10px 18px; }
         .clause-list li { margin-bottom: 4px; }
@@ -195,36 +202,114 @@ class ContractService
 
         // Header
         $html .= "<div class='header'><table style='width:100%;'><tr>";
-        $html .= "<td><div class='header-title'>Resource Partner Services Agreement</div><div class='header-subtitle'>Issued via Staffoo Platform</div></td>";
+        $html .= "<td><div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div><div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot; Version 3.0</div></td>";
         $html .= "<td class='header-meta'>Contract #: {$contractNumber}<br>Date: {$date}</td>";
         $html .= "</tr></table></div>";
 
         // Parties
-        $html .= "<p>This Resource Partner Services Agreement (\"Agreement\") is entered into between "
-               . "<strong>Staffoo (Capital Services Pty Ltd)</strong> (\"Staffoo\") and "
-               . "<strong>{$contractorName}</strong> (ABN: {$contractorAbn}) (\"Resource Partner\"), "
-               . "for the provision of security services in <strong>{$state}</strong>, effective from {$effectiveFrom}.</p>";
+        $html .= "<p>This Resource Partner &amp; Subcontractor Agreement (\"Agreement\") governs the commercial and "
+               . "operational relationship between <strong>Capital Services Pty Ltd</strong> (ABN 48 613 317 838, "
+               . "trading as \"Staffoo\") and <strong>{$contractorName}</strong> (ABN: {$contractorAbn}) "
+               . "(\"Resource Partner\"), an independent licensed security provider, vendor, or staffing agency "
+               . "accepting shift allocations and providing security personnel through the Staffoo platform in "
+               . "<strong>{$state}</strong>, effective from {$effectiveFrom}.</p>";
 
-        $html .= "<p>The Resource Partner acknowledges and agrees that it is engaged by Staffoo as an "
-               . "independent <strong>Resource Partner</strong>, and not as an employee, agent, or partner of Staffoo. "
-               . "The Resource Partner is responsible for its own tax, superannuation, insurance, and statutory "
-               . "obligations in connection with the services provided under this Agreement.</p>";
+        // 1. Licensing, Statutory Warranties & Compliance
+        $html .= "<div class='section-title'>1. Licensing, Statutory Warranties &amp; Compliance</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<div class='clause-heading'>1.1 Corporate Licensing &amp; Registration</div>";
+        $html .= "<p>The Resource Partner warrants that it holds and maintains at all times all necessary Master "
+               . "Security Licences, Labour Hire Licences (where mandated by state legislation, including Victoria, "
+               . "Queensland, and South Australia), and corporate registrations required to legally supply security "
+               . "personnel in all operating jurisdictions.</p>";
+        $html .= "<div class='clause-heading'>1.2 Personnel Qualifications &amp; VEVO Verification</div>";
+        $html .= "<p>The Resource Partner warrants that all guards assigned to Staffoo shifts possess valid, current "
+               . "individual security licences, valid First Aid/CPR certifications, Responsible Service of Alcohol "
+               . "(RSA, where applicable), and legal Australian working rights verified via VEVO.</p>";
+        $html .= "</div>";
 
-        // Key terms
-        $html .= "<div class='section-title'>Key Terms</div>";
+        // 2. Operational Standards, Uniforms & Shift Punctuality
+        $html .= "<div class='section-title'>2. Operational Standards, Uniforms &amp; Shift Punctuality</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<div class='clause-heading'>2.1 Standard Uniform &amp; Presentation Requirements</div>";
+        $html .= "<p>The Resource Partner must ensure that all deployed personnel arrive on site wearing a neat, "
+               . "professional standard black security uniform (black trousers, black collared security shirt or "
+               . "blazer, and clean black safety footwear). Personnel must wear a high-visibility (hi-vis) safety "
+               . "vest where required by site safety protocols, client briefs, or WHS laws.</p>";
+        $html .= "<div class='clause-heading'>2.2 Mandatory 15-Minute Early Arrival</div>";
+        $html .= "<p>To ensure proper site handover, safety briefings, and timely clock-in, the Resource Partner "
+               . "must ensure that all personnel arrive on site at least fifteen (15) minutes prior to the "
+               . "scheduled shift start time.</p>";
+        $html .= "<div class='clause-heading'>2.3 App Usage &amp; Attendance Logging</div>";
+        $html .= "<p>All time, attendance, site check-ins, break logging, and duress checks must be completed "
+               . "exclusively through the Staffoo mobile application. Unauthorized sub-subcontracting or secondary "
+               . "outsourcing of assigned shifts is strictly prohibited.</p>";
+        $html .= "</div>";
+
+        // 3. Employment Obligations, Fair Work & WHS Compliance
+        $html .= "<div class='section-title'>3. Employment Obligations, Fair Work &amp; WHS Compliance</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<div class='clause-heading'>3.1 Direct Employment Relationship</div>";
+        $html .= "<p>The Resource Partner acknowledges that it is the sole employer or principal contractor of all "
+               . "personnel deployed. No employment, agency, or joint-venture relationship exists between Staffoo "
+               . "and the Resource Partner's personnel.</p>";
+        $html .= "<div class='clause-heading'>3.2 Modern Award &amp; Fatigue Management</div>";
+        $html .= "<p>The Resource Partner warrants strict compliance with the Security Services Industry Award 2020 "
+               . "[MA000016], the Fair Work Act 2009 (Cth), Superannuation Guarantee laws, and state Workers' "
+               . "Compensation laws. This includes paying mandatory minimum hourly rates, penalty rates, and "
+               . "enforcing fatigue limits (including mandatory minimum 8-to-10 hour breaks between shifts).</p>";
+        $html .= "</div>";
+
+        // 4. Client Deductions, Negligence Liability & Financial Set-Off
+        $html .= "<div class='section-title'>4. Client Deductions, Negligence Liability &amp; Financial Set-Off</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<div class='clause-heading'>4.1 Liability for Negligence &amp; Client Deductions</div>";
+        $html .= "<p>If a Client reduces, deducts, or refuses payment for shift hours due to late arrival, "
+               . "abandonment, uniform non-compliance, misconduct, breach of site instructions, or negligence by "
+               . "the Resource Partner or its personnel, the Resource Partner shall be held fully responsible for "
+               . "all resulting financial losses, damages, and administrative costs suffered by Staffoo.</p>";
+        $html .= "<div class='clause-heading'>4.2 Right of Recovery &amp; Set-Off</div>";
+        $html .= "<p>The Resource Partner expressly authorizes Staffoo to deduct, withhold, or set off the amount "
+               . "of any client payment deductions or loss claims directly from current or future funds held in "
+               . "the Resource Partner's Stripe account or pending payout ledger.</p>";
+        $html .= "</div>";
+
+        // 5. Platform Fees, Automated Deductions & Insurance
+        $html .= "<div class='section-title'>5. Platform Fees &amp; Automated Deductions</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<div class='clause-heading'>5.1 Platform Service Fee</div>";
+        $html .= "<p>In consideration for access to the Staffoo marketplace, WFM tools, and automated billing "
+               . "engine, the Resource Partner agrees to pay Staffoo the agreed Platform Service Fee per shift.</p>";
+        $html .= "<div class='clause-heading'>5.2 Automated Stripe Payout Deductions</div>";
+        $html .= "<p>The Resource Partner authorizes Staffoo and its payment gateway provider (Stripe) to "
+               . "automatically deduct the Platform Service Fee from captured client funds upon job completion "
+               . "before remitting the net balance to the Resource Partner's bank account.</p>";
+        $html .= "</div>";
+
+        // 6. Mandatory Insurance Requirements
+        $html .= "<div class='section-title'>6. Mandatory Insurance Requirements</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<p>The Resource Partner must maintain at all times:</p>";
         $html .= "<ul class='clause-list'>";
-        $html .= "<li>The Resource Partner will provide licensed security guarding services within the state of <strong>{$state}</strong> only, unless otherwise agreed in writing.</li>";
-        $html .= "<li>Charge rates payable to the Resource Partner for services rendered in {$state} are set out in the rate schedule below, and reflect the rates approved on Staffoo's platform.</li>";
-        $html .= "<li>This Agreement does not guarantee any minimum volume of work; jobs are offered at Staffoo's discretion via the platform.</li>";
-        $html .= "<li>The Resource Partner must maintain all licences, certifications, and insurances required by law to perform the services in {$state}.</li>";
-        $html .= "<li>Either party may terminate this arrangement in accordance with the terms of the Staffoo platform agreement.</li>";
+        $html .= "<li><strong>Public &amp; Products Liability Insurance:</strong> Minimum coverage of $10,000,000 "
+               . "per claim (or $20,000,000 where specified by site brief).</li>";
+        $html .= "<li><strong>Workers' Compensation Insurance:</strong> Statutory coverage for all employees in "
+               . "accordance with relevant state laws.</li>";
         $html .= "</ul>";
+        $html .= "</div>";
+
+        // 7. Governing Law
+        $html .= "<div class='section-title'>7. Governing Law</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<p>This Agreement is governed by the laws of the State of Victoria, Australia. Both parties "
+               . "submit to the exclusive jurisdiction of the courts operating in Victoria.</p>";
+        $html .= "</div>";
 
         // Rate schedule
         $html .= "<div class='section-title'>{$state} — Charge Rates</div>";
         $html .= $rateHtml;
 
-         // Signature
+         // Signature — unchanged
         $html .= "<div class='sign-box'>";
         if ($isSigned) {
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";

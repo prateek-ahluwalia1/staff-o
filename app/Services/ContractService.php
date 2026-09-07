@@ -109,11 +109,6 @@ class ContractService
         // page-break-inside:avoid so a heading is never orphaned from its
         // clauses across the page break.
         $css = '
-        /* @page margin applies to EVERY page dompdf renders, not just the
-           first — this is what gives page 2 (and any later page) the same
-           top/side padding as page 1 instead of content butting right up
-           against the paper edge after a page break. */
-        @page { margin: 26px 32px; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -122,11 +117,7 @@ class ContractService
             line-height: 1.38;
             background: #ffffff;
         }
-        /* Horizontal/vertical spacing now comes from @page above, so the
-           wrapper itself carries no extra padding — otherwise page 1 would
-           get double padding (page margin + wrapper padding) while later
-           pages would only get the page margin. */
-        .wrapper { padding: 0; max-width: 800px; margin: 0 auto; position: relative; }
+        .wrapper { padding: 22px 32px; max-width: 800px; margin: 0 auto; position: relative; }
 
         /* Header */
         .header {

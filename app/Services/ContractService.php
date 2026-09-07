@@ -202,7 +202,7 @@ class ContractService
 
         // Header
         $html .= "<div class='header'><table style='width:100%;'><tr>";
-        $html .= "<td><div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div><div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot; Version 3.0</div></td>";
+        $html .= "<td><div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div><div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot;</div></td>";
         $html .= "<td class='header-meta'>Contract #: {$contractNumber}<br>Date: {$date}</td>";
         $html .= "</tr></table></div>";
 
@@ -212,7 +212,7 @@ class ContractService
                . "trading as \"Staffoo\") and independent licensed security providers, vendors, and staffing "
                . "agencies (\"Resource Partner\") accepting shift allocations and providing security personnel "
                . "through the Staffoo platform.</p>";
-               
+
 
         // 1. Licensing, Statutory Warranties & Compliance
         $html .= "<div class='section-title'>1. Licensing, Statutory Warranties &amp; Compliance</div>";

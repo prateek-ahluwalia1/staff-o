@@ -224,7 +224,7 @@ class ContractService
         $html .= "<div class='section-title'>{$state} — Charge Rates</div>";
         $html .= $rateHtml;
 
-        // Signature
+         // Signature
         $html .= "<div class='sign-box'>";
         if ($isSigned) {
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";

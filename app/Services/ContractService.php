@@ -44,6 +44,13 @@ class ContractService
     {
         $categories = [];
         foreach ($rates as $rate) {
+            // Defensive: skip anything that isn't a proper label/value rate
+            // row instead of fataling the whole PDF (and the signing
+            // request with it) on one bad/unexpected entry.
+            if (!is_array($rate) || !isset($rate['label']) || !isset($rate['value'])) {
+                continue;
+            }
+
             $label = trim($rate['label']);
             $value = (float) $rate['value'];
 
@@ -127,10 +134,28 @@ class ContractService
 
         // ── One contract, every approved state on it. Accepts the new
         // multi-state 'states' shape, or falls back to the old single
-        // 'state' + 'rates' shape wrapped into a one-entry list. ──────────
-        $stateBlocks = $d['states'] ?? [
-            ['state' => $d['state'] ?? '', 'rates' => $d['rates'] ?? []],
-        ];
+        // 'state' + 'rates' shape wrapped into a one-entry list.
+        //
+        // Also auto-detects a mismatch: some callers (e.g. the sign-
+        // contract flow, which replays a stored rate_snapshot) pass a
+        // flat 'rates' array that is ACTUALLY a list of per-state blocks
+        // (each with its own 'state' + 'rates' keys) rather than a flat
+        // list of label/value rows. Passing that straight to
+        // groupRatesByCategory() would look for a 'label' key on a
+        // ['state'=>..,'rates'=>[...]] block and blow up — this is what
+        // was causing "Undefined array key \"label\"" during signing.
+        // Detect that shape here and treat it as 'states' instead.
+        $stateBlocks = $d['states'] ?? null;
+        if ($stateBlocks === null) {
+            $rawRates = $d['rates'] ?? [];
+            $looksLikeStateBlocks = !empty($rawRates)
+                && is_array($rawRates[0] ?? null)
+                && isset($rawRates[0]['state']);
+
+            $stateBlocks = $looksLikeStateBlocks
+                ? $rawRates
+                : [['state' => $d['state'] ?? '', 'rates' => $rawRates]];
+        }
 
         $rateSectionsHtml = '';
         foreach ($stateBlocks as $block) {

@@ -136,11 +136,10 @@ class ContractService
         ];
 
         $rateTableHtml = $this->renderRateTable($stateBlocks);
-        $sealHtml = $this->buildSealHtml();
 
-        // ── CSS with improved margins like invoice ──────────────────────
+        // ── CSS with invoice-style margins ──────────────────────────────
         $css = '
-        /* Page margins - consistent with invoice style */
+        /* Page margins - matching invoice style */
         @page { 
             margin: 32px 36px; 
             margin-header: 0; 
@@ -163,19 +162,19 @@ class ContractService
             margin: 0;
         }
         
-        /* Wrapper with comfortable padding */
+        /* Wrapper with consistent alignment */
         .wrapper { 
             max-width: 100%; 
-            padding: 0 2px;
+            padding: 0;
             margin: 0;
         }
 
-        /* Header with more breathing room */
+        /* Header - clean layout without seal */
         .header {
             border-bottom: 3px solid #0A7C6E;
-            padding-bottom: 16px;
+            padding-bottom: 14px;
             margin-bottom: 20px;
-            padding-top: 6px;
+            padding-top: 4px;
         }
         
         .header-title { 
@@ -195,7 +194,7 @@ class ContractService
             font-size: 9px; 
             color: #6B7280; 
             text-align: right; 
-            padding-right: 12px;
+            padding-right: 0;
             line-height: 1.6;
         }
 
@@ -223,7 +222,6 @@ class ContractService
         p { 
             margin-bottom: 10px; 
             text-align: justify; 
-            padding-right: 2px;
             line-height: 1.6;
         }
         
@@ -237,7 +235,7 @@ class ContractService
             line-height: 1.5;
         }
 
-        /* Rate table with better spacing */
+        /* Rate table */
         .rate-table { 
             width: 100%; 
             border-collapse: collapse; 
@@ -290,7 +288,7 @@ class ContractService
             margin-right: 4px; 
         }
 
-        /* Signature box with generous padding */
+        /* Signature box */
         .sign-box { 
             margin-top: 28px; 
             border: 1.5px solid #d1d5db; 
@@ -321,18 +319,6 @@ class ContractService
             font-weight: 500;
         }
         
-        .signed-badge {
-            display: inline-block; 
-            background: #ecfdf5; 
-            color: #065f46; 
-            border: 1px solid #6ee7b7;
-            border-radius: 14px; 
-            padding: 4px 14px; 
-            font-size: 9px; 
-            font-weight: bold; 
-            margin-bottom: 12px;
-        }
-        
         .unsigned-line { 
             border-bottom: 1.5px solid #9ca3af; 
             width: 220px; 
@@ -358,59 +344,25 @@ class ContractService
             padding-bottom: 6px;
             letter-spacing: 0.2px;
         }
-
-        /* Seal with better alignment */
-        .seal-cell { 
-            width: 80px; 
-            text-align: right; 
-            vertical-align: top; 
-            padding-right: 6px;
-        }
-        
-        .seal-table { 
-            border-collapse: collapse; 
-            margin-left: auto; 
-        }
-        
-        .seal-circle {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            background: #B91C1C;
-            border: 3px double #FFFFFF;
-            text-align: center;
-            vertical-align: middle;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .seal-text-main { 
-            color: #FFFFFF; 
-            font-weight: bold; 
-            font-size: 10px; 
-            letter-spacing: 0.6px; 
-        }
-        
-        .seal-text-sub { 
-            color: #FECACA; 
-            font-size: 6.5px; 
-            letter-spacing: 1.2px; 
-            margin-top: 1px;
-        }
         ';
 
         $html  = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><style>{$css}</style></head><body>";
         $html .= "<div class='wrapper'>";
 
-        // Header
-        $html .= "<div class='header'><table style='width:100%;border-collapse:collapse;'>";
+        // Header - clean layout without seal
+        $html .= "<div class='header'>";
+        $html .= "<table style='width:100%;border-collapse:collapse;'>";
         $html .= "<tr>";
-        $html .= "<td style='padding:0;width:60%;'>";
+        $html .= "<td style='padding:0;width:65%;'>";
         $html .= "<div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div>";
-        $html .= "<div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot;</div>";
+        $html .= "<div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform</div>";
         $html .= "</td>";
-        $html .= "<td class='header-meta' style='width:25%;'>Contract #: {$contractNumber}<br>Date: {$date}</td>";
-        $html .= "<td class='seal-cell' style='width:15%;'>{$sealHtml}</td>";
-        $html .= "</tr></table></div>";
+        $html .= "<td class='header-meta' style='width:35%;text-align:right;'>";
+        $html .= "Contract #: {$contractNumber}<br>Date: {$date}";
+        $html .= "</td>";
+        $html .= "</tr>";
+        $html .= "</table>";
+        $html .= "</div>";
 
         // Parties
         $html .= "<p style='margin-bottom:14px;'>This Resource Partner &amp; Subcontractor Agreement (\"Agreement\") governs the commercial and "
@@ -545,23 +497,5 @@ class ContractService
         $html .= "</div></body></html>";
 
         return $html;
-    }
-
-    /**
-     * Builds the certificate seal as pure HTML/CSS (a styled circle with
-     * centered text) — no SVG. dompdf was not rendering the SVG polygon/
-     * gradient version at all (only the raw <text> content leaked through
-     * as plain text), so this uses the same table-cell vertical-align
-     * technique that already renders reliably elsewhere in this document.
-     */
-    private function buildSealHtml(): string
-    {
-        return "
-        <table class='seal-table'><tr>
-            <td class='seal-circle'>
-                <div class='seal-text-main'>STAFFOO</div>
-                <div class='seal-text-sub'>CERTIFIED</div>
-            </td>
-        </tr></table>";
     }
 }

@@ -136,7 +136,7 @@ class ContractService
         ];
 
         $rateTableHtml = $this->renderRateTable($stateBlocks);
-        $sealSvg = $this->buildSealSvg();
+        $sealHtml = $this->buildSealHtml();
 
         // ── CSS ──────────────────────────────────────────────────────────
         $css = '
@@ -203,17 +203,36 @@ class ContractService
             border-top: 1px solid #e5e7eb; padding-top: 10px;
         }
 
-        .seal-cell { width: 80px; text-align: right; vertical-align: top; }
+        /* Certificate seal — pure CSS circle (no SVG; dompdf was not
+           rendering the SVG polygon/gradient at all and only leaking the
+           raw <text> content through as plain text). Same table-cell
+           vertical-align technique already used reliably elsewhere in
+           this document for centering content in dompdf. */
+        .seal-cell { width: 76px; text-align: right; vertical-align: top; }
+        .seal-table { border-collapse: collapse; margin-left: auto; }
+        .seal-circle {
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            background: #B91C1C;
+            border: 3px double #FFFFFF;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .seal-text-main { color: #FFFFFF; font-weight: bold; font-size: 9.5px; letter-spacing: 0.4px; }
+        .seal-text-sub { color: #FECACA; font-size: 6px; letter-spacing: 1px; }
         ';
 
         $html  = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><style>{$css}</style></head><body>";
         $html .= "<div class='wrapper'>";
 
-        
+        // Header — title/subtitle | contract meta | seal, all as normal
+        // table cells (not absolute positioning, which wasn't rendering
+        // reliably in dompdf)
         $html .= "<div class='header'><table style='width:100%;'><tr>";
         $html .= "<td><div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div><div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot;</div></td>";
         $html .= "<td class='header-meta'>Contract #: {$contractNumber}<br>Date: {$date}</td>";
-        $html .= "<td class='seal-cell'>{$sealSvg}</td>";
+        $html .= "<td class='seal-cell'>{$sealHtml}</td>";
         $html .= "</tr></table></div>";
 
         // Parties
@@ -352,42 +371,20 @@ class ContractService
     }
 
     /**
-     * Builds an inline SVG scalloped-edge seal/badge with "STAFFOO" text.
-     * Returns raw SVG markup (not a data URI) — inline SVG renders more
-     * reliably in dompdf than an <img> with a base64-encoded SVG source.
+     * Builds the certificate seal as pure HTML/CSS (a styled circle with
+     * centered text) — no SVG. dompdf was not rendering the SVG polygon/
+     * gradient version at all (only the raw <text> content leaked through
+     * as plain text), so this uses the same table-cell vertical-align
+     * technique that already renders reliably elsewhere in this document.
      */
-    private function buildSealSvg(): string
+    private function buildSealHtml(): string
     {
-        $cx = 45;
-        $cy = 45;
-        $outerR = 42;
-        $innerR = 36;
-        $teeth = 22;
-
-        $points = [];
-        for ($i = 0; $i < $teeth * 2; $i++) {
-            $angle = (M_PI * 2 / ($teeth * 2)) * $i;
-            $r = ($i % 2 === 0) ? $outerR : $innerR;
-            $x = $cx + $r * cos($angle);
-            $y = $cy + $r * sin($angle);
-            $points[] = round($x, 1) . ',' . round($y, 1);
-        }
-        $pointsAttr = implode(' ', $points);
-
         return "
-        <svg width='72' height='72' viewBox='0 0 90 90' xmlns='http://www.w3.org/2000/svg'>
-            <defs>
-                <linearGradient id='sealGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
-                    <stop offset='0%' stop-color='#DC2626' />
-                    <stop offset='100%' stop-color='#7F1D1D' />
-                </linearGradient>
-            </defs>
-            <polygon points='{$pointsAttr}' fill='url(#sealGrad)' stroke='#7F1D1D' stroke-width='1' />
-            <circle cx='{$cx}' cy='{$cy}' r='30' fill='none' stroke='#FFFFFF' stroke-width='1' stroke-opacity='0.7' />
-            <text x='{$cx}' y='42' text-anchor='middle' font-family='DejaVu Sans, sans-serif'
-                  font-size='11' font-weight='bold' fill='#FFFFFF' letter-spacing='0.5'>STAFFOO</text>
-            <text x='{$cx}' y='55' text-anchor='middle' font-family='DejaVu Sans, sans-serif'
-                  font-size='6' fill='#FCA5A5' letter-spacing='1.5'>CERTIFIED</text>
-        </svg>";
+        <table class='seal-table'><tr>
+            <td class='seal-circle'>
+                <div class='seal-text-main'>STAFFOO</div>
+                <div class='seal-text-sub'>CERTIFIED</div>
+            </td>
+        </tr></table>";
     }
 }

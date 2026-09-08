@@ -5834,11 +5834,133 @@ public function list_charge_rate_requests(Request $request)
  * Applies the rates to contractor_charge_rates (update if a row already
  * exists for this user_id + state, otherwise create a new one).
  */
+// public function accept_charge_rate_request(Request $request, $id)
+// {
+//     try {
+//         $rateRequest = DB::table('charge_rate_requests')->where('id', $id)->first();
+
+//         if (!$rateRequest) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Charge rate request not found.',
+//                 'data' => null,
+//             ], 200);
+//         }
+
+//         if ($rateRequest->status !== 'pending') {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'This request has already been reviewed.',
+//                 'data' => null,
+//             ], 200);
+//         }
+
+//         $rateFieldLabels = $this->chargeRateFieldLabels();
+
+//         // Find existing rate card for this contractor + state, else create new
+//         $charge_rate = ContractorChargeRate::where('user_id', $rateRequest->user_id)
+//             ->where('state', $rateRequest->state)
+//             ->first();
+
+//         if (!$charge_rate) {
+//             $charge_rate = new ContractorChargeRate();
+//         }
+
+//         $charge_rate->title   = $rateRequest->title;
+//         $charge_rate->user_id = $rateRequest->user_id;
+//         $charge_rate->state   = $rateRequest->state;
+
+//         foreach ($rateFieldLabels as $column => $label) {
+//             $charge_rate->{$column} = $rateRequest->{$column} ?? 0;
+//         }
+
+//         $charge_rate->effective_from = $rateRequest->effective_from;
+//         $charge_rate->save();
+
+//         // Mark the request approved
+//         DB::table('charge_rate_requests')->where('id', $id)->update([
+//             'status'                    => 'approved',
+//             'reviewed_by'               => auth()->id() ?? $request->input('admin_id'),
+//             'reviewed_at'               => now(),
+//             'contractor_charge_rate_id' => $charge_rate->id,
+//         ]);
+
+//           // ============ NEW: notify the CONTRACTOR their request was approved ============
+//         $contractor = DB::table('users')->where('id', $rateRequest->user_id)->first();
+ 
+//         if ($contractor) {
+//             // Email
+//             if (!empty($contractor->email)) {
+//                 try {
+//                     Mail::to($contractor->email)->send(new ChargeRateApprovedMail(
+//                         $contractor->name ?? 'Contractor',
+//                         $rateRequest->title,
+//                         $rateRequest->state,
+//                         $rateRequest->effective_from
+//                     ));
+//                 } catch (\Exception $e) {
+//                     Log::error('Failed to send charge rate approval email', [
+//                         'charge_rate_request_id' => $id,
+//                         'error' => $e->getMessage(),
+//                     ]);
+//                 }
+//             }
+ 
+//             // Push notification
+//             if (!empty($contractor->notification_token)) {
+//                 try {
+//                     send_push_notification([
+//                         'message' => "Your charge rate request for " . strtoupper($rateRequest->state) . " has been approved.",
+//                         'title' => 'Charge Rate Approved',
+//                         'notification_token' => $contractor->notification_token,
+//                         'page' => 'charge-rates',
+//                     ]);
+//                 } catch (\Exception $e) {
+//                     Log::error('Failed to send charge rate approval push notification', [
+//                         'charge_rate_request_id' => $id,
+//                         'error' => $e->getMessage(),
+//                     ]);
+//                 }
+//             }
+//         }
+
+//         $this->generateAndSendContract($contractor, $rateRequest, $charge_rate);
+//         // ============ END NEW ============
+
+//         $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
+//         foreach ($admins as $a) {
+//             $notification_data = [
+//                 'message' => 'Charge rate request submitted.',
+//                 'title' => 'Charge Rate Request',
+//                 'notification_token' => $a->notification_token,
+//                 'page' => 'my-job-applications',
+//             ];
+//             send_push_notification($notification_data);
+//         }
+
+//         return response()->json([
+//             'success' => true,
+//             'message' => 'Charge rate request approved and applied.',
+//             'data' => [
+//                 'charge_rate_request_id'    => $id,
+//                 'contractor_charge_rate_id' => $charge_rate->id,
+//             ],
+//         ], 200);
+
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'An error occurred while approving the charge rate request.',
+//             'error' => $e->getMessage(),
+//             'trace' => $e->getTraceAsString(),
+//         ], 500);
+//     }
+// }
 public function accept_charge_rate_request(Request $request, $id)
 {
     try {
         $rateRequest = DB::table('charge_rate_requests')->where('id', $id)->first();
-
+ 
         if (!$rateRequest) {
             return response()->json([
                 'success' => false,
@@ -5846,7 +5968,7 @@ public function accept_charge_rate_request(Request $request, $id)
                 'data' => null,
             ], 200);
         }
-
+ 
         if ($rateRequest->status !== 'pending') {
             return response()->json([
                 'success' => false,
@@ -5854,29 +5976,29 @@ public function accept_charge_rate_request(Request $request, $id)
                 'data' => null,
             ], 200);
         }
-
+ 
         $rateFieldLabels = $this->chargeRateFieldLabels();
-
+ 
         // Find existing rate card for this contractor + state, else create new
         $charge_rate = ContractorChargeRate::where('user_id', $rateRequest->user_id)
             ->where('state', $rateRequest->state)
             ->first();
-
+ 
         if (!$charge_rate) {
             $charge_rate = new ContractorChargeRate();
         }
-
+ 
         $charge_rate->title   = $rateRequest->title;
         $charge_rate->user_id = $rateRequest->user_id;
         $charge_rate->state   = $rateRequest->state;
-
+ 
         foreach ($rateFieldLabels as $column => $label) {
             $charge_rate->{$column} = $rateRequest->{$column} ?? 0;
         }
-
+ 
         $charge_rate->effective_from = $rateRequest->effective_from;
         $charge_rate->save();
-
+ 
         // Mark the request approved
         DB::table('charge_rate_requests')->where('id', $id)->update([
             'status'                    => 'approved',
@@ -5884,8 +6006,8 @@ public function accept_charge_rate_request(Request $request, $id)
             'reviewed_at'               => now(),
             'contractor_charge_rate_id' => $charge_rate->id,
         ]);
-
-          // ============ NEW: notify the CONTRACTOR their request was approved ============
+ 
+        // ============ NEW: notify the CONTRACTOR their request was approved ============
         $contractor = DB::table('users')->where('id', $rateRequest->user_id)->first();
  
         if ($contractor) {
@@ -5923,10 +6045,35 @@ public function accept_charge_rate_request(Request $request, $id)
                 }
             }
         }
-
-        $this->generateAndSendContract($contractor, $rateRequest, $charge_rate);
-        // ============ END NEW ============
-
+ 
+        // ============ CHANGED: only send ONE contract email, and only once
+        // every state the contractor submitted has been reviewed ============
+        //
+        // Previously generateAndSendContract() fired on every single
+        // approval, so a contractor who applied for e.g. NSW + VIC + QLD
+        // at once got three separate contract emails as the admin worked
+        // through them one by one. Now: after approving this request,
+        // check whether any OTHER request from the same contractor is
+        // still sitting at 'pending'. If so, this is not the last one in
+        // the batch — skip sending, the next approval (or the one after
+        // that) will check again. Once none are left pending, build the
+        // contract from every approved rate card this contractor
+        // currently holds (not just the one just approved) so all states
+        // land on a single PDF/email.
+        $remainingPending = DB::table('charge_rate_requests')
+            ->where('user_id', $rateRequest->user_id)
+            ->where('status', 'pending')
+            ->exists();
+ 
+        if (!$remainingPending) {
+            $allApprovedRates = ContractorChargeRate::where('user_id', $rateRequest->user_id)->get();
+ 
+            if ($allApprovedRates->isNotEmpty()) {
+                $this->generateAndSendContract($contractor, $rateRequest, $allApprovedRates);
+            }
+        }
+        // ============ END CHANGED ============
+ 
         $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
         foreach ($admins as $a) {
             $notification_data = [
@@ -5937,7 +6084,7 @@ public function accept_charge_rate_request(Request $request, $id)
             ];
             send_push_notification($notification_data);
         }
-
+ 
         return response()->json([
             'success' => true,
             'message' => 'Charge rate request approved and applied.',
@@ -5946,7 +6093,7 @@ public function accept_charge_rate_request(Request $request, $id)
                 'contractor_charge_rate_id' => $charge_rate->id,
             ],
         ], 200);
-
+ 
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,

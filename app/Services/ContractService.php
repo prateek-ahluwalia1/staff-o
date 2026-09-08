@@ -140,20 +140,26 @@ class ContractService
             $rateSectionsHtml .= $this->renderRateCards($categories);
         }
 
-        // ── CSS — spacing kept generous throughout. Rate cards now sit in
-        // a single compact row per state (smaller padding/type so the full
+        // ── CSS — spacing kept generous throughout. Rate cards sit in a
+        // single compact row per state (smaller padding/type so the full
         // category set for one state fits on one line without wrapping).
         // .sign-box still has page-break-inside:avoid, so if it doesn't fit
         // under the rate cards it drops to the next page as a whole block.
         // Section blocks use page-break-inside:avoid so a heading is never
         // orphaned from its clauses across a page break.
+        //
+        // NOTE ON PAGE MARGINS: @page { margin } was not being honoured by
+        // this dompdf install (page 2+ rendered edge-to-edge regardless of
+        // the value). Rather than depend on it, margins are now built by
+        // hand: the whole body is one <table class="page-table"> whose
+        // <thead> dompdf reliably repeats at the top of every page (giving
+        // a real per-page top margin), and whose single <tbody> cell
+        // carries left/right padding (cell padding persists across a
+        // row's page-break, unlike a block element's padding). @page is
+        // zeroed out purely so dompdf's own default margin can't stack on
+        // top of this and throw the sizing off.
         $css = '
-        /* @page margin applies to EVERY page dompdf renders, not just the
-           first — this is what gives page 2+ the same top/side padding as
-           page 1 instead of content butting right up against the paper
-           edge after a page break. Bumped up from 26/32 so the page reads
-           with visible breathing room instead of edge-to-edge. */
-        @page { margin: 44px 46px; }
+        @page { margin: 0; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -162,10 +168,12 @@ class ContractService
             line-height: 1.38;
             background: #ffffff;
         }
-        /* Horizontal/vertical spacing comes from @page above, so the
-           wrapper itself carries no extra padding — otherwise page 1 would
-           get double padding (page margin + wrapper padding) while later
-           pages would only get the page margin. */
+        /* Manual page margin scaffold — see NOTE above. */
+        .page-table { width: 100%; border-collapse: collapse; }
+        .page-table thead td { height: 40px; line-height: 40px; font-size: 1px; }
+        .page-table tfoot td { height: 26px; line-height: 26px; font-size: 1px; }
+        .page-table > tbody > tr > td { padding: 0 46px; }
+
         .wrapper { padding: 0; max-width: 800px; margin: 0 auto; position: relative; }
 
         /* Header */
@@ -252,6 +260,13 @@ class ContractService
         ';
 
         $html  = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><style>{$css}</style></head><body>";
+        // Manual page-margin scaffold: thead repeats every page (top
+        // margin), tbody td padding gives left/right margin, tfoot gives a
+        // bottom buffer before the hard page break.
+        $html .= "<table class='page-table'>";
+        $html .= "<thead><tr><td>&nbsp;</td></tr></thead>";
+        $html .= "<tfoot><tr><td>&nbsp;</td></tr></tfoot>";
+        $html .= "<tbody><tr><td>";
         $html .= "<div class='wrapper'>";
 
         // Header
@@ -389,7 +404,9 @@ class ContractService
         $html .= "</div>";
 
         $html .= "<div class='footer'>Staffoo (Capital Services Pty Ltd) — ABN 48 613 317 838</div>";
-        $html .= "</div></body></html>";
+        $html .= "</div>"; // end .wrapper
+        $html .= "</td></tr></tbody></table>";
+        $html .= "</body></html>";
 
         return $html;
     }

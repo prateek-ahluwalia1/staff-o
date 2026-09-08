@@ -35,8 +35,7 @@
         <div class="badge">✓ Approved</div>
 
         <p>
-            Your charge rate request <strong>"{{ $title }}"</strong> for
-            <strong>{{ strtoupper($state) }}</strong> has been reviewed and approved.
+            Your charge rate request for <strong>{{ strtoupper($state) }}</strong> has been reviewed and approved.
             These rates are now active on your account.
         </p>
 

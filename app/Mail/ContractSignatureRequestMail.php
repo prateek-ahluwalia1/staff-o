@@ -25,7 +25,7 @@ class ContractSignatureRequestMail extends Mailable
 
     public function build()
     {
-        return $this->subject("Action Required: Sign Your Subcontractor Agreement ({$this->state})")
+        return $this->subject("Action Required: Sign Your Subcontractor Agreement ({$this->contractNumber})")
             ->view('emails.contract-signature-request')
             ->with([
                 'contractorName' => $this->contractorName,

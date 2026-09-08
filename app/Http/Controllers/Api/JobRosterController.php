@@ -6492,22 +6492,6 @@ private function canRemoveAcceptedBy($user, $job): bool
 }
 
  //new contract flow
-    /**
- * Add these methods to your controller. Add these use statements at the top:
- *
- *   use App\Services\ContractService;
- *   use App\Mail\ContractSignatureRequestMail;
- *   use App\Mail\ContractSignedMail;
- *   use Illuminate\Support\Facades\Mail;
- *   use Illuminate\Support\Facades\Log;
- *   use Illuminate\Support\Str;
- *
- * Routes:
- *   Route::post('contracts/{id}/upload', [YourController::class, 'uploadContract']);
- *   Route::get('contracts/sign/{token}', [YourController::class, 'getContractByToken']);
- *   Route::post('contracts/sign/{token}', [YourController::class, 'signContract']);
- *   Route::get('contracts', [YourController::class, 'listContracts']); // admin view
- */
  
 /**
  * STEP 1 — call this from accept_charge_rate_request(), right after the
@@ -6544,7 +6528,7 @@ private function generateAndSendContract($contractor, $rateRequest, $charge_rate
         $existingContract = DB::table('contracts')->where('contractor_id', $contractor->id)->first();
  
         $contractNumber = $existingContract->contract_number
-            ?? ('CTR-' . strtoupper($rateRequest->state) . '-' . Str::random(6));
+            ?? ('CTR-' . strtoupper($rateRequest->id) . '-' . Str::random(6));
         $signingToken = Str::random(48);
  
         $pdfData = [

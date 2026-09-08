@@ -8,71 +8,62 @@ class ContractService
 {
     /**
      * Generate the contract PDF and return raw bytes.
+     *
+     * Expected $data keys:
+     *  contract_number, date,
+     *  contractor_name, contractor_abn,
+     *  title, effective_from,
+     *
+     *  states => [
+     *      ['state' => 'NSW', 'rates' => [ ['label' => 'Default Metro Mon–Fri Day', 'value' => 25.00], ... ]],
+     *      ['state' => 'VIC', 'rates' => [ ... ]],
+     *      ...
+     *  ]
+     *  One "STATE — Charge Rates" section is rendered per entry — this is how
+     *  every state the contractor has an approved rate card for shows up on
+     *  the single contract, instead of only the state just approved.
+     *
+     *  Back-compat: a caller can still pass the old single-state shape
+     *  (`state` + `rates` at the top level) and it will be treated as a
+     *  one-entry `states` list.
+     *
+     *  Optional (only present once signed):
+     *  signature_name, signature_image_base64, signed_at, signed_ip
      */
     public function generatePdf(array $data): string
     {
-        $html = $this->buildHtml($data);
-
-        $pdf = Pdf::loadHTML($html)
-            ->setPaper('a4', 'portrait');
-
+        $pdf = Pdf::loadHTML($this->buildHtml($data))->setPaper('a4', 'portrait');
         return $pdf->output();
     }
 
     /**
-     * Group rates into categories and Metro/Regional values.
+     * Group a flat list of rate rows into Metro/Regional pairs keyed by
+     * category (e.g. "Mon–Fri Day" => ['Metro' => 25.00, 'Regional' => 30.00]).
      */
     private function groupRatesByCategory(array $rates): array
     {
         $categories = [];
-
         foreach ($rates as $rate) {
-            $label = trim($rate['label'] ?? '');
-            $value = (float) ($rate['value'] ?? 0);
-
-            if ($label === '') {
-                continue;
-            }
+            $label = trim($rate['label']);
+            $value = (float) $rate['value'];
 
             $isMetro = stripos($label, 'metro') !== false;
             $area = $isMetro ? 'Metro' : 'Regional';
 
-            $category = trim(
-                str_ireplace(
-                    ['Default', 'EBA', 'Metro', 'Regional'],
-                    '',
-                    $label
-                )
-            );
+            $category = trim(str_ireplace(['Default', 'EBA', 'Metro', 'Regional'], '', $label));
+            $category = trim(preg_replace('/\s+/', ' ', $category));
 
-            $category = trim(
-                preg_replace('/\s+/', ' ', $category)
-            );
-
-            /*
-             * Ignore Saturday/Sunday/Public Holiday night
-             * rows because the rate table uses one row per category.
-             */
             $collapsed = false;
-
-            foreach ([
-                'Saturday',
-                'Sunday',
-                'Public Holiday'
-            ] as $collapsedBase) {
-
+            foreach (['Saturday', 'Sunday', 'Public Holiday'] as $collapsedBase) {
                 if (stripos($category, $collapsedBase) === 0) {
-
                     if (stripos($category, 'Night') !== false) {
                         $collapsed = true;
                         break;
                     }
-
                     $category = $collapsedBase;
                     break;
                 }
             }
-
             if ($collapsed) {
                 continue;
             }
@@ -84,1108 +75,317 @@ class ContractService
     }
 
     /**
-     * Render a single rate table for all approved states.
+     * Render grouped categories as compact rate cards, 4 per row.
      */
-    private function renderRateTable(array $stateBlocks): string
+    private function renderRateCards(array $categories): string
     {
-        $categoryOrder = [
-            'Mon–Fri Day',
-            'Mon–Fri Night',
-            'Saturday',
-            'Sunday',
-            'Public Holiday',
-        ];
+        $categoryChunks = array_chunk($categories, 4, true);
+        $rateHtml = '';
+        foreach ($categoryChunks as $chunk) {
+            $rateHtml .= "<table class='card-row'><tr>";
+            foreach ($chunk as $categoryName => $areas) {
+                $metroValue    = '$' . number_format($areas['Metro'] ?? 0, 2);
+                $regionalValue = '$' . number_format($areas['Regional'] ?? 0, 2);
 
-        $headerCells = '';
-
-        foreach ($categoryOrder as $category) {
-            $headerCells .= '
-                <th class="rate-header">
-                    ' . htmlspecialchars($category) . '
-                </th>
-            ';
-        }
-
-        $rows = '';
-
-        foreach ($stateBlocks as $index => $block) {
-
-            $stateName = htmlspecialchars(
-                strtoupper($block['state'] ?? '')
-            );
-
-            $categories = $this->groupRatesByCategory(
-                $block['rates'] ?? []
-            );
-
-            $rowClass = ($index % 2 === 0)
-                ? 'rate-row'
-                : 'rate-row rate-row-alt';
-
-            $rows .= '
-                <tr class="' . $rowClass . '">
-                    <td class="state-cell">
-                        ' . $stateName . '
-                    </td>
-            ';
-
-            foreach ($categoryOrder as $category) {
-
-                $metro = $categories[$category]['Metro'] ?? 0;
-                $regional = $categories[$category]['Regional'] ?? 0;
-
-                $rows .= '
-                    <td class="rate-cell">
-
-                        <div class="rate-line">
-                            <span class="rate-label">M</span>
-                            <span class="rate-value">
-                                $' . number_format($metro, 2) . '
-                            </span>
-                        </div>
-
-                        <div class="rate-line">
-                            <span class="rate-label">R</span>
-                            <span class="rate-value">
-                                $' . number_format($regional, 2) . '
-                            </span>
-                        </div>
-
-                    </td>
-                ';
+                $rateHtml .= "
+                <td class='rate-card' width='" . (int)(100 / count($chunk)) . "%'>
+                    <div class='rate-title'>" . htmlspecialchars($categoryName) . "</div>
+                    <div class='rate-label'><span class='icon-dot'></span>METRO</div>
+                    <div class='rate-value'>{$metroValue}</div>
+                    <div style='height:2px;'></div>
+                    <div class='rate-label'><span class='icon-tri'></span>REGIONAL</div>
+                    <div class='rate-value'>{$regionalValue}</div>
+                </td>";
             }
-
-            $rows .= '</tr>';
+            for ($i = count($chunk); $i < 4; $i++) {
+                $rateHtml .= "<td width='" . (int)(100/4) . "%'></td>";
+            }
+            $rateHtml .= "</tr></table>";
         }
 
-        return '
-            <table class="rate-table">
-                <thead>
-                    <tr>
-                        <th class="state-header">State</th>
-                        ' . $headerCells . '
-                    </tr>
-                </thead>
-
-                <tbody>
-                    ' . $rows . '
-                </tbody>
-            </table>
-
-            <div class="rate-note">
-                <strong>M</strong> = Metro &nbsp;&nbsp;&nbsp;
-                <strong>R</strong> = Regional
-            </div>
-        ';
+        return $rateHtml;
     }
 
-    /**
-     * Build complete contract HTML.
-     */
     private function buildHtml(array $d): string
     {
-        $contractNumber = htmlspecialchars(
-            $d['contract_number'] ?? ''
-        );
+        $contractNumber = htmlspecialchars($d['contract_number']);
+        $date           = htmlspecialchars($d['date']);
+        $contractorName = htmlspecialchars($d['contractor_name']);
+        $contractorAbn  = htmlspecialchars($d['contractor_abn'] ?? 'N/A');
+        $effectiveFrom  = htmlspecialchars($d['effective_from'] ?? 'the date of signing');
 
-        $date = htmlspecialchars(
-            $d['date'] ?? ''
-        );
-
-        $contractorName = htmlspecialchars(
-            $d['contractor_name'] ?? ''
-        );
-
-        $contractorAbn = htmlspecialchars(
-            $d['contractor_abn'] ?? 'N/A'
-        );
-
-        $effectiveFrom = htmlspecialchars(
-            $d['effective_from'] ?? 'the date of signing'
-        );
-
-        $isSigned =
-            !empty($d['signature_name']) ||
-            !empty($d['signature_image_base64']);
-
-        $signatureName = htmlspecialchars(
-            $d['signature_name'] ?? ''
-        );
-
-        $signedAt = htmlspecialchars(
-            $d['signed_at'] ?? ''
-        );
-
-        $signedIp = htmlspecialchars(
-            $d['signed_ip'] ?? ''
-        );
-
-        $signatureImageBase64 =
-            $d['signature_image_base64'] ?? null;
-
-        if (
-            $signatureImageBase64 &&
-            !str_starts_with(
-                $signatureImageBase64,
-                'data:image'
-            )
-        ) {
-            $signatureImageBase64 =
-                'data:image/png;base64,' .
-                $signatureImageBase64;
+        $isSigned      = !empty($d['signature_name']) || !empty($d['signature_image_base64']);
+        $signatureName = htmlspecialchars($d['signature_name'] ?? '');
+        $signedAt      = htmlspecialchars($d['signed_at'] ?? '');
+        $signedIp      = htmlspecialchars($d['signed_ip'] ?? '');
+        $signatureImageBase64 = $d['signature_image_base64'] ?? null;
+        if ($signatureImageBase64 && !str_starts_with($signatureImageBase64, 'data:image')) {
+            $signatureImageBase64 = 'data:image/png;base64,' . $signatureImageBase64;
         }
 
-        /*
-         * Support both:
-         *
-         * states => [...]
-         *
-         * and old:
-         *
-         * state + rates
-         */
+        // ── One contract, every approved state on it. Accepts the new
+        // multi-state 'states' shape, or falls back to the old single
+        // 'state' + 'rates' shape wrapped into a one-entry list. ──────────
         $stateBlocks = $d['states'] ?? [
-            [
-                'state' => $d['state'] ?? '',
-                'rates' => $d['rates'] ?? [],
-            ],
+            ['state' => $d['state'] ?? '', 'rates' => $d['rates'] ?? []],
         ];
 
-        $rateTableHtml =
-            $this->renderRateTable($stateBlocks);
-
-        /*
-         * IMPORTANT:
-         *
-         * Use millimetres for @page instead of px.
-         * This gives DomPDF much more predictable A4 margins.
-         */
-        $css = <<<'CSS'
-
-        @page {
-            size: A4 portrait;
-
-            /*
-             * Top    : 16mm
-             * Right  : 15mm
-             * Bottom : 17mm
-             * Left   : 15mm
-             */
-            margin: 16mm 15mm 17mm 15mm;
+        $rateSectionsHtml = '';
+        foreach ($stateBlocks as $block) {
+            $blockState = htmlspecialchars(strtoupper($block['state'] ?? ''));
+            $categories = $this->groupRatesByCategory($block['rates'] ?? []);
+            $rateSectionsHtml .= "<div class='section-title'>{$blockState} — Charge Rates</div>";
+            $rateSectionsHtml .= $this->renderRateCards($categories);
         }
 
-        * {
-            box-sizing: border-box;
-        }
-
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-        }
-
+        // ── CSS — spacing kept tight throughout. Rate cards are now
+        // deliberately compact (4 per row, smaller type/padding) since a
+        // contract can carry a rate section per approved state and needs to
+        // stay legible without ballooning to many pages. .sign-box still
+        // has page-break-inside:avoid, so if it doesn't fit under the rate
+        // cards it drops to the next page as a whole block. Section blocks
+        // use page-break-inside:avoid so a heading is never orphaned from
+        // its clauses across a page break.
+        $css = '
+        /* @page margin applies to EVERY page dompdf renders, not just the
+           first — this is what gives page 2+ the same top/side padding as
+           page 1 instead of content butting right up against the paper
+           edge after a page break. */
+        @page { margin: 26px 32px; }
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 9.2px;
-            color: #1f2937;
-            line-height: 1.55;
+            font-size: 10px;
+            color: #1a1a2e;
+            line-height: 1.38;
             background: #ffffff;
         }
+        /* Horizontal/vertical spacing comes from @page above, so the
+           wrapper itself carries no extra padding — otherwise page 1 would
+           get double padding (page margin + wrapper padding) while later
+           pages would only get the page margin. */
+        .wrapper { padding: 0; max-width: 800px; margin: 0 auto; position: relative; }
 
-        .wrapper {
-            width: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
-        /* =========================================================
-           HEADER
-        ========================================================= */
-
+        /* Header */
         .header {
-            width: 100%;
-            padding: 0 0 12px 0;
-            margin: 0 0 18px 0;
-            border-bottom: 2px solid #087f70;
+            border-bottom: 3px solid #0A7C6E;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
         }
+        .header-title { font-size: 17px; font-weight: bold; color: #1a1a2e; }
+        .header-subtitle { font-size: 9.5px; color: #6B7280; margin-top: 2px; }
+        .header-meta { font-size: 9px; color: #6B7280; text-align: right; }
 
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+        /* Content */
+        .section-title { font-size: 12.5px; font-weight: bold; color: #0A7C6E; margin: 11px 0 5px; }
+        .clause-block { margin-bottom: 8px; page-break-inside: avoid; }
+        .clause-heading { font-size: 10.2px; font-weight: bold; color: #1a1a2e; margin-bottom: 2px; }
+        p { margin-bottom: 7px; text-align: justify; }
+        .clause-list { margin: 4px 0 10px 18px; }
+        .clause-list li { margin-bottom: 4px; }
 
-        .header-left {
-            width: 68%;
+        /* Rate cards — table-based (dompdf does not reliably support
+           flexbox). Sized small/compact: 4 per row, tight padding. */
+        .card-row { width: 100%; border-collapse: separate; border-spacing: 4px; margin-bottom: 2px; page-break-inside: avoid; }
+        .rate-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            padding: 6px 8px;
             vertical-align: top;
-            padding: 0;
-        }
-
-        .header-right {
-            width: 32%;
-            vertical-align: top;
-            text-align: right;
-            padding: 2px 0 0 10px;
-        }
-
-        .header-title {
-            font-size: 17px;
-            line-height: 1.25;
-            font-weight: bold;
-            color: #172033;
-            margin: 0 0 5px 0;
-        }
-
-        .header-subtitle {
-            font-size: 8.5px;
-            line-height: 1.4;
-            color: #6b7280;
-            margin: 0;
-        }
-
-        .contract-meta {
-            font-size: 8.5px;
-            line-height: 1.65;
-            color: #4b5563;
-        }
-
-        .contract-meta strong {
-            color: #172033;
-        }
-
-        /* =========================================================
-           INTRO / GENERAL TEXT
-        ========================================================= */
-
-        .intro {
-            margin: 0 0 16px 0;
-            padding: 0;
-        }
-
-        p {
-            margin: 0 0 8px 0;
-            padding: 0;
-            line-height: 1.55;
-            text-align: justify;
-        }
-
-        strong {
-            color: #172033;
-        }
-
-        /* =========================================================
-           SECTIONS
-        ========================================================= */
-
-        .section {
-            margin: 0 0 13px 0;
-            padding: 0;
             page-break-inside: avoid;
         }
-
-        .section-title {
-            font-size: 11.5px;
-            line-height: 1.35;
-            font-weight: bold;
-            color: #087f70;
-            margin: 15px 0 8px 0;
-            padding: 0 0 5px 0;
-            border-bottom: 0.6px solid #d9e5e2;
-        }
-
-        .section-title.first {
-            margin-top: 0;
-        }
-
-        .clause-block {
-            margin: 0;
-            padding: 0;
-        }
-
-        .clause-heading {
+        .rate-title {
             font-size: 9.5px;
-            line-height: 1.4;
-            font-weight: bold;
-            color: #172033;
-            margin: 8px 0 3px 0;
-            padding: 0;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 3px;
         }
-
-        .clause-heading:first-child {
-            margin-top: 0;
-        }
-
-        .clause-list {
-            margin: 4px 0 10px 18px;
-            padding: 0;
-        }
-
-        .clause-list li {
-            margin: 0 0 5px 0;
-            padding: 0 0 0 3px;
-            line-height: 1.5;
-        }
-
-        /* =========================================================
-           RATE SECTION
-        ========================================================= */
-
-        .rate-section {
-            margin-top: 16px;
-            page-break-inside: avoid;
-        }
-
-        .rate-table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-            margin: 7px 0 4px 0;
-            font-size: 7.7px;
-        }
-
-        .rate-table thead {
-            display: table-header-group;
-        }
-
-        .rate-header,
-        .state-header {
-            background: #087f70;
-            color: #ffffff;
-            font-size: 7.5px;
-            font-weight: bold;
-            line-height: 1.25;
-            padding: 8px 4px;
-            text-align: center;
-            border-right: 0.5px solid #48a89d;
-            vertical-align: middle;
-        }
-
-        .state-header {
-            width: 12%;
-            text-align: left;
-            padding-left: 8px;
-        }
-
-        .rate-header {
-            width: 17.6%;
-        }
-
-        .rate-row {
-            background: #ffffff;
-        }
-
-        .rate-row-alt {
-            background: #f5f8f8;
-        }
-
-        .rate-table tbody tr {
-            page-break-inside: avoid;
-        }
-
-        .rate-table tbody td {
-            border-bottom: 0.5px solid #dfe6e8;
-            vertical-align: middle;
-            height: 42px;
-            padding: 7px 4px;
-        }
-
-        .state-cell {
-            text-align: left;
-            padding-left: 8px !important;
-            font-size: 9px;
-            font-weight: bold;
-            color: #172033;
-        }
-
-        .rate-cell {
-            text-align: center;
-        }
-
-        .rate-line {
-            width: 100%;
-            white-space: nowrap;
-            line-height: 1.7;
-        }
-
         .rate-label {
-            display: inline-block;
-            width: 12px;
+            font-size: 6.5px;
+            font-weight: 600;
             color: #64748b;
-            font-size: 7px;
-            font-weight: bold;
+            letter-spacing: 0.4px;
+            margin-bottom: 1px;
         }
-
-        .rate-value {
-            color: #087f70;
-            font-size: 7.5px;
-            font-weight: bold;
+        .icon-dot {
+            display: inline-block; width: 4px; height: 4px; border-radius: 50%;
+            background: #0A7C6E; margin-right: 3px;
         }
-
-        .rate-note {
-            font-size: 7px;
-            color: #7b8794;
-            text-align: right;
-            margin: 3px 0 0 0;
+        .icon-tri {
+            display: inline-block; width: 0; height: 0;
+            border-left: 3px solid transparent; border-right: 3px solid transparent;
+            border-bottom: 4px solid #14243D; margin-right: 3px;
         }
+        .rate-value { font-size: 11px; font-weight: bold; color: #0A7C6E; }
 
-        /* =========================================================
-           SIGNATURE
-        ========================================================= */
-
-        .signature-section {
-            margin-top: 18px;
-            page-break-inside: avoid;
+        /* Signature */
+        .sign-box { margin-top: 16px; border: 1px solid #d1d5db; border-radius: 6px; padding: 14px 16px; page-break-inside: avoid; }
+        .sign-title { font-size: 11.5px; font-weight: bold; color: #1a1a2e; margin-bottom: 7px; }
+        .sign-row { font-size: 9.5px; margin-bottom: 6px; }
+        .sign-label { color: #6B7280; display: inline-block; width: 105px; }
+        .signed-badge {
+            display: inline-block; background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7;
+            border-radius: 14px; padding: 3px 12px; font-size: 9px; font-weight: bold; margin-bottom: 9px;
         }
-
-        .sign-box {
-            width: 100%;
-            border: 0.8px solid #cbd5dc;
-            background: #f8fafb;
-            padding: 15px 17px 13px 17px;
-            margin: 0;
-        }
-
-        .sign-title {
-            font-size: 11px;
-            line-height: 1.3;
-            font-weight: bold;
-            color: #172033;
-            margin: 0 0 7px 0;
-        }
-
-        .sign-description {
-            font-size: 8.5px;
-            line-height: 1.5;
-            color: #374151;
-            margin: 0 0 12px 0;
-        }
-
-        .sign-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .sign-table td {
-            vertical-align: middle;
-            padding: 5px 0;
-        }
-
-        .sign-label-cell {
-            width: 24%;
-            font-size: 8px;
-            font-weight: bold;
-            color: #6b7280;
-        }
-
-        .sign-value-cell {
-            width: 76%;
-            font-size: 8.5px;
-            color: #172033;
-        }
-
-        .unsigned-line {
-            display: inline-block;
-            width: 225px;
-            height: 17px;
-            border-bottom: 0.8px solid #9ca3af;
-        }
-
-        .signature-image {
-            display: block;
-            width: auto;
-            height: 45px;
-            max-width: 240px;
-            margin: 0 0 3px 0;
-        }
-
-        .signature-line {
-            width: 240px;
-            border-bottom: 0.8px solid #9ca3af;
-        }
-
-        /* =========================================================
-           FOOTER
-        ========================================================= */
-
+        .unsigned-line { border-bottom: 1px solid #9ca3af; width: 200px; display: inline-block; height: 16px; }
+        .signature-image { height: 50px; max-width: 240px; border-bottom: 1px solid #9ca3af; padding-bottom: 3px; margin-bottom: 5px; }
         .footer {
-            width: 100%;
-            margin: 18px 0 0 0;
-            padding: 8px 0 0 0;
-            border-top: 0.5px solid #dce3e7;
-            text-align: center;
-            font-size: 7.5px;
-            line-height: 1.4;
-            color: #9aa5b1;
+            margin-top: 14px; font-size: 8.5px; color: #9ca3af; text-align: center;
+            border-top: 1px solid #e5e7eb; padding-top: 10px;
         }
 
-        /* =========================================================
-           DOMPDF PAGE BREAK HELPERS
-        ========================================================= */
-
-        .keep-together {
-            page-break-inside: avoid;
+        /* Certificate seal — absolutely positioned stamp, top-right corner */
+        .seal-wrap {
+            position: absolute;
+            top: 14px;
+            right: 28px;
+            width: 90px;
+            height: 90px;
         }
-
-        .page-break-before {
-            page-break-before: always;
-        }
-
-        CSS;
-
-        $html = '
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <title>Resource Partner Agreement</title>
-
-            <style>
-                ' . $css . '
-            </style>
-        </head>
-
-        <body>
-
-            <div class="wrapper">
-
-                <!-- ================= HEADER ================= -->
-
-                <div class="header">
-
-                    <table class="header-table">
-
-                        <tr>
-
-                            <td class="header-left">
-
-                                <div class="header-title">
-                                    Resource Partner &amp; Subcontractor Agreement
-                                </div>
-
-                                <div class="header-subtitle">
-                                    Operated by Capital Services Pty Ltd
-                                    &middot;
-                                    Issued via Staffoo Platform
-                                </div>
-
-                            </td>
-
-                            <td class="header-right">
-
-                                <div class="contract-meta">
-                                    <strong>Contract #:</strong>
-                                    ' . $contractNumber . '
-                                    <br>
-
-                                    <strong>Date:</strong>
-                                    ' . $date . '
-                                </div>
-
-                            </td>
-
-                        </tr>
-
-                    </table>
-
-                </div>
-
-
-                <!-- ================= INTRO ================= -->
-
-                <div class="intro">
-
-                    <p>
-                        This Resource Partner &amp; Subcontractor Agreement
-                        ("Agreement") governs the commercial and operational
-                        relationship between
-                        <strong>Capital Services Pty Ltd</strong>
-                        (ABN 48 613 317 838, trading as "Staffoo")
-                        and independent licensed security providers,
-                        vendors, and staffing agencies
-                        ("Resource Partner") accepting shift allocations
-                        and providing security personnel through the Staffoo
-                        platform.
-                    </p>
-
-                </div>
-
-
-                <!-- ================= SECTION 1 ================= -->
-
-                <div class="section">
-
-                    <div class="section-title first">
-                        1. Licensing, Statutory Warranties &amp; Compliance
-                    </div>
-
-                    <div class="clause-block">
-
-                        <div class="clause-heading">
-                            1.1 Corporate Licensing &amp; Registration
-                        </div>
-
-                        <p>
-                            The Resource Partner warrants that it holds and
-                            maintains at all times all necessary Master
-                            Security Licences, Labour Hire Licences
-                            (where mandated by state legislation, including
-                            Victoria, Queensland, and South Australia),
-                            and corporate registrations required to legally
-                            supply security personnel in all operating
-                            jurisdictions.
-                        </p>
-
-                        <div class="clause-heading">
-                            1.2 Personnel Qualifications &amp; VEVO Verification
-                        </div>
-
-                        <p>
-                            The Resource Partner warrants that all guards
-                            assigned to Staffoo shifts possess valid, current
-                            individual security licences, valid First Aid/CPR
-                            certifications, Responsible Service of Alcohol
-                            (RSA, where applicable), and legal Australian
-                            working rights verified via VEVO.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <!-- ================= SECTION 2 ================= -->
-
-                <div class="section">
-
-                    <div class="section-title">
-                        2. Operational Standards, Uniforms &amp; Shift Punctuality
-                    </div>
-
-                    <div class="clause-block">
-
-                        <div class="clause-heading">
-                            2.1 Standard Uniform &amp; Presentation Requirements
-                        </div>
-
-                        <p>
-                            The Resource Partner must ensure that all deployed
-                            personnel arrive on site wearing a neat,
-                            professional standard black security uniform
-                            (black trousers, black collared security shirt
-                            or blazer, and clean black safety footwear).
-                            Personnel must wear a high-visibility (hi-vis)
-                            safety vest where required by site safety
-                            protocols, client briefs, or WHS laws.
-                        </p>
-
-                        <div class="clause-heading">
-                            2.2 Mandatory 15-Minute Early Arrival
-                        </div>
-
-                        <p>
-                            To ensure proper site handover, safety briefings,
-                            and timely clock-in, the Resource Partner must
-                            ensure that all personnel arrive on site at least
-                            fifteen (15) minutes prior to the scheduled shift
-                            start time.
-                        </p>
-
-                        <div class="clause-heading">
-                            2.3 App Usage &amp; Attendance Logging
-                        </div>
-
-                        <p>
-                            All time, attendance, site check-ins, break logging,
-                            and duress checks must be completed exclusively
-                            through the Staffoo mobile application.
-                            Unauthorized sub-subcontracting or secondary
-                            outsourcing of assigned shifts is strictly
-                            prohibited.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <!-- ================= SECTION 3 ================= -->
-
-                <div class="section">
-
-                    <div class="section-title">
-                        3. Employment Obligations, Fair Work &amp; WHS Compliance
-                    </div>
-
-                    <div class="clause-block">
-
-                        <div class="clause-heading">
-                            3.1 Direct Employment Relationship
-                        </div>
-
-                        <p>
-                            The Resource Partner acknowledges that it is the
-                            sole employer or principal contractor of all
-                            personnel deployed. No employment, agency, or
-                            joint-venture relationship exists between Staffoo
-                            and the Resource Partner\'s personnel.
-                        </p>
-
-                        <div class="clause-heading">
-                            3.2 Modern Award &amp; Fatigue Management
-                        </div>
-
-                        <p>
-                            The Resource Partner warrants strict compliance
-                            with the Security Services Industry Award 2020
-                            [MA000016], the Fair Work Act 2009 (Cth),
-                            Superannuation Guarantee laws, and state Workers\'
-                            Compensation laws. This includes paying mandatory
-                            minimum hourly rates, penalty rates, and enforcing
-                            fatigue limits (including mandatory minimum
-                            8-to-10 hour breaks between shifts).
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <!-- ================= SECTION 4 ================= -->
-
-                <div class="section">
-
-                    <div class="section-title">
-                        4. Client Deductions, Negligence Liability &amp;
-                        Financial Set-Off
-                    </div>
-
-                    <div class="clause-block">
-
-                        <div class="clause-heading">
-                            4.1 Liability for Negligence &amp; Client Deductions
-                        </div>
-
-                        <p>
-                            If a Client reduces, deducts, or refuses payment
-                            for shift hours due to late arrival, abandonment,
-                            uniform non-compliance, misconduct, breach of site
-                            instructions, or negligence by the Resource Partner
-                            or its personnel, the Resource Partner shall be
-                            held fully responsible for all resulting financial
-                            losses, damages, and administrative costs suffered
-                            by Staffoo.
-                        </p>
-
-                        <div class="clause-heading">
-                            4.2 Right of Recovery &amp; Set-Off
-                        </div>
-
-                        <p>
-                            The Resource Partner expressly authorizes Staffoo
-                            to deduct, withhold, or set off the amount of any
-                            client payment deductions or loss claims directly
-                            from current or future funds held in the Resource
-                            Partner\'s Stripe account or pending payout ledger.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <!-- ================= SECTION 5 ================= -->
-
-                <div class="section">
-
-                    <div class="section-title">
-                        5. Platform Fees &amp; Automated Deductions
-                    </div>
-
-                    <div class="clause-block">
-
-                        <div class="clause-heading">
-                            5.1 Platform Service Fee
-                        </div>
-
-                        <p>
-                            In consideration for access to the Staffoo
-                            marketplace, WFM tools, and automated billing
-                            engine, the Resource Partner agrees to pay Staffoo
-                            the agreed Platform Service Fee per shift.
-                        </p>
-
-                        <div class="clause-heading">
-                            5.2 Automated Stripe Payout Deductions
-                        </div>
-
-                        <p>
-                            The Resource Partner authorizes Staffoo and its
-                            payment gateway provider (Stripe) to automatically
-                            deduct the Platform Service Fee from captured
-                            client funds upon job completion before remitting
-                            the net balance to the Resource Partner\'s bank
-                            account.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <!-- ================= SECTION 6 ================= -->
-
-                <div class="section">
-
-                    <div class="section-title">
-                        6. Mandatory Insurance Requirements
-                    </div>
-
-                    <div class="clause-block">
-
-                        <p>
-                            The Resource Partner must maintain at all times:
-                        </p>
-
-                        <ul class="clause-list">
-
-                            <li>
-                                <strong>
-                                    Public &amp; Products Liability Insurance:
-                                </strong>
-                                Minimum coverage of $10,000,000 per claim
-                                (or $20,000,000 where specified by site brief).
-                            </li>
-
-                            <li>
-                                <strong>
-                                    Workers\' Compensation Insurance:
-                                </strong>
-                                Statutory coverage for all employees in
-                                accordance with relevant state laws.
-                            </li>
-
-                        </ul>
-
-                    </div>
-
-                </div>
-
-
-                <!-- ================= SECTION 7 ================= -->
-
-                <div class="section">
-
-                    <div class="section-title">
-                        7. Governing Law
-                    </div>
-
-                    <div class="clause-block">
-
-                        <p>
-                            This Agreement is governed by the laws of the
-                            State of Victoria, Australia. Both parties submit
-                            to the exclusive jurisdiction of the courts
-                            operating in Victoria.
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <!-- ================= RATE SCHEDULE ================= -->
-
-                <div class="rate-section keep-together">
-
-                    <div class="section-title">
-                        Charge Rates — All Approved States
-                    </div>
-
-                    ' . $rateTableHtml . '
-
-                </div>
-
-
-                <!-- ================= SIGNATURE ================= -->
-
-                <div class="signature-section keep-together">
-
-                    <div class="sign-box">
-
-                        <div class="sign-title">
-                            Acknowledgement &amp; Signature
-                        </div>
-
-                        <p class="sign-description">
-                            By signing below, the Resource Partner confirms
-                            they have read, understood, and agree to be bound
-                            by the terms of this Agreement, including the rate
-                            schedule above.
-                        </p>
-
-                        <table class="sign-table">
-
         ';
 
+        $html  = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><style>{$css}</style></head><body>";
+        $html .= "<div class='wrapper'>";
+
+        // Header
+        $html .= "<div class='header'><table style='width:100%;'><tr>";
+        $html .= "<td><div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div><div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot;</div></td>";
+        $html .= "<td class='header-meta'>Contract #: {$contractNumber}<br>Date: {$date}</td>";
+        $html .= "</tr></table></div>";
+
+        // Parties
+        $html .= "<p>This Resource Partner &amp; Subcontractor Agreement (\"Agreement\") governs the commercial and "
+               . "operational relationship between <strong>Capital Services Pty Ltd</strong> (ABN 48 613 317 838, "
+               . "trading as \"Staffoo\") and independent licensed security providers, vendors, and staffing "
+               . "agencies (\"Resource Partner\") accepting shift allocations and providing security personnel "
+               . "through the Staffoo platform.</p>";
+
+        // 1. Licensing, Statutory Warranties & Compliance
+        $html .= "<div class='section-title'>1. Licensing, Statutory Warranties &amp; Compliance</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<div class='clause-heading'>1.1 Corporate Licensing &amp; Registration</div>";
+        $html .= "<p>The Resource Partner warrants that it holds and maintains at all times all necessary Master "
+               . "Security Licences, Labour Hire Licences (where mandated by state legislation, including Victoria, "
+               . "Queensland, and South Australia), and corporate registrations required to legally supply security "
+               . "personnel in all operating jurisdictions.</p>";
+        $html .= "<div class='clause-heading'>1.2 Personnel Qualifications &amp; VEVO Verification</div>";
+        $html .= "<p>The Resource Partner warrants that all guards assigned to Staffoo shifts possess valid, current "
+               . "individual security licences, valid First Aid/CPR certifications, Responsible Service of Alcohol "
+               . "(RSA, where applicable), and legal Australian working rights verified via VEVO.</p>";
+        $html .= "</div>";
+
+        // 2. Operational Standards, Uniforms & Shift Punctuality
+        $html .= "<div class='section-title'>2. Operational Standards, Uniforms &amp; Shift Punctuality</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<div class='clause-heading'>2.1 Standard Uniform &amp; Presentation Requirements</div>";
+        $html .= "<p>The Resource Partner must ensure that all deployed personnel arrive on site wearing a neat, "
+               . "professional standard black security uniform (black trousers, black collared security shirt or "
+               . "blazer, and clean black safety footwear). Personnel must wear a high-visibility (hi-vis) safety "
+               . "vest where required by site safety protocols, client briefs, or WHS laws.</p>";
+        $html .= "<div class='clause-heading'>2.2 Mandatory 15-Minute Early Arrival</div>";
+        $html .= "<p>To ensure proper site handover, safety briefings, and timely clock-in, the Resource Partner "
+               . "must ensure that all personnel arrive on site at least fifteen (15) minutes prior to the "
+               . "scheduled shift start time.</p>";
+        $html .= "<div class='clause-heading'>2.3 App Usage &amp; Attendance Logging</div>";
+        $html .= "<p>All time, attendance, site check-ins, break logging, and duress checks must be completed "
+               . "exclusively through the Staffoo mobile application. Unauthorized sub-subcontracting or secondary "
+               . "outsourcing of assigned shifts is strictly prohibited.</p>";
+        $html .= "</div>";
+
+        // 3. Employment Obligations, Fair Work & WHS Compliance
+        $html .= "<div class='section-title'>3. Employment Obligations, Fair Work &amp; WHS Compliance</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<div class='clause-heading'>3.1 Direct Employment Relationship</div>";
+        $html .= "<p>The Resource Partner acknowledges that it is the sole employer or principal contractor of all "
+               . "personnel deployed. No employment, agency, or joint-venture relationship exists between Staffoo "
+               . "and the Resource Partner's personnel.</p>";
+        $html .= "<div class='clause-heading'>3.2 Modern Award &amp; Fatigue Management</div>";
+        $html .= "<p>The Resource Partner warrants strict compliance with the Security Services Industry Award 2020 "
+               . "[MA000016], the Fair Work Act 2009 (Cth), Superannuation Guarantee laws, and state Workers' "
+               . "Compensation laws. This includes paying mandatory minimum hourly rates, penalty rates, and "
+               . "enforcing fatigue limits (including mandatory minimum 8-to-10 hour breaks between shifts).</p>";
+        $html .= "</div>";
+
+        // 4. Client Deductions, Negligence Liability & Financial Set-Off
+        $html .= "<div class='section-title'>4. Client Deductions, Negligence Liability &amp; Financial Set-Off</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<div class='clause-heading'>4.1 Liability for Negligence &amp; Client Deductions</div>";
+        $html .= "<p>If a Client reduces, deducts, or refuses payment for shift hours due to late arrival, "
+               . "abandonment, uniform non-compliance, misconduct, breach of site instructions, or negligence by "
+               . "the Resource Partner or its personnel, the Resource Partner shall be held fully responsible for "
+               . "all resulting financial losses, damages, and administrative costs suffered by Staffoo.</p>";
+        $html .= "<div class='clause-heading'>4.2 Right of Recovery &amp; Set-Off</div>";
+        $html .= "<p>The Resource Partner expressly authorizes Staffoo to deduct, withhold, or set off the amount "
+               . "of any client payment deductions or loss claims directly from current or future funds held in "
+               . "the Resource Partner's Stripe account or pending payout ledger.</p>";
+        $html .= "</div>";
+
+        // 5. Platform Fees, Automated Deductions & Insurance
+        $html .= "<div class='section-title'>5. Platform Fees &amp; Automated Deductions</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<div class='clause-heading'>5.1 Platform Service Fee</div>";
+        $html .= "<p>In consideration for access to the Staffoo marketplace, WFM tools, and automated billing "
+               . "engine, the Resource Partner agrees to pay Staffoo the agreed Platform Service Fee per shift.</p>";
+        $html .= "<div class='clause-heading'>5.2 Automated Stripe Payout Deductions</div>";
+        $html .= "<p>The Resource Partner authorizes Staffoo and its payment gateway provider (Stripe) to "
+               . "automatically deduct the Platform Service Fee from captured client funds upon job completion "
+               . "before remitting the net balance to the Resource Partner's bank account.</p>";
+        $html .= "</div>";
+
+        // 6. Mandatory Insurance Requirements
+        $html .= "<div class='section-title'>6. Mandatory Insurance Requirements</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<p>The Resource Partner must maintain at all times:</p>";
+        $html .= "<ul class='clause-list'>";
+        $html .= "<li><strong>Public &amp; Products Liability Insurance:</strong> Minimum coverage of $10,000,000 "
+               . "per claim (or $20,000,000 where specified by site brief).</li>";
+        $html .= "<li><strong>Workers' Compensation Insurance:</strong> Statutory coverage for all employees in "
+               . "accordance with relevant state laws.</li>";
+        $html .= "</ul>";
+        $html .= "</div>";
+
+        // 7. Governing Law
+        $html .= "<div class='section-title'>7. Governing Law</div>";
+        $html .= "<div class='clause-block'>";
+        $html .= "<p>This Agreement is governed by the laws of the State of Victoria, Australia. Both parties "
+               . "submit to the exclusive jurisdiction of the courts operating in Victoria.</p>";
+        $html .= "</div>";
+
+        // Rate schedule — one compact section per approved state
+        $html .= $rateSectionsHtml;
+
+         // Signature — unchanged
+        $html .= "<div class='sign-box'>";
         if ($isSigned) {
-
-            $html .= '
-
-                            <tr>
-
-                                <td class="sign-label-cell">
-                                    Signature:
-                                </td>
-
-                                <td class="sign-value-cell">
-            ';
-
+            $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
+            $html .= "<p style='margin-bottom:8px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "
+                   . "and agree to be bound by the terms of this Agreement, including the rate schedule above.</p>";
             if ($signatureImageBase64) {
-
-                $html .= '
-                                    <img
-                                        src="' . $signatureImageBase64 . '"
-                                        class="signature-image"
-                                    />
-
-                                    <div class="signature-line"></div>
-                ';
-            } else {
-
-                $html .= '
-                                    <strong>Signed electronically</strong>
-                ';
+                $html .= "<div class='sign-row'><span class='sign-label'>Signature:</span></div>";
+                $html .= "<img src='{$signatureImageBase64}' class='signature-image' />";
             }
-
-            $html .= '
-
-                                </td>
-
-                            </tr>
-
-            ';
-
             if ($signatureName) {
-
-                $html .= '
-
-                            <tr>
-
-                                <td class="sign-label-cell">
-                                    Printed Name:
-                                </td>
-
-                                <td class="sign-value-cell">
-                                    <strong>
-                                        ' . $signatureName . '
-                                    </strong>
-                                </td>
-
-                            </tr>
-
-                ';
+                $html .= "<div class='sign-row'><span class='sign-label'>Printed Name:</span><strong>{$signatureName}</strong></div>";
             }
-
-            $html .= '
-
-                            <tr>
-
-                                <td class="sign-label-cell">
-                                    Date signed:
-                                </td>
-
-                                <td class="sign-value-cell">
-                                    ' . $signedAt . '
-                                </td>
-
-                            </tr>
-
-            ';
-
+            $html .= "<div class='sign-row'><span class='sign-label'>Date signed:</span>{$signedAt}</div>";
             if ($signedIp) {
-
-                $html .= '
-
-                            <tr>
-
-                                <td class="sign-label-cell">
-                                    IP address:
-                                </td>
-
-                                <td class="sign-value-cell">
-                                    ' . $signedIp . '
-                                </td>
-
-                            </tr>
-
-                ';
+                $html .= "<div class='sign-row'><span class='sign-label'>IP address:</span>{$signedIp}</div>";
             }
-
         } else {
-
-            $html .= '
-
-                            <tr>
-
-                                <td class="sign-label-cell">
-                                    Signature:
-                                </td>
-
-                                <td class="sign-value-cell">
-                                    <span class="unsigned-line"></span>
-                                </td>
-
-                            </tr>
-
-                            <tr>
-
-                                <td class="sign-label-cell">
-                                    Printed Name:
-                                </td>
-
-                                <td class="sign-value-cell">
-                                    <span class="unsigned-line"></span>
-                                </td>
-
-                            </tr>
-
-                            <tr>
-
-                                <td class="sign-label-cell">
-                                    Date:
-                                </td>
-
-                                <td class="sign-value-cell">
-                                    <span class="unsigned-line"></span>
-                                </td>
-
-                            </tr>
-
-            ';
+            $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
+            $html .= "<p style='margin-bottom:8px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "
+                   . "and agree to be bound by the terms of this Agreement, including the rate schedule above.</p>";
+            $html .= "<div class='sign-row'><span class='sign-label'>Signature:</span><span class='unsigned-line'></span></div>";
+            $html .= "<div class='sign-row'><span class='sign-label'>Printed Name:</span><span class='unsigned-line'></span></div>";
+            $html .= "<div class='sign-row'><span class='sign-label'>Date:</span><span class='unsigned-line'></span></div>";
         }
+        $html .= "</div>";
 
-        $html .= '
-
-                        </table>
-
-                    </div>
-
-                </div>
-
-
-                <!-- ================= FOOTER ================= -->
-
-                <div class="footer">
-                    Staffoo (Capital Services Pty Ltd)
-                    &mdash;
-                    ABN 48 613 317 838
-                </div>
-
-            </div>
-
-        </body>
-        </html>
-        ';
+        $html .= "<div class='footer'>Staffoo (Capital Services Pty Ltd) — ABN 48 613 317 838</div>";
+        $html .= "</div></body></html>";
 
         return $html;
     }
+
 }

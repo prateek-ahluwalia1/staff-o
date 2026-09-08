@@ -75,33 +75,35 @@ class ContractService
     }
 
     /**
-     * Render grouped categories as compact rate cards, 4 per row.
+     * Render grouped categories as compact rate cards, ALL in a single row
+     * per state. Cards are sized down (smaller padding/type) so an entire
+     * state's category set fits on one line without wrapping.
      */
     private function renderRateCards(array $categories): string
     {
-        $categoryChunks = array_chunk($categories, 4, true);
-        $rateHtml = '';
-        foreach ($categoryChunks as $chunk) {
-            $rateHtml .= "<table class='card-row'><tr>";
-            foreach ($chunk as $categoryName => $areas) {
-                $metroValue    = '$' . number_format($areas['Metro'] ?? 0, 2);
-                $regionalValue = '$' . number_format($areas['Regional'] ?? 0, 2);
-
-                $rateHtml .= "
-                <td class='rate-card' width='" . (int)(100 / count($chunk)) . "%'>
-                    <div class='rate-title'>" . htmlspecialchars($categoryName) . "</div>
-                    <div class='rate-label'><span class='icon-dot'></span>METRO</div>
-                    <div class='rate-value'>{$metroValue}</div>
-                    <div style='height:2px;'></div>
-                    <div class='rate-label'><span class='icon-tri'></span>REGIONAL</div>
-                    <div class='rate-value'>{$regionalValue}</div>
-                </td>";
-            }
-            for ($i = count($chunk); $i < 4; $i++) {
-                $rateHtml .= "<td width='" . (int)(100/4) . "%'></td>";
-            }
-            $rateHtml .= "</tr></table>";
+        $count = count($categories);
+        if ($count === 0) {
+            return '';
         }
+
+        $widthPct = round(100 / $count, 4);
+
+        $rateHtml = "<table class='card-row'><tr>";
+        foreach ($categories as $categoryName => $areas) {
+            $metroValue    = '$' . number_format($areas['Metro'] ?? 0, 2);
+            $regionalValue = '$' . number_format($areas['Regional'] ?? 0, 2);
+
+            $rateHtml .= "
+            <td class='rate-card' width='{$widthPct}%'>
+                <div class='rate-title'>" . htmlspecialchars($categoryName) . "</div>
+                <div class='rate-label'><span class='icon-dot'></span>METRO</div>
+                <div class='rate-value'>{$metroValue}</div>
+                <div style='height:1px;'></div>
+                <div class='rate-label'><span class='icon-tri'></span>REGIONAL</div>
+                <div class='rate-value'>{$regionalValue}</div>
+            </td>";
+        }
+        $rateHtml .= "</tr></table>";
 
         return $rateHtml;
     }
@@ -138,20 +140,20 @@ class ContractService
             $rateSectionsHtml .= $this->renderRateCards($categories);
         }
 
-        // ── CSS — spacing kept tight throughout. Rate cards are now
-        // deliberately compact (4 per row, smaller type/padding) since a
-        // contract can carry a rate section per approved state and needs to
-        // stay legible without ballooning to many pages. .sign-box still
-        // has page-break-inside:avoid, so if it doesn't fit under the rate
-        // cards it drops to the next page as a whole block. Section blocks
-        // use page-break-inside:avoid so a heading is never orphaned from
-        // its clauses across a page break.
+        // ── CSS — spacing kept generous throughout. Rate cards now sit in
+        // a single compact row per state (smaller padding/type so the full
+        // category set for one state fits on one line without wrapping).
+        // .sign-box still has page-break-inside:avoid, so if it doesn't fit
+        // under the rate cards it drops to the next page as a whole block.
+        // Section blocks use page-break-inside:avoid so a heading is never
+        // orphaned from its clauses across a page break.
         $css = '
         /* @page margin applies to EVERY page dompdf renders, not just the
            first — this is what gives page 2+ the same top/side padding as
            page 1 instead of content butting right up against the paper
-           edge after a page break. */
-        @page { margin: 26px 32px; }
+           edge after a page break. Bumped up from 26/32 so the page reads
+           with visible breathing room instead of edge-to-edge. */
+        @page { margin: 44px 46px; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -185,39 +187,43 @@ class ContractService
         .clause-list li { margin-bottom: 4px; }
 
         /* Rate cards — table-based (dompdf does not reliably support
-           flexbox). Sized small/compact: 4 per row, tight padding. */
-        .card-row { width: 100%; border-collapse: separate; border-spacing: 4px; margin-bottom: 2px; page-break-inside: avoid; }
+           flexbox). One row per state, sized down so every category for
+           that state fits on a single line. */
+        .card-row { width: 100%; border-collapse: separate; border-spacing: 3px; margin-bottom: 2px; page-break-inside: avoid; }
         .rate-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 5px;
-            padding: 6px 8px;
+            border-radius: 4px;
+            padding: 4px 5px;
             vertical-align: top;
             page-break-inside: avoid;
         }
         .rate-title {
-            font-size: 9.5px;
+            font-size: 7.8px;
             font-weight: 600;
             color: #0f172a;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .rate-label {
-            font-size: 6.5px;
+            font-size: 5.3px;
             font-weight: 600;
             color: #64748b;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.3px;
             margin-bottom: 1px;
         }
         .icon-dot {
-            display: inline-block; width: 4px; height: 4px; border-radius: 50%;
-            background: #0A7C6E; margin-right: 3px;
+            display: inline-block; width: 3px; height: 3px; border-radius: 50%;
+            background: #0A7C6E; margin-right: 2px;
         }
         .icon-tri {
             display: inline-block; width: 0; height: 0;
-            border-left: 3px solid transparent; border-right: 3px solid transparent;
-            border-bottom: 4px solid #14243D; margin-right: 3px;
+            border-left: 2.5px solid transparent; border-right: 2.5px solid transparent;
+            border-bottom: 3.5px solid #14243D; margin-right: 2px;
         }
-        .rate-value { font-size: 11px; font-weight: bold; color: #0A7C6E; }
+        .rate-value { font-size: 9px; font-weight: bold; color: #0A7C6E; }
 
         /* Signature */
         .sign-box { margin-top: 16px; border: 1px solid #d1d5db; border-radius: 6px; padding: 14px 16px; page-break-inside: avoid; }
@@ -352,7 +358,7 @@ class ContractService
                . "submit to the exclusive jurisdiction of the courts operating in Victoria.</p>";
         $html .= "</div>";
 
-        // Rate schedule — one compact section per approved state
+        // Rate schedule — one compact single-row section per approved state
         $html .= $rateSectionsHtml;
 
          // Signature — unchanged

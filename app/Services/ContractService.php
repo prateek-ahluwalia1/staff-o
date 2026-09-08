@@ -101,8 +101,8 @@ class ContractService
                 $metro    = $categories[$cat]['Metro'] ?? 0;
                 $regional = $categories[$cat]['Regional'] ?? 0;
                 $rows .= "<td class='rate-cell'>"
-                       . "<div class='rate-cell-line'><span class='rc-label'>M</span>$" . number_format($metro, 2) . "</div>"
-                       . "<div class='rate-cell-line'><span class='rc-label'>R</span>$" . number_format($regional, 2) . "</div>"
+                       . "<div class='rate-cell-line'><span class='rc-label'>M</span> $" . number_format($metro, 2) . "</div>"
+                       . "<div class='rate-cell-line'><span class='rc-label'>R</span> $" . number_format($regional, 2) . "</div>"
                        . "</td>";
             }
             $rows .= "</tr>";
@@ -136,6 +136,7 @@ class ContractService
         ];
 
         $rateTableHtml = $this->renderRateTable($stateBlocks);
+        $sealSvg = $this->buildSealSvg();
 
         // ── CSS ──────────────────────────────────────────────────────────
         $css = '
@@ -152,7 +153,7 @@ class ContractService
             line-height: 1.38;
             background: #ffffff;
         }
-        .wrapper { max-width: 800px; margin: 0 auto; position: relative; }
+        .wrapper { max-width: 800px; margin: 0 auto; }
 
         /* Header */
         .header {
@@ -202,23 +203,24 @@ class ContractService
             border-top: 1px solid #e5e7eb; padding-top: 10px;
         }
 
-        /* Certificate seal — absolutely positioned stamp, top-right corner */
-        .seal-wrap {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 90px;
-            height: 90px;
-        }
+        /* Certificate seal — third cell in the header table (normal
+           document flow, not absolutely positioned). Avoids relying on
+           dompdf's absolute-positioning/negative-offset support, which is
+           inconsistent across versions and was causing the seal to not
+           render at all. */
+        .seal-cell { width: 80px; text-align: right; vertical-align: top; }
         ';
 
         $html  = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><style>{$css}</style></head><body>";
         $html .= "<div class='wrapper'>";
 
-        // Header
+        // Header — title/subtitle | contract meta | seal, all as normal
+        // table cells (not absolute positioning, which wasn't rendering
+        // reliably in dompdf)
         $html .= "<div class='header'><table style='width:100%;'><tr>";
         $html .= "<td><div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div><div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot;</div></td>";
         $html .= "<td class='header-meta'>Contract #: {$contractNumber}<br>Date: {$date}</td>";
+        $html .= "<td class='seal-cell'>{$sealSvg}</td>";
         $html .= "</tr></table></div>";
 
         // Parties
@@ -356,4 +358,43 @@ class ContractService
         return $html;
     }
 
+    /**
+     * Builds an inline SVG scalloped-edge seal/badge with "STAFFOO" text.
+     * Returns raw SVG markup (not a data URI) — inline SVG renders more
+     * reliably in dompdf than an <img> with a base64-encoded SVG source.
+     */
+    private function buildSealSvg(): string
+    {
+        $cx = 45;
+        $cy = 45;
+        $outerR = 42;
+        $innerR = 36;
+        $teeth = 22;
+
+        $points = [];
+        for ($i = 0; $i < $teeth * 2; $i++) {
+            $angle = (M_PI * 2 / ($teeth * 2)) * $i;
+            $r = ($i % 2 === 0) ? $outerR : $innerR;
+            $x = $cx + $r * cos($angle);
+            $y = $cy + $r * sin($angle);
+            $points[] = round($x, 1) . ',' . round($y, 1);
+        }
+        $pointsAttr = implode(' ', $points);
+
+        return "
+        <svg width='72' height='72' viewBox='0 0 90 90' xmlns='http://www.w3.org/2000/svg'>
+            <defs>
+                <linearGradient id='sealGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
+                    <stop offset='0%' stop-color='#DC2626' />
+                    <stop offset='100%' stop-color='#7F1D1D' />
+                </linearGradient>
+            </defs>
+            <polygon points='{$pointsAttr}' fill='url(#sealGrad)' stroke='#7F1D1D' stroke-width='1' />
+            <circle cx='{$cx}' cy='{$cy}' r='30' fill='none' stroke='#FFFFFF' stroke-width='1' stroke-opacity='0.7' />
+            <text x='{$cx}' y='42' text-anchor='middle' font-family='DejaVu Sans, sans-serif'
+                  font-size='11' font-weight='bold' fill='#FFFFFF' letter-spacing='0.5'>STAFFOO</text>
+            <text x='{$cx}' y='55' text-anchor='middle' font-family='DejaVu Sans, sans-serif'
+                  font-size='6' fill='#FCA5A5' letter-spacing='1.5'>CERTIFIED</text>
+        </svg>";
+    }
 }

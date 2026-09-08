@@ -19,9 +19,9 @@ class ContractService
      *      ['state' => 'VIC', 'rates' => [ ... ]],
      *      ...
      *  ]
-     *  One "STATE — Charge Rates" section is rendered per entry — this is how
-     *  every state the contractor has an approved rate card for shows up on
-     *  the single contract, instead of only the state just approved.
+     *  Every state the contractor has an approved rate card for is rendered
+     *  as ONE ROW in a single rate table (not a separate card section per
+     *  state) — keeps the document compact even with many states.
      *
      *  Back-compat: a caller can still pass the old single-state shape
      *  (`state` + `rates` at the top level) and it will be treated as a
@@ -75,35 +75,40 @@ class ContractService
     }
 
     /**
-     * Render grouped categories as compact rate cards, 4 per row.
+     * Render ONE table covering every state — each state is a single row,
+     * with a fixed column per rate category (Mon–Fri Day/Night, Saturday,
+     * Sunday, Public Holiday), each cell showing Metro + Regional stacked.
+     * Replaces the old per-state card-grid layout (which repeated a whole
+     * card section per state and grew tall fast with multiple states).
      */
-    private function renderRateCards(array $categories): string
+    private function renderRateTable(array $stateBlocks): string
     {
-        $categoryChunks = array_chunk($categories, 4, true);
-        $rateHtml = '';
-        foreach ($categoryChunks as $chunk) {
-            $rateHtml .= "<table class='card-row'><tr>";
-            foreach ($chunk as $categoryName => $areas) {
-                $metroValue    = '$' . number_format($areas['Metro'] ?? 0, 2);
-                $regionalValue = '$' . number_format($areas['Regional'] ?? 0, 2);
+        $categoryOrder = ['Mon–Fri Day', 'Mon–Fri Night', 'Saturday', 'Sunday', 'Public Holiday'];
 
-                $rateHtml .= "
-                <td class='rate-card' width='" . (int)(100 / count($chunk)) . "%'>
-                    <div class='rate-title'>" . htmlspecialchars($categoryName) . "</div>
-                    <div class='rate-label'><span class='icon-dot'></span>METRO</div>
-                    <div class='rate-value'>{$metroValue}</div>
-                    <div style='height:2px;'></div>
-                    <div class='rate-label'><span class='icon-tri'></span>REGIONAL</div>
-                    <div class='rate-value'>{$regionalValue}</div>
-                </td>";
-            }
-            for ($i = count($chunk); $i < 4; $i++) {
-                $rateHtml .= "<td width='" . (int)(100/4) . "%'></td>";
-            }
-            $rateHtml .= "</tr></table>";
+        $headerCells = '';
+        foreach ($categoryOrder as $cat) {
+            $headerCells .= "<th class='rate-cell-h'>" . htmlspecialchars($cat) . "</th>";
         }
 
-        return $rateHtml;
+        $rows = '';
+        foreach ($stateBlocks as $i => $block) {
+            $rowBg = ($i % 2 === 0) ? '#FFFFFF' : '#F8FAFC';
+            $stateName = htmlspecialchars(strtoupper($block['state'] ?? ''));
+            $categories = $this->groupRatesByCategory($block['rates'] ?? []);
+
+            $rows .= "<tr style='background:{$rowBg};'><td class='state-cell'>{$stateName}</td>";
+            foreach ($categoryOrder as $cat) {
+                $metro    = $categories[$cat]['Metro'] ?? 0;
+                $regional = $categories[$cat]['Regional'] ?? 0;
+                $rows .= "<td class='rate-cell'>"
+                       . "<div class='rate-cell-line'><span class='rc-label'>M</span>$" . number_format($metro, 2) . "</div>"
+                       . "<div class='rate-cell-line'><span class='rc-label'>R</span>$" . number_format($regional, 2) . "</div>"
+                       . "</td>";
+            }
+            $rows .= "</tr>";
+        }
+
+        return "<table class='rate-table'><thead><tr><th class='state-cell-h'>State</th>{$headerCells}</tr></thead><tbody>{$rows}</tbody></table>";
     }
 
     private function buildHtml(array $d): string
@@ -130,28 +135,15 @@ class ContractService
             ['state' => $d['state'] ?? '', 'rates' => $d['rates'] ?? []],
         ];
 
-        $rateSectionsHtml = '';
-        foreach ($stateBlocks as $block) {
-            $blockState = htmlspecialchars(strtoupper($block['state'] ?? ''));
-            $categories = $this->groupRatesByCategory($block['rates'] ?? []);
-            $rateSectionsHtml .= "<div class='section-title'>{$blockState} — Charge Rates</div>";
-            $rateSectionsHtml .= $this->renderRateCards($categories);
-        }
+        $rateTableHtml = $this->renderRateTable($stateBlocks);
 
-        // ── CSS — spacing kept tight throughout. Rate cards are now
-        // deliberately compact (4 per row, smaller type/padding) since a
-        // contract can carry a rate section per approved state and needs to
-        // stay legible without ballooning to many pages. .sign-box still
-        // has page-break-inside:avoid, so if it doesn't fit under the rate
-        // cards it drops to the next page as a whole block. Section blocks
-        // use page-break-inside:avoid so a heading is never orphaned from
-        // its clauses across a page break.
+        // ── CSS ──────────────────────────────────────────────────────────
         $css = '
-        /* @page margin applies to EVERY page dompdf renders, not just the
-           first — this is what gives page 2+ the same top/side padding as
-           page 1 instead of content butting right up against the paper
-           edge after a page break. */
-        @page { margin: 59pt 42pt; }
+        /* Uniform padding on every side, every page — @page margin applies
+           to EVERY page dompdf renders (page 1 and any page after a break),
+           so this alone gives consistent spacing without needing separate
+           wrapper padding that would otherwise double up on page 1. */
+        @page { margin: 28px; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -160,11 +152,7 @@ class ContractService
             line-height: 1.38;
             background: #ffffff;
         }
-        /* Horizontal/vertical spacing comes from @page above, so the
-           wrapper itself carries no extra padding — otherwise page 1 would
-           get double padding (page margin + wrapper padding) while later
-           pages would only get the page margin. */
-        .wrapper { padding: 0; max-width: 800px; margin: 0 auto; position: relative; }
+        .wrapper { max-width: 800px; margin: 0 auto; position: relative; }
 
         /* Header */
         .header {
@@ -184,40 +172,19 @@ class ContractService
         .clause-list { margin: 4px 0 10px 18px; }
         .clause-list li { margin-bottom: 4px; }
 
-        /* Rate cards — table-based (dompdf does not reliably support
-           flexbox). Sized small/compact: 4 per row, tight padding. */
-        .card-row { width: 100%; border-collapse: separate; border-spacing: 4px; margin-bottom: 2px; page-break-inside: avoid; }
-        .rate-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 5px;
-            padding: 6px 8px;
-            vertical-align: top;
-            page-break-inside: avoid;
+        /* Rate table — one row per state (dompdf repeats <thead> across
+           page breaks automatically, so a long state list still shows the
+           column headers on every page it spans). */
+        .rate-table { width: 100%; border-collapse: collapse; font-size: 8.5px; margin-top: 4px; }
+        .rate-table thead th {
+            background: #0A7C6E; color: #fff; padding: 7px 6px; font-size: 8px;
+            text-align: center; letter-spacing: 0.2px;
         }
-        .rate-title {
-            font-size: 9.5px;
-            font-weight: 600;
-            color: #0f172a;
-            margin-bottom: 3px;
-        }
-        .rate-label {
-            font-size: 6.5px;
-            font-weight: 600;
-            color: #64748b;
-            letter-spacing: 0.4px;
-            margin-bottom: 1px;
-        }
-        .icon-dot {
-            display: inline-block; width: 4px; height: 4px; border-radius: 50%;
-            background: #0A7C6E; margin-right: 3px;
-        }
-        .icon-tri {
-            display: inline-block; width: 0; height: 0;
-            border-left: 3px solid transparent; border-right: 3px solid transparent;
-            border-bottom: 4px solid #14243D; margin-right: 3px;
-        }
-        .rate-value { font-size: 11px; font-weight: bold; color: #0A7C6E; }
+        .state-cell-h { text-align: left !important; }
+        .rate-table tbody td { padding: 6px 6px; border-bottom: 1px solid #E5E7EB; text-align: center; vertical-align: top; }
+        .state-cell { font-weight: bold; color: #0f172a; text-align: left; font-size: 9.5px; }
+        .rate-cell-line { font-size: 8px; color: #0A7C6E; font-weight: 600; white-space: nowrap; }
+        .rc-label { color: #64748b; font-weight: 600; margin-right: 3px; }
 
         /* Signature */
         .sign-box { margin-top: 16px; border: 1px solid #d1d5db; border-radius: 6px; padding: 14px 16px; page-break-inside: avoid; }
@@ -238,8 +205,8 @@ class ContractService
         /* Certificate seal — absolutely positioned stamp, top-right corner */
         .seal-wrap {
             position: absolute;
-            top: 14px;
-            right: 28px;
+            top: 0;
+            right: 0;
             width: 90px;
             height: 90px;
         }
@@ -321,7 +288,7 @@ class ContractService
                . "the Resource Partner's Stripe account or pending payout ledger.</p>";
         $html .= "</div>";
 
-        // 5. Platform Fees, Automated Deductions & Insurance
+        // 5. Platform Fees & Automated Deductions
         $html .= "<div class='section-title'>5. Platform Fees &amp; Automated Deductions</div>";
         $html .= "<div class='clause-block'>";
         $html .= "<div class='clause-heading'>5.1 Platform Service Fee</div>";
@@ -352,8 +319,9 @@ class ContractService
                . "submit to the exclusive jurisdiction of the courts operating in Victoria.</p>";
         $html .= "</div>";
 
-        // Rate schedule — one compact section per approved state
-        $html .= $rateSectionsHtml;
+        // Rate schedule — ONE table, one row per approved state
+        $html .= "<div class='section-title'>Charge Rates — All Approved States</div>";
+        $html .= $rateTableHtml;
 
          // Signature — unchanged
         $html .= "<div class='sign-box'>";

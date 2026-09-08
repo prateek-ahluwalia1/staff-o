@@ -140,76 +140,228 @@ class ContractService
 
         // ── CSS ──────────────────────────────────────────────────────────
         $css = '
-        /* Uniform padding on every side, every page — @page margin applies
-           to EVERY page dompdf renders (page 1 and any page after a break),
-           so this alone gives consistent spacing without needing separate
-           wrapper padding that would otherwise double up on page 1. */
-        @page { margin: 28px; }
-        * { margin:0; padding:0; box-sizing:border-box; }
+        /* Page margins - consistent on ALL pages */
+        @page { 
+            margin: 28px; 
+            margin-header: 0; 
+            margin-footer: 0;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
         body {
             font-family: DejaVu Sans, sans-serif;
             font-size: 10px;
             color: #1a1a2e;
             line-height: 1.38;
             background: #ffffff;
+            padding: 0;
+            margin: 0;
         }
-        .wrapper { max-width: 800px; margin: 0 auto; }
+        
+        /* Wrapper with consistent padding */
+        .wrapper { 
+            max-width: 100%; 
+            padding: 0 4px;
+            margin: 0;
+        }
 
         /* Header */
         .header {
             border-bottom: 3px solid #0A7C6E;
-            padding-bottom: 10px;
-            margin-bottom: 14px;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            padding-top: 4px;
         }
-        .header-title { font-size: 17px; font-weight: bold; color: #1a1a2e; }
-        .header-subtitle { font-size: 9.5px; color: #6B7280; margin-top: 2px; }
-        .header-meta { font-size: 9px; color: #6B7280; text-align: right; }
+        
+        .header-title { 
+            font-size: 17px; 
+            font-weight: bold; 
+            color: #1a1a2e; 
+        }
+        
+        .header-subtitle { 
+            font-size: 9.5px; 
+            color: #6B7280; 
+            margin-top: 2px; 
+        }
+        
+        .header-meta { 
+            font-size: 9px; 
+            color: #6B7280; 
+            text-align: right; 
+            padding-right: 10px;
+        }
 
-        /* Content */
-        .section-title { font-size: 12.5px; font-weight: bold; color: #0A7C6E; margin: 11px 0 5px; }
-        .clause-block { margin-bottom: 8px; page-break-inside: avoid; }
-        .clause-heading { font-size: 10.2px; font-weight: bold; color: #1a1a2e; margin-bottom: 2px; }
-        p { margin-bottom: 7px; text-align: justify; }
-        .clause-list { margin: 4px 0 10px 18px; }
-        .clause-list li { margin-bottom: 4px; }
+        /* Content spacing */
+        .section-title { 
+            font-size: 12.5px; 
+            font-weight: bold; 
+            color: #0A7C6E; 
+            margin: 14px 0 6px; 
+        }
+        
+        .clause-block { 
+            margin-bottom: 10px; 
+            page-break-inside: avoid; 
+        }
+        
+        .clause-heading { 
+            font-size: 10.2px; 
+            font-weight: bold; 
+            color: #1a1a2e; 
+            margin-bottom: 2px; 
+            margin-top: 6px;
+        }
+        
+        p { 
+            margin-bottom: 8px; 
+            text-align: justify; 
+            padding-right: 2px;
+        }
+        
+        .clause-list { 
+            margin: 4px 0 12px 20px; 
+        }
+        
+        .clause-list li { 
+            margin-bottom: 5px; 
+            padding-left: 4px;
+        }
 
-        /* Rate table — one row per state (dompdf repeats <thead> across
-           page breaks automatically, so a long state list still shows the
-           column headers on every page it spans). */
-        .rate-table { width: 100%; border-collapse: collapse; font-size: 8.5px; margin-top: 4px; }
+        /* Rate table */
+        .rate-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 8.5px; 
+            margin-top: 6px; 
+            margin-bottom: 8px;
+        }
+        
         .rate-table thead th {
-            background: #0A7C6E; color: #fff; padding: 7px 6px; font-size: 8px;
-            text-align: center; letter-spacing: 0.2px;
+            background: #0A7C6E; 
+            color: #fff; 
+            padding: 8px 6px; 
+            font-size: 8px;
+            text-align: center; 
+            letter-spacing: 0.2px;
         }
-        .state-cell-h { text-align: left !important; }
-        .rate-table tbody td { padding: 6px 6px; border-bottom: 1px solid #E5E7EB; text-align: center; vertical-align: top; }
-        .state-cell { font-weight: bold; color: #0f172a; text-align: left; font-size: 9.5px; }
-        .rate-cell-line { font-size: 8px; color: #0A7C6E; font-weight: 600; white-space: nowrap; }
-        .rc-label { color: #64748b; font-weight: 600; margin-right: 3px; }
+        
+        .state-cell-h { 
+            text-align: left !important; 
+            padding-left: 8px !important;
+        }
+        
+        .rate-table tbody td { 
+            padding: 7px 6px; 
+            border-bottom: 1px solid #E5E7EB; 
+            text-align: center; 
+            vertical-align: middle; 
+        }
+        
+        .state-cell { 
+            font-weight: bold; 
+            color: #0f172a; 
+            text-align: left; 
+            font-size: 9.5px; 
+            padding-left: 8px !important;
+        }
+        
+        .rate-cell-line { 
+            font-size: 8px; 
+            color: #0A7C6E; 
+            font-weight: 600; 
+            white-space: nowrap; 
+            line-height: 1.5;
+        }
+        
+        .rc-label { 
+            color: #64748b; 
+            font-weight: 600; 
+            margin-right: 3px; 
+        }
 
         /* Signature */
-        .sign-box { margin-top: 16px; border: 1px solid #d1d5db; border-radius: 6px; padding: 14px 16px; page-break-inside: avoid; }
-        .sign-title { font-size: 11.5px; font-weight: bold; color: #1a1a2e; margin-bottom: 7px; }
-        .sign-row { font-size: 9.5px; margin-bottom: 6px; }
-        .sign-label { color: #6B7280; display: inline-block; width: 105px; }
-        .signed-badge {
-            display: inline-block; background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7;
-            border-radius: 14px; padding: 3px 12px; font-size: 9px; font-weight: bold; margin-bottom: 9px;
+        .sign-box { 
+            margin-top: 20px; 
+            border: 1px solid #d1d5db; 
+            border-radius: 6px; 
+            padding: 16px 18px; 
+            page-break-inside: avoid;
         }
-        .unsigned-line { border-bottom: 1px solid #9ca3af; width: 200px; display: inline-block; height: 16px; }
-        .signature-image { height: 50px; max-width: 240px; border-bottom: 1px solid #9ca3af; padding-bottom: 3px; margin-bottom: 5px; }
+        
+        .sign-title { 
+            font-size: 11.5px; 
+            font-weight: bold; 
+            color: #1a1a2e; 
+            margin-bottom: 8px; 
+        }
+        
+        .sign-row { 
+            font-size: 9.5px; 
+            margin-bottom: 8px; 
+        }
+        
+        .sign-label { 
+            color: #6B7280; 
+            display: inline-block; 
+            width: 105px; 
+        }
+        
+        .signed-badge {
+            display: inline-block; 
+            background: #ecfdf5; 
+            color: #065f46; 
+            border: 1px solid #6ee7b7;
+            border-radius: 14px; 
+            padding: 3px 12px; 
+            font-size: 9px; 
+            font-weight: bold; 
+            margin-bottom: 9px;
+        }
+        
+        .unsigned-line { 
+            border-bottom: 1px solid #9ca3af; 
+            width: 200px; 
+            display: inline-block; 
+            height: 16px; 
+        }
+        
+        .signature-image { 
+            height: 50px; 
+            max-width: 240px; 
+            border-bottom: 1px solid #9ca3af; 
+            padding-bottom: 3px; 
+            margin-bottom: 5px; 
+        }
+        
         .footer {
-            margin-top: 14px; font-size: 8.5px; color: #9ca3af; text-align: center;
-            border-top: 1px solid #e5e7eb; padding-top: 10px;
+            margin-top: 18px; 
+            font-size: 8.5px; 
+            color: #9ca3af; 
+            text-align: center;
+            border-top: 1px solid #e5e7eb; 
+            padding-top: 12px;
+            padding-bottom: 4px;
         }
 
-        /* Certificate seal — pure CSS circle (no SVG; dompdf was not
-           rendering the SVG polygon/gradient at all and only leaking the
-           raw <text> content through as plain text). Same table-cell
-           vertical-align technique already used reliably elsewhere in
-           this document for centering content in dompdf. */
-        .seal-cell { width: 76px; text-align: right; vertical-align: top; }
-        .seal-table { border-collapse: collapse; margin-left: auto; }
+        /* Seal */
+        .seal-cell { 
+            width: 76px; 
+            text-align: right; 
+            vertical-align: top; 
+            padding-right: 4px;
+        }
+        
+        .seal-table { 
+            border-collapse: collapse; 
+            margin-left: auto; 
+        }
+        
         .seal-circle {
             width: 62px;
             height: 62px;
@@ -219,18 +371,27 @@ class ContractService
             text-align: center;
             vertical-align: middle;
         }
-        .seal-text-main { color: #FFFFFF; font-weight: bold; font-size: 9.5px; letter-spacing: 0.4px; }
-        .seal-text-sub { color: #FECACA; font-size: 6px; letter-spacing: 1px; }
+        
+        .seal-text-main { 
+            color: #FFFFFF; 
+            font-weight: bold; 
+            font-size: 9.5px; 
+            letter-spacing: 0.4px; 
+        }
+        
+        .seal-text-sub { 
+            color: #FECACA; 
+            font-size: 6px; 
+            letter-spacing: 1px; 
+        }
         ';
 
         $html  = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><style>{$css}</style></head><body>";
         $html .= "<div class='wrapper'>";
 
-        // Header — title/subtitle | contract meta | seal, all as normal
-        // table cells (not absolute positioning, which wasn't rendering
-        // reliably in dompdf)
-        $html .= "<div class='header'><table style='width:100%;'><tr>";
-        $html .= "<td><div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div><div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot;</div></td>";
+        // Header
+        $html .= "<div class='header'><table style='width:100%;border-collapse:collapse;'><tr>";
+        $html .= "<td style='padding:0;'><div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div><div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot;</div></td>";
         $html .= "<td class='header-meta'>Contract #: {$contractNumber}<br>Date: {$date}</td>";
         $html .= "<td class='seal-cell'>{$sealHtml}</td>";
         $html .= "</tr></table></div>";
@@ -333,15 +494,15 @@ class ContractService
                . "submit to the exclusive jurisdiction of the courts operating in Victoria.</p>";
         $html .= "</div>";
 
-        // Rate schedule — ONE table, one row per approved state
+        // Rate schedule
         $html .= "<div class='section-title'>Charge Rates — All Approved States</div>";
         $html .= $rateTableHtml;
 
-         // Signature — unchanged
+        // Signature
         $html .= "<div class='sign-box'>";
         if ($isSigned) {
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
-            $html .= "<p style='margin-bottom:8px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "
+            $html .= "<p style='margin-bottom:10px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "
                    . "and agree to be bound by the terms of this Agreement, including the rate schedule above.</p>";
             if ($signatureImageBase64) {
                 $html .= "<div class='sign-row'><span class='sign-label'>Signature:</span></div>";
@@ -356,7 +517,7 @@ class ContractService
             }
         } else {
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
-            $html .= "<p style='margin-bottom:8px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "
+            $html .= "<p style='margin-bottom:10px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "
                    . "and agree to be bound by the terms of this Agreement, including the rate schedule above.</p>";
             $html .= "<div class='sign-row'><span class='sign-label'>Signature:</span><span class='unsigned-line'></span></div>";
             $html .= "<div class='sign-row'><span class='sign-label'>Printed Name:</span><span class='unsigned-line'></span></div>";

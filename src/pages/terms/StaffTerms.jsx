@@ -183,7 +183,7 @@ export default function StaffTerms({
 
           {/* Right Controls: Print & Close Cross */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <button
+            {/* <button
               type="button"
               onClick={() => window.print()}
               title="Print Terms"
@@ -210,7 +210,7 @@ export default function StaffTerms({
               }}
             >
               <i className="fa-solid fa-print"></i>
-            </button>
+            </button> */}
 
             {/* TOP RIGHT CLOSE CROSS ICON BUTTON */}
             <button

@@ -358,7 +358,16 @@ const ManageStaff = () => {
 
   const staffDocuments = useMemo(() => {
     if (!editingUser) return [];
-    return editingUser.documents || editingUser.staff?.documents || [];
+    const rawDocs = editingUser.documents || editingUser.staff?.documents || [];
+    const contractorCategories = ["contractor_document", "nsw_document", "qld_document", "tas_document", "wa_document", "sa_document"];
+    const contractorTypes = ["security_master_license", "public_liability", "workcover", "security_membership", "labour_hire", "asic_report"];
+    return rawDocs.filter((doc) => {
+      if (doc.document_category && contractorCategories.includes(doc.document_category)) return false;
+      const normalizedType = (doc.document_type || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const normalizedName = (doc.document_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (contractorTypes.some((t) => normalizedType.includes(t.replace(/[^a-z0-9]/g, "")) || normalizedName.includes(t.replace(/[^a-z0-9]/g, "")))) return false;
+      return true;
+    });
   }, [editingUser]);
 
   const isDocumentsComplete = staffDocuments.length > 0 && staffDocuments.every(doc => doc.file || doc.file_path);
@@ -974,10 +983,26 @@ const ManageStaff = () => {
         toast.success(editingUser ? "Staff member updated successfully!" : "Staff member created successfully!");
         refetch();
         const createdUser = res.data?.user || res.data?.guard || res.data || res.user || (res.id ? res : { id: res.data?.id, ...payload });
+        const newUserId = createdUser?.id || res.data?.id || res.id;
+        let docs = createdUser?.documents || [];
+
+        if ((!docs || docs.length === 0) && newUserId) {
+          try {
+            const editRes = await submit(`api/user-edit/${newUserId}`, undefined, { method: "GET" });
+            if (editRes?.data?.documents && editRes.data.documents.length > 0) {
+              docs = editRes.data.documents;
+            } else if (editRes?.documents && editRes.documents.length > 0) {
+              docs = editRes.documents;
+            }
+          } catch (fetchErr) {
+            console.error("Failed to load documents for newly created user", fetchErr);
+          }
+        }
+
         const userToSet = {
           ...payload,
-          id: createdUser?.id || res.data?.id || res.id,
-          documents: createdUser?.documents || [],
+          id: newUserId,
+          documents: docs,
           staff: createdUser?.staff || {
             phone: payload.phone,
             gender: payload.gender,

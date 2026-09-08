@@ -72,6 +72,8 @@ const PaySheet = lazy(() => import("./pages/PaySheet"));
 const StafooStaff = lazy(() => import("./pages/staffooStaff"));
 const CoverJobs = lazy(() => import("./pages/CoverJobs"));
 const ContractorRates = lazy(() => import("./pages/ContractorRates"));
+const ContractSign = lazy(() => import("./pages/ContractSign"));
+const PartnerContracts = lazy(() => import("./pages/PartnerContracts"));
 
 
 const ONESIGNAL_APP_ID = "79041c59-5506-4e56-9de4-8a6619f85e1d";
@@ -626,6 +628,7 @@ function AppContent() {
                 <Route path="/partner-terms" element={<ProtectedRoute public><ResourcePartnerTerms /></ProtectedRoute>} />
                 <Route path="/about-us" element={<ProtectedRoute public><AboutUs /></ProtectedRoute>} />
                 <Route path="/contact-us" element={<ProtectedRoute public><ContactUs /></ProtectedRoute>} />
+                <Route path="/contracts/sign" element={<ProtectedRoute public><ContractSign /></ProtectedRoute>} />
 
                 {/* Auth */}
                 <Route path="/login" element={<ProtectedRoute guestOnly><Login /></ProtectedRoute>} />
@@ -640,6 +643,7 @@ function AppContent() {
                     <Route path="/job-alerts" element={<JobAlerts />} />
                     <Route path="/roster" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><RosterPage /></ProtectedRoute>} />
                     <Route path="/manage-users" element={<ProtectedRoute allowedRoles={["admin"]}><ManageUsers /></ProtectedRoute>} />
+                    <Route path="/partner-contracts" element={<ProtectedRoute allowedRoles={["admin"]}><PartnerContracts /></ProtectedRoute>} />
                     <Route path="/manage-staff" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><ManageStaff /></ProtectedRoute>} />
                     <Route path="/cover-jobs" element={<ProtectedRoute allowedRoles={['contractor', ...(isStaffCoverJobsVisible ? ['staff'] : [])]}><CoverJobs /></ProtectedRoute>} />
                     <Route path="/payment-history" element={<PaymentHistory />} />

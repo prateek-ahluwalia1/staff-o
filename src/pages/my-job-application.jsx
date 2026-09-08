@@ -268,6 +268,9 @@ export default function MyJobApplications() {
       const DOC_LABELS = {
         working_with_children: "Working With Children Check",
         white_card: "White Card",
+        msic_card: "MSIC Card",
+        control_room_certificate: "Control Room Certificate",
+        ras_certificate: "RAS Certificate",
       };
 
       let documents = [];
@@ -1389,12 +1392,12 @@ export default function MyJobApplications() {
                     {selectedApp.documents.map((doc, idx) => (
                       <span
                         key={idx}
-                        className="badge rounded-pill px-3 py-2"
+                        className="badge rounded-pill px-2 py-2"
                         style={{
                           backgroundColor: 'rgba(10, 124, 110, 0.1)',
                           color: '#0A7C6E',
                           border: '1px solid rgba(10, 124, 110, 0.3)',
-                          fontSize: '12px',
+                          fontSize: '11px',
                           fontWeight: 700,
                         }}
                       >

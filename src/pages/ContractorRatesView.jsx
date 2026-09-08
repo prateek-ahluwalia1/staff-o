@@ -68,10 +68,12 @@ const makeBlankForm = (states = []) => {
 };
 
 const normalizeValue = (val) => {
-  if (val === null || val === undefined || val === "") return "";
-  const num = Number(val);
+  if (val === null || val === undefined) return "";
+  const str = String(val).trim();
+  if (str === "") return "";
+  const num = Number(str);
   if (!isNaN(num)) return num;
-  return String(val).trim();
+  return str;
 };
 
 const checkIfFormChanged = (currentForm, initialForm, states) => {
@@ -81,7 +83,7 @@ const checkIfFormChanged = (currentForm, initialForm, states) => {
     return true;
   }
 
-  for (const s of states) {
+  for (const s of (states || [])) {
     const currentTab = currentForm[s] || {};
     const initialTab = initialForm[s] || {};
 
@@ -388,6 +390,11 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
 
     if (!modalStates || modalStates.length === 0) {
       toast.error("You must have selected states in your profile before requesting rates.");
+      return;
+    }
+
+    if (!hasFormChanged) {
+      toast.info("Please make changes to the rates or notes before submitting.");
       return;
     }
 
@@ -1279,7 +1286,8 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                     type="button"
                     className="rr-btn-secondary"
                     onClick={(e) => handleRequestSubmit(e, 0)}
-                    disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0}
+                    disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0 || !hasFormChanged}
+                    title={!hasFormChanged ? "Please make changes before saving" : ""}
                   >
                     {isSavingAndExiting ? (
                       <>
@@ -1303,7 +1311,8 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                       type="button"
                       className="rr-btn-submit"
                       onClick={(e) => handleRequestSubmit(e, 1)}
-                      disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0}
+                      disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0 || !hasFormChanged}
+                      title={!hasFormChanged ? "Please make changes before submitting" : ""}
                     >
                       {isSavingAndSubmitting ? (
                         <>

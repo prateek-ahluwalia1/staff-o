@@ -151,6 +151,7 @@ const Sidebar = memo(function Sidebar() {
     { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
     { to: "/pay-charge-rate", icon: "fa-solid fa-building-columns", label: "Accounts" },
     { to: "/manage-users", icon: "fa-solid fa-users-gear", label: "Manage Users" },
+    { to: "/partner-contracts", icon: "fa-solid fa-file-signature", label: "Partner Contracts" },
     { to: "/my-job-applications", icon: "fa-solid fa-list-check", label: "All Jobs" },
     { to: "/payment-history", icon: "fa-solid fa-vault", label: "Financials" },
     { to: "/edit-profile", icon: "fa-solid fa-gear", label: "Settings" },

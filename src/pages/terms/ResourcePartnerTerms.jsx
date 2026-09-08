@@ -185,7 +185,7 @@ export default function ResourcePartnerTerms({
 
           {/* Right Controls: Print & Top-Right Cross Icon */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <button
+            {/* <button
               type="button"
               onClick={() => window.print()}
               title="Print Agreement"
@@ -212,7 +212,7 @@ export default function ResourcePartnerTerms({
               }}
             >
               <i className="fa-solid fa-print"></i>
-            </button>
+            </button> */}
 
             {/* TOP RIGHT CLOSE CROSS ICON BUTTON */}
             <button

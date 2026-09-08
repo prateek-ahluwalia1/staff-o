@@ -34,12 +34,11 @@ const roleLabels = {
   staff: "Staff",
 };
 
-const DOC_TYPES = [
+const STAFF_DOC_TYPES = [
   { value: "Passport", label: "Passport" },
   { value: "Visa", label: "Visa" },
   { value: "Driver License Front", label: "Driver License (Front)" },
   { value: "Driver License Back", label: "Driver License (Back)" },
-  { value: "Security Master License", label: "Security Master License" },
   { value: "Security License", label: "Security License" },
   { value: "Working with Children Check", label: "Working With Children Check (WWCC)" },
   { value: "Employment Application Form", label: "Employment Application Form" },
@@ -52,12 +51,21 @@ const DOC_TYPES = [
   { value: "Medicare", label: "Medicare Certificate" },
   { value: "Birth Certificate", label: "Birth Certificate" },
   { value: "White Card", label: "White Card" },
+];
+
+const CONTRACTOR_DOC_TYPES = [
+  { value: "Security Master License", label: "Security Master License" },
   { value: "Public Liability", label: "Public Liability" },
   { value: "Workcover", label: "Workcover" },
   { value: "Labour Hire", label: "Labour Hire" },
   { value: "ASIC Report", label: "ASIC Report" },
   { value: "Security Industry Membership Certificate", label: "Security Industry Membership Certificate" },
   { value: "Security Industry Membership certificate", label: "Security Industry Membership certificate" },
+];
+
+const DOC_TYPES = [
+  ...STAFF_DOC_TYPES,
+  ...CONTRACTOR_DOC_TYPES,
 ];
 
 // ========== DATE HELPERS ==========
@@ -388,6 +396,18 @@ const ManageUsers = () => {
       }
 
       return docs.filter((doc) => allowedCategories.includes(doc.document_category));
+    }
+
+    if (activeTab === "staff") {
+      const contractorCategories = ["contractor_document", "nsw_document", "qld_document", "tas_document", "wa_document", "sa_document"];
+      const contractorTypes = ["security_master_license", "public_liability", "workcover", "security_membership", "labour_hire", "asic_report"];
+      return docs.filter((doc) => {
+        if (doc.document_category && contractorCategories.includes(doc.document_category)) return false;
+        const normalizedType = (doc.document_type || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const normalizedName = (doc.document_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (contractorTypes.some((t) => normalizedType.includes(t.replace(/[^a-z0-9]/g, "")) || normalizedName.includes(t.replace(/[^a-z0-9]/g, "")))) return false;
+        return true;
+      });
     }
 
     return docs;
@@ -1097,10 +1117,26 @@ const ManageUsers = () => {
 
         if (activeTab === "staff" || activeTab === "sub_contractor") {
           const createdUser = res.data?.user || res.data?.guard || res.data?.contractor || res.data || res.user || (res.id ? res : { id: res.data?.id, ...payload });
+          const newUserId = createdUser?.id || res.data?.id || res.id;
+          let docs = createdUser?.documents || [];
+
+          if ((!docs || docs.length === 0) && newUserId) {
+            try {
+              const editRes = await submit(`api/user-edit/${newUserId}`, undefined, { method: "GET" });
+              if (editRes?.data?.documents && editRes.data.documents.length > 0) {
+                docs = editRes.data.documents;
+              } else if (editRes?.documents && editRes.documents.length > 0) {
+                docs = editRes.documents;
+              }
+            } catch (fetchErr) {
+              console.error("Failed to load documents for newly created user", fetchErr);
+            }
+          }
+
           const userToSet = {
             ...payload,
-            id: createdUser?.id || res.data?.id || res.id,
-            documents: createdUser?.documents || [],
+            id: newUserId,
+            documents: docs,
             staff: createdUser?.staff || {
               phone: payload.phone,
               gender: payload.gender,
@@ -1955,7 +1991,7 @@ const ManageUsers = () => {
               disabled={!!selectedDoc}
             >
               <option value="">Select Type</option>
-              {DOC_TYPES.map((type) => (
+              {(activeTab === "staff" ? STAFF_DOC_TYPES : activeTab === "sub_contractor" ? CONTRACTOR_DOC_TYPES : DOC_TYPES).map((type) => (
                 <option key={type.value} value={type.value}>
                   {capitalizeWords(type.label)}
                 </option>

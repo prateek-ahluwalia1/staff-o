@@ -15,12 +15,19 @@ const DOC_CONFIG = {
   first_aid: { label: "First Aid Certificate", sort: 10 },
   cpr: { label: "CPR Certificate", sort: 11 },
   vaccination: { label: "Vaccination Certificate", sort: 12 },
-  security_master_license: { label: "Security Master License", sort: 13 },
-  public_liability: { label: "Public Liability", sort: 14 },
-  workcover: { label: "Workcover", sort: 15 },
-  security_membership: { label: "Security Industry Membership Certificate", sort: 16 },
-  labour_hire: { label: "Labour Hire", sort: 17 },
-  asic_report: { label: "ASIC Report", sort: 18 },
+  white_card: { label: "White Card", sort: 13 },
+  citizen_ship: { label: "Citizen Ship Certificate", sort: 14 },
+  medicare: { label: "Medicare Certificate", sort: 15 },
+  birth_certificate: { label: "Birth Certificate", sort: 16 },
+  msic_card: { label: "MSIC Card", sort: 17 },
+  control_room_certificate: { label: "Control Room Certificate", sort: 18 },
+  ras_certificate: { label: "RAS Certificate", sort: 19 },
+  security_master_license: { label: "Security Master License", sort: 20 },
+  public_liability: { label: "Public Liability", sort: 21 },
+  workcover: { label: "Workcover", sort: 22 },
+  security_membership: { label: "Security Industry Membership Certificate", sort: 23 },
+  labour_hire: { label: "Labour Hire", sort: 24 },
+  asic_report: { label: "ASIC Report", sort: 25 },
 };
 
 const STATE_CATEGORY_ORDER = [
@@ -119,9 +126,25 @@ function DocRowActions({ doc, onAddFile, showDocErrors }) {
   );
 }
 
+function getDocDisplayName(doc) {
+  if (!doc) return "Document";
+  const typeKey = (doc.document_type || "").toLowerCase().replace(/[\s-]+/g, "_");
+  const nameKey = (doc.document_name || "").toLowerCase().replace(/[\s-]+/g, "_");
+  if (DOC_CONFIG[typeKey]?.label) return DOC_CONFIG[typeKey].label;
+  if (DOC_CONFIG[nameKey]?.label) return DOC_CONFIG[nameKey].label;
+  const raw = doc.document_name || doc.document_type || "Document";
+  if (raw.includes("_")) {
+    return raw
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  }
+  return raw;
+}
+
 function DocNameCell({ doc }) {
   const status = getExpiryStatus(doc.document_expiry);
-  const displayLabel = DOC_CONFIG[doc.document_type]?.label || doc.document_name;
+  const displayLabel = getDocDisplayName(doc);
   return (
     <div className="doc-name">
       <span className="doc-icon">
@@ -250,18 +273,13 @@ function StateGroupHeader({ label, uploaded, total, expanded, onToggle }) {
 }
 
 const DEFAULT_STAFF_DOC_TEMPLATES = [
-  { document_name: "Passport", document_type: "passport" },
-  { document_name: "Visa", document_type: "visa" },
-  { document_name: "Driver License Front", document_type: "driver_license_front" },
-  { document_name: "Driver License Back", document_type: "driver_license_back" },
   { document_name: "Security License", document_type: "security_license" },
   { document_name: "Working With Children Check", document_type: "working_with_children" },
-  { document_name: "Employment Application Form", document_type: "employment_application" },
-  { document_name: "TFN Declaration", document_type: "tfn_declaration" },
-  { document_name: "Superannuation Form", document_type: "superannuation" },
+  { document_name: "White Card", document_type: "white_card" },
   { document_name: "First Aid Certificate", document_type: "first_aid" },
-  { document_name: "CPR Certificate", document_type: "cpr" },
-  { document_name: "Vaccination Certificate", document_type: "vaccination" },
+  { document_name: "MSIC Card", document_type: "msic_card" },
+  { document_name: "Control Room Certificate", document_type: "control_room_certificate" },
+  { document_name: "RAS Certificate", document_type: "ras_certificate" },
 ];
 
 const DEFAULT_CONTRACTOR_DOC_TEMPLATES = [
@@ -320,47 +338,31 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
     const incomingDocs = Array.isArray(documents) ? documents : [];
 
     if (userType === "staff") {
-      const usedIds = new Set();
-      const mergedList = DEFAULT_STAFF_DOC_TEMPLATES.map((tmpl) => {
-        const found = incomingDocs.find(
-          (d) => !usedIds.has(d.id || d) && matchDoc(tmpl, d)
-        );
-        if (found) {
-          if (found.id) usedIds.add(found.id);
-          else usedIds.add(found);
-          return {
-            ...found,
-            document_name: found.document_name || tmpl.document_name,
-            document_type: found.document_type || tmpl.document_type,
-          };
-        }
-        return {
-          id: `temp_${tmpl.document_type}`,
-          document_name: tmpl.document_name,
-          document_type: tmpl.document_type,
-          file: null,
-          document_no: "",
-          document_expiry: "",
-        };
-      });
+      if (incomingDocs.length > 0) {
+        return [...incomingDocs].sort((a, b) => {
+          const typeA = (a.document_type || a.document_name || "").toLowerCase().replace(/[\s-]+/g, "_");
+          const typeB = (b.document_type || b.document_name || "").toLowerCase().replace(/[\s-]+/g, "_");
+          const orderA = DOC_CONFIG[typeA]?.sort || 99;
+          const orderB = DOC_CONFIG[typeB]?.sort || 99;
+          return orderA - orderB;
+        });
+      }
 
-      const extraDocs = incomingDocs.filter(
-        (d) =>
-          !usedIds.has(d.id || d) &&
-          !DEFAULT_STAFF_DOC_TEMPLATES.some((tmpl) => matchDoc(tmpl, d))
-      );
-
-      const fullList = [...mergedList, ...extraDocs];
-      return fullList.sort((a, b) => {
-        const orderA = DOC_CONFIG[a.document_type]?.sort || 99;
-        const orderB = DOC_CONFIG[b.document_type]?.sort || 99;
-        return orderA - orderB;
-      });
+      return DEFAULT_STAFF_DOC_TEMPLATES.map((tmpl) => ({
+        id: `temp_${tmpl.document_type}`,
+        document_name: tmpl.document_name,
+        document_type: tmpl.document_type,
+        file: null,
+        document_no: "",
+        document_expiry: "",
+      }));
     }
 
     return [...incomingDocs].sort((a, b) => {
-      const orderA = DOC_CONFIG[a.document_type]?.sort || 99;
-      const orderB = DOC_CONFIG[b.document_type]?.sort || 99;
+      const typeA = (a.document_type || a.document_name || "").toLowerCase().replace(/[\s-]+/g, "_");
+      const typeB = (b.document_type || b.document_name || "").toLowerCase().replace(/[\s-]+/g, "_");
+      const orderA = DOC_CONFIG[typeA]?.sort || 99;
+      const orderB = DOC_CONFIG[typeB]?.sort || 99;
       return orderA - orderB;
     });
   }, [documents, userType]);

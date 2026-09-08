@@ -138,11 +138,11 @@ class ContractService
         $rateTableHtml = $this->renderRateTable($stateBlocks);
         $sealHtml = $this->buildSealHtml();
 
-        // ── CSS ──────────────────────────────────────────────────────────
+        // ── CSS with improved margins like invoice ──────────────────────
         $css = '
-        /* Page margins - consistent on ALL pages */
+        /* Page margins - consistent with invoice style */
         @page { 
-            margin: 28px; 
+            margin: 32px 36px; 
             margin-header: 0; 
             margin-footer: 0;
         }
@@ -157,31 +157,32 @@ class ContractService
             font-family: DejaVu Sans, sans-serif;
             font-size: 10px;
             color: #1a1a2e;
-            line-height: 1.38;
+            line-height: 1.5;
             background: #ffffff;
             padding: 0;
             margin: 0;
         }
         
-        /* Wrapper with consistent padding */
+        /* Wrapper with comfortable padding */
         .wrapper { 
             max-width: 100%; 
-            padding: 0 4px;
+            padding: 0 2px;
             margin: 0;
         }
 
-        /* Header */
+        /* Header with more breathing room */
         .header {
             border-bottom: 3px solid #0A7C6E;
-            padding-bottom: 12px;
-            margin-bottom: 16px;
-            padding-top: 4px;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+            padding-top: 6px;
         }
         
         .header-title { 
-            font-size: 17px; 
+            font-size: 18px; 
             font-weight: bold; 
             color: #1a1a2e; 
+            margin-bottom: 4px;
         }
         
         .header-subtitle { 
@@ -194,70 +195,74 @@ class ContractService
             font-size: 9px; 
             color: #6B7280; 
             text-align: right; 
-            padding-right: 10px;
+            padding-right: 12px;
+            line-height: 1.6;
         }
 
         /* Content spacing */
         .section-title { 
-            font-size: 12.5px; 
+            font-size: 13px; 
             font-weight: bold; 
             color: #0A7C6E; 
-            margin: 14px 0 6px; 
+            margin: 18px 0 8px; 
         }
         
         .clause-block { 
-            margin-bottom: 10px; 
+            margin-bottom: 14px; 
             page-break-inside: avoid; 
         }
         
         .clause-heading { 
-            font-size: 10.2px; 
+            font-size: 10.5px; 
             font-weight: bold; 
             color: #1a1a2e; 
-            margin-bottom: 2px; 
-            margin-top: 6px;
+            margin-bottom: 3px; 
+            margin-top: 8px;
         }
         
         p { 
-            margin-bottom: 8px; 
+            margin-bottom: 10px; 
             text-align: justify; 
             padding-right: 2px;
+            line-height: 1.6;
         }
         
         .clause-list { 
-            margin: 4px 0 12px 20px; 
+            margin: 6px 0 14px 24px; 
         }
         
         .clause-list li { 
-            margin-bottom: 5px; 
+            margin-bottom: 6px; 
             padding-left: 4px;
+            line-height: 1.5;
         }
 
-        /* Rate table */
+        /* Rate table with better spacing */
         .rate-table { 
             width: 100%; 
             border-collapse: collapse; 
             font-size: 8.5px; 
-            margin-top: 6px; 
-            margin-bottom: 8px;
+            margin-top: 10px; 
+            margin-bottom: 14px;
         }
         
         .rate-table thead th {
             background: #0A7C6E; 
             color: #fff; 
-            padding: 8px 6px; 
+            padding: 10px 8px; 
             font-size: 8px;
             text-align: center; 
-            letter-spacing: 0.2px;
+            letter-spacing: 0.3px;
+            font-weight: bold;
         }
         
         .state-cell-h { 
             text-align: left !important; 
-            padding-left: 8px !important;
+            padding-left: 12px !important;
         }
         
         .rate-table tbody td { 
-            padding: 7px 6px; 
+            padding: 10px 8px; 
             border-bottom: 1px solid #E5E7EB; 
             text-align: center; 
             vertical-align: middle; 
@@ -268,7 +273,7 @@ class ContractService
             color: #0f172a; 
             text-align: left; 
             font-size: 9.5px; 
-            padding-left: 8px !important;
+            padding-left: 12px !important;
         }
         
         .rate-cell-line { 
@@ -276,40 +281,44 @@ class ContractService
             color: #0A7C6E; 
             font-weight: 600; 
             white-space: nowrap; 
-            line-height: 1.5;
+            line-height: 1.8;
         }
         
         .rc-label { 
             color: #64748b; 
             font-weight: 600; 
-            margin-right: 3px; 
+            margin-right: 4px; 
         }
 
-        /* Signature */
+        /* Signature box with generous padding */
         .sign-box { 
-            margin-top: 20px; 
-            border: 1px solid #d1d5db; 
-            border-radius: 6px; 
-            padding: 16px 18px; 
+            margin-top: 28px; 
+            border: 1.5px solid #d1d5db; 
+            border-radius: 8px; 
+            padding: 22px 24px; 
             page-break-inside: avoid;
+            background: #fafbfc;
         }
         
         .sign-title { 
-            font-size: 11.5px; 
+            font-size: 12px; 
             font-weight: bold; 
             color: #1a1a2e; 
-            margin-bottom: 8px; 
+            margin-bottom: 12px; 
+            letter-spacing: 0.3px;
         }
         
         .sign-row { 
             font-size: 9.5px; 
-            margin-bottom: 8px; 
+            margin-bottom: 10px; 
+            padding: 2px 0;
         }
         
         .sign-label { 
             color: #6B7280; 
             display: inline-block; 
-            width: 105px; 
+            width: 120px; 
+            font-weight: 500;
         }
         
         .signed-badge {
@@ -318,43 +327,44 @@ class ContractService
             color: #065f46; 
             border: 1px solid #6ee7b7;
             border-radius: 14px; 
-            padding: 3px 12px; 
+            padding: 4px 14px; 
             font-size: 9px; 
             font-weight: bold; 
-            margin-bottom: 9px;
+            margin-bottom: 12px;
         }
         
         .unsigned-line { 
-            border-bottom: 1px solid #9ca3af; 
-            width: 200px; 
+            border-bottom: 1.5px solid #9ca3af; 
+            width: 220px; 
             display: inline-block; 
-            height: 16px; 
+            height: 20px; 
         }
         
         .signature-image { 
-            height: 50px; 
-            max-width: 240px; 
-            border-bottom: 1px solid #9ca3af; 
-            padding-bottom: 3px; 
-            margin-bottom: 5px; 
+            height: 55px; 
+            max-width: 260px; 
+            border-bottom: 1.5px solid #9ca3af; 
+            padding-bottom: 4px; 
+            margin-bottom: 8px; 
         }
         
         .footer {
-            margin-top: 18px; 
+            margin-top: 24px; 
             font-size: 8.5px; 
             color: #9ca3af; 
             text-align: center;
             border-top: 1px solid #e5e7eb; 
-            padding-top: 12px;
-            padding-bottom: 4px;
+            padding-top: 14px;
+            padding-bottom: 6px;
+            letter-spacing: 0.2px;
         }
 
-        /* Seal */
+        /* Seal with better alignment */
         .seal-cell { 
-            width: 76px; 
+            width: 80px; 
             text-align: right; 
             vertical-align: top; 
-            padding-right: 4px;
+            padding-right: 6px;
         }
         
         .seal-table { 
@@ -363,26 +373,28 @@ class ContractService
         }
         
         .seal-circle {
-            width: 62px;
-            height: 62px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             background: #B91C1C;
             border: 3px double #FFFFFF;
             text-align: center;
             vertical-align: middle;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .seal-text-main { 
             color: #FFFFFF; 
             font-weight: bold; 
-            font-size: 9.5px; 
-            letter-spacing: 0.4px; 
+            font-size: 10px; 
+            letter-spacing: 0.6px; 
         }
         
         .seal-text-sub { 
             color: #FECACA; 
-            font-size: 6px; 
-            letter-spacing: 1px; 
+            font-size: 6.5px; 
+            letter-spacing: 1.2px; 
+            margin-top: 1px;
         }
         ';
 
@@ -390,14 +402,18 @@ class ContractService
         $html .= "<div class='wrapper'>";
 
         // Header
-        $html .= "<div class='header'><table style='width:100%;border-collapse:collapse;'><tr>";
-        $html .= "<td style='padding:0;'><div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div><div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot;</div></td>";
-        $html .= "<td class='header-meta'>Contract #: {$contractNumber}<br>Date: {$date}</td>";
-        $html .= "<td class='seal-cell'>{$sealHtml}</td>";
+        $html .= "<div class='header'><table style='width:100%;border-collapse:collapse;'>";
+        $html .= "<tr>";
+        $html .= "<td style='padding:0;width:60%;'>";
+        $html .= "<div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div>";
+        $html .= "<div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot;</div>";
+        $html .= "</td>";
+        $html .= "<td class='header-meta' style='width:25%;'>Contract #: {$contractNumber}<br>Date: {$date}</td>";
+        $html .= "<td class='seal-cell' style='width:15%;'>{$sealHtml}</td>";
         $html .= "</tr></table></div>";
 
         // Parties
-        $html .= "<p>This Resource Partner &amp; Subcontractor Agreement (\"Agreement\") governs the commercial and "
+        $html .= "<p style='margin-bottom:14px;'>This Resource Partner &amp; Subcontractor Agreement (\"Agreement\") governs the commercial and "
                . "operational relationship between <strong>Capital Services Pty Ltd</strong> (ABN 48 613 317 838, "
                . "trading as \"Staffoo\") and independent licensed security providers, vendors, and staffing "
                . "agencies (\"Resource Partner\") accepting shift allocations and providing security personnel "
@@ -502,7 +518,7 @@ class ContractService
         $html .= "<div class='sign-box'>";
         if ($isSigned) {
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
-            $html .= "<p style='margin-bottom:10px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "
+            $html .= "<p style='margin-bottom:12px;font-size:9.5px;line-height:1.6;'>By signing below, the Resource Partner confirms they have read, understood, "
                    . "and agree to be bound by the terms of this Agreement, including the rate schedule above.</p>";
             if ($signatureImageBase64) {
                 $html .= "<div class='sign-row'><span class='sign-label'>Signature:</span></div>";
@@ -517,7 +533,7 @@ class ContractService
             }
         } else {
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
-            $html .= "<p style='margin-bottom:10px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "
+            $html .= "<p style='margin-bottom:12px;font-size:9.5px;line-height:1.6;'>By signing below, the Resource Partner confirms they have read, understood, "
                    . "and agree to be bound by the terms of this Agreement, including the rate schedule above.</p>";
             $html .= "<div class='sign-row'><span class='sign-label'>Signature:</span><span class='unsigned-line'></span></div>";
             $html .= "<div class='sign-row'><span class='sign-label'>Printed Name:</span><span class='unsigned-line'></span></div>";

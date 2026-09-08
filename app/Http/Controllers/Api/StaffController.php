@@ -1161,6 +1161,128 @@ class StaffController extends Controller
             if ($user->user_type === 'staff') {
                 $staff = Staff::where('user_id', $user->id)->first();
 
+                // if (!empty($data['staff_document_type']) && $user->user_id == 1) {
+                //     $check_old_data_exist = Document::where('user_id', $user->id)
+                //         ->where('document_category', '!=', 'other-doc')
+                //         ->first();
+
+                //     if (!$staff || !$check_old_data_exist) {
+                //         $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
+                //         if ($document_categories) {
+                //             foreach (json_decode($document_categories->document_type) as $key => $value) {
+                //                 $guard_documents = new Document();
+                //                 $guard_documents->user_id = $user->id;
+                //                 $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
+                //                 $guard_documents->document_type = $key;
+                //                 $guard_documents->document_name = $value;
+                //                 $guard_documents->save();
+                //             }
+                //         }
+                //     }
+                //     // Case 2: Updating existing documents
+                //     else if ($staff && $staff->staff_document_type != $request->staff_document_type) {
+                //         $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
+
+                //         if ($document_categories) {
+                //             // Get existing documents
+                //             $old_docs = Document::where('user_id', $user->id)
+                //                 ->where('document_category', '!=', 'other-doc')
+                //                 ->get()
+                //                 ->keyBy('document_type');
+
+                //             $new_doc_types = json_decode($document_categories->document_type, true);
+                //             $new_document_category = $document_categories->document_category ?: 'other';
+
+                //             // ===== HANDLE VISA =====
+                //             // 1. Delete old visa if exists
+                //             Document::where('user_id', $user->id)
+                //                 ->where('document_type', 'visa')
+                //                 ->delete();
+                            
+                //             // 2. Check if new type has visa
+                //             $has_new_visa = isset($new_doc_types['visa']);
+                //             $visa_name = $has_new_visa ? $new_doc_types['visa'] : null;
+                //             // ===== END VISA HANDLING =====
+
+                //             // Remove visa from old docs array for comparison
+                //             $old_docs_filtered = $old_docs->filter(function($doc) {
+                //                 return $doc->document_type !== 'visa';
+                //             });
+                            
+                //             // Remove visa from new types for comparison
+                //             $new_doc_types_filtered = $new_doc_types;
+                //             unset($new_doc_types_filtered['visa']);
+
+                //             // Get keys
+                //             $old_doc_keys = $old_docs_filtered->keys()->toArray();
+                //             $new_doc_keys = array_keys($new_doc_types_filtered);
+
+                //             // Compare keys
+                //             $to_delete_keys = array_diff($old_doc_keys, $new_doc_keys);
+                //             $to_add_keys = array_diff($new_doc_keys, $old_doc_keys);
+                //             $common_keys = array_intersect($old_doc_keys, $new_doc_keys);
+
+                //             // Update common types
+                //             if (!empty($common_keys)) {
+                //                 $common_doc_ids = [];
+                //                 foreach ($common_keys as $doc_type) {
+                //                     if ($old_docs_filtered->has($doc_type)) {
+                //                         $common_doc_ids[] = $old_docs_filtered[$doc_type]->id;
+                //                     }
+                //                 }
+
+                //                 if (!empty($common_doc_ids)) {
+                //                     Document::whereIn('id', $common_doc_ids)
+                //                         ->update(['document_category' => $new_document_category]);
+                //                 }
+                //             }
+
+                //             // Delete old types
+                //             if (!empty($to_delete_keys)) {
+                //                 Document::where('user_id', $user->id)
+                //                     ->where('document_category', '!=', 'other-doc')
+                //                     ->whereIn('document_type', $to_delete_keys)
+                //                     ->delete();
+                //             }
+
+                //             // Add new types
+                //             if (!empty($to_add_keys)) {
+                //                 $documents_to_insert = [];
+
+                //                 foreach ($to_add_keys as $doc_type) {
+                //                     if (!Document::where(['user_id' => $user->id, 'document_type' => $doc_type])->exists()) {
+                //                         $documents_to_insert[] = [
+                //                             'user_id' => $user->id,
+                //                             'document_category' => $new_document_category,
+                //                             'document_type' => $doc_type,
+                //                             'document_name' => $new_doc_types_filtered[$doc_type],
+                //                             'created_at' => now(),
+                //                             'updated_at' => now()
+                //                         ];
+                //                     }
+                //                 }
+
+                //                 if (!empty($documents_to_insert)) {
+                //                     Document::insert($documents_to_insert);
+                //                 }
+                //             }
+
+                //             // Add visa if new type has it
+                //             if ($has_new_visa) {
+                //                 if (!Document::where(['user_id' => $user->id, 'document_type' => 'visa'])->exists()) {
+                //                     Document::create([
+                //                         'user_id' => $user->id,
+                //                         'document_category' => $new_document_category,
+                //                         'document_type' => 'visa',
+                //                         'document_name' => $visa_name,
+                //                         'created_at' => now(),
+                //                         'updated_at' => now()
+                //                     ]);
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }
                 if (!empty($data['staff_document_type']) && $user->user_id == 1) {
                     $check_old_data_exist = Document::where('user_id', $user->id)
                         ->where('document_category', '!=', 'other-doc')
@@ -1170,12 +1292,18 @@ class StaffController extends Controller
                         $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
                         if ($document_categories) {
                             foreach (json_decode($document_categories->document_type) as $key => $value) {
-                                $guard_documents = new Document();
-                                $guard_documents->user_id = $user->id;
-                                $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
-                                $guard_documents->document_type = $key;
-                                $guard_documents->document_name = $value;
-                                $guard_documents->save();
+                                // Check if document already exists before creating
+                                if (!Document::where('user_id', $user->id)
+                                    ->where('document_type', $key)
+                                    ->exists()) {
+                                    
+                                    $guard_documents = new Document();
+                                    $guard_documents->user_id = $user->id;
+                                    $guard_documents->document_category = ($document_categories->document_category != '' ? $document_categories->document_category : 'other');
+                                    $guard_documents->document_type = $key;
+                                    $guard_documents->document_name = $value;
+                                    $guard_documents->save();
+                                }
                             }
                         }
                     }
@@ -1275,6 +1403,33 @@ class StaffController extends Controller
                                         'document_category' => $new_document_category,
                                         'document_type' => 'visa',
                                         'document_name' => $visa_name,
+                                        'created_at' => now(),
+                                        'updated_at' => now()
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                    // Case 3: Staff exists but document type hasn't changed - check for missing documents
+                    else if ($staff && $staff->staff_document_type == $request->staff_document_type) {
+                        $document_categories = DocumentCategory::where('document_category', $request->staff_document_type)->first();
+                        
+                        if ($document_categories) {
+                            $required_doc_types = json_decode($document_categories->document_type, true);
+                            $existing_docs = Document::where('user_id', $user->id)
+                                ->where('document_category', '!=', 'other-doc')
+                                ->get()
+                                ->keyBy('document_type');
+                            
+                            // Check for missing documents
+                            foreach ($required_doc_types as $doc_type => $doc_name) {
+                                if (!$existing_docs->has($doc_type)) {
+                                    // Document is missing - add it
+                                    Document::create([
+                                        'user_id' => $user->id,
+                                        'document_category' => $document_categories->document_category ?: 'other',
+                                        'document_type' => $doc_type,
+                                        'document_name' => $doc_name,
                                         'created_at' => now(),
                                         'updated_at' => now()
                                     ]);

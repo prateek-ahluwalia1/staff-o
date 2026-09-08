@@ -6723,7 +6723,7 @@ private function generateAndSendContract($contractor, $rateRequest, $charge_rate
         // rate-set change means the previously signed terms no longer
         // match the document and the contractor needs to re-accept.
         if (!empty($contractor->email)) {
-            $signingLink = 'http://localhost:3000/contracts/sign?token=' . $signingToken;
+            $signingUrl = config('app.url') . '/contracts/sign?token=' . $signingToken;
  
             Mail::to($contractor->email)->send(new ContractSignatureRequestMail(
                 $contractor->name ?? 'Contractor',

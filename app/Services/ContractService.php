@@ -159,7 +159,12 @@ class ContractService
         // compiled views/config (`php artisan view:clear && config:clear`)
         // before assuming dompdf itself isn't applying it.
         $css = '
-        @page { margin: 46px 50px; }
+        @page {
+            margin-top: 46px;
+            margin-right: 50px;
+            margin-bottom: 46px;
+            margin-left: 50px;
+        }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: DejaVu Sans, sans-serif;

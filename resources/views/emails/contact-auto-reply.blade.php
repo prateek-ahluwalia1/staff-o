@@ -209,7 +209,7 @@
             </div>
 
             <p style="font-size: 16px; margin-bottom: 20px;">
-                Thank you for reaching out to <strong>{{ $appName }}</strong>. We have successfully received your inquiry and our team will review it promptly.
+                Thank you for reaching out to <strong>STAFFOO</strong>. We have successfully received your inquiry and our team will review it promptly.
             </p>
 
             <div class="message-card">
@@ -288,17 +288,11 @@
             <div class="signature">
                 <p>Best regards,</p>
                 <div class="team-name">{{ $teamName }}</div>
-                <p style="color: #6b7280; margin-top: 5px;">{{ $appName }}</p>
+                <p style="color: #6b7280; margin-top: 5px;">STAFFOO</p>
             </div>
         </div>
 
         <div class="footer">
-            <div class="social-links">
-                <a href="#">Facebook</a> •
-                <a href="#">Twitter</a> •
-                <a href="#">LinkedIn</a> •
-                <a href="#">Instagram</a>
-            </div>
             <p>This is an automated response. Please do not reply to this email.</p>
             <p>&copy; {{ $year }} {{ $appName }}. All rights reserved.</p>
             <p style="font-size: 11px; margin-top: 10px;">{{ $appUrl }}</p>

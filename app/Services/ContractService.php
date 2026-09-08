@@ -203,20 +203,13 @@ class ContractService
             border-top: 1px solid #e5e7eb; padding-top: 10px;
         }
 
-        /* Certificate seal — third cell in the header table (normal
-           document flow, not absolutely positioned). Avoids relying on
-           dompdf's absolute-positioning/negative-offset support, which is
-           inconsistent across versions and was causing the seal to not
-           render at all. */
         .seal-cell { width: 80px; text-align: right; vertical-align: top; }
         ';
 
         $html  = "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><style>{$css}</style></head><body>";
         $html .= "<div class='wrapper'>";
 
-        // Header — title/subtitle | contract meta | seal, all as normal
-        // table cells (not absolute positioning, which wasn't rendering
-        // reliably in dompdf)
+        
         $html .= "<div class='header'><table style='width:100%;'><tr>";
         $html .= "<td><div class='header-title'>Resource Partner &amp; Subcontractor Agreement</div><div class='header-subtitle'>Operated by Capital Services Pty Ltd &middot; Issued via Staffoo Platform &middot;</div></td>";
         $html .= "<td class='header-meta'>Contract #: {$contractNumber}<br>Date: {$date}</td>";

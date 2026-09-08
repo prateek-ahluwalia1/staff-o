@@ -148,22 +148,29 @@ class ContractService
         // Section blocks use page-break-inside:avoid so a heading is never
         // orphaned from its clauses across a page break.
         //
-        // NOTE ON PAGE MARGINS: a manual thead/tfoot "spacer table" wrapper
-        // was tried here to force per-page margins, but it broke
-        // pagination — dompdf does not reliably paginate a table cell that
-        // itself contains other tables (the header table, the rate-card
-        // tables), and content was silently dropped after a certain point.
-        // @page margin is the correct, natively-supported mechanism for
-        // per-page margins in dompdf and does not have this problem — back
-        // to using it here. If a build ever appears to ignore it, clear
-        // compiled views/config (`php artisan view:clear && config:clear`)
-        // before assuming dompdf itself isn't applying it.
+        // NOTE ON PAGE MARGINS (read before touching this again):
+        //  - A manual thead/tfoot "spacer table" wrapper was tried first —
+        //    reverted. dompdf does not reliably paginate a table cell that
+        //    itself contains other tables (header table, rate-card
+        //    tables); content was silently dropped mid-document.
+        //  - @page { margin: ... } for ALL FOUR sides was tried next
+        //    (shorthand, then longhand) — reverted. On this dompdf build,
+        //    @page correctly offsets the TOP and LEFT edge, but does not
+        //    subtract margin-right from the printable width used for
+        //    percentage/auto-width children, so content still runs flush
+        //    to the physical right edge regardless of the value given.
+        //  - Working combo: @page still handles top/bottom (confirmed
+        //    fine — this is what keeps page 2+ from starting flush at the
+        //    top, the original problem). Left/right spacing is done with
+        //    ordinary padding on <body> instead, which is plain CSS box
+        //    sizing, persists on every page, and isn't routed through the
+        //    buggy @page width calculation at all.
         $css = '
         @page {
             margin-top: 46px;
-            margin-right: 50px;
             margin-bottom: 46px;
-            margin-left: 50px;
+            margin-left: 0;
+            margin-right: 0;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body {
@@ -172,11 +179,9 @@ class ContractService
             color: #1a1a2e;
             line-height: 1.38;
             background: #ffffff;
+            padding-left: 50px;
+            padding-right: 50px;
         }
-        /* Horizontal/vertical spacing comes from @page above, so the
-           wrapper itself carries no extra padding — otherwise page 1 would
-           get double padding (page margin + wrapper padding) while later
-           pages would only get the page margin. */
         .wrapper { padding: 0; max-width: 800px; margin: 0 auto; position: relative; }
 
         /* Header */

@@ -925,7 +925,8 @@ class StaffController extends Controller
                     'staff_document_type' => 'sometimes|nullable|string',
                     'security_license_no' => 'sometimes|nullable|string',
                     'date_of_birth' => 'sometimes|nullable|string',
-                    'origin_country' => 'sometimes|nullable|string'
+                    'origin_country' => 'sometimes|nullable|string',
+                    'is_control_room_license' => 'sometimes|nullable|string'
                 ]);
             }
 

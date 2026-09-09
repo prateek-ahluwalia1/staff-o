@@ -335,6 +335,8 @@ class AdminStaffController extends Controller
                 'security_license_no' => 'nullable|string|max:100',
                 'date_of_birth' => 'nullable|string',
                 'origin_country' => 'nullable|string',
+                'is_control_room_license' => 'nullable|string'
+
             ]);
 
             $plainPassword = generateSecurePassword() ?? "Temp1234";
@@ -375,6 +377,7 @@ class AdminStaffController extends Controller
                 'phone' => $validated['phone'],
                 'staff_document_type' => $validated['staff_document_type'] ?? null,
                 'security_license_no' => $validated['security_license_no'] ?? null,
+                'is_control_room_license' => $validated['is_control_room_license'] ?? null,
                 'date_of_birth' => $validated['date_of_birth'] ?? null,
                 'origin_country' => $validated['origin_country'] ?? null,
             ]);
@@ -667,6 +670,13 @@ class AdminStaffController extends Controller
             $staff->origin_country = $request->origin_country;
 
         }
+
+        
+        if ($request->has('is_control_room_license')) {
+            $staff->is_control_room_license = $request->is_control_room_license;
+
+        }
+        
         
 
         $staff->save();

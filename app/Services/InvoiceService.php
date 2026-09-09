@@ -15,19 +15,6 @@ class InvoiceService
      *  shifts  [ {start, end, numberOfGuards, hours, rate, amount} … ]
      *  base_total, discount, service_fee, grand_total, amount_charged, balance
      */
-    // public function generatePdf(array $data): string
-    // {
-    //     $options = new Options();
-    //     $options->set('isHtml5ParserEnabled', true);
-    //     $options->set('isRemoteEnabled', false);
-
-    //     $dompdf = new Dompdf($options);
-    //     $dompdf->loadHtml($this->buildHtml($data));
-    //     $dompdf->setPaper('A4', 'portrait');
-    //     $dompdf->render();
-
-    //     return $dompdf->output();
-    // }
     public function generatePdf(array $data): string
     {
         $pdf = Pdf::loadHTML($this->buildHtml($data))->setPaper('a4', 'portrait');
@@ -41,8 +28,24 @@ class InvoiceService
         foreach ($d['shifts'] as $i => $shift) {
             $rowBg  = ($i % 2 === 0) ? '#F7F9FC' : '#FFFFFF';
             $num    = $i + 1;
-            $start  = htmlspecialchars($shift['start']);
-            $end    = htmlspecialchars($shift['end']);
+
+            // Combined "05-09-2026(12:00 - 20:00)" style date/time column —
+            // date comes from the start timestamp, both times shown 24hr.
+            // If a shift spans midnight into a different end date, the end
+            // date is included too so the range still reads correctly
+            // instead of silently dropping the day change.
+            $startDt = \Carbon\Carbon::parse($shift['start']);
+            $endDt   = \Carbon\Carbon::parse($shift['end']);
+
+            if ($startDt->format('d-m-Y') === $endDt->format('d-m-Y')) {
+                $dateTimeRange = $startDt->format('d-m-Y')
+                    . '(' . $startDt->format('H:i') . ' - ' . $endDt->format('H:i') . ')';
+            } else {
+                $dateTimeRange = $startDt->format('d-m-Y') . ' ' . $startDt->format('H:i')
+                    . ' - ' . $endDt->format('d-m-Y') . ' ' . $endDt->format('H:i');
+            }
+            $dateTimeRange = htmlspecialchars($dateTimeRange);
+
             $guards = (int) $shift['numberOfGuards'];
             $hours  = (float) $shift['hours'];
             // NEW: per-hour rate for this shift, falls back to computing it
@@ -56,8 +59,7 @@ class InvoiceService
             $shiftRows .= "
             <tr style='background:{$rowBg};'>
                 <td style='text-align:center;'>{$num}</td>
-                <td>{$start}</td>
-                <td>{$end}</td>
+                <td>{$dateTimeRange}</td>
                 <td style='text-align:center;'>{$guards}</td>
                 <td style='text-align:center;'>{$hours}</td>
                 <td style='text-align:right;'>$" . number_format($rate, 2) . "</td>
@@ -147,12 +149,11 @@ class InvoiceService
         $html .= "<div class='section-title'>Shift Details</div>";
         $html .= "<div class='table-wrap'><table class='st'><thead><tr>";
         $html .= "<th style='width:5%;'>#</th>";
-        $html .= "<th style='width:22%;'>Start Date</th>";
-        $html .= "<th style='width:22%;'>End Date</th>";
-        $html .= "<th style='width:11%;text-align:center;'>Guards</th>";
-        $html .= "<th style='width:12%;text-align:center;'>Hours</th>";
-        $html .= "<th style='width:14%;text-align:right;'>Rate (AUD)</th>";
-        $html .= "<th style='width:14%;text-align:right;'>Amount (AUD)</th>";
+        $html .= "<th style='width:34%;'>Date &amp; Time</th>";
+        $html .= "<th style='width:15%;text-align:center;'>Guards</th>";
+        $html .= "<th style='width:15%;text-align:center;'>Hours</th>";
+        $html .= "<th style='width:15%;text-align:right;'>Rate (AUD)</th>";
+        $html .= "<th style='width:16%;text-align:right;'>Amount (AUD)</th>";
         $html .= "</tr></thead><tbody>{$shiftRows}</tbody></table></div>";
 
         $html .= "<div style='height:10px;'></div><div class='grey-line'></div>";

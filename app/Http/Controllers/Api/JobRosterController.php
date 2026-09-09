@@ -3955,6 +3955,12 @@ private function sendStaffActivationNotification(User $user): void
         $siteState = $jobs->first()->site->state ?? null;
         $Guards = $this->getStaffooGuardsByRadius($siteCoordinates, 15, $siteState);
         $partners = $this->getResourcePartners($jobs->first()->site_id);
+
+        if ($jobs->first()->job_type === 'Control Room Operator') {
+            $Guards = collect($Guards)->filter(function ($guard) {
+                return optional($guard->staff)->is_control_room_license == 1;
+            })->values();
+        }
         
 
         $allGuards = $Guards->merge($partners);
@@ -5206,7 +5212,7 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     $client = DB::table('users')->where('id', $updatedRoster->created_by)->first();
  
     // 5. Build invoice number — e.g. STF-2026-1082-D
-    $invoiceNumber = 'STF-' . now()->format('Y') . '-' . str_pad($updatedRoster->id, 4, '0', STR_PAD_LEFT);
+    $invoiceNumber = 'STF-' . '-' . str_pad($updatedRoster->id, 4, '0', STR_PAD_LEFT);
  
     // 6. Create Stripe product/price/payment link
     \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
@@ -6265,7 +6271,7 @@ public function releaseContractorPayout($rosterId)
     $feeInvoiceData = [
         'fee_invoice_number'   => $feeInvoiceNumber,
         'date'                 => now()->format('d M Y'),
-        'job_ref'              => $invoiceMeta['invoice_number'] ?? ('STF-' . now()->format('Y') . '-' . str_pad($roster->id, 4, '0', STR_PAD_LEFT) . '-D'),
+        'job_ref'              => $invoiceMeta['invoice_number'] ?? ('STF-' . '-' . str_pad($roster->id, 4, '0', STR_PAD_LEFT) . '-D'),
         'client_booking_label' => $roster->address ?? 'N/A',
         'service_label'        => 'Automated Timesheet & Geofence Verification',
 

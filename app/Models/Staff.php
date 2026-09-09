@@ -22,6 +22,7 @@ class Staff extends Model
         'is_policy_accepted',
         'current_coordinates',
         'origin_country',
+        'is_control_room_license',
     ];
 
     /* ======================

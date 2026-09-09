@@ -123,6 +123,11 @@ class SendJobNotificationJob implements ShouldQueue
 
             // CHANGED: pass $siteState so Staffoo's permission can be checked
             $guardsWithJobs = $this->getEligibleGuardsByRadius($siteCoords, 25, $jobsToProcess, $siteState);
+            if ($jobs->first()->job_type === 'Control Room Operator') {
+                $guardsWithJobs = collect($guardsWithJobs)->filter(function ($guard) {
+                    return optional($guard->staff)->is_control_room_license == 1;
+                })->values();
+            }
             $this->notifyGuardsWithEligibleJobs($guardsWithJobs, $jobsToProcess, $title, $message, 25, $shouldConsolidate);
 
             // Resource partners are now filtered by their own states_allowed permission

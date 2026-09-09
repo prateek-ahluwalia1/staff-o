@@ -416,9 +416,6 @@ class ContractService
                 $html .= "<div class='sign-row'><span class='sign-label'>Printed Name:</span><strong>{$signatureName}</strong></div>";
             }
             $html .= "<div class='sign-row'><span class='sign-label'>Date signed:</span>{$signedAt}</div>";
-            if ($signedIp) {
-                $html .= "<div class='sign-row'><span class='sign-label'>IP address:</span>{$signedIp}</div>";
-            }
         } else {
             $html .= "<div class='sign-title'>Acknowledgement &amp; Signature</div>";
             $html .= "<p style='margin-bottom:8px;font-size:9.5px;'>By signing below, the Resource Partner confirms they have read, understood, "

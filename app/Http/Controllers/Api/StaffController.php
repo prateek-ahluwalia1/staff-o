@@ -1447,7 +1447,8 @@ class StaffController extends Controller
                     'staff_document_type',
                     'security_license_no',
                     'date_of_birth',
-                    'origin_country'
+                    'origin_country',
+                    'is_control_room_license'
                 ])->toArray();
 
                 if ($request->hasFile('profile_image')) {

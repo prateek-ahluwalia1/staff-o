@@ -30,21 +30,14 @@ class InvoiceService
             $num    = $i + 1;
 
             // Combined "05-09-2026(12:00 - 20:00)" style date/time column —
-            // date comes from the start timestamp, both times shown 24hr.
-            // If a shift spans midnight into a different end date, the end
-            // date is included too so the range still reads correctly
-            // instead of silently dropping the day change.
+            // always the START date, with both times shown 24hr, even when
+            // the shift crosses midnight into the next calendar day.
             $startDt = \Carbon\Carbon::parse($shift['start']);
             $endDt   = \Carbon\Carbon::parse($shift['end']);
 
-            if ($startDt->format('d-m-Y') === $endDt->format('d-m-Y')) {
-                $dateTimeRange = $startDt->format('d-m-Y')
-                    . '(' . $startDt->format('H:i') . ' - ' . $endDt->format('H:i') . ')';
-            } else {
-                $dateTimeRange = $startDt->format('d-m-Y') . ' ' . $startDt->format('H:i')
-                    . ' - ' . $endDt->format('d-m-Y') . ' ' . $endDt->format('H:i');
-            }
-            $dateTimeRange = htmlspecialchars($dateTimeRange);
+            $dateTimeRange = htmlspecialchars(
+                $startDt->format('d-m-Y') . '(' . $startDt->format('H:i') . ' - ' . $endDt->format('H:i') . ')'
+            );
 
             $guards = (int) $shift['numberOfGuards'];
             $hours  = (float) $shift['hours'];

@@ -14,11 +14,11 @@ return [
     */
 
     'admin_addresses' => env('MAIL_ADMIN_ADDRESSES', 'admin@example.com'),
-    
+
     'support_email' => env('MAIL_SUPPORT_EMAIL', 'support@example.com'),
-    
+
     'support_phone' => env('MAIL_SUPPORT_PHONE', ''),
-    
+
     'default' => env('MAIL_MAILER', 'smtp'),
 
     /*
@@ -35,7 +35,8 @@ return [
     | mailers below. You are free to add additional mailers as required.
     |
     | Supported: "smtp", "sendmail", "mailgun", "ses", "ses-v2",
-    |            "postmark", "log", "array", "failover", "roundrobin"
+    |            "postmark", "log", "array", "failover", "roundrobin",
+    |            "sendgrid"
     |
     */
 
@@ -50,6 +51,10 @@ return [
             'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
+        ],
+
+        'sendgrid' => [
+            'transport' => 'sendgrid',
         ],
 
         'ses' => [

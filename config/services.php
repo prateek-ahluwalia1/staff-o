@@ -53,4 +53,8 @@ return [
         'scope'         => env('VSURE_SCOPE', 'aus:production'),
         'environment'   => env('VSURE_ENV', 'live'),
     ],
+
+    'sendgrid' => [
+    'api_key' => env('SENDGRID_API_KEY'),
+    ],
 ];

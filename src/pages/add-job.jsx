@@ -28,7 +28,7 @@ const calculateJobLevel = (title) => {
   // Level 3
   if (t.includes("control room operator") || t.includes("venue supervisor") || t.includes("aviation") || t.includes("maritime")) return 3;
   // Level 2
-  if (t.includes("monitoring") || t.includes("control room (basic)") || t.includes("dog") || t.includes("armed") || t.includes("cash-in-transit") || t.includes("cash in transit")) return 2;
+  if (t.includes("monitoring") || t.includes("control room") || t.includes("dog") || t.includes("armed") || t.includes("cash-in-transit") || t.includes("cash in transit")) return 2;
 
   // Default to Level 1
   return 1;

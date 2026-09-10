@@ -371,6 +371,7 @@ const ManageUsers = () => {
     abn: "",
     acn: "",
     states_allowed: [],
+    is_control_room_license: 0,
   }), []);
 
   const [formData, setFormData] = useState(defaultFormState);
@@ -577,6 +578,7 @@ const ManageUsers = () => {
         abn: user.abn || extraInfo.abn || "",
         acn: user.acn || extraInfo.acn || "",
         states_allowed: existingStatesAllowed,
+        is_control_room_license: (Number(user.is_control_room_license ?? extraInfo.is_control_room_license ?? 0) === 1 || user.is_control_room_license === true || extraInfo.is_control_room_license === true) ? 1 : 0,
       });
     } else {
       setEditingUser(null);
@@ -1098,6 +1100,11 @@ const ManageUsers = () => {
 
     const payload = { ...formData };
     delete payload.password;
+    if (activeTab === "staff") {
+      payload.is_control_room_license = formData.is_control_room_license ? 1 : 0;
+    } else {
+      delete payload.is_control_room_license;
+    }
 
     if (Array.isArray(payload.states_allowed)) {
       payload.states_allowed = JSON.stringify(payload.states_allowed);
@@ -1917,6 +1924,7 @@ const ManageUsers = () => {
                     abn: formData.abn || "",
                     acn: formData.acn || "",
                     security_license_no: formData.security_license_no || "",
+                    is_control_room_license: formData.is_control_room_license ?? 0,
                     states_allowed: formData.states_allowed,
                   }}
                   onChange={handleProfileFormChange}

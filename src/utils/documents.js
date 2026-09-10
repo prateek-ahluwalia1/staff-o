@@ -3,7 +3,7 @@ const DOCUMENT_LABELS = {
     white_card: "White Card",
     msic_card: "MSIC Card",
     control_room_certificate: "Control Room Certificate",
-    ras_certificate: "RAS Certificate",
+    rsa_certificate: "RSA Certificate",
 };
 
 export const parseRequiredDocuments = (documentListRaw, isDocumentFlag) => {

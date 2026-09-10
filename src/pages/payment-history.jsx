@@ -686,10 +686,9 @@ export default function PaymentHistory() {
                       <tr>
                         {isAdmin && <th>Client</th>}
                         <th>Date</th>
-                        <th>Amount Charged</th>
+                        <th>Transaction ID</th>
                         <th>Total Amount</th>
                         <th>Status</th>
-                        {/* <th>Transaction ID</th> */}
                         <th className="text-center">Actions</th>
                       </tr>
                     </thead>
@@ -704,8 +703,24 @@ export default function PaymentHistory() {
                           <td style={{ color: "#334155", fontWeight: 500 }}>
                             {formatDate(tx.created_at)}
                           </td>
-                          <td className="fw-bold" style={{ color: "#0f172a" }}>
-                            {formatAmount(tx.amount_charged)}
+                          <td>
+                            {tx.invoice_filename ? (
+                              <span
+                                className="small"
+                                style={{
+                                  fontFamily: "monospace",
+                                  background: "#f1f5f9",
+                                  padding: "2px 8px",
+                                  borderRadius: "6px",
+                                  color: "#334155",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {tx.invoice_filename.split(/[/\\]/).pop().replace(/\.pdf$/i, "")}
+                              </span>
+                            ) : (
+                              <span className="text-muted small">-</span>
+                            )}
                           </td>
                           <td className="fw-bold" style={{ color: "#0f172a" }}>
                             {formatAmount(tx.total_amount)}
@@ -715,20 +730,6 @@ export default function PaymentHistory() {
                               {formatStatus(tx.status)}
                             </span>
                           </td>
-                          {/* <td>
-                            <span
-                              className="small"
-                              style={{
-                                fontFamily: "monospace",
-                                background: "#f1f5f9",
-                                padding: "2px 8px",
-                                borderRadius: "6px",
-                                color: "#64748b",
-                              }}
-                            >
-                              {tx.payment_intent_id}
-                            </span>
-                          </td> */}
                           <td className="text-center">
                             {tx.invoice_filename ? (
                               <div className="d-flex gap-2 justify-content-center">

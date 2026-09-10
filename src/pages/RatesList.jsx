@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Select from "react-select";
 import useFetch from "../hooks/useFetch";
@@ -169,6 +169,19 @@ const RatesList = ({ forcedType } = {}) => {
   const [reviewNote, setReviewNote] = useState("");
   const [processingRequestId, setProcessingRequestId] = useState(null);
   const [requestTab, setRequestTab] = useState("pending"); // "pending" | "approved" | "rejected"
+
+  // Prevent background scrolling when any modal is open
+  useEffect(() => {
+    if (reviewRequest || showEditModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [reviewRequest, showEditModal]);
 
   const { userdata } = useSelector((state) => state.auth || {});
   const userType = userdata?.data?.user_type || userdata?.user_type;
@@ -608,6 +621,7 @@ const RatesList = ({ forcedType } = {}) => {
           z-index: 9999;
           padding: 20px;
           animation: overlayFadeIn 0.18s ease-out;
+          overscroll-behavior: contain;
         }
         @keyframes overlayFadeIn {
           from { opacity: 0; }
@@ -994,6 +1008,18 @@ const RatesList = ({ forcedType } = {}) => {
                     <i className="fa fa-comment-alt me-1" style={{ color: "#0A7C6E" }}></i> Resource Partner's Reason
                   </h6>
                   <p className="mb-0 text-dark" style={{ fontSize: "13.5px" }}>{reviewRequest.request.reason}</p>
+                </div>
+              )}
+
+              {/* Review Note */}
+              {(reviewRequest.request.review_note || reviewRequest.request.reviewNote) && (
+                <div className="bg-white rounded-3 p-3 mb-4 shadow-sm border">
+                  <h6 className="fw-bold text-dark mb-2 small text-uppercase" style={{ color: "#64748b", letterSpacing: "0.5px" }}>
+                    <i className="fa fa-sticky-note me-1" style={{ color: "#0A7C6E" }}></i> Review Note
+                  </h6>
+                  <p className="mb-0 text-dark" style={{ fontSize: "13.5px", whiteSpace: "pre-wrap" }}>
+                    {reviewRequest.request.review_note || reviewRequest.request.reviewNote}
+                  </p>
                 </div>
               )}
 

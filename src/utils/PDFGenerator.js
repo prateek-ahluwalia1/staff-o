@@ -98,7 +98,7 @@ const generateTFNDeclarationPDF = (formData) => {
   // Accepts full_name OR first_name+surname; full_name takes precedence.
   const {
     tfn, title, full_name, first_name, surname, previous_name, dob, address, basis_of_payment,
-    australian_resident, claim_threshold, help_debt, signature, signed_date,
+    australian_resident, claim_threshold, help_debt, signature, signed_date, date,
   } = formData;
 
   const name = full_name || `${first_name || ""} ${surname || ""}`.trim();
@@ -184,7 +184,7 @@ const generateTFNDeclarationPDF = (formData) => {
   doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
   doc.setTextColor(...T.teal); doc.text("Date:", mg, y);          // ← teal label
   doc.setTextColor(...T.text);
-  const tfnDate = formatDateForDisplay(signed_date);
+  const tfnDate = formatDateForDisplay(signed_date || date);
   doc.text(String(tfnDate), mg + 12, y);
 
   return doc;

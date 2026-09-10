@@ -126,15 +126,16 @@
 /* Main Content Area */
 .cs-main {
   flex: 1;
-  padding: 7%;
+  padding: 40px 0 80px;
   background: linear-gradient(180deg, #FAFCFA 0%, #FFFFFF 300px);
+  width: 100%;
 }
 
 /* Hero / Header Section */
 .cs-hero-section {
   text-align: center;
-  margin-bottom: 36px;
-  margin-top: 32px;
+  margin-bottom: 32px;
+  margin-top: 20px;
 }
 
 .cs-kicker {
@@ -157,14 +158,15 @@
 }
 
 .cs-title {
-  font-size: 2.5rem;
-  line-height: 1.15;
+  font-size: clamp(1.65rem, 4.5vw, 2.5rem);
+  line-height: 1.2;
   margin: 0 0 12px;
   color: var(--nh-ink, #14181C);
+  word-break: break-word;
 }
 
 .cs-subtitle {
-  font-size: 1.05rem;
+  font-size: clamp(0.92rem, 2.2vw, 1.05rem);
   color: var(--nh-text-secondary, #5B6660);
   max-width: 600px;
   margin: 0 auto;
@@ -384,16 +386,25 @@
   font-size: 11px;
 }
 
+.cs-doc-text {
+  min-width: 0;
+  flex: 1;
+}
+
 .cs-doc-filename {
   font-family: 'Barlow Semi Condensed', sans-serif;
   font-size: 16px;
   font-weight: 600;
   color: var(--nh-ink, #14181C);
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .cs-doc-meta {
   font-size: 13px;
   color: var(--nh-text-secondary, #5B6660);
+  line-height: 1.45;
+  word-break: break-word;
 }
 
 .cs-pdf-btn {
@@ -443,6 +454,117 @@
 .cs-form-label .required {
   color: #DC2626;
   margin-left: 2px;
+}
+
+/* Signature Header Toolbar & Mode Switcher */
+.cs-sig-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.cs-sig-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cs-sig-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: var(--nh-tint, #F5F8F5);
+  border: 1px solid var(--nh-border, #E4E9E4);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.cs-sig-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 13px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--nh-text-secondary, #5B6660);
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.15s ease;
+}
+
+.cs-sig-tab-btn:hover:not(.active) {
+  color: var(--nh-ink, #14181C);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.cs-sig-tab-btn.active {
+  background: #FFFFFF;
+  color: var(--nh-green, #0A7C6E);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.cs-sig-action-btns {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cs-btn-generate-sig {
+  background: var(--nh-green-light, #E1F3F0);
+  border: 1px solid #A7F3D0;
+  color: var(--nh-green, #0A7C6E);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 2px rgba(10, 124, 110, 0.06);
+}
+
+.cs-btn-generate-sig:hover {
+  background: var(--nh-green, #0A7C6E);
+  color: #FFFFFF;
+  border-color: var(--nh-green, #0A7C6E);
+  box-shadow: 0 2px 8px rgba(10, 124, 110, 0.2);
+  transform: translateY(-1px);
+}
+
+.cs-btn-generate-sig:active {
+  transform: translateY(0);
+}
+
+.cs-btn-clear-sig {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: #64748B;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.cs-btn-clear-sig:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+  border-color: #FCA5A5;
 }
 
 .cs-input {
@@ -743,41 +865,385 @@
   margin: 0 auto 24px;
 }
 
-/* Responsive Media Queries */
+/* Action Buttons container */
+.cs-action-btns {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* =====================================================
+   COMPREHENSIVE RESPONSIVE DESIGN BREAKPOINTS
+   ===================================================== */
+
+/* Tablet Landscape & Medium Screens (<= 992px) */
+@media (max-width: 992px) {
+  .cs-container {
+    max-width: 100%;
+    padding: 0 20px;
+  }
+
+  .cs-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+
+/* Tablet Portrait & Large Smartphones (<= 768px) */
 @media (max-width: 768px) {
   .cs-main {
-    padding: 7%;
+    padding: 28px 0 56px;
   }
 
   .cs-container {
     padding: 0 16px;
   }
 
-  .cs-title {
-    font-size: 1.85rem;
+  .cs-hero-section {
+    margin-top: 50px !important;
+    margin-bottom: 24px;
   }
 
   .cs-card {
-    padding: 20px 16px;
+    padding: 20px 18px;
     border-radius: 12px;
+    margin-bottom: 18px;
   }
 
-  .cs-grid {
-    grid-template-columns: 1fr;
+  .cs-card-header {
+    padding-bottom: 14px;
+    margin-bottom: 16px;
   }
 
   .cs-doc-box {
-    padding: 16px;
+    padding: 18px 16px;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .cs-doc-info {
+    width: 100%;
   }
 
   .cs-pdf-btn {
     width: 100%;
     justify-content: center;
+    padding: 12px 18px;
+  }
+
+  .cs-submit-box {
+    margin-top: 24px;
+    padding-top: 20px;
   }
 
   .cs-submit-btn {
     max-width: 100%;
+    width: 100%;
+    padding: 13px 24px;
+  }
+
+  .cs-success-card,
+  .cs-error-card {
+    padding: 36px 20px;
+    border-radius: 14px;
+    margin: 50px auto 24px;
+  }
+}
+
+/* Standard Mobile Devices (<= 580px) */
+@media (max-width: 580px) {
+  .cs-topbar {
+    padding: 12px 0;
+  }
+
+  .cs-topbar-inner {
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .cs-topbar-logo {
+    height: 28px;
+  }
+
+  .cs-topbar-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    gap: 5px;
+  }
+
+  .cs-topbar-badge i {
+    font-size: 10px;
+  }
+
+  .cs-hero-section {
+    margin-top: 50px !important;
+    margin-bottom: 20px;
+  }
+
+  .cs-card {
+    padding: 16px 14px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+  }
+
+  .cs-card-header {
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    gap: 8px;
+  }
+
+  .cs-card-title {
+    font-size: 1.12rem;
+    gap: 8px;
+  }
+
+  .cs-badge {
+    padding: 4px 10px;
+    font-size: 11.5px;
+  }
+
+  .cs-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .cs-grid-item {
+    padding: 11px 13px;
+    border-radius: 8px;
+  }
+
+  .cs-grid-label {
+    font-size: 10.5px;
+  }
+
+  .cs-grid-value {
+    font-size: 14px;
+  }
+
+  .cs-grid-value.highlight {
+    font-size: 15px;
+  }
+
+  .cs-doc-box {
+    padding: 14px 12px;
+    gap: 12px;
+    border-radius: 10px;
+  }
+
+  .cs-doc-info {
+    gap: 12px;
+  }
+
+  .cs-doc-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 22px;
+    border-radius: 10px;
+  }
+
+  .cs-doc-filename {
+    font-size: 14.5px;
+  }
+
+  .cs-doc-meta {
+    font-size: 12px;
+  }
+
+  .cs-sig-instruction {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+
+  .cs-form-group {
+    margin-bottom: 16px;
+  }
+
+  .cs-form-label {
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+
+  .cs-input {
+    padding: 10px 13px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+
+  .cs-terms-checkbox-group {
+    padding: 12px;
+    margin-top: 14px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+  }
+
+  .cs-terms-checkbox-label {
+    gap: 10px;
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+
+  .cs-checkbox {
+    width: 17px;
+    height: 17px;
+    margin-top: 2px;
+  }
+
+  .cs-submit-box {
+    margin-top: 20px;
+    padding-top: 16px;
+    gap: 12px;
+  }
+
+  .cs-submit-btn {
+    padding: 12px 18px;
+    font-size: 15px;
+    border-radius: 8px;
+  }
+
+  .cs-submit-disclaimer {
+    font-size: 11.5px;
+    line-height: 1.45;
+  }
+
+  .cs-signed-banner {
+    padding: 14px;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    border-radius: 10px;
+  }
+
+  .cs-signed-banner i {
+    font-size: 20px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .cs-signed-banner-text h4 {
+    font-size: 14px;
+  }
+
+  .cs-signed-banner-text p {
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+
+  .cs-success-card,
+  .cs-error-card {
+    padding: 26px 14px;
+    border-radius: 12px;
+    margin: 50px auto 20px;
+  }
+
+  .cs-success-icon-wrap,
+  .cs-error-icon-wrap {
+    width: 54px;
+    height: 54px;
+    font-size: 24px;
+    margin-bottom: 14px;
+  }
+
+  .cs-success-title,
+  .cs-error-title {
+    font-size: 1.45rem;
+  }
+
+  .cs-success-desc,
+  .cs-error-desc {
+    font-size: 0.92rem;
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+
+  .cs-success-summary {
+    padding: 12px 14px;
+    margin-bottom: 20px;
+    gap: 8px;
+  }
+
+  .cs-success-summary-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .cs-success-summary-label {
+    font-size: 12px;
+  }
+
+  .cs-success-summary-value {
+    font-size: 13.5px;
+    word-break: break-word;
+  }
+
+  .cs-action-btns {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .cs-action-btns .nh-btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+    padding: 11px 16px !important;
+  }
+
+  .cs-simple-footer {
+    padding: 18px 0;
+    font-size: 12px;
+  }
+}
+
+/* Small / Compact Smartphones (<= 380px) */
+@media (max-width: 380px) {
+  .cs-container {
+    padding: 0 10px;
+  }
+
+  .cs-topbar-inner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .cs-topbar-badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+  }
+
+  .cs-card {
+    padding: 14px 10px;
+  }
+
+  .cs-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .cs-card-title {
+    font-size: 1.05rem;
+  }
+
+  .cs-doc-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .cs-submit-btn {
+    font-size: 14px;
+    padding: 11px 14px;
+  }
+
+  .cs-success-title,
+  .cs-error-title {
+    font-size: 1.3rem;
   }
 }

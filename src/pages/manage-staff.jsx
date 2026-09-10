@@ -36,7 +36,33 @@ const normalizeToDisplay = (dateStr) => {
   }
   return dateStr;
 };
-// ===================================
+
+const getExpiryStatus = (dateString) => {
+  if (!dateString) return "no-expiry";
+  let expiry;
+  const ddMatch = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (ddMatch) {
+    const [, d, m, y] = ddMatch;
+    expiry = new Date(y, m - 1, d);
+  } else {
+    const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) {
+      const [, y, m, d] = isoMatch;
+      expiry = new Date(y, m - 1, d);
+    } else {
+      expiry = new Date(dateString);
+    }
+  }
+  if (isNaN(expiry.getTime())) return "no-expiry";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = (expiry - today) / (1000 * 60 * 60 * 24);
+  if (diffDays < 0) return "expired";
+  if (diffDays <= 30) return "expiring";
+  return "valid";
+};
+
+
 
 const DOC_TYPES = [
   { value: "Passport", label: "Passport" },
@@ -350,6 +376,7 @@ const ManageStaff = () => {
       coordinates: "",
       date_of_birth: "",
       origin_country: "",
+      is_control_room_license: 0,
     }),
     []
   );
@@ -370,7 +397,9 @@ const ManageStaff = () => {
     });
   }, [editingUser]);
 
-  const isDocumentsComplete = staffDocuments.length > 0 && staffDocuments.every(doc => doc.file || doc.file_path);
+  const isDocumentsComplete = useMemo(() => {
+    return true;
+  }, []);
 
   const passportDoc = useMemo(() => {
     if (!staffDocuments) return null;
@@ -427,15 +456,6 @@ const ManageStaff = () => {
       return;
     }
 
-    if (tab === "onboarding") {
-      if (!isDocumentsComplete) {
-        setShowDocErrors(false);
-        setTimeout(() => setShowDocErrors(true), 10);
-        toast.error("Please upload all required documents first.");
-        return;
-      }
-    }
-
     setActiveModalTab(tab);
   };
 
@@ -455,6 +475,7 @@ const ManageStaff = () => {
     setSelectedDoc(null);
     if (user) {
       const staffData = user.staff || {};
+      const rawControlRoom = staffData.is_control_room_license ?? user.is_control_room_license ?? 0;
       setEditingUser(user);
       setFormData({
         name: user.name || "",
@@ -463,6 +484,7 @@ const ManageStaff = () => {
         gender: staffData.gender || "",
         staff_document_type: staffData.staff_document_type || "",
         security_license_no: staffData.security_license_no || user.security_license_no || "",
+        is_control_room_license: (rawControlRoom === 1 || rawControlRoom === "1" || rawControlRoom === true) ? 1 : 0,
         address: user.address || "",
         city: user.city || "",
         state: user.state || "",
@@ -976,6 +998,7 @@ const ManageStaff = () => {
     const payload = { ...formData };
     delete payload.password;
     payload.user_id = loggedInContractorId;
+    payload.is_control_room_license = formData.is_control_room_license ? 1 : 0;
 
     try {
       const res = await submit(url, payload, { method });
@@ -1544,6 +1567,7 @@ const ManageStaff = () => {
                     date_of_birth: formData.date_of_birth,
                     origin_country: formData.origin_country,
                     security_license_no: formData.security_license_no || "",
+                    is_control_room_license: formData.is_control_room_license ?? 0,
                     abn: "",
                     acn: "",
                     company_name: "",
@@ -1559,11 +1583,19 @@ const ManageStaff = () => {
                 />
               ) : activeModalTab === "documents" ? (
                 <div>
+                  <div className="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                      <h6 className="fw-bold mb-1">Documents</h6>
+                      <p className="text-muted small mb-0">Upload and manage staff documents.</p>
+                    </div>
+                  </div>
+
                   <DocumentTable
                     documents={staffDocuments}
                     userType="staff"
                     onAddFile={openDocumentModal}
                     showDocErrors={showDocErrors}
+                    isStaffooStaff={false}
                   />
                 </div>
               ) : null}

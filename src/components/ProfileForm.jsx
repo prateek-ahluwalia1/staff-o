@@ -87,6 +87,12 @@ export default function ProfileForm({
         opt.label === formData.origin_country
     ) || null;
 
+  const isControlRoomYes = Boolean(
+    Number(formData.is_control_room_license) === 1 ||
+    formData.is_control_room_license === true ||
+    formData.is_control_room_license === "1"
+  );
+
   return (
     <form id="profile-form" noValidate onSubmit={onSubmit} className="w-100">
       <div className="card border shadow-sm rounded-4 overflow-hidden bg-white">
@@ -837,6 +843,125 @@ export default function ProfileForm({
                         <i className="fa-solid fa-circle-exclamation me-1"></i>Country of birth is required.
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Control Room License Toggle */}
+                {!hideFields.includes("is_control_room_license") && (
+                  <div className="col-md-6">
+                    <label className="form-label fw-bold text-dark small mb-1 d-block">
+                      Control Room License
+                    </label>
+                    <div
+                      className="d-flex align-items-center justify-content-between p-2.5 px-3 rounded-3 border"
+                      onClick={() => {
+                        const nextVal = isControlRoomYes ? 0 : 1;
+                        onChange({
+                          target: {
+                            id: "is_control_room_license",
+                            name: "is_control_room_license",
+                            value: nextVal,
+                          },
+                        });
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          const nextVal = isControlRoomYes ? 0 : 1;
+                          onChange({
+                            target: {
+                              id: "is_control_room_license",
+                              name: "is_control_room_license",
+                              value: nextVal,
+                            },
+                          });
+                        }
+                      }}
+                      style={{
+                        cursor: "pointer",
+                        minHeight: "44px",
+                        backgroundColor: isControlRoomYes ? "#f0fdf9" : "#f8f9fa",
+                        borderColor: isControlRoomYes ? "#0A7C6E" : "#dee2e6",
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      <div className="d-flex align-items-center gap-2">
+                        <div
+                          className="d-flex align-items-center justify-content-center rounded-2"
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            backgroundColor: isControlRoomYes ? "rgba(10, 124, 110, 0.12)" : "#e2e8f0",
+                            color: isControlRoomYes ? "#0A7C6E" : "#64748b",
+                            fontSize: "0.9rem",
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          <i className="fa-solid fa-tower-broadcast"></i>
+                        </div>
+                        <div>
+                          <div
+                            className="fw-semibold"
+                            style={{
+                              fontSize: "0.85rem",
+                              color: isControlRoomYes ? "#075e53" : "#334155",
+                              lineHeight: 1.25,
+                            }}
+                          >
+                            Do you have control room license?
+                          </div>
+                          <div className="text-muted" style={{ fontSize: "0.72rem", marginTop: "1px" }}>
+                            {isControlRoomYes ? "Yes, control room licensed" : "No license"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Switch */}
+                      <div
+                        className="position-relative"
+                        style={{
+                          width: "56px",
+                          height: "26px",
+                          minWidth: "56px",
+                          borderRadius: "999px",
+                          backgroundColor: isControlRoomYes ? "#0A7C6E" : "#cbd5e1",
+                          transition: "background-color 0.25s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          boxShadow: isControlRoomYes ? "0 2px 6px rgba(10, 124, 110, 0.3)" : "none",
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: "absolute",
+                            fontSize: "10px",
+                            fontWeight: "800",
+                            letterSpacing: "0.5px",
+                            userSelect: "none",
+                            ...(isControlRoomYes
+                              ? { left: "8px", color: "#ffffff" }
+                              : { right: "8px", color: "#475569" }),
+                          }}
+                        >
+                          {isControlRoomYes ? "YES" : "NO"}
+                        </span>
+                        <span
+                          style={{
+                            position: "absolute",
+                            top: "2px",
+                            left: isControlRoomYes ? "calc(100% - 24px)" : "2px",
+                            width: "22px",
+                            height: "22px",
+                            borderRadius: "50%",
+                            backgroundColor: "#ffffff",
+                            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.25)",
+                            transition: "left 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
               </>

@@ -192,6 +192,7 @@ const INITIAL_FORM_STATE = {
   company_name: "",
   bank_details: [],
   states_allowed: [],
+  is_control_room_license: 0,
 };
 
 const DOC_TYPES = [
@@ -297,12 +298,49 @@ const DOC_LABEL_MAP = {
   first_aid: "First Aid Certificate",
   cpr: "CPR Certificate",
   vaccination: "Vaccination Certificate",
+  citizen_ship: "Citizen Ship Certificate",
+  medicare: "Medicare Certificate",
+  birth_certificate: "Birth Certificate",
   security_master_license: "Security Master License",
   public_liability: "Public Liability",
   workcover: "Workcover",
   security_membership: "Security Industry Membership Certificate",
   labour_hire: "Labour Hire",
   asic_report: "ASIC Report",
+};
+
+const STAFF_DOCUMENT_POINTS = {
+  passport: 70,
+  citizen_ship: 70,
+  medicare: 25,
+  birth_certificate: 25,
+  security_license: 40,
+  driver_license_front: 70,
+  driver_license_back: 0,
+  working_with_children: 0,
+  first_aid: 0,
+  cpr: 0,
+  visa: 0,
+};
+
+const getStaffDocPoints = (doc) => {
+  if (!doc) return 0;
+  const rawKey = (doc.document_type || doc.document_name || "").toLowerCase().trim();
+  const normalizedKey = rawKey.replace(/[^a-z0-9]/g, "");
+
+  if (normalizedKey.includes("passport")) return 70;
+  if (normalizedKey.includes("citizenship") || normalizedKey.includes("citizenship")) return 70;
+  if (normalizedKey.includes("medicare")) return 25;
+  if (normalizedKey.includes("birthcertificate")) return 25;
+  if (normalizedKey.includes("driverlicensefront")) return 70;
+  if (normalizedKey.includes("driverlicenseback")) return 0;
+  if (normalizedKey.includes("securitylicense")) return 40;
+  if (normalizedKey.includes("workingwithchildren") || normalizedKey.includes("wwcc")) return 0;
+  if (normalizedKey.includes("firstaid")) return 0;
+  if (normalizedKey.includes("cpr")) return 0;
+  if (normalizedKey.includes("visa")) return 0;
+
+  return 0;
 };
 
 const STATE_CATEGORY_LABELS_MAP = {
@@ -346,6 +384,15 @@ export default function EditProfile() {
     loading: fetchLoading,
     refetch,
   } = useFetch(endpoint, { isAuth: true });
+
+  const parentContractorId = Number(
+    userdata?.data?.user_id ??
+    userdata?.user_id ??
+    profileData?.data?.user_id ??
+    profileData?.data?.staff?.user_id ??
+    0
+  );
+  const isStaffooStaff = userType === "staff" && parentContractorId === 1;
 
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: submitSecurityLicense } = useSubmit({
@@ -490,6 +537,9 @@ export default function EditProfile() {
       }
     }
 
+    const rawControlRoom = staff.is_control_room_license ?? d.is_control_room_license ?? 0;
+    const controlRoomLicenseVal = (rawControlRoom === 1 || rawControlRoom === "1" || rawControlRoom === true) ? 1 : 0;
+
     setFormData({
       name: d.name || "",
       email: d.email || "",
@@ -509,6 +559,7 @@ export default function EditProfile() {
       gender: staff.gender || contractor.gender || d.gender || "",
       staff_document_type: staff.staff_document_type || "",
       security_license_no: staff.security_license_no || contractor.security_license_no || "",
+      is_control_room_license: controlRoomLicenseVal,
       date_of_birth: isoToDisplay(d.date_of_birth || staff.date_of_birth || ""),
       company_name:
         userType === "admin"
@@ -560,6 +611,7 @@ export default function EditProfile() {
       gender: staff.gender || contractor.gender || d.gender || "",
       staff_document_type: staff.staff_document_type || "",
       security_license_no: staff.security_license_no || contractor.security_license_no || "",
+      is_control_room_license: controlRoomLicenseVal,
       date_of_birth: isoToDisplay(d.date_of_birth || staff.date_of_birth || ""),
       company_name:
         userType === "admin"
@@ -757,11 +809,23 @@ export default function EditProfile() {
     const invalidDocs = [];
 
     if (!filteredDocuments || filteredDocuments.length === 0) {
+      if (isStaffooStaff) {
+        return {
+          isValid: false,
+          missingDocs: [{ name: "Required Documents (Minimum 100 Points)" }],
+          invalidDocs: [],
+          totalPoints: 0,
+          requiredPoints: 100,
+        };
+      }
       return { isValid: false, missingDocs: [{ name: "Required Documents" }], invalidDocs: [] };
     }
 
     const categories = new Set(filteredDocuments.map((d) => d.document_category).filter(Boolean));
     const showStateLabel = categories.size > 1;
+
+    let totalStaffPoints = 0;
+    const countedDocTypes = new Set();
 
     filteredDocuments.forEach((doc) => {
       const name = getDocDisplayName(doc, showStateLabel);
@@ -796,16 +860,39 @@ export default function EditProfile() {
 
         if (isInvalid) {
           invalidDocs.push({ id: doc.id || name, name, reason: reason || "Invalid or incomplete document", doc });
+        } else {
+          // Valid uploaded document: add points for Staff-O staff only
+          if (isStaffooStaff) {
+            const rawType = (doc.document_type || doc.document_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+            const pts = getStaffDocPoints(doc);
+            if (pts > 0 && !countedDocTypes.has(rawType)) {
+              countedDocTypes.add(rawType);
+              totalStaffPoints += pts;
+            }
+          }
         }
       }
     });
+
+    if (isStaffooStaff) {
+      const isPointsValid = totalStaffPoints >= 100;
+      return {
+        isValid: isPointsValid && invalidDocs.length === 0,
+        missingDocs: isPointsValid ? [] : missingDocs,
+        invalidDocs,
+        totalPoints: totalStaffPoints,
+        requiredPoints: 100,
+      };
+    }
 
     return {
       isValid: missingDocs.length === 0 && invalidDocs.length === 0,
       missingDocs,
       invalidDocs,
+      totalPoints: 0,
+      requiredPoints: 0,
     };
-  }, [filteredDocuments]);
+  }, [filteredDocuments, isStaffooStaff]);
 
   const handleAvatarUpload = useCallback(
     async (file) => {
@@ -890,6 +977,7 @@ export default function EditProfile() {
       registration_number: formData.registration_number || "",
       abn: formData.abn || "",
       acn: formData.acn || "",
+      is_control_room_license: formData.is_control_room_license ? 1 : 0,
     };
 
     const initialPersonalDataNormalized = {
@@ -910,6 +998,7 @@ export default function EditProfile() {
       registration_number: initialPersonalFormData.registration_number || "",
       abn: initialPersonalFormData.abn || "",
       acn: initialPersonalFormData.acn || "",
+      is_control_room_license: initialPersonalFormData.is_control_room_license ? 1 : 0,
     };
 
     return JSON.stringify(currentPersonalData) !== JSON.stringify(initialPersonalDataNormalized);
@@ -957,12 +1046,15 @@ export default function EditProfile() {
       const payload = new FormData();
       Object.keys(formData).forEach((key) => {
         if (key === "profile_image" || key === "email") return;
-        if (userType === "admin" && (key === "name" || key === "phone" || key === "gender" || key === "date_of_birth" || key === "staff_document_type" || key === "security_license_no")) return;
+        if (userType === "admin" && (key === "name" || key === "phone" || key === "gender" || key === "date_of_birth" || key === "staff_document_type" || key === "security_license_no" || key === "is_control_room_license")) return;
+        if (userType !== "staff" && key === "is_control_room_license") return;
 
         if (key === "bank_details") {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
         } else if (key === "states_allowed") {
           payload.append("states_allowed", JSON.stringify(formData.states_allowed || []));
+        } else if (key === "is_control_room_license") {
+          payload.append("is_control_room_license", formData.is_control_room_license ? 1 : 0);
         } else {
           if (formData[key] !== undefined && formData[key] !== null) {
             payload.append(key, formData[key]);
@@ -1010,6 +1102,7 @@ export default function EditProfile() {
           origin_country: formData.origin_country || "",
           staff_document_type: formData.staff_document_type || "",
           security_license_no: formData.security_license_no || "",
+          is_control_room_license: formData.is_control_room_license ? 1 : 0,
           date_of_birth: formData.date_of_birth || "",
           company_name: formData.company_name || "",
           registration_number: formData.registration_number || "",
@@ -1560,7 +1653,11 @@ export default function EditProfile() {
             }
           }, 50);
         }, 10);
-        toast.error("Please upload all required documents before continuing.");
+        if (isStaffooStaff) {
+          toast.error(`Please upload documents to achieve at least 100 points before continuing. (Current: ${docValidation.totalPoints || 0}/100 points)`);
+        } else {
+          toast.error("Please upload all required documents before continuing.");
+        }
         setActiveTab("documents");
         return;
       }
@@ -1724,7 +1821,7 @@ export default function EditProfile() {
       </div>
 
       {/* ⚠️ Inactive Profile Warning – amber style */}
-      {userType === "staff" && !(userdata?.data?.is_active || userdata?.is_active) && (
+      {isStaffooStaff && !(userdata?.data?.is_active || userdata?.is_active) && (
         <div
           className="d-flex align-items-center gap-3 px-4 py-3 rounded-3 shadow-sm mb-4"
           style={{
@@ -1741,8 +1838,31 @@ export default function EditProfile() {
           <div>
             <strong className="d-block mb-1 fw-bold">Action Required</strong>
             <span style={{ textTransform: "none", fontSize: "0.9rem" }}>
-              Complete your personal information, upload all required documents,
-              and fill out the three verification forms to become an active member.
+              Complete your personal information, reach at least 100 document verification points,
+              and fill out the verification forms to become an active member.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {userType === "staff" && !isStaffooStaff && !(userdata?.data?.is_active || userdata?.is_active) && (
+        <div
+          className="d-flex align-items-center gap-3 px-4 py-3 rounded-3 shadow-sm mb-4"
+          style={{
+            backgroundColor: "#fffbeb",
+            borderLeft: "5px solid #d97706",
+            color: "#92400e",
+          }}
+          role="alert"
+        >
+          <i
+            className="fa-solid fa-triangle-exclamation fs-2"
+            style={{ color: "#d97706" }}
+          ></i>
+          <div>
+            <strong className="d-block mb-1 fw-bold">Action Required</strong>
+            <span style={{ textTransform: "none", fontSize: "0.9rem" }}>
+              Complete your personal information and upload all required documents to become an active member.
             </span>
           </div>
         </div>
@@ -1780,7 +1900,7 @@ export default function EditProfile() {
             My Rates
           </button>
         )}
-        {(userType === "staff" && (userdata?.data?.user_id === 1 || userdata?.user_id === 1)) && (
+        {isStaffooStaff && (
           <button
             className={`tab-btn ${activeTab === "onboarding" ? "active" : "inactive"}`}
             onClick={() => handleTabClick("onboarding")}
@@ -1830,7 +1950,7 @@ export default function EditProfile() {
         />
       )}
 
-      {activeTab === "onboarding" && userType === "staff" && (
+      {activeTab === "onboarding" && isStaffooStaff && (
         <StaffOnboardingForms submit={submit} userId={userId} />
       )}
 
@@ -1976,6 +2096,66 @@ export default function EditProfile() {
 
       {activeTab === "documents" && userType !== "customer" && (
         <div className="content-card p-4">
+          {/* 100-Point Identification Check Banner for Staff-O Staff ONLY */}
+          {isStaffooStaff && (
+            <div
+              className="p-3 p-md-4 rounded-3 mb-4 shadow-sm"
+              style={{
+                background: (docValidation.totalPoints || 0) >= 100 ? "#f0fdf4" : "#f8fafc",
+                border: `1px solid ${(docValidation.totalPoints || 0) >= 100 ? "#86efac" : "#e2e8f0"}`,
+                borderLeft: `5px solid ${(docValidation.totalPoints || 0) >= 100 ? "#16a34a" : "#0A7C6E"}`,
+              }}
+            >
+              <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-2">
+                <div>
+                  <h6 className="fw-bold mb-1" style={{ color: "#0f172a" }}>
+                    <i className="fa-solid fa-id-card me-2" style={{ color: "#0A7C6E" }}></i>
+                    100-Point Identification Check
+                  </h6>
+                  <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
+                    Upload eligible identity documents to reach a minimum of <strong>100 points</strong> to proceed to verification forms.
+                  </p>
+                </div>
+                <div className="text-end flex-shrink-0">
+                  <span
+                    className="badge fs-6 px-3 py-2 rounded-pill fw-bold"
+                    style={{
+                      backgroundColor: (docValidation.totalPoints || 0) >= 100 ? "#16a34a" : "#0A7C6E",
+                      color: "#fff",
+                    }}
+                  >
+                    {docValidation.totalPoints || 0} / 100 Points
+                  </span>
+                </div>
+              </div>
+              <div className="progress mt-2" style={{ height: "10px", backgroundColor: "#e2e8f0", borderRadius: "10px" }}>
+                <div
+                  className="progress-bar progress-bar-striped"
+                  role="progressbar"
+                  style={{
+                    width: `${Math.min(100, (docValidation.totalPoints || 0))}%`,
+                    backgroundColor: (docValidation.totalPoints || 0) >= 100 ? "#16a34a" : "#0A7C6E",
+                    transition: "width 0.4s ease",
+                  }}
+                  aria-valuenow={docValidation.totalPoints || 0}
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                ></div>
+              </div>
+              {(docValidation.totalPoints || 0) >= 100 ? (
+                <div className="d-flex align-items-center gap-2 mt-2 text-success small fw-semibold">
+                  <i className="fa-solid fa-circle-check"></i>
+                  <span>Requirement met! You have reached 100+ points and can proceed.</span>
+                </div>
+              ) : (
+                <div className="d-flex align-items-center gap-2 mt-2 text-muted small">
+                  <i className="fa-solid fa-circle-info text-primary"></i>
+                  <span>Need <strong>{Math.max(0, 100 - (docValidation.totalPoints || 0))} more points</strong> to unlock next step.</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {showDocErrors && !docValidation.isValid && (
             <div
               ref={docErrorRef}
@@ -1995,9 +2175,16 @@ export default function EditProfile() {
                 ></i>
                 <div className="w-100">
                   <h5 className="fw-bold mb-2" style={{ color: "#991b1b", fontSize: "1rem" }}>
-                    Please upload all required documents before continuing.
+                    {isStaffooStaff
+                      ? `Minimum 100 document verification points required (Current: ${docValidation.totalPoints || 0}/100 points).`
+                      : "Please upload all required documents before continuing."}
                   </h5>
-                  {docValidation.missingDocs.length > 0 && (
+                  {isStaffooStaff && (docValidation.totalPoints || 0) < 100 && (
+                    <p className="mb-2" style={{ fontSize: "0.88rem", color: "#7f1d1d" }}>
+                      You need at least <strong>{Math.max(0, 100 - (docValidation.totalPoints || 0))} more points</strong>. Please upload additional eligible identity documents (e.g. Passport 70 pts, Driver License Front 70 pts, Citizenship 70 pts, Security License 40 pts, Medicare 25 pts, Birth Certificate 25 pts).
+                    </p>
+                  )}
+                  {!isStaffooStaff && docValidation.missingDocs.length > 0 && (
                     <div className="mb-2">
                       <strong className="d-block mb-1" style={{ fontSize: "0.88rem", color: "#7f1d1d" }}>
                         Missing documents:
@@ -2033,6 +2220,7 @@ export default function EditProfile() {
           <DocumentTable
             documents={filteredDocuments}
             userType={userType}
+            isStaffooStaff={isStaffooStaff}
             showDocErrors={showDocErrors}
             onAddFile={(doc) => {
               setSelectedDoc(doc);

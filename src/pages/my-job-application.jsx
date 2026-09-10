@@ -60,6 +60,14 @@ const DateField = ({ label, selected, onChange, placeholder, maxDate, minDate })
   </div>
 );
 
+const formatAmount = (val) => {
+  if (val == null || val === "") return "";
+  const s = String(val).trim();
+  if (s.startsWith("$")) return s;
+  const n = Number(s);
+  return isNaN(n) ? `$${s}` : `$${n.toFixed(2)}`;
+};
+
 // ---------- Profile Image Component ----------
 const ProfileImage = ({ src, name, size = 36 }) => {
   const [imgError, setImgError] = useState(false);
@@ -270,7 +278,7 @@ export default function MyJobApplications() {
         white_card: "White Card",
         msic_card: "MSIC Card",
         control_room_certificate: "Control Room Certificate",
-        ras_certificate: "RAS Certificate",
+        rsa_certificate: "RSA Certificate",
       };
 
       let documents = [];
@@ -316,7 +324,36 @@ export default function MyJobApplications() {
         shift.payment?.payment_intent_id ||
         shift.rawShift?.payment_intent_id ||
         null;
-      const jobAmount = shift.job_amount || shift.amount || null;
+
+      // Parse invoice_meta safely
+      let invoiceMeta = null;
+      const rawInvoiceMeta =
+        shift.invoice_meta ||
+        shift.rawShift?.invoice_meta ||
+        shift.payment?.invoice_meta ||
+        shift.contractor_invoice_meta;
+
+      if (rawInvoiceMeta) {
+        if (typeof rawInvoiceMeta === "object") {
+          invoiceMeta = rawInvoiceMeta;
+        } else if (typeof rawInvoiceMeta === "string") {
+          try {
+            invoiceMeta = JSON.parse(rawInvoiceMeta);
+          } catch (e) {
+            invoiceMeta = null;
+          }
+        }
+      }
+
+      const totalPayable =
+        invoiceMeta?.total_payable != null
+          ? invoiceMeta.total_payable
+          : null;
+
+      const jobAmount =
+        totalPayable != null
+          ? totalPayable
+          : (shift.job_amount || shift.amount || null);
 
       return {
         rawShift: shift,
@@ -345,6 +382,8 @@ export default function MyJobApplications() {
         guardProfileImage,
         contractorProfileImage,
         payment_intent_id: paymentIntentId,
+        invoiceMeta,
+        totalPayable,
         jobAmount,
       };
     });
@@ -1284,7 +1323,7 @@ export default function MyJobApplications() {
                     <i className={`fa-solid ${stat.icon}`}></i>
                     <div className="d-flex flex-column" style={{ minWidth: 0 }}>
                       <span className="quick-stat-label">{stat.label}</span>
-                      <span className="quick-stat-value text-truncate d-block">
+                      <span className="quick-stat-value pb-1 text-truncate d-block">
                         {stat.value}
                       </span>
                     </div>
@@ -1463,8 +1502,8 @@ export default function MyJobApplications() {
             >
               <div className="d-flex align-items-center gap-2" style={{ position: "relative", zIndex: 1 }}>
                 <i
-                  className="fa-solid fa-circle-check"
-                  style={{ color: "#34d399", fontSize: "20px" }}
+                  className="fa-solid fa-credit-card"
+                  style={{ color: "#fbbf24", fontSize: "20px" }}
                 ></i>
                 <h3
                   className="modal-title"
@@ -1476,7 +1515,10 @@ export default function MyJobApplications() {
                     color: "#fff",
                   }}
                 >
-                  Job Accepted
+                  {waitingForPaymentJobs.length}{" "}
+                  {waitingForPaymentJobs.length === 1
+                    ? "Job Awaiting for Payment"
+                    : "Jobs Awaiting for Payment"}
                 </h3>
               </div>
               <button
@@ -1568,15 +1610,13 @@ export default function MyJobApplications() {
                           {job.role}
                         </div>
                       </div>
-                      {job.jobAmount != null && (
+                      {(job.totalPayable != null || job.jobAmount != null) && (
                         <div className="text-end flex-shrink-0">
                           <div
                             className="fw-bold"
                             style={{ fontSize: "16px", color: "#0A7C6E" }}
                           >
-                            {String(job.jobAmount).startsWith("$")
-                              ? job.jobAmount
-                              : `$${job.jobAmount}`}
+                            {formatAmount(job.totalPayable ?? job.jobAmount)}
                           </div>
                         </div>
                       )}

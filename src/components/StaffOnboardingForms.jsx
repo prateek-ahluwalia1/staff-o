@@ -51,6 +51,17 @@ const displayToISO = (val) => {
     return cleaned;
 };
 
+/* ---------- Error Message Helper Component ---------- */
+const FieldError = ({ error }) => {
+    if (!error) return null;
+    return (
+        <div className="text-danger small mt-1 d-flex align-items-center gap-1 animate__animated animate__fadeIn">
+            <i className="fa-solid fa-circle-exclamation" style={{ fontSize: "0.82rem" }}></i>
+            <span style={{ fontSize: "0.82rem", fontWeight: "500" }}>{error}</span>
+        </div>
+    );
+};
+
 /* ---------- Shared react-select styling ---------- */
 const selectStyles = {
     control: (base, state) => ({
@@ -66,7 +77,7 @@ const selectStyles = {
 };
 
 /* ---------- Reusable Date Input ---------- */
-const DateInput = ({ name, value, onChange, required, disabled, placeholder, max }) => {
+const DateInput = ({ name, value, onChange, required, disabled, placeholder, max, error }) => {
     const pickerRef = useRef(null);
     const currentValue = value || "";
 
@@ -98,46 +109,53 @@ const DateInput = ({ name, value, onChange, required, disabled, placeholder, max
     };
 
     return (
-        <div className="input-group shadow-none">
-            <button
-                type="button"
-                className="input-group-text bg-light border-light-subtle text-primary px-3"
-                onClick={openPicker}
-                disabled={disabled}
-                style={{ cursor: disabled ? "not-allowed" : "pointer" }}
-                title="Open calendar"
-            >
-                <i className="fa-solid fa-calendar-days"></i>
-            </button>
-            <input
-                type="date"
-                ref={pickerRef}
-                className="position-absolute"
-                style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
-                value={displayToISO(currentValue)}
-                onChange={handlePickerChange}
-                disabled={disabled}
-                max={max ? displayToISO(max) : undefined}
-            />
-            <input
-                type="text"
-                className="form-control border-light-subtle border-start-0 ps-0 bg-light focus-ring focus-ring-primary py-2"
-                placeholder={placeholder || "DD/MM/YYYY"}
-                value={currentValue}
-                onChange={handleTextChange}
-                required={required}
-                disabled={disabled}
-                maxLength={10}
-                pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                title="Enter a date in DD/MM/YYYY format"
-                style={{ fontSize: "1rem", cursor: disabled ? "not-allowed" : "text" }}
-            />
+        <div>
+            <div className={`input-group shadow-none ${error ? "border border-danger rounded-3" : ""}`}>
+                <button
+                    type="button"
+                    className={`input-group-text ${error ? "bg-danger-subtle text-danger border-danger" : "bg-light border-light-subtle text-primary"} px-3`}
+                    onClick={openPicker}
+                    disabled={disabled}
+                    style={{ cursor: disabled ? "not-allowed" : "pointer" }}
+                    title="Open calendar"
+                >
+                    <i className="fa-solid fa-calendar-days"></i>
+                </button>
+                <input
+                    type="date"
+                    ref={pickerRef}
+                    className="position-absolute"
+                    style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none" }}
+                    value={displayToISO(currentValue)}
+                    onChange={handlePickerChange}
+                    disabled={disabled}
+                    max={max ? displayToISO(max) : undefined}
+                />
+                <input
+                    type="text"
+                    className={`form-control border-start-0 ps-0 py-2 ${error ? "border-danger is-invalid" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                    style={{
+                        backgroundColor: error ? "#fff8f8" : undefined,
+                        fontSize: "1rem",
+                        cursor: disabled ? "not-allowed" : "text"
+                    }}
+                    placeholder={placeholder || "DD/MM/YYYY"}
+                    value={currentValue}
+                    onChange={handleTextChange}
+                    required={required}
+                    disabled={disabled}
+                    maxLength={10}
+                    pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                    title="Enter a date in DD/MM/YYYY format"
+                />
+            </div>
+            <FieldError error={error} />
         </div>
     );
 };
 
 /* ---------- Address Autocomplete ---------- */
-const AddressAutocomplete = ({ value, name, onChange, placeholder, required, maxLength = 500 }) => {
+const AddressAutocomplete = ({ value, name, onChange, placeholder, required, maxLength = 500, error }) => {
     const inputRef = useRef(null);
     useEffect(() => {
         let autocomplete;
@@ -173,73 +191,101 @@ const AddressAutocomplete = ({ value, name, onChange, placeholder, required, max
     }, [name, onChange]);
 
     return (
-        <div className="input-group shadow-none">
-            <span className="input-group-text bg-light border-light-subtle text-muted px-3">
-                <i className="fa-solid fa-location-dot"></i>
-            </span>
-            <input
-                ref={inputRef}
-                type="text"
-                className="form-control border-light-subtle border-start-0 ps-0 bg-light focus-ring focus-ring-primary py-2"
-                name={name}
-                placeholder={placeholder}
-                maxLength={maxLength}
-                value={value}
-                onChange={onChange}
-                required={required}
-                autoComplete="off"
-                style={{ fontSize: "1rem" }}
-            />
+        <div>
+            <div className={`input-group shadow-none ${error ? "border border-danger rounded-3" : ""}`}>
+                <span className={`input-group-text ${error ? "bg-danger-subtle text-danger border-danger" : "bg-light border-light-subtle text-muted"} px-3`}>
+                    <i className="fa-solid fa-location-dot"></i>
+                </span>
+                <input
+                    ref={inputRef}
+                    type="text"
+                    className={`form-control border-start-0 ps-0 py-2 ${error ? "border-danger is-invalid" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                    style={{
+                        backgroundColor: error ? "#fff8f8" : undefined,
+                        fontSize: "1rem"
+                    }}
+                    name={name}
+                    placeholder={placeholder}
+                    maxLength={maxLength}
+                    value={value}
+                    onChange={onChange}
+                    required={required}
+                    autoComplete="off"
+                />
+            </div>
+            <FieldError error={error} />
         </div>
     );
 };
 
 /* ---------- Country Select ---------- */
-const CountrySelect = ({ inputId, name, value, onChange, placeholder }) => {
+const CountrySelect = ({ inputId, name, value, onChange, placeholder, error }) => {
     const countryOptions = COUNTRIES.map((c) => ({ value: c.name, label: c.name }));
     const selected =
         countryOptions.find((opt) => opt.value === value || opt.label === value) ||
         (value ? { value, label: value } : null);
 
+    const customStyles = {
+        ...selectStyles,
+        control: (base, state) => ({
+            ...selectStyles.control(base, state),
+            borderColor: error ? "#dc3545" : state.isFocused ? "#0A7C6E" : "#dee2e6",
+            backgroundColor: error ? "#fff8f8" : "#f8f9fa",
+            "&:hover": { borderColor: error ? "#dc3545" : "#0A7C6E" },
+        }),
+    };
+
     return (
-        <Select
-            inputId={inputId}
-            options={countryOptions}
-            value={selected}
-            onChange={(opt) => onChange({ target: { name, value: opt ? opt.value : "" } })}
-            placeholder={placeholder || "Search country..."}
-            isClearable
-            isSearchable
-            styles={selectStyles}
-        />
+        <div>
+            <Select
+                inputId={inputId}
+                options={countryOptions}
+                value={selected}
+                onChange={(opt) => onChange({ target: { name, value: opt ? opt.value : "" } })}
+                placeholder={placeholder || "Search country..."}
+                isClearable
+                isSearchable
+                styles={customStyles}
+            />
+            <FieldError error={error} />
+        </div>
     );
 };
 
 /* ---------- Pill Radio Group ---------- */
-const PillRadioGroup = ({ name, value, onChange, options, required }) => (
-    <div className="d-flex flex-wrap gap-2">
-        {options.map((opt) => {
-            const isSelected = value === opt.value;
-            return (
-                <label
-                    key={opt.value}
-                    className={`btn d-flex align-items-center gap-2 px-4 py-2 border rounded-pill transition-all ${isSelected ? "btn-primary-custom shadow-sm" : "btn-light border-light-subtle text-muted"}`}
-                    style={{ cursor: "pointer", fontSize: "0.9rem" }}
-                >
-                    <input
-                        type="radio"
-                        className="d-none"
-                        name={name}
-                        value={opt.value}
-                        checked={isSelected}
-                        onChange={onChange}
-                        required={required}
-                    />
-                    {opt.icon && <i className={`fa-solid ${opt.icon}`}></i>}
-                    {opt.label}
-                </label>
-            );
-        })}
+const PillRadioGroup = ({ name, value, onChange, options, required, error }) => (
+    <div>
+        <div className="d-flex flex-wrap gap-2">
+            {options.map((opt) => {
+                const isSelected = value === opt.value;
+                return (
+                    <label
+                        key={opt.value}
+                        className={`btn d-flex align-items-center gap-2 px-4 py-2 border rounded-pill transition-all ${
+                            isSelected
+                                ? "btn-primary-custom shadow-sm"
+                                : error
+                                ? "btn-light border-danger text-danger"
+                                : "btn-light border-light-subtle text-muted"
+                        }`}
+                        style={{ cursor: "pointer", fontSize: "0.9rem" }}
+                    >
+                        <input
+                            type="radio"
+                            className="d-none"
+                            name={name}
+                            value={opt.value}
+                            checked={isSelected}
+                            onChange={onChange}
+                            required={required}
+                        />
+                        {opt.icon && <i className={`fa-solid ${opt.icon}`}></i>}
+                        {opt.label}
+                    </label>
+                );
+            })}
+        </div>
+        <FieldError error={error} />
     </div>
 );
 
@@ -278,34 +324,62 @@ const FormCardHeader = ({ title, description, onDownloadPDF, downloadKey }) => (
 );
 
 /* ---------- Card Footer ---------- */
-const FormCardFooter = ({ loading, saveLabel, disabled }) => (
-    <div className="card-footer bg-white px-4 px-md-5 py-4 border-top d-flex justify-content-end">
-        <button
-            type="submit"
-            className="btn btn-primary btn-lg px-5 shadow-sm rounded-pill d-flex align-items-center gap-2"
-            disabled={loading || disabled}
-            style={{ fontWeight: "600", transition: "all 0.2s ease", fontSize: "1rem" }}
-        >
-            {loading ? (
-                <>
-                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    Saving...
-                </>
-            ) : (
-                <>
-                    {saveLabel}
-                </>
+const FormCardFooter = ({
+    loading,
+    saveLabel,
+    saveIcon = "fa-arrow-right",
+    disabled = false,
+    onPrev,
+    prevLabel = "Previous",
+}) => (
+    <div className="card-footer bg-white px-4 px-md-5 py-4 border-top d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            {onPrev && (
+                <button
+                    type="button"
+                    className="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2"
+                    onClick={onPrev}
+                    style={{ fontSize: "0.95rem" }}
+                >
+                    <i className="fa-solid fa-arrow-left"></i>
+                    <span>{prevLabel}</span>
+                </button>
             )}
-        </button>
+        </div>
+        <div className="d-flex align-items-center gap-2 flex-wrap ms-auto">
+            <button
+                type="submit"
+                className="btn btn-primary-custom btn-lg px-5 shadow-sm rounded-pill d-inline-flex align-items-center gap-2"
+                disabled={loading || disabled}
+                style={{
+                    fontWeight: "600",
+                    transition: "all 0.2s ease",
+                    fontSize: "1rem",
+                    backgroundColor: "#0A7C6E",
+                    borderColor: "#0A7C6E",
+                    color: "#ffffff",
+                }}
+            >
+                {loading ? (
+                    <>
+                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Saving...
+                    </>
+                ) : (
+                    <>
+                        <span>{saveLabel}</span>
+                        {saveIcon && <i className={`fa-solid ${saveIcon}`}></i>}
+                    </>
+                )}
+            </button>
+        </div>
     </div>
 );
 
-const inputCls = "form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3";
-const selectCls = "form-select border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3";
 const labelCls = "form-label fw-semibold text-dark";
 
 /* ---------- Document Upload Field with Submission Indicator ---------- */
-const DocumentUploadField = ({ label, required, filePath, onUpload, accept = ".pdf,.doc,.docx,.jpg,.jpeg,.png" }) => {
+const DocumentUploadField = ({ label, required, filePath, onUpload, accept = ".pdf,.doc,.docx,.jpg,.jpeg,.png", error }) => {
     const [showReplace, setShowReplace] = useState(false);
 
     const resolveDocUrl = (pathOrUrl) => {
@@ -316,9 +390,11 @@ const DocumentUploadField = ({ label, required, filePath, onUpload, accept = ".p
 
     return (
         <div className="mb-3">
-            <label className={labelCls}>
-                {label} {required && <span className="text-danger">*</span>}
-            </label>
+            {label && (
+                <label className={labelCls}>
+                    {label} {required && <span className="text-danger">*</span>}
+                </label>
+            )}
             {filePath ? (
                 <div className="p-3 bg-light rounded-3 border d-flex flex-wrap align-items-center gap-3">
                     <div className="d-flex align-items-center gap-2 text-success">
@@ -354,10 +430,10 @@ const DocumentUploadField = ({ label, required, filePath, onUpload, accept = ".p
                     )}
                 </div>
             ) : (
-                <div className="d-flex align-items-center gap-3 flex-wrap p-3 bg-light rounded-3 border">
+                <div className={`d-flex align-items-center gap-3 flex-wrap p-3 rounded-3 border ${error ? "border-danger bg-danger-subtle" : "bg-light"}`}>
                     <input
                         type="file"
-                        className="form-control bg-white"
+                        className={`form-control bg-white ${error ? "is-invalid border-danger" : ""}`}
                         style={{ maxWidth: "320px" }}
                         accept={accept}
                         onChange={onUpload}
@@ -365,6 +441,7 @@ const DocumentUploadField = ({ label, required, filePath, onUpload, accept = ".p
                     />
                 </div>
             )}
+            <FieldError error={error} />
         </div>
     );
 };
@@ -433,8 +510,8 @@ const mapStaffInfoToSuperForm = (staff) => ({
     date2: todayDDMMYYYY(),
 });
 
-/* ---------- TFN Declaration Form (Full Name only) ---------- */
-const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified, onDownloadPDF }) => (
+/* ---------- TFN Declaration Form ---------- */
+const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, onDownloadPDF, onPrev, errors = {} }) => (
     <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white animate__animated animate__fadeIn">
         <FormCardHeader
             title="TFN Declaration"
@@ -442,7 +519,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
             onDownloadPDF={onDownloadPDF}
             downloadKey="tfn"
         />
-        <form onSubmit={onSubmit}>
+        <form onSubmit={onSubmit} noValidate>
             <div className="card-body px-4 px-md-5 py-4 py-md-5">
                 <SectionHeader icon="fa-hashtag">Tax File Number</SectionHeader>
                 <div className="row g-4 mb-4">
@@ -452,7 +529,8 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                         </label>
                         <input
                             type="text"
-                            className={inputCls}
+                            className={`form-control py-2 px-3 ${errors.tfn ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                            style={{ backgroundColor: errors.tfn ? "#fff8f8" : undefined, fontSize: "1rem" }}
                             name="tfn"
                             placeholder="000 000 000"
                             minLength="8"
@@ -460,8 +538,8 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                             value={values.tfn}
                             onChange={onChange}
                             required
-                            style={{ fontSize: "1rem" }}
                         />
+                        <FieldError error={errors.tfn} />
                     </div>
                 </div>
 
@@ -471,12 +549,20 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                         <label className={labelCls}>
                             Title <span className="text-danger">*</span>
                         </label>
-                        <select className={selectCls} name="title" value={values.title} onChange={onChange} required style={{ fontSize: "1rem" }}>
+                        <select
+                            className={`form-select py-2 px-3 ${errors.title ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                            style={{ backgroundColor: errors.title ? "#fff8f8" : undefined, fontSize: "1rem" }}
+                            name="title"
+                            value={values.title}
+                            onChange={onChange}
+                            required
+                        >
                             <option value="" disabled>Select</option>
                             <option value="Mr">Mr</option>
                             <option value="Ms">Ms</option>
                             <option value="Mrs">Mrs</option>
                         </select>
+                        <FieldError error={errors.title} />
                     </div>
                     <div className="col-md-10">
                         <label className={labelCls}>
@@ -484,21 +570,22 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                         </label>
                         <input
                             type="text"
-                            className={inputCls}
+                            className={`form-control py-2 px-3 ${errors.full_name ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                            style={{ backgroundColor: errors.full_name ? "#fff8f8" : undefined, fontSize: "1rem" }}
                             name="full_name"
                             placeholder="Jane Smith"
                             maxLength="50"
                             value={values.full_name}
                             onChange={onChange}
                             required
-                            style={{ fontSize: "1rem" }}
                         />
+                        <FieldError error={errors.full_name} />
                     </div>
                     <div className="col-md-6">
                         <label className={labelCls}>Previous Name (if any)</label>
                         <input
                             type="text"
-                            className={inputCls}
+                            className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
                             name="prev_name"
                             placeholder="—"
                             maxLength="50"
@@ -511,7 +598,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                         <label className={labelCls}>
                             Date of Birth <span className="text-danger">*</span>
                         </label>
-                        <DateInput name="dob" value={values.dob} onChange={onChange} required />
+                        <DateInput name="dob" value={values.dob} onChange={onChange} required error={errors.dob} />
                     </div>
                 </div>
 
@@ -528,6 +615,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                             placeholder="Street address, suburb, state, postcode"
                             required={true}
                             maxLength={80}
+                            error={errors.address}
                         />
                     </div>
                 </div>
@@ -543,6 +631,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                             value={values.basis}
                             onChange={onChange}
                             required
+                            error={errors.basis}
                             options={[
                                 { value: "full-time", label: "Full-time" },
                                 { value: "part-time", label: "Part-time" },
@@ -560,7 +649,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                         { label: "HELP / VSL / FS / SSL debt?", name: "help" },
                     ].map(({ label, name }) => (
                         <div className="col-12" key={name}>
-                            <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 p-3 bg-light rounded-3 border">
+                            <div className={`d-flex flex-wrap justify-content-between align-items-center gap-3 p-3 rounded-3 border ${errors[name] ? "border-danger bg-danger-subtle" : "bg-light"}`}>
                                 <label className="fw-semibold text-dark mb-0" style={{ fontSize: "0.9rem" }}>
                                     {label} <span className="text-danger">*</span>
                                 </label>
@@ -569,6 +658,7 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                                     value={values[name]}
                                     onChange={onChange}
                                     required
+                                    error={errors[name]}
                                     options={[
                                         { value: "yes", label: "Yes" },
                                         { value: "no", label: "No" },
@@ -587,31 +677,38 @@ const TfnDeclarationForm = ({ values, loading, onChange, onSubmit, dataModified,
                         </label>
                         <input
                             type="text"
-                            className={inputCls}
+                            className={`form-control py-2 px-3 ${errors.sig1 ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                            style={{ backgroundColor: errors.sig1 ? "#fff8f8" : undefined, fontSize: "1rem" }}
                             name="sig1"
                             placeholder="Type your full name"
                             maxLength="40"
                             value={values.sig1}
                             onChange={onChange}
                             required
-                            style={{ fontSize: "1rem" }}
                         />
+                        <FieldError error={errors.sig1} />
                     </div>
                     <div className="col-md-6">
                         <label className={labelCls}>
                             Date <span className="text-danger">*</span>
                         </label>
-                        <DateInput name="date1" value={values.date1} onChange={onChange} required />
+                        <DateInput name="date1" value={values.date1} onChange={onChange} required error={errors.date1} />
                     </div>
                 </div>
             </div>
-            <FormCardFooter loading={loading} saveLabel="Save TFN Declaration" disabled={!dataModified} />
+            <FormCardFooter
+                loading={loading}
+                saveLabel="Save TFN Declaration & Next"
+                saveIcon="fa-arrow-right"
+                onPrev={onPrev}
+                prevLabel="Back to Onboarding"
+            />
         </form>
     </div>
 );
 
 /* ---------- Superannuation Form ---------- */
-const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified, onDownloadPDF }) => (
+const SuperannuationForm = ({ values, loading, onChange, onSubmit, onDownloadPDF, onPrev, errors = {} }) => (
     <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white animate__animated animate__fadeIn">
         <FormCardHeader
             title="Superannuation Standard Choice Form"
@@ -619,7 +716,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
             onDownloadPDF={onDownloadPDF}
             downloadKey="super_form"
         />
-        <form onSubmit={onSubmit}>
+        <form onSubmit={onSubmit} noValidate>
             <div className="card-body px-4 px-md-5 py-4 py-md-5">
                 <SectionHeader icon="fa-user">Employee Details</SectionHeader>
                 <div className="row g-4 mb-4">
@@ -629,21 +726,22 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                         </label>
                         <input
                             type="text"
-                            className={inputCls}
+                            className={`form-control py-2 px-3 ${errors.s_name ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                            style={{ backgroundColor: errors.s_name ? "#fff8f8" : undefined, fontSize: "1rem" }}
                             name="s_name"
                             placeholder="John Doe"
                             maxLength="50"
                             value={values.s_name}
                             onChange={onChange}
                             required
-                            style={{ fontSize: "1rem" }}
                         />
+                        <FieldError error={errors.s_name} />
                     </div>
                     <div className="col-md-6">
                         <label className={labelCls}>Employee Number</label>
                         <input
                             type="text"
-                            className={inputCls}
+                            className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
                             name="s_empno"
                             placeholder="Optional"
                             maxLength="20"
@@ -662,6 +760,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                             value={values.fund_choice}
                             onChange={onChange}
                             required
+                            error={errors.fund_choice}
                             options={[
                                 { value: "own", label: "I nominate my own super fund", icon: "fa-hand-pointer" },
                                 { value: "employer", label: "Use the employer's default fund", icon: "fa-building" },
@@ -671,22 +770,23 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                 </div>
 
                 {values.fund_choice === "own" ? (
-                    <div className="row g-4 mb-4 p-3 mx-0 bg-light rounded-3 border animate__animated animate__fadeIn">
+                    <div className={`row g-4 mb-4 p-3 mx-0 rounded-3 border animate__animated animate__fadeIn ${errors.s_fundname || errors.s_fundabn || errors.s_usi || errors.s_member ? "border-danger bg-danger-subtle" : "bg-light"}`}>
                         <div className="col-md-6">
                             <label className={labelCls}>
                                 Fund Name <span className="text-danger">*</span>
                             </label>
                             <input
                                 type="text"
-                                className={inputCls}
+                                className={`form-control py-2 px-3 ${errors.s_fundname ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.s_fundname ? "#fff8f8" : undefined, fontSize: "1rem" }}
                                 name="s_fundname"
                                 placeholder="e.g. AustralianSuper"
                                 maxLength="35"
                                 value={values.s_fundname}
                                 onChange={onChange}
                                 required={values.fund_choice === "own"}
-                                style={{ fontSize: "1rem" }}
                             />
+                            <FieldError error={errors.s_fundname} />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>
@@ -694,15 +794,16 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                             </label>
                             <input
                                 type="text"
-                                className={inputCls}
+                                className={`form-control py-2 px-3 ${errors.s_fundabn ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.s_fundabn ? "#fff8f8" : undefined, fontSize: "1rem" }}
                                 name="s_fundabn"
                                 placeholder="12 345 678 901"
                                 maxLength="11"
                                 value={values.s_fundabn}
                                 onChange={onChange}
                                 required={values.fund_choice === "own"}
-                                style={{ fontSize: "1rem" }}
                             />
+                            <FieldError error={errors.s_fundabn} />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>
@@ -710,15 +811,16 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                             </label>
                             <input
                                 type="text"
-                                className={inputCls}
+                                className={`form-control py-2 px-3 ${errors.s_usi ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.s_usi ? "#fff8f8" : undefined, fontSize: "1rem" }}
                                 name="s_usi"
                                 placeholder="USI code"
                                 maxLength="20"
                                 value={values.s_usi}
                                 onChange={onChange}
                                 required={values.fund_choice === "own"}
-                                style={{ fontSize: "1rem" }}
                             />
+                            <FieldError error={errors.s_usi} />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>
@@ -726,15 +828,16 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                             </label>
                             <input
                                 type="text"
-                                className={inputCls}
+                                className={`form-control py-2 px-3 ${errors.s_member ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.s_member ? "#fff8f8" : undefined, fontSize: "1rem" }}
                                 name="s_member"
                                 placeholder="Member no."
                                 maxLength="30"
                                 value={values.s_member}
                                 onChange={onChange}
                                 required={values.fund_choice === "own"}
-                                style={{ fontSize: "1rem" }}
                             />
+                            <FieldError error={errors.s_member} />
                         </div>
                     </div>
                 ) : (
@@ -754,27 +857,28 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                         </label>
                         <input
                             type="text"
-                            className={inputCls}
+                            className={`form-control py-2 px-3 ${errors.sig2 ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                            style={{ backgroundColor: errors.sig2 ? "#fff8f8" : undefined, fontSize: "1rem" }}
                             name="sig2"
                             placeholder="Type your full name"
                             maxLength="40"
                             value={values.sig2}
                             onChange={onChange}
                             required
-                            style={{ fontSize: "1rem" }}
                         />
+                        <FieldError error={errors.sig2} />
                     </div>
                     <div className="col-md-6">
                         <label className={labelCls}>
                             Date <span className="text-danger">*</span>
                         </label>
-                        <DateInput name="date2" value={values.date2} onChange={onChange} required />
+                        <DateInput name="date2" value={values.date2} onChange={onChange} required error={errors.date2} />
                     </div>
                 </div>
 
-                <div className="mt-4 p-3 rounded-3 form-check d-flex align-items-center">
+                <div className={`mt-4 p-3 rounded-3 form-check d-flex align-items-center ${errors.super_confirm ? "border border-danger bg-danger-subtle" : ""}`}>
                     <input
-                        className="form-check-input"
+                        className={`form-check-input ${errors.super_confirm ? "is-invalid border-danger" : ""}`}
                         type="checkbox"
                         id="super_confirm"
                         name="super_confirm"
@@ -791,17 +895,24 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, dataModified,
                         contributions will be paid into the fund I have selected above.
                     </label>
                 </div>
+                <FieldError error={errors.super_confirm} />
             </div>
-            <FormCardFooter loading={loading} saveLabel="Save Superannuation" disabled={!dataModified} />
+            <FormCardFooter
+                loading={loading}
+                saveLabel="Save Superannuation"
+                saveIcon="fa-check"
+                onPrev={onPrev}
+                prevLabel="Back to TFN Declaration"
+            />
         </form>
     </div>
 );
 
 /* ---------- Employee Onboarding Form ---------- */
 const EmployeeOnboardingForm = ({
-    values, loading, onChange, onSubmit, dataModified,
+    values, loading, onChange, onSubmit,
     onDocUpload, verifyingSecurityLicense, onVerifySecurityLicense,
-    onDownloadPDF, securityLicenceModified  // new prop
+    onDownloadPDF, securityLicenceModified, errors = {}
 }) => {
     return (
         <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white animate__animated animate__fadeIn">
@@ -811,7 +922,7 @@ const EmployeeOnboardingForm = ({
                 onDownloadPDF={onDownloadPDF}
                 downloadKey="onboarding"
             />
-            <form onSubmit={onSubmit}>
+            <form onSubmit={onSubmit} noValidate>
                 <div className="card-body px-4 px-md-5 py-4 py-md-5">
                     <SectionHeader icon="fa-user">Personal Contact Details</SectionHeader>
                     <div className="row g-4 mb-4">
@@ -819,47 +930,87 @@ const EmployeeOnboardingForm = ({
                             <label className={labelCls}>
                                 Full Name (as per ID) <span className="text-danger">*</span>
                             </label>
-                            <input type="text" className={inputCls} name="o_name" maxLength="50"
-                                value={values.o_name} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            <input
+                                type="text"
+                                className={`form-control py-2 px-3 ${errors.o_name ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.o_name ? "#fff8f8" : undefined, fontSize: "1rem" }}
+                                name="o_name"
+                                maxLength="50"
+                                value={values.o_name}
+                                onChange={onChange}
+                                required
+                            />
+                            <FieldError error={errors.o_name} />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>
                                 Date of Birth <span className="text-danger">*</span>
                             </label>
-                            <DateInput name="o_dob" value={values.o_dob} onChange={onChange} required />
+                            <DateInput name="o_dob" value={values.o_dob} onChange={onChange} required error={errors.o_dob} />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>
                                 Residential Address <span className="text-danger">*</span>
                             </label>
-                            <AddressAutocomplete name="o_addr" value={values.o_addr} onChange={onChange}
-                                placeholder="Street address, suburb, state, postcode" required={true} maxLength={80} />
+                            <AddressAutocomplete
+                                name="o_addr"
+                                value={values.o_addr}
+                                onChange={onChange}
+                                placeholder="Street address, suburb, state, postcode"
+                                required={true}
+                                maxLength={80}
+                                error={errors.o_addr}
+                            />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>
                                 Mobile Phone <span className="text-danger">*</span>
                             </label>
-                            <div className="input-group shadow-none">
-                                <span className="input-group-text bg-light border-light-subtle text-muted px-3">
+                            <div className={`input-group shadow-none ${errors.o_phone ? "border border-danger rounded-3" : ""}`}>
+                                <span className={`input-group-text ${errors.o_phone ? "bg-danger-subtle text-danger border-danger" : "bg-light border-light-subtle text-muted"} px-3`}>
                                     <i className="fa-solid fa-phone"></i>
                                 </span>
-                                <input type="text" className="form-control border-light-subtle border-start-0 ps-0 bg-light focus-ring focus-ring-primary py-2"
-                                    name="o_phone" placeholder="04xx xxx xxx"
-                                    maxLength="15" value={values.o_phone} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                                <input
+                                    type="text"
+                                    className={`form-control border-start-0 ps-0 py-2 ${errors.o_phone ? "border-danger is-invalid" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                    style={{
+                                        backgroundColor: errors.o_phone ? "#fff8f8" : undefined,
+                                        fontSize: "1rem"
+                                    }}
+                                    name="o_phone"
+                                    placeholder="04xx xxx xxx"
+                                    maxLength="15"
+                                    value={values.o_phone}
+                                    onChange={onChange}
+                                    required
+                                />
                             </div>
+                            <FieldError error={errors.o_phone} />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>
                                 Personal Email <span className="text-danger">*</span>
                             </label>
-                            <div className="input-group shadow-none">
-                                <span className="input-group-text bg-light border-light-subtle text-muted px-3">
+                            <div className={`input-group shadow-none ${errors.o_email ? "border border-danger rounded-3" : ""}`}>
+                                <span className={`input-group-text ${errors.o_email ? "bg-danger-subtle text-danger border-danger" : "bg-light border-light-subtle text-muted"} px-3`}>
                                     <i className="fa-solid fa-envelope"></i>
                                 </span>
-                                <input type="email" className="form-control border-light-subtle border-start-0 ps-0 bg-light focus-ring focus-ring-primary py-2"
-                                    name="o_email" placeholder="jane@email.com"
-                                    maxLength="100" value={values.o_email} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                                <input
+                                    type="email"
+                                    className={`form-control border-start-0 ps-0 py-2 ${errors.o_email ? "border-danger is-invalid" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                    style={{
+                                        backgroundColor: errors.o_email ? "#fff8f8" : undefined,
+                                        fontSize: "1rem"
+                                    }}
+                                    name="o_email"
+                                    placeholder="jane@email.com"
+                                    maxLength="100"
+                                    value={values.o_email}
+                                    onChange={onChange}
+                                    required
+                                />
                             </div>
+                            <FieldError error={errors.o_email} />
                         </div>
                     </div>
 
@@ -869,8 +1020,18 @@ const EmployeeOnboardingForm = ({
                             <label className={labelCls}>
                                 Passport No. <span className="text-danger">*</span>
                             </label>
-                            <input type="text" className={inputCls} name="o_passport" placeholder="PA1234567"
-                                maxLength="20" value={values.o_passport} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            <input
+                                type="text"
+                                className={`form-control py-2 px-3 ${errors.o_passport ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.o_passport ? "#fff8f8" : undefined, fontSize: "1rem" }}
+                                name="o_passport"
+                                placeholder="PA1234567"
+                                maxLength="20"
+                                value={values.o_passport}
+                                onChange={onChange}
+                                required
+                            />
+                            <FieldError error={errors.o_passport} />
                         </div>
                         <div className="col-md-4">
                             <label className={labelCls}>
@@ -882,21 +1043,26 @@ const EmployeeOnboardingForm = ({
                                 value={values.o_pcountry}
                                 onChange={onChange}
                                 placeholder="Search country..."
+                                error={errors.o_pcountry}
                             />
                         </div>
                         <div className="col-md-4">
                             <label className={labelCls}>
                                 Passport Expiry <span className="text-danger">*</span>
                             </label>
-                            <DateInput name="o_pexpiry" value={values.o_pexpiry} onChange={onChange} required />
+                            <DateInput name="o_pexpiry" value={values.o_pexpiry} onChange={onChange} required error={errors.o_pexpiry} />
                         </div>
-                        <DocumentUploadField
-                            label="Upload Passport Document"
-                            required
-                            filePath={values.passport_doc}
-                            onUpload={(e) => onDocUpload(e, "passport_doc")}
-                        />
+                        <div className="col-12">
+                            <DocumentUploadField
+                                label="Upload Passport Document"
+                                required
+                                filePath={values.passport_doc}
+                                onUpload={(e) => onDocUpload(e, "passport_doc")}
+                                error={errors.passport_doc}
+                            />
+                        </div>
                     </div>
+
                     {/* Work Rights */}
                     <div className="col-md-12 mb-4">
                         <label className={`${labelCls} d-block`}>
@@ -907,6 +1073,7 @@ const EmployeeOnboardingForm = ({
                             value={values.work}
                             onChange={onChange}
                             required
+                            error={errors.work}
                             options={[
                                 { value: "citizen", label: "Australian Citizen / PR" },
                                 { value: "student", label: "Student Visa" },
@@ -923,19 +1090,20 @@ const EmployeeOnboardingForm = ({
                             </label>
                             <input
                                 type="text"
-                                className={inputCls}
+                                className={`form-control py-2 px-3 ${errors.o_visa_type ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.o_visa_type ? "#fff8f8" : undefined, fontSize: "1rem" }}
                                 name="o_visa_type"
                                 placeholder="Specify your visa type"
                                 maxLength="30"
                                 value={values.o_visa_type}
                                 onChange={onChange}
                                 required
-                                style={{ fontSize: "1rem" }}
                             />
+                            <FieldError error={errors.o_visa_type} />
                         </div>
                     )}
 
-                    {/* 100-Point ID Check – read-only, prefilled from response */}
+                    {/* 100-Point ID Check – read-only summary */}
                     <SectionHeader icon="fa-id-card">100-Point ID Check</SectionHeader>
                     <div className="border rounded-3 overflow-hidden mb-4">
                         {[
@@ -976,38 +1144,105 @@ const EmployeeOnboardingForm = ({
                     <div className="row g-4 mb-4">
                         <div className="col-md-4">
                             <label className={labelCls}>Bank Name <span className="text-danger">*</span></label>
-                            <input type="text" className={inputCls} name="o_bank" placeholder="XYZ Bank"
-                                maxLength="35" value={values.o_bank} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            <input
+                                type="text"
+                                className={`form-control py-2 px-3 ${errors.o_bank ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.o_bank ? "#fff8f8" : undefined, fontSize: "1rem" }}
+                                name="o_bank"
+                                placeholder="XYZ Bank"
+                                maxLength="35"
+                                value={values.o_bank}
+                                onChange={onChange}
+                                required
+                            />
+                            <FieldError error={errors.o_bank} />
                         </div>
                         <div className="col-md-4">
                             <label className={labelCls}>BSB Number <span className="text-danger">*</span></label>
-                            <input type="text" className={inputCls} name="o_bsb" placeholder="062-000"
-                                maxLength="7" value={values.o_bsb} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            <input
+                                type="text"
+                                className={`form-control py-2 px-3 ${errors.o_bsb ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.o_bsb ? "#fff8f8" : undefined, fontSize: "1rem" }}
+                                name="o_bsb"
+                                placeholder="062-000"
+                                maxLength="7"
+                                value={values.o_bsb}
+                                onChange={onChange}
+                                required
+                            />
+                            <FieldError error={errors.o_bsb} />
                         </div>
                         <div className="col-md-4">
                             <label className={labelCls}>Account Number <span className="text-danger">*</span></label>
-                            <input type="text" className={inputCls} name="o_acct" placeholder="12345678"
-                                maxLength="20" value={values.o_acct} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            <input
+                                type="text"
+                                className={`form-control py-2 px-3 ${errors.o_acct ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.o_acct ? "#fff8f8" : undefined, fontSize: "1rem" }}
+                                name="o_acct"
+                                placeholder="12345678"
+                                maxLength="20"
+                                value={values.o_acct}
+                                onChange={onChange}
+                                required
+                            />
+                            <FieldError error={errors.o_acct} />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>TFN <span className="text-danger">*</span></label>
-                            <input type="text" className={inputCls} name="o_tfn" minLength="8"
-                                maxLength="11" value={values.o_tfn} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            <input
+                                type="text"
+                                className={`form-control py-2 px-3 ${errors.o_tfn ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.o_tfn ? "#fff8f8" : undefined, fontSize: "1rem" }}
+                                name="o_tfn"
+                                minLength="8"
+                                maxLength="11"
+                                value={values.o_tfn}
+                                onChange={onChange}
+                                required
+                            />
+                            <FieldError error={errors.o_tfn} />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>Super Fund Name <span className="text-danger">*</span></label>
-                            <input type="text" className={inputCls} name="o_superfund" maxLength="35"
-                                value={values.o_superfund} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            <input
+                                type="text"
+                                className={`form-control py-2 px-3 ${errors.o_superfund ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.o_superfund ? "#fff8f8" : undefined, fontSize: "1rem" }}
+                                name="o_superfund"
+                                maxLength="35"
+                                value={values.o_superfund}
+                                onChange={onChange}
+                                required
+                            />
+                            <FieldError error={errors.o_superfund} />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>Super USI <span className="text-danger">*</span></label>
-                            <input type="text" className={inputCls} name="o_superusi" maxLength="20"
-                                value={values.o_superusi} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            <input
+                                type="text"
+                                className={`form-control py-2 px-3 ${errors.o_superusi ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.o_superusi ? "#fff8f8" : undefined, fontSize: "1rem" }}
+                                name="o_superusi"
+                                maxLength="20"
+                                value={values.o_superusi}
+                                onChange={onChange}
+                                required
+                            />
+                            <FieldError error={errors.o_superusi} />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>Member Number <span className="text-danger">*</span></label>
-                            <input type="text" className={inputCls} name="o_member" maxLength="30"
-                                value={values.o_member} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            <input
+                                type="text"
+                                className={`form-control py-2 px-3 ${errors.o_member ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.o_member ? "#fff8f8" : undefined, fontSize: "1rem" }}
+                                name="o_member"
+                                maxLength="30"
+                                value={values.o_member}
+                                onChange={onChange}
+                                required
+                            />
+                            <FieldError error={errors.o_member} />
                         </div>
                     </div>
 
@@ -1017,9 +1252,21 @@ const EmployeeOnboardingForm = ({
                             <label className={labelCls}>
                                 Security Licence No. <span className="text-danger">*</span>
                             </label>
-                            <div className="input-group">
-                                <input type="text" className={inputCls + " rounded-start"} name="o_seclic" placeholder="VIC 123456"
-                                    maxLength="30" value={values.o_seclic} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            <div className={`input-group ${errors.o_seclic ? "border border-danger rounded-3" : ""}`}>
+                                <input
+                                    type="text"
+                                    className={`form-control rounded-start py-2 px-3 ${errors.o_seclic ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                    style={{
+                                        backgroundColor: errors.o_seclic ? "#fff8f8" : undefined,
+                                        fontSize: "1rem"
+                                    }}
+                                    name="o_seclic"
+                                    placeholder="VIC 123456"
+                                    maxLength="30"
+                                    value={values.o_seclic}
+                                    onChange={onChange}
+                                    required
+                                />
                                 <button
                                     type="button"
                                     className="btn btn-outline-primary"
@@ -1032,6 +1279,7 @@ const EmployeeOnboardingForm = ({
                                     ) : "Verify"}
                                 </button>
                             </div>
+                            <FieldError error={errors.o_seclic} />
                             <div className="mt-3">
                                 <label className={labelCls}>
                                     Upload Security Licence Document <span className="text-danger">*</span>
@@ -1047,6 +1295,7 @@ const EmployeeOnboardingForm = ({
                                         required
                                         filePath={values.security_license_doc}
                                         onUpload={(e) => onDocUpload(e, "security_license_doc")}
+                                        error={errors.security_license_doc}
                                     />
                                 )}
                             </div>
@@ -1056,19 +1305,28 @@ const EmployeeOnboardingForm = ({
                                 Security Licence Expiry <span className="text-danger">*</span>
                             </label>
                             <DateInput name="o_seclicexp" value={values.o_seclicexp} onChange={onChange}
-                                required disabled={true} />
+                                required disabled={true} error={errors.o_seclicexp} />
                         </div>
 
                         <div className="col-md-6">
                             <label className={labelCls}>First Aid Certificate No.</label>
-                            <input type="text" className={inputCls} name="o_fa" placeholder="FA-001234"
-                                maxLength="30" value={values.o_fa} onChange={onChange} style={{ fontSize: "1rem" }} />
+                            <input
+                                type="text"
+                                className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
+                                name="o_fa"
+                                placeholder="FA-001234"
+                                maxLength="30"
+                                value={values.o_fa}
+                                onChange={onChange}
+                                style={{ fontSize: "1rem" }}
+                            />
                             <div className="mt-3">
                                 <DocumentUploadField
                                     label="Upload First Aid Document"
-                                    required
+                                    required={Boolean(values.o_fa?.trim())}
                                     filePath={values.first_aid_doc}
                                     onUpload={(e) => onDocUpload(e, "first_aid_doc")}
+                                    error={errors.first_aid_doc}
                                 />
                             </div>
                         </div>
@@ -1084,18 +1342,32 @@ const EmployeeOnboardingForm = ({
                             <label className={labelCls}>
                                 Employee Signature (Type Name) <span className="text-danger">*</span>
                             </label>
-                            <input type="text" className={inputCls} name="sig3" placeholder="Type your full name"
-                                maxLength="40" value={values.sig3} onChange={onChange} required style={{ fontSize: "1rem" }} />
+                            <input
+                                type="text"
+                                className={`form-control py-2 px-3 ${errors.sig3 ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                style={{ backgroundColor: errors.sig3 ? "#fff8f8" : undefined, fontSize: "1rem" }}
+                                name="sig3"
+                                placeholder="Type your full name"
+                                maxLength="40"
+                                value={values.sig3}
+                                onChange={onChange}
+                                required
+                            />
+                            <FieldError error={errors.sig3} />
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>
                                 Date <span className="text-danger">*</span>
                             </label>
-                            <DateInput name="date3" value={values.date3} onChange={onChange} required />
+                            <DateInput name="date3" value={values.date3} onChange={onChange} required error={errors.date3} />
                         </div>
                     </div>
                 </div>
-                <FormCardFooter loading={loading} saveLabel="Save Onboarding Form" disabled={!dataModified} />
+                <FormCardFooter
+                    loading={loading}
+                    saveLabel="Save Onboarding Form & Next"
+                    saveIcon="fa-arrow-right"
+                />
             </form>
         </div>
     );
@@ -1106,7 +1378,7 @@ const normalizeTfnData = (apiData) => {
     return {
         tfn: apiData?.tfn ?? "",
         title: apiData?.title ?? "",
-        full_name: apiData?.full_name,
+        full_name: apiData?.full_name ?? "",
         prev_name: apiData?.previous_name ?? apiData?.prev_name ?? "",
         dob: isoToDisplay(apiData?.dob),
         address: apiData?.address ?? "",
@@ -1134,8 +1406,8 @@ const normalizeSuperData = (apiData) => ({
     sig2: apiData?.signature ?? apiData?.sig2 ?? "",
     date2: isoToDisplay(apiData?.signed_date ?? apiData?.date) || todayDDMMYYYY(),
 });
+
 const normalizeOnboardData = (apiData) => {
-    // Parse id_checks if it's a string
     let parsedIdChecks = {};
     if (apiData?.id_checks) {
         if (typeof apiData.id_checks === "string") {
@@ -1165,7 +1437,6 @@ const normalizeOnboardData = (apiData) => {
         chk_driver: Boolean(parsedIdChecks?.drivers_license ?? apiData?.chk_driver ?? false),
         chk_security: Boolean(parsedIdChecks?.security_license ?? apiData?.chk_security ?? false),
         chk_medicare: Boolean(parsedIdChecks?.medicare_or_utility ?? apiData?.chk_medicare ?? false),
-        // … rest remains exactly the same
         o_bank: apiData?.bank_name ?? apiData?.o_bank ?? "",
         o_bsb: apiData?.bsb ?? apiData?.o_bsb ?? "",
         o_acct: apiData?.account_number ?? apiData?.o_acct ?? "",
@@ -1182,6 +1453,89 @@ const normalizeOnboardData = (apiData) => {
         sig3: apiData?.signature ?? apiData?.sig3 ?? "",
         date3: isoToDisplay(apiData?.signed_date ?? apiData?.date) || todayDDMMYYYY(),
     };
+};
+
+/* ---------- Validation Functions ---------- */
+const validateOnboardForm = (values) => {
+    const errs = {};
+    if (!values.o_name?.trim()) errs.o_name = "Full name is required";
+    if (!values.o_dob?.trim()) errs.o_dob = "Date of birth is required";
+    if (!values.o_addr?.trim()) errs.o_addr = "Residential address is required";
+    if (!values.o_phone?.trim()) errs.o_phone = "Mobile phone is required";
+    if (!values.o_email?.trim()) {
+        errs.o_email = "Personal email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.o_email.trim())) {
+        errs.o_email = "Please enter a valid email address";
+    }
+
+    if (!values.o_passport?.trim()) errs.o_passport = "Passport number is required";
+    if (!values.o_pcountry?.trim()) errs.o_pcountry = "Country of issue is required";
+    if (!values.o_pexpiry?.trim()) errs.o_pexpiry = "Passport expiry date is required";
+    if (!values.passport_doc) errs.passport_doc = "Passport document upload is required";
+
+    if (!values.work) errs.work = "Work rights selection is required";
+    if (values.work === "other" && !values.o_visa_type?.trim()) {
+        errs.o_visa_type = "Visa type specification is required";
+    }
+
+    if (!values.o_bank?.trim()) errs.o_bank = "Bank name is required";
+    if (!values.o_bsb?.trim()) errs.o_bsb = "BSB number is required";
+    if (!values.o_acct?.trim()) errs.o_acct = "Account number is required";
+    if (!values.o_tfn?.trim()) errs.o_tfn = "TFN is required";
+    if (!values.o_superfund?.trim()) errs.o_superfund = "Super fund name is required";
+    if (!values.o_superusi?.trim()) errs.o_superusi = "Super USI is required";
+    if (!values.o_member?.trim()) errs.o_member = "Member number is required";
+
+    if (!values.o_seclic?.trim()) errs.o_seclic = "Security licence number is required";
+    if (!values.o_seclicexp?.trim()) errs.o_seclicexp = "Please verify your security licence first";
+    if (!values.security_license_doc) errs.security_license_doc = "Security licence document upload is required";
+
+    if (values.o_fa?.trim() && !values.first_aid_doc) {
+        errs.first_aid_doc = "First aid document upload is required";
+    }
+
+    if (!values.sig3?.trim()) errs.sig3 = "Employee signature is required";
+    if (!values.date3?.trim()) errs.date3 = "Date is required";
+
+    return errs;
+};
+
+const validateTfnForm = (values) => {
+    const errs = {};
+    if (!values.tfn?.trim()) {
+        errs.tfn = "TFN is required";
+    } else if (values.tfn.replace(/\s+/g, "").length < 8 || values.tfn.replace(/\s+/g, "").length > 9) {
+        errs.tfn = "TFN must be 8 or 9 digits";
+    }
+    if (!values.title?.trim()) errs.title = "Title is required";
+    if (!values.full_name?.trim()) errs.full_name = "Full name is required";
+    if (!values.dob?.trim()) errs.dob = "Date of birth is required";
+    if (!values.address?.trim()) errs.address = "Residential address is required";
+    if (!values.basis) errs.basis = "Employment type is required";
+    if (!values.aus_res) errs.aus_res = "Please answer this declaration";
+    if (!values.threshold) errs.threshold = "Please answer this declaration";
+    if (!values.help) errs.help = "Please answer this declaration";
+    if (!values.sig1?.trim()) errs.sig1 = "Employee signature is required";
+    if (!values.date1?.trim()) errs.date1 = "Date is required";
+
+    return errs;
+};
+
+const validateSuperForm = (values) => {
+    const errs = {};
+    if (!values.s_name?.trim()) errs.s_name = "Full name is required";
+    if (!values.fund_choice) errs.fund_choice = "Fund choice is required";
+    if (values.fund_choice === "own") {
+        if (!values.s_fundname?.trim()) errs.s_fundname = "Fund name is required";
+        if (!values.s_fundabn?.trim()) errs.s_fundabn = "Fund ABN is required";
+        if (!values.s_usi?.trim()) errs.s_usi = "Fund USI is required";
+        if (!values.s_member?.trim()) errs.s_member = "Member account number is required";
+    }
+    if (!values.sig2?.trim()) errs.sig2 = "Employee signature is required";
+    if (!values.date2?.trim()) errs.date2 = "Date is required";
+    if (!values.super_confirm) errs.super_confirm = "You must confirm this declaration before proceeding";
+
+    return errs;
 };
 
 /* ---------- Main Component ---------- */
@@ -1211,6 +1565,13 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     const [loading, setLoading] = useState(false);
     const [dataModified, setDataModified] = useState(false);
     const [formDataLoading, setFormDataLoading] = useState(true);
+    const [errors, setErrors] = useState({});
+
+    const [savedForms, setSavedForms] = useState({
+        onboarding: false,
+        tfn: false,
+        superannuation: false,
+    });
 
     const [verifyingSecurityLicense, setVerifyingSecurityLicense] = useState(false);
     const [staffState, setStaffState] = useState("");
@@ -1237,32 +1598,34 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             const endpoint = `api/form-data?user_id=${encodeURIComponent(userId)}&type=${encodeURIComponent(formType)}`;
             const res = await submit(endpoint, undefined, { method: "GET", silentErrorToast: true });
             const fetchedData = res?.data ?? res;
-
             if (formType === "tfn") {
-                if (fetchedData) {
+                if (fetchedData && typeof fetchedData === "object" && Object.keys(fetchedData).length > 0) {
                     const normalized = normalizeTfnData(fetchedData);
-                    const hasContent = normalized.tfn.trim() !== "" || normalized.full_name.trim() !== "";
-                    if (hasContent) {
+                    const hasSaved = Boolean(fetchedData.tfn || fetchedData.signature || fetchedData.id || normalized.tfn.trim() !== "");
+                    if (hasSaved) {
                         setTfnForm(normalized);
                         setOriginalTfnForm(normalized);
+                        setSavedForms((prev) => ({ ...prev, tfn: true }));
                     }
                 }
             } else if (formType === "superannuation") {
-                if (fetchedData) {
+                if (fetchedData && typeof fetchedData === "object" && Object.keys(fetchedData).length > 0) {
                     const normalized = normalizeSuperData(fetchedData);
-                    const hasContent = normalized.s_name.trim() !== "" || normalized.s_fundname.trim() !== "";
-                    if (hasContent) {
+                    const hasSaved = Boolean(fetchedData.fund_choice || fetchedData.fund_name || fetchedData.signature || fetchedData.id || normalized.s_name.trim() !== "");
+                    if (hasSaved) {
                         setSuperForm(normalized);
                         setOriginalSuperForm(normalized);
+                        setSavedForms((prev) => ({ ...prev, superannuation: true }));
                     }
                 }
             } else if (formType === "onboarding") {
-                if (fetchedData) {
+                if (fetchedData && typeof fetchedData === "object" && Object.keys(fetchedData).length > 0) {
                     const normalized = normalizeOnboardData(fetchedData);
-                    const hasContent = normalized.o_name.trim() !== "" || normalized.o_addr.trim() !== "";
-                    if (hasContent) {
+                    const hasSaved = Boolean(fetchedData.full_name || fetchedData.signature || fetchedData.id || fetchedData.address || (normalized.o_name && normalized.o_addr));
+                    if (hasSaved) {
                         setOnboardForm(normalized);
                         setOriginalOnboardForm(normalized);
+                        setSavedForms((prev) => ({ ...prev, onboarding: true }));
                     }
                 }
             }
@@ -1312,6 +1675,13 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     const handleTfnChange = (e) => {
         const { name, value, type, checked } = e.target;
+        if (errors[name]) {
+            setErrors((prev) => {
+                const copy = { ...prev };
+                delete copy[name];
+                return copy;
+            });
+        }
         const updatedForm = { ...tfnForm, [name]: type === "checkbox" ? checked : value };
         setTfnForm(updatedForm);
         setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalTfnForm));
@@ -1319,6 +1689,13 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     const handleSuperChange = (e) => {
         const { name, value, type, checked } = e.target;
+        if (errors[name]) {
+            setErrors((prev) => {
+                const copy = { ...prev };
+                delete copy[name];
+                return copy;
+            });
+        }
         const updatedForm = { ...superForm, [name]: type === "checkbox" ? checked : value };
         setSuperForm(updatedForm);
         setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalSuperForm));
@@ -1326,6 +1703,13 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     const handleOnboardChange = (e) => {
         const { name, value, type, checked } = e.target;
+        if (errors[name]) {
+            setErrors((prev) => {
+                const copy = { ...prev };
+                delete copy[name];
+                return copy;
+            });
+        }
         if (name === "o_seclic") {
             const updatedForm = { ...onboardForm, [name]: value, o_seclicexp: "" };
             setOnboardForm(updatedForm);
@@ -1375,6 +1759,12 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             if (res?.success && res?.expiry) {
                 const expiryStr = cleanDateString(res.expiry);
                 setOnboardForm((prev) => ({ ...prev, o_seclicexp: expiryStr }));
+                setErrors((prev) => {
+                    const copy = { ...prev };
+                    delete copy.o_seclic;
+                    delete copy.o_seclicexp;
+                    return copy;
+                });
                 setDataModified(JSON.stringify({ ...onboardForm, o_seclicexp: expiryStr }) !== JSON.stringify(originalOnboardForm));
                 toast.success("Security License verified. Expiry date locked.");
             }
@@ -1393,47 +1783,125 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             toast.error("File is too large. Please upload a file smaller than 10MB.");
             return;
         }
-        const fd = new FormData();
-        fd.append("file", file);
-        fd.append("folder", "staff_documents");
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("user_id", userId);
+        formData.append("type", fieldName);
+
+        setLoading(true);
         try {
-            const res = await submit("api/upload-file", fd, { method: "POST" });
-            if (res?.success && res?.path) {
-                setOnboardForm((prev) => {
-                    const updatedForm = { ...prev, [fieldName]: res.path };
-                    setDataModified(JSON.stringify(updatedForm) !== JSON.stringify(originalOnboardForm));
-                    return updatedForm;
+            const res = await submit("api/upload-staff-file", formData, {
+                method: "POST",
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            if (res?.success || res?.file_path) {
+                const uploadedPath = res?.file_path || res?.data?.file_path || file.name;
+                setOnboardForm((prev) => ({ ...prev, [fieldName]: uploadedPath }));
+                setErrors((prev) => {
+                    const copy = { ...prev };
+                    delete copy[fieldName];
+                    return copy;
                 });
+                setDataModified(true);
+                toast.success("Document uploaded successfully.");
             } else {
-                toast.error(res?.message || "Failed to upload document.");
+                toast.error("Failed to upload document.");
             }
         } catch (err) {
-            console.error("Doc upload failed", err);
-            toast.error("An error occurred while uploading.");
+            console.error("Upload error:", err);
+            toast.error("Error uploading document.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleTabSwitch = (targetIdx) => {
+        if (formDataLoading) return;
+        if (targetIdx === 0) {
+            setErrors({});
+            setSubTab(0);
+            return;
+        }
+        if (targetIdx === 1) {
+            if (!savedForms.onboarding) {
+                toast.error("Please fill and save the Employee Onboarding Form first.");
+                return;
+            }
+            setErrors({});
+            setSubTab(1);
+            return;
+        }
+        if (targetIdx === 2) {
+            if (!savedForms.onboarding) {
+                toast.error("Please fill and save the Employee Onboarding Form first.");
+                return;
+            }
+            if (!savedForms.tfn) {
+                toast.error("Please fill and save the TFN Declaration form first.");
+                return;
+            }
+            setErrors({});
+            setSubTab(2);
+            return;
         }
     };
 
     const handleFormSubmit = async (e, tabIndex) => {
         e.preventDefault();
-        if (!userId) return toast.error("User ID missing. Cannot save form.");
+        if (!userId) {
+            toast.error("User ID is missing.");
+            return;
+        }
 
-        let payload = {};
+        let validationErrors = {};
+        if (tabIndex === 0) {
+            validationErrors = validateOnboardForm(onboardForm);
+        } else if (tabIndex === 1) {
+            validationErrors = validateTfnForm(tfnForm);
+        } else if (tabIndex === 2) {
+            validationErrors = validateSuperForm(superForm);
+        }
+
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
+            toast.error("Please fill in all required fields marked in red.");
+            setTimeout(() => {
+                const firstErrorEl = document.querySelector(".is-invalid, .border-danger");
+                if (firstErrorEl) {
+                    firstErrorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+                    if (firstErrorEl.focus) firstErrorEl.focus();
+                }
+            }, 100);
+            return;
+        }
+
+        setErrors({});
+
         let endpoint = "";
-        let pdfFormData = {};
+        let payload = {};
         let pdfType = "";
         let fileName = "";
+        let pdfFormData = {};
 
         if (tabIndex === 1) {
             endpoint = "api/tfn-declaration";
             pdfType = "tfn";
             fileName = `TFN_Declaration_${userId}_${new Date().getTime()}.pdf`;
             payload = {
-                user_id: userId, tfn: tfnForm.tfn, title: tfnForm.title,
+                user_id: userId,
+                tfn: tfnForm.tfn,
+                title: tfnForm.title,
                 full_name: tfnForm.full_name,
-                previous_name: tfnForm.prev_name, dob: tfnForm.dob,
-                address: tfnForm.address, basis_of_payment: tfnForm.basis,
-                australian_resident: tfnForm.aus_res, claim_threshold: tfnForm.threshold,
-                help_debt: tfnForm.help, signature: tfnForm.sig1, date: tfnForm.date1
+                previous_name: tfnForm.prev_name,
+                dob: displayToISO(tfnForm.dob),
+                address: tfnForm.address,
+                basis_of_payment: tfnForm.basis,
+                australian_resident: tfnForm.aus_res,
+                claim_threshold: tfnForm.threshold,
+                help_debt: tfnForm.help,
+                signature: tfnForm.sig1,
+                date: displayToISO(tfnForm.date1) || displayToISO(todayDDMMYYYY())
             };
             pdfFormData = { ...payload };
         } else if (tabIndex === 2) {
@@ -1487,9 +1955,16 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         if (saveSucceeded) {
             toast.success("Form saved successfully!");
 
-            if (tabIndex === 0) await fetchFormData("onboarding");
-            else if (tabIndex === 1) await fetchFormData("tfn");
-            else if (tabIndex === 2) await fetchFormData("superannuation");
+            if (tabIndex === 0) {
+                setSavedForms((prev) => ({ ...prev, onboarding: true }));
+                await fetchFormData("onboarding");
+            } else if (tabIndex === 1) {
+                setSavedForms((prev) => ({ ...prev, tfn: true }));
+                await fetchFormData("tfn");
+            } else if (tabIndex === 2) {
+                setSavedForms((prev) => ({ ...prev, superannuation: true }));
+                await fetchFormData("superannuation");
+            }
             setDataModified(false);
 
             try {
@@ -1506,6 +1981,14 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                 }
             } catch (pdfError) {
                 console.error("PDF generation/upload error:", pdfError);
+            }
+
+            if (tabIndex === 0) {
+                setSubTab(1);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            } else if (tabIndex === 1) {
+                setSubTab(2);
+                window.scrollTo({ top: 0, behavior: "smooth" });
             }
         }
     };
@@ -1588,39 +2071,50 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             >
                 {TAB_META.map((tab, idx) => {
                     const isActive = subTab === idx;
+                    const isLocked =
+                        idx === 1 ? !savedForms.onboarding :
+                        idx === 2 ? (!savedForms.onboarding || !savedForms.tfn) :
+                        false;
+                    const isCompleted =
+                        idx === 0 ? savedForms.onboarding :
+                        idx === 1 ? savedForms.tfn :
+                        savedForms.superannuation;
 
                     return (
                         <button
                             key={idx}
                             type="button"
-                            onClick={() => setSubTab(idx)}
+                            onClick={() => handleTabSwitch(idx)}
                             disabled={formDataLoading}
                             aria-current={isActive ? "page" : undefined}
                             aria-label={tab.label}
-                            className={`btn rounded-pill flex-fill d-flex align-items-center justify-content-center gap-2 fw-semibold ${isActive
-                                ? "btn-primary-custom shadow"
-                                : "btn-light border text-muted"
-                                }`}
+                            className={`btn rounded-pill flex-fill d-flex align-items-center justify-content-center gap-2 fw-semibold ${
+                                isActive
+                                    ? "btn-primary-custom shadow"
+                                    : isLocked
+                                    ? "btn-light border text-muted opacity-75"
+                                    : "btn-light border text-dark"
+                            }`}
                             style={{
                                 minHeight: "48px",
                                 minWidth: "130px",
                                 fontSize: "0.92rem",
                                 transition: "all 0.25s ease",
                                 transform: isActive ? "scale(1.02)" : "scale(1)",
-                                opacity: formDataLoading ? 0.7 : 1,
-                                cursor: formDataLoading ? "not-allowed" : "pointer",
+                                opacity: formDataLoading ? 0.7 : isLocked ? 0.65 : 1,
+                                cursor: formDataLoading ? "not-allowed" : isLocked ? "not-allowed" : "pointer",
                                 boxShadow: isActive
                                     ? "0 6px 18px rgba(13,110,253,.18)"
                                     : "none",
                             }}
                             onMouseEnter={(e) => {
-                                if (!isActive && !formDataLoading) {
+                                if (!isActive && !formDataLoading && !isLocked) {
                                     e.currentTarget.style.backgroundColor = "#f8f9fa";
                                     e.currentTarget.style.transform = "translateY(-2px)";
                                 }
                             }}
                             onMouseLeave={(e) => {
-                                if (!isActive) {
+                                if (!isActive && !isLocked) {
                                     e.currentTarget.style.backgroundColor = "";
                                     e.currentTarget.style.transform = "translateY(0)";
                                 }
@@ -1633,6 +2127,11 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                                 >
                                     <span className="visually-hidden">Loading...</span>
                                 </div>
+                            ) : isLocked ? (
+                                <i
+                                    className="fa-solid fa-lock text-muted"
+                                    style={{ fontSize: "0.9rem" }}
+                                />
                             ) : (
                                 <i
                                     className={`fa-solid ${tab.icon}`}
@@ -1646,13 +2145,14 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
                             <span>{tab.label}</span>
 
-                            {isActive && !formDataLoading && (
+                            {isCompleted && !formDataLoading && (
                                 <i
-                                    className="fa-solid fa-check-circle"
+                                    className={`fa-solid fa-check-circle ${isActive ? "text-white" : "text-success"}`}
                                     style={{
-                                        fontSize: "0.75rem",
-                                        opacity: 0.8,
+                                        fontSize: "0.85rem",
+                                        opacity: 0.9,
                                     }}
+                                    title="Form saved"
                                 />
                             )}
                         </button>
@@ -1672,6 +2172,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                     onVerifySecurityLicense={handleVerifySecurityLicense}
                     onDownloadPDF={downloadPDF}
                     securityLicenceModified={securityLicenceModified}
+                    errors={errors}
                 />
             )}
 
@@ -1683,6 +2184,11 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                     onSubmit={(e) => handleFormSubmit(e, 1)}
                     dataModified={dataModified}
                     onDownloadPDF={downloadPDF}
+                    onPrev={() => {
+                        setSubTab(0);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    errors={errors}
                 />
             )}
 
@@ -1694,6 +2200,11 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                     onSubmit={(e) => handleFormSubmit(e, 2)}
                     dataModified={dataModified}
                     onDownloadPDF={downloadPDF}
+                    onPrev={() => {
+                        setSubTab(1);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    errors={errors}
                 />
             )}
         </div>

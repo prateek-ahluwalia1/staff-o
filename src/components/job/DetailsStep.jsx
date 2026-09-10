@@ -11,23 +11,23 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
 
   const JOB_TYPE_OPTIONS = [
     { value: "", label: "Select type" },
-    { label: 'Crowd Controller (venue/event)', value: 'Crowd Controller (venue/event)' },
-    { label: 'Static Security Officer (Gatehouse, warehouse, construction site)', value: 'Static Security Officer (Gatehouse, warehouse, construction site)' },
-    { label: 'Patrol Staff (Foot or routine mobile patrol)', value: 'Patrol Staff (Foot or routine mobile patrol)' },
+    { label: 'Crowd Controller', value: 'Crowd Controller' },
+    { label: 'Static Security Officer', value: 'Static Security Officer' },
+    { label: 'Patrol Staff', value: 'Patrol Staff' },
     // { label: 'Concierge/Front of House Guard', value: 'Concierge/Front of House Guard' },
-    { label: 'Security Officer - Monitoring/Control Room (Basic)', value: 'Security Officer - Monitoring/Control Room (Basic)' },
-    { label: 'Security Staff with a Trained Security Dog', value: 'Security Staff with a Trained Security Dog' },
-    { label: 'Armed Security Officer (Cash-in-Transit / Low-complexity)', value: 'Armed Security Officer (Cash-in-Transit / Low-complexity)' },
-    { label: 'Control Room Operator (Advanced/Full Systems)', value: 'Control Room Operator (Advanced/Full Systems)' },
-    { label: 'Event/Venue Supervisor (Small Team Leader)', value: 'Event/Venue Supervisor (Small Team Leader)' },
-    { label: 'Aviation/Maritime Security Protection Officer', value: 'Aviation/Maritime Security Protection Officer' },
+    { label: 'Security Officer - Monitoring/Control Room', value: 'Security Officer - Monitoring/Control Room' },
+    // { label: 'Security Staff with a Trained Security Dog', value: 'Security Staff with a Trained Security Dog' },
+    // { label: 'Armed Security Officer (Cash-in-Transit / Low-complexity)', value: 'Armed Security Officer (Cash-in-Transit / Low-complexity)' },
+    { label: 'Control Room Operator', value: 'Control Room Operator' },
+    { label: 'Event/Venue Supervisor', value: 'Event/Venue Supervisor' },
+    // { label: 'Aviation/Maritime Security Protection Officer', value: 'Aviation/Maritime Security Protection Officer' },
     { label: 'Senior Security Supervisor / Shift Supervisor', value: 'Senior Security Supervisor / Shift Supervisor' },
     // { label: 'Mobile Patrol Inspector / Fleet Coordinator', value: 'Mobile Patrol Inspector / Fleet Coordinator' },
-    { label: 'Control Room Shift Manager', value: 'Control Room Shift Manager' },
+    // { label: 'Control Room Shift Manager', value: 'Control Room Shift Manager' },
     // { label: 'Security Operations Manager', value: 'Security Operations Manager' },
     // { label: 'Regional Contract Manager', value: 'Regional Contract Manager' },
     // { label: 'Chief Security Instructor / Compliance Auditor', value: 'Chief Security Instructor / Compliance Auditor' },
-    { label: "Others (Custom Entry)", value: "others" },
+    { label: "Others", value: "others" },
   ];
 
   const selectedJobTypeOption = form.jobType
@@ -81,14 +81,62 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
     <div
       className={`jw-switch-row ${isYes ? "on" : ""}`}
       onClick={() => onToggle(!isYes)}
-      style={{ padding: "10px 14px" }}
+      style={{ padding: "10px 14px", cursor: "pointer" }}
     >
       <div className="jw-switch-row-label" style={{ fontSize: "0.82rem" }}>
         {icon && <i className={icon}></i>}
         <span>{label}</span>
       </div>
-      <button type="button" className={`jw-switch ${isYes ? "on" : ""}`} aria-pressed={isYes}>
-        <span className="jw-thumb"></span>
+      <button
+        type="button"
+        className={`jw-switch ${isYes ? "on" : ""}`}
+        aria-pressed={isYes}
+        style={{
+          width: "56px",
+          height: "26px",
+          minWidth: "56px",
+          position: "relative",
+          borderRadius: "999px",
+          flexShrink: 0,
+          border: "none",
+          padding: 0,
+          backgroundColor: isYes ? "#0A7C6E" : "#cbd5e1",
+          transition: "background-color 0.2s ease",
+          cursor: "pointer",
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            top: "50%",
+            transform: "translateY(-50%)",
+            fontSize: "11px",
+            fontWeight: "700",
+            lineHeight: 1,
+            userSelect: "none",
+            letterSpacing: "0.2px",
+            ...(isYes
+              ? { left: "8px", color: "#ffffff" }
+              : { right: "8px", color: "#475569" }),
+          }}
+        >
+          {isYes ? "Yes" : "No"}
+        </span>
+        <span
+          className="jw-thumb"
+          style={{
+            position: "absolute",
+            top: "3px",
+            left: "3px",
+            width: "20px",
+            height: "20px",
+            borderRadius: "50%",
+            backgroundColor: "#ffffff",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.35)",
+            transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+            transform: isYes ? "translateX(30px)" : "translateX(0)",
+          }}
+        ></span>
       </button>
     </div>
   );
@@ -232,18 +280,18 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
                 onToggle={(val) => toggleDocument('white_card', val)}
               />
             </div>
-            <div className="col-12 col-md-6 col-lg-4">
+            {/* <div className="col-12 col-md-6 col-lg-4">
               <SwitchRow
                 icon="fa-solid fa-id-badge"
                 label="MSIC Card Required?"
                 isYes={Array.isArray(form.document_types) && form.document_types.includes('msic_card')}
                 onToggle={(val) => toggleDocument('msic_card', val)}
               />
-            </div>
+            </div> */}
             <div className="col-12 col-md-6 col-lg-4">
               <SwitchRow
                 icon="fa-solid fa-building-shield"
-                label="Control Room Certificate Required?"
+                label="Control Room License Required?"
                 isYes={Array.isArray(form.document_types) && form.document_types.includes('control_room_certificate')}
                 onToggle={(val) => toggleDocument('control_room_certificate', val)}
               />
@@ -251,11 +299,12 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
             <div className="col-12 col-md-6 col-lg-4">
               <SwitchRow
                 icon="fa-solid fa-award"
-                label="RAS Certificate Required?"
-                isYes={Array.isArray(form.document_types) && form.document_types.includes('ras_certificate')}
-                onToggle={(val) => toggleDocument('ras_certificate', val)}
+                label="RSA Certificate Required?"
+                isYes={Array.isArray(form.document_types) && form.document_types.includes('rsa_certificate')}
+                onToggle={(val) => toggleDocument('rsa_certificate', val)}
               />
             </div>
+            
           </div>
         </div>
       </div>

@@ -186,6 +186,65 @@ const getInitials = (name) => {
     return name.split(" ").filter(Boolean).map(w => w[0]).join("").toUpperCase().slice(0, 2);
 };
 
+const getExpiryStatus = (dateString) => {
+    if (!dateString) return "no-expiry";
+    let expiry;
+    const ddMatch = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (ddMatch) {
+        const [, d, m, y] = ddMatch;
+        expiry = new Date(y, m - 1, d);
+    } else {
+        const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (isoMatch) {
+            const [, y, m, d] = isoMatch;
+            expiry = new Date(y, m - 1, d);
+        } else {
+            expiry = new Date(dateString);
+        }
+    }
+    if (isNaN(expiry.getTime())) return "no-expiry";
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = (expiry - today) / (1000 * 60 * 60 * 24);
+    if (diffDays < 0) return "expired";
+    if (diffDays <= 30) return "expiring";
+    return "valid";
+};
+
+const STAFF_DOCUMENT_POINTS = {
+    passport: 70,
+    citizen_ship: 70,
+    medicare: 25,
+    birth_certificate: 25,
+    security_license: 40,
+    driver_license_front: 70,
+    driver_license_back: 0,
+    working_with_children: 0,
+    first_aid: 0,
+    cpr: 0,
+    visa: 0,
+};
+
+const getStaffDocPoints = (doc) => {
+    if (!doc) return 0;
+    const rawKey = (doc.document_type || doc.document_name || "").toLowerCase().trim();
+    const normalizedKey = rawKey.replace(/[^a-z0-9]/g, "");
+
+    if (normalizedKey.includes("passport")) return 70;
+    if (normalizedKey.includes("citizenship") || normalizedKey.includes("citizenship")) return 70;
+    if (normalizedKey.includes("medicare")) return 25;
+    if (normalizedKey.includes("birthcertificate")) return 25;
+    if (normalizedKey.includes("driverlicensefront")) return 70;
+    if (normalizedKey.includes("driverlicenseback")) return 0;
+    if (normalizedKey.includes("securitylicense")) return 40;
+    if (normalizedKey.includes("workingwithchildren") || normalizedKey.includes("wwcc")) return 0;
+    if (normalizedKey.includes("firstaid")) return 0;
+    if (normalizedKey.includes("cpr")) return 0;
+    if (normalizedKey.includes("visa")) return 0;
+
+    return 0;
+};
+
 // Simple Avatar component
 const Avatar = ({ src, name, size = 40 }) => {
     const [imgError, setImgError] = useState(false);
@@ -257,7 +316,7 @@ const StaffooStaff = () => {
     const defaultFormState = useMemo(() => ({
         name: "", email: "", phone: "", gender: "", staff_document_type: "",
         security_license_no: "", address: "", city: "", state: "", country: "", coordinates: "",
-        date_of_birth: "", origin_country: "",
+        date_of_birth: "", origin_country: "", is_control_room_license: 0,
     }), []);
     const [formData, setFormData] = useState(defaultFormState);
     const [showErrors, setShowErrors] = useState(false);
@@ -277,7 +336,31 @@ const StaffooStaff = () => {
         });
     }, [editingUser]);
 
-    const isDocumentsComplete = staffDocuments.length > 0 && staffDocuments.every(doc => doc.file || doc.file_path);
+    const staffPointsData = useMemo(() => {
+        let total = 0;
+        const countedDocTypes = new Set();
+        (staffDocuments || []).forEach((doc) => {
+            const hasFile = Boolean(doc.file || doc.file_path);
+            if (hasFile) {
+                const expiryStatus = getExpiryStatus(doc.document_expiry);
+                const isInvalid = expiryStatus === "expired" || doc.status === "rejected" || doc.status === "invalid" || doc.status === "error" || doc.is_valid === false;
+                if (!isInvalid) {
+                    const rawType = (doc.document_type || doc.document_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                    const pts = getStaffDocPoints(doc);
+                    if (pts > 0 && !countedDocTypes.has(rawType)) {
+                        countedDocTypes.add(rawType);
+                        total += pts;
+                    }
+                }
+            }
+        });
+        return {
+            totalPoints: total,
+            isComplete: total >= 100,
+        };
+    }, [staffDocuments]);
+
+    const isDocumentsComplete = staffPointsData.isComplete;
 
     const passportDoc = useMemo(() => {
         if (!staffDocuments) return null;
@@ -329,7 +412,7 @@ const StaffooStaff = () => {
             if (!isDocumentsComplete) {
                 setShowDocErrors(false);
                 setTimeout(() => setShowDocErrors(true), 10);
-                toast.error("Please upload all required documents first.");
+                toast.error(`Please reach at least 100 points by uploading required documents before continuing. (Current: ${staffPointsData.totalPoints || 0}/100 points)`);
                 return;
             }
         }
@@ -371,6 +454,7 @@ const StaffooStaff = () => {
         setSelectedDoc(null);
         if (user) {
             const staffData = user.staff || {};
+            const rawControlRoom = staffData.is_control_room_license ?? user.is_control_room_license ?? 0;
             setEditingUser(user);
             setFormData({
                 name: user.name || "", email: user.email || "",
@@ -378,6 +462,7 @@ const StaffooStaff = () => {
                 staff_document_type: staffData.staff_document_type || "",
                 address: user.address || "", city: user.city || "", state: user.state || "", country: user.country || "",
                 security_license_no: staffData.security_license_no || user.security_license_no || "",
+                is_control_room_license: (rawControlRoom === 1 || rawControlRoom === "1" || rawControlRoom === true) ? 1 : 0,
                 coordinates: user.coordinates || staffData.coordinates || "",
                 date_of_birth: isoToDisplay(staffData.date_of_birth || user.date_of_birth || ""),
                 origin_country: staffData.origin_country || user.origin_country || "",
@@ -721,6 +806,7 @@ const StaffooStaff = () => {
         const payload = { ...formData };
         delete payload.password;
         payload.user_id = 1;
+        payload.is_control_room_license = formData.is_control_room_license ? 1 : 0;
         try {
             const res = await submit(url, payload, { method });
             if (res.success) {
@@ -982,10 +1068,68 @@ const StaffooStaff = () => {
                                 />
                             ) : activeModalTab === "documents" ? (
                                 <div>
+                                    {/* 100-Point Identification Check Progress Bar */}
+                                    <div
+                                        className="p-3 p-md-4 rounded-3 mb-4 shadow-sm"
+                                        style={{
+                                            background: (staffPointsData.totalPoints || 0) >= 100 ? "#f0fdf4" : "#f8fafc",
+                                            border: `1px solid ${(staffPointsData.totalPoints || 0) >= 100 ? "#86efac" : "#e2e8f0"}`,
+                                            borderLeft: `5px solid ${(staffPointsData.totalPoints || 0) >= 100 ? "#16a34a" : "#0A7C6E"}`,
+                                        }}
+                                    >
+                                        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-2">
+                                            <div>
+                                                <h6 className="fw-bold mb-1" style={{ color: "#0f172a" }}>
+                                                    <i className="fa-solid fa-id-card me-2" style={{ color: "#0A7C6E" }}></i>
+                                                    100-Point Identification Check
+                                                </h6>
+                                                <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
+                                                    Upload eligible identity documents to reach a minimum of <strong>100 points</strong> to proceed to verification forms.
+                                                </p>
+                                            </div>
+                                            <div className="text-end flex-shrink-0">
+                                                <span
+                                                    className="badge fs-6 px-3 py-2 rounded-pill fw-bold"
+                                                    style={{
+                                                        backgroundColor: (staffPointsData.totalPoints || 0) >= 100 ? "#16a34a" : "#0A7C6E",
+                                                        color: "#fff",
+                                                    }}
+                                                >
+                                                    {staffPointsData.totalPoints || 0} / 100 Points
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="progress mt-2" style={{ height: "10px", backgroundColor: "#e2e8f0", borderRadius: "10px" }}>
+                                            <div
+                                                className="progress-bar progress-bar-striped"
+                                                role="progressbar"
+                                                style={{
+                                                    width: `${Math.min(100, (staffPointsData.totalPoints || 0))}%`,
+                                                    backgroundColor: (staffPointsData.totalPoints || 0) >= 100 ? "#16a34a" : "#0A7C6E",
+                                                    transition: "width 0.4s ease",
+                                                }}
+                                                aria-valuenow={staffPointsData.totalPoints || 0}
+                                                aria-valuemin="0"
+                                                aria-valuemax="100"
+                                            ></div>
+                                        </div>
+                                        {(staffPointsData.totalPoints || 0) >= 100 ? (
+                                            <div className="d-flex align-items-center gap-2 mt-2 text-success small fw-semibold">
+                                                <i className="fa-solid fa-circle-check"></i>
+                                                <span>Requirement met! You have reached 100+ points and can proceed.</span>
+                                            </div>
+                                        ) : (
+                                            <div className="d-flex align-items-center gap-2 mt-2 text-muted small">
+                                                <i className="fa-solid fa-circle-info text-primary"></i>
+                                                <span>Need <strong>{Math.max(0, 100 - (staffPointsData.totalPoints || 0))} more points</strong> to unlock next step.</span>
+                                            </div>
+                                        )}
+                                    </div>
+
                                     <div className="d-flex justify-content-between align-items-center mb-4">
                                         <div><h6 className="fw-bold mb-1">Documents</h6><p className="text-muted small mb-0">Upload and manage staff documents.</p></div>
                                     </div>
-                                    <DocumentTable documents={staffDocuments} userType="staff" onAddFile={openDocumentModal} showDocErrors={showDocErrors} />
+                                    <DocumentTable documents={staffDocuments} userType="staff" onAddFile={openDocumentModal} showDocErrors={showDocErrors} isStaffooStaff={true} />
                                 </div>
                             ) : (
                                 <div><StaffOnboardingForms submit={submit} userId={editingUser?.id} contractorId={1} /></div>

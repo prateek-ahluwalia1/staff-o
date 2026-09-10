@@ -11,101 +11,160 @@ import PropTypes from "prop-types";
 /**
  * SignaturePad Component
  *
- * Provides a responsive, high-DPI digital signature drawing canvas
- * with full mouse, touch, and pointer event support.
- * Prevents mobile touch scrolling while actively drawing.
+ * Supports both manual signature drawing (mouse, touch, stylus)
+ * and name-based automatic signature generation.
+ * High-DPI responsive canvas with clean 2x export.
  */
 const SignaturePad = forwardRef(
   (
     {
+      mode = "draw", // "draw" | "auto"
+      name = "",
       height = 200,
       strokeColor = "#14181C",
       strokeWidth = 2.5,
       backgroundColor = "#FFFFFF",
+      onChange,
       onEnd,
-      onClear,
       disabled = false,
-      placeholderText = "Sign above this line",
+      placeholderText = "Draw your signature here",
     },
     ref
   ) => {
     const containerRef = useRef(null);
     const canvasRef = useRef(null);
     const isDrawingRef = useRef(false);
-    const pointsRef = useRef([]); // Points for current stroke
-    const strokesRef = useRef([]); // History of all strokes for resize redraws
-    const [hasDrawn, setHasDrawn] = useState(false);
+    const pointsRef = useRef([]);
+    const strokesRef = useRef([]);
+    const manualClearedRef = useRef(false);
+    const [hasContent, setHasContent] = useState(false);
+
+    // Reset manualCleared whenever name changes or mode changes
+    useEffect(() => {
+      manualClearedRef.current = false;
+    }, [name, mode]);
 
     /**
-     * Get bounding rect and scale factor
+     * Render all content (auto signature text or drawing strokes) onto a 2D canvas context
      */
-    const getCanvasContext = useCallback(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return null;
-      return canvas.getContext("2d");
-    }, []);
-
-    /**
-     * Redraw all recorded strokes onto the canvas
-     */
-    const redrawAllStrokes = useCallback(
-      (ctx, width, height) => {
+    const renderContent = useCallback(
+      (ctx, width, canvasHeight, isExport = false) => {
         if (!ctx) return;
-        ctx.clearRect(0, 0, width, height);
 
-        // Fill background
+        // Solid clean background
         ctx.fillStyle = backgroundColor;
-        ctx.fillRect(0, 0, width, height);
+        ctx.fillRect(0, 0, width, canvasHeight);
 
-        // Draw guideline placeholder text if canvas is empty
-        if (!hasDrawn && strokesRef.current.length === 0 && placeholderText) {
+        const autoText =
+          mode === "auto" && !manualClearedRef.current ? (name || "").trim() : "";
+        const strokes = mode === "draw" ? strokesRef.current : [];
+        const isEmpty = !autoText && strokes.length === 0;
+
+        // 1. Clean placeholder text if no content exists (NO cross, NO dotted line)
+        if (isEmpty) {
+          if (!isExport && placeholderText) {
+            ctx.save();
+            ctx.font = "500 14px 'Inter', sans-serif";
+            ctx.fillStyle = "#94A3B8";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(placeholderText, width / 2, canvasHeight / 2);
+            ctx.restore();
+          }
+          return;
+        }
+
+        // 2. Render Auto-Generated Cursive Signature
+        if (autoText) {
           ctx.save();
-          ctx.font = "500 13px 'Inter', sans-serif";
-          ctx.fillStyle = "#A0AEC0";
+
+          // Dynamic font size calculation based on text length
+          let targetFontSize = 48;
+          ctx.font = `600 ${targetFontSize}px 'Dancing Script', 'Great Vibes', 'Caveat', 'Brush Script MT', 'Segoe Script', cursive`;
+          let measuredWidth = ctx.measureText(autoText).width;
+          const maxAllowedWidth = width * 0.82;
+
+          if (measuredWidth > maxAllowedWidth && measuredWidth > 0) {
+            const scaledSize = Math.floor(targetFontSize * (maxAllowedWidth / measuredWidth));
+            targetFontSize = Math.max(24, scaledSize);
+            ctx.font = `600 ${targetFontSize}px 'Dancing Script', 'Great Vibes', 'Caveat', 'Brush Script MT', 'Segoe Script', cursive`;
+          }
+
+          ctx.fillStyle = strokeColor;
           ctx.textAlign = "center";
-          ctx.fillText(placeholderText, width / 2, height / 2);
+          ctx.textBaseline = "middle";
+          ctx.fillText(autoText, width / 2, canvasHeight / 2);
+
           ctx.restore();
         }
 
-        // Draw each stroke
-        strokesRef.current.forEach((stroke) => {
-          if (!stroke || stroke.length === 0) return;
-          ctx.save();
-          ctx.strokeStyle = strokeColor;
-          ctx.lineWidth = strokeWidth;
-          ctx.lineCap = "round";
-          ctx.lineJoin = "round";
+        // 3. Render Manual Drawn Strokes
+        if (strokes.length > 0) {
+          strokes.forEach((stroke) => {
+            if (!stroke || stroke.length === 0) return;
+            ctx.save();
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = strokeWidth;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
 
-          if (stroke.length === 1) {
-            ctx.beginPath();
-            ctx.arc(stroke[0].x, stroke[0].y, strokeWidth / 2, 0, Math.PI * 2);
-            ctx.fillStyle = strokeColor;
-            ctx.fill();
-          } else {
-            ctx.beginPath();
-            ctx.moveTo(stroke[0].x, stroke[0].y);
-            for (let i = 1; i < stroke.length; i++) {
-              // Midpoint quadratic curve for smoothness
-              const prev = stroke[i - 1];
-              const curr = stroke[i];
-              const midX = (prev.x + curr.x) / 2;
-              const midY = (prev.y + curr.y) / 2;
-              ctx.quadraticCurveTo(prev.x, prev.y, midX, midY);
+            if (stroke.length === 1) {
+              ctx.beginPath();
+              ctx.arc(stroke[0].x, stroke[0].y, strokeWidth / 2, 0, Math.PI * 2);
+              ctx.fillStyle = strokeColor;
+              ctx.fill();
+            } else {
+              ctx.beginPath();
+              ctx.moveTo(stroke[0].x, stroke[0].y);
+              for (let i = 1; i < stroke.length; i++) {
+                const prev = stroke[i - 1];
+                const curr = stroke[i];
+                const midX = (prev.x + curr.x) / 2;
+                const midY = (prev.y + curr.y) / 2;
+                ctx.quadraticCurveTo(prev.x, prev.y, midX, midY);
+              }
+              const last = stroke[stroke.length - 1];
+              ctx.lineTo(last.x, last.y);
+              ctx.stroke();
             }
-            const last = stroke[stroke.length - 1];
-            ctx.lineTo(last.x, last.y);
-            ctx.stroke();
-          }
-          ctx.restore();
-        });
+            ctx.restore();
+          });
+        }
       },
-      [backgroundColor, strokeColor, strokeWidth, hasDrawn, placeholderText]
+      [backgroundColor, mode, name, placeholderText, strokeColor, strokeWidth]
     );
 
     /**
-     * Resize canvas properly handling Device Pixel Ratio
+     * Export canvas as 2x crisp PNG Base64 Data URL
      */
-    const resizeCanvas = useCallback(() => {
+    const exportDataURL = useCallback(() => {
+      const autoText =
+        mode === "auto" && !manualClearedRef.current ? (name || "").trim() : "";
+      const strokes = mode === "draw" ? strokesRef.current : [];
+      if (!autoText && strokes.length === 0) return "";
+
+      const canvas = canvasRef.current;
+      if (!canvas) return "";
+
+      const rect = canvas.getBoundingClientRect();
+      const cssWidth = Math.floor(rect.width) || 400;
+      const cssHeight = height;
+
+      const exportCanvas = document.createElement("canvas");
+      exportCanvas.width = cssWidth * 2;
+      exportCanvas.height = cssHeight * 2;
+
+      const expCtx = exportCanvas.getContext("2d");
+      expCtx.scale(2, 2);
+
+      renderContent(expCtx, cssWidth, cssHeight, true);
+      return exportCanvas.toDataURL("image/png");
+    }, [height, mode, name, renderContent]);
+
+    /**
+     * Redraw the visible screen canvas
+     */
+    const redrawVisibleCanvas = useCallback(() => {
       const canvas = canvasRef.current;
       const container = containerRef.current;
       if (!canvas || !container) return;
@@ -123,13 +182,38 @@ const SignaturePad = forwardRef(
       const ctx = canvas.getContext("2d");
       ctx.scale(dpr, dpr);
 
-      redrawAllStrokes(ctx, cssWidth, cssHeight);
-    }, [height, redrawAllStrokes]);
+      renderContent(ctx, cssWidth, cssHeight, false);
 
-    // Initial setup and resize observer
+      const autoText =
+        mode === "auto" && !manualClearedRef.current ? (name || "").trim() : "";
+      const hasValidContent = Boolean(autoText || (mode === "draw" && strokesRef.current.length > 0));
+      setHasContent(hasValidContent);
+
+      const dataUrl = hasValidContent ? exportDataURL() : "";
+      if (onChange) {
+        onChange({ isEmpty: !hasValidContent, dataUrl });
+      }
+      if (onEnd) {
+        onEnd({ isEmpty: !hasValidContent, dataUrl });
+      }
+    }, [exportDataURL, height, mode, name, onChange, onEnd, renderContent]);
+
+    // Redraw on prop updates
     useEffect(() => {
-      resizeCanvas();
+      redrawVisibleCanvas();
+    }, [mode, name, redrawVisibleCanvas]);
 
+    // Redraw once Google Web Fonts are ready
+    useEffect(() => {
+      if (typeof document !== "undefined" && document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => {
+          redrawVisibleCanvas();
+        });
+      }
+    }, [redrawVisibleCanvas]);
+
+    // Resize observer
+    useEffect(() => {
       const container = containerRef.current;
       if (!container) return;
 
@@ -137,7 +221,7 @@ const SignaturePad = forwardRef(
       const observer = new ResizeObserver(() => {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
-          resizeCanvas();
+          redrawVisibleCanvas();
         }, 50);
       });
       observer.observe(container);
@@ -146,10 +230,10 @@ const SignaturePad = forwardRef(
         observer.disconnect();
         clearTimeout(resizeTimer);
       };
-    }, [resizeCanvas]);
+    }, [redrawVisibleCanvas]);
 
     /**
-     * Get canvas relative coordinates from pointer/touch/mouse event
+     * Manual Drawing Event Handlers
      */
     const getEventPos = (e) => {
       const canvas = canvasRef.current;
@@ -174,11 +258,8 @@ const SignaturePad = forwardRef(
       };
     };
 
-    /**
-     * Start drawing
-     */
     const startDrawing = (e) => {
-      if (disabled) return;
+      if (disabled || mode === "auto") return;
       if (e.cancelable && e.type.startsWith("touch")) {
         e.preventDefault();
       }
@@ -186,28 +267,13 @@ const SignaturePad = forwardRef(
       isDrawingRef.current = true;
       const pos = getEventPos(e);
       pointsRef.current = [pos];
-
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const ctx = getCanvasContext();
-      if (!ctx) return;
-
-      // Draw initial dot
-      if (!hasDrawn) {
-        setHasDrawn(true);
-      }
-
-      // Add to strokes
       strokesRef.current.push([...pointsRef.current]);
-      redrawAllStrokes(ctx, rect.width, height);
+
+      redrawVisibleCanvas();
     };
 
-    /**
-     * Continue drawing
-     */
     const draw = (e) => {
-      if (!isDrawingRef.current || disabled) return;
+      if (!isDrawingRef.current || disabled || mode === "auto") return;
       if (e.cancelable) {
         e.preventDefault();
       }
@@ -215,23 +281,21 @@ const SignaturePad = forwardRef(
       const pos = getEventPos(e);
       pointsRef.current.push(pos);
 
-      // Update current active stroke in strokes array
       if (strokesRef.current.length > 0) {
         strokesRef.current[strokesRef.current.length - 1] = [...pointsRef.current];
       }
 
       const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const ctx = getCanvasContext();
-      if (!ctx) return;
-
-      redrawAllStrokes(ctx, rect.width, height);
+      const container = containerRef.current;
+      if (!canvas || !container) return;
+      const rect = container.getBoundingClientRect();
+      const cssWidth = Math.floor(rect.width) || 300;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        renderContent(ctx, cssWidth, height, false);
+      }
     };
 
-    /**
-     * Stop drawing and export data
-     */
     const stopDrawing = (e) => {
       if (!isDrawingRef.current) return;
       if (e && e.cancelable && e.type && e.type.startsWith("touch")) {
@@ -241,105 +305,56 @@ const SignaturePad = forwardRef(
       isDrawingRef.current = false;
       pointsRef.current = [];
 
-      const isEmptySignature = strokesRef.current.length === 0;
-      setHasDrawn(!isEmptySignature);
-
-      if (onEnd) {
-        const dataUrl = isEmptySignature ? "" : exportDataURL();
-        onEnd({
-          isEmpty: isEmptySignature,
-          dataUrl,
-        });
-      }
+      redrawVisibleCanvas();
     };
 
     /**
-     * Clear all strokes
+     * Clear signature pad - safe and non-recursive
      */
     const clear = useCallback(() => {
       strokesRef.current = [];
       pointsRef.current = [];
       isDrawingRef.current = false;
-      setHasDrawn(false);
+      manualClearedRef.current = true;
+      setHasContent(false);
 
       const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const ctx = getCanvasContext();
-      if (ctx) {
-        redrawAllStrokes(ctx, rect.width, height);
+      const container = containerRef.current;
+      if (canvas && container) {
+        const rect = container.getBoundingClientRect();
+        const cssWidth = Math.floor(rect.width) || 300;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.fillStyle = backgroundColor;
+          ctx.fillRect(0, 0, cssWidth, height);
+
+          if (placeholderText) {
+            ctx.save();
+            ctx.font = "500 14px 'Inter', sans-serif";
+            ctx.fillStyle = "#94A3B8";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(placeholderText, cssWidth / 2, height / 2);
+            ctx.restore();
+          }
+        }
       }
 
-      if (onClear) {
-        onClear();
+      if (onChange) {
+        onChange({ isEmpty: true, dataUrl: "" });
       }
       if (onEnd) {
         onEnd({ isEmpty: true, dataUrl: "" });
       }
-    }, [getCanvasContext, height, onClear, onEnd, redrawAllStrokes]);
-
-    /**
-     * Export canvas as PNG Base64 string
-     */
-    const exportDataURL = useCallback(() => {
-      if (strokesRef.current.length === 0) return "";
-      const canvas = canvasRef.current;
-      if (!canvas) return "";
-
-      // Create a clean export canvas with pure white background and trimmed strokes
-      const exportCanvas = document.createElement("canvas");
-      const rect = canvas.getBoundingClientRect();
-      const width = Math.floor(rect.width) || 400;
-      const exportHeight = height;
-
-      exportCanvas.width = width * 2; // 2x scale for crisp export
-      exportCanvas.height = exportHeight * 2;
-      const expCtx = exportCanvas.getContext("2d");
-      expCtx.scale(2, 2);
-
-      // White background
-      expCtx.fillStyle = "#FFFFFF";
-      expCtx.fillRect(0, 0, width, exportHeight);
-
-      // Render only strokes (no guidelines)
-      strokesRef.current.forEach((stroke) => {
-        if (!stroke || stroke.length === 0) return;
-        expCtx.save();
-        expCtx.strokeStyle = strokeColor;
-        expCtx.lineWidth = strokeWidth;
-        expCtx.lineCap = "round";
-        expCtx.lineJoin = "round";
-
-        if (stroke.length === 1) {
-          expCtx.beginPath();
-          expCtx.arc(stroke[0].x, stroke[0].y, strokeWidth / 2, 0, Math.PI * 2);
-          expCtx.fillStyle = strokeColor;
-          expCtx.fill();
-        } else {
-          expCtx.beginPath();
-          expCtx.moveTo(stroke[0].x, stroke[0].y);
-          for (let i = 1; i < stroke.length; i++) {
-            const prev = stroke[i - 1];
-            const curr = stroke[i];
-            const midX = (prev.x + curr.x) / 2;
-            const midY = (prev.y + curr.y) / 2;
-            expCtx.quadraticCurveTo(prev.x, prev.y, midX, midY);
-          }
-          const last = stroke[stroke.length - 1];
-          expCtx.lineTo(last.x, last.y);
-          expCtx.stroke();
-        }
-        expCtx.restore();
-      });
-
-      return exportCanvas.toDataURL("image/png");
-    }, [height, strokeColor, strokeWidth]);
+    }, [backgroundColor, height, onChange, onEnd, placeholderText]);
 
     const isEmpty = useCallback(() => {
-      return strokesRef.current.length === 0;
-    }, []);
+      const autoText =
+        mode === "auto" && !manualClearedRef.current ? (name || "").trim() : "";
+      return !autoText && strokesRef.current.length === 0;
+    }, [mode, name]);
 
-    // Expose methods to parent via ref
+    // Expose methods to parent ref
     useImperativeHandle(ref, () => ({
       clear,
       isEmpty,
@@ -354,7 +369,7 @@ const SignaturePad = forwardRef(
           width: "100%",
           position: "relative",
           userSelect: "none",
-          touchAction: "none",
+          touchAction: mode === "draw" ? "none" : "auto",
         }}
       >
         <div
@@ -363,39 +378,26 @@ const SignaturePad = forwardRef(
             position: "relative",
             width: "100%",
             height: `${height}px`,
-            border: "1.5px solid var(--nh-border, #E4E9E4)",
+            border: hasContent
+              ? "1.5px solid var(--nh-green, #0A7C6E)"
+              : "1.5px solid var(--nh-border, #E4E9E4)",
             borderRadius: "10px",
-            backgroundColor: "#FFFFFF",
+            backgroundColor: backgroundColor,
             overflow: "hidden",
-            boxShadow: "inset 0 1px 3px rgba(0,0,0,0.03)",
-            cursor: disabled ? "not-allowed" : "crosshair",
+            boxShadow: hasContent
+              ? "0 2px 8px rgba(10, 124, 110, 0.08)"
+              : "inset 0 1px 3px rgba(0,0,0,0.03)",
+            cursor: disabled
+              ? "not-allowed"
+              : mode === "draw"
+              ? "crosshair"
+              : "default",
+            transition: "border-color 0.2s ease, box-shadow 0.2s ease",
             opacity: disabled ? 0.7 : 1,
           }}
         >
-          <canvas
-            ref={canvasRef}
-            onPointerDown={startDrawing}
-            onPointerMove={draw}
-            onPointerUp={stopDrawing}
-            onPointerCancel={stopDrawing}
-            onTouchStart={startDrawing}
-            onTouchMove={draw}
-            onTouchEnd={stopDrawing}
-            onTouchCancel={stopDrawing}
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseLeave={stopDrawing}
-            style={{
-              display: "block",
-              width: "100%",
-              height: "100%",
-              touchAction: "none",
-            }}
-          />
-
-          {/* Reset / Clear Button */}
-          {hasDrawn && !disabled && (
+          {/* Clear Button in Top Right of Pad (Shown when signature content exists) */}
+          {hasContent && !disabled && (
             <button
               type="button"
               onClick={clear}
@@ -405,10 +407,10 @@ const SignaturePad = forwardRef(
               style={{
                 position: "absolute",
                 top: "10px",
-                right: "10px",
-                backgroundColor: "#F5F8F5",
+                right: "12px",
+                backgroundColor: "#F8FAFC",
                 color: "#5B6660",
-                border: "1px solid #E4E9E4",
+                border: "1px solid #E2E8F0",
                 borderRadius: "6px",
                 padding: "5px 12px",
                 fontSize: "12px",
@@ -427,15 +429,37 @@ const SignaturePad = forwardRef(
                 e.currentTarget.style.borderColor = "#FCA5A5";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#F5F8F5";
+                e.currentTarget.style.backgroundColor = "#F8FAFC";
                 e.currentTarget.style.color = "#5B6660";
-                e.currentTarget.style.borderColor = "#E4E9E4";
+                e.currentTarget.style.borderColor = "#E2E8F0";
               }}
             >
               <i className="fa-solid fa-rotate-right" style={{ fontSize: "11px" }} />
               Clear
             </button>
           )}
+
+          <canvas
+            ref={canvasRef}
+            onPointerDown={startDrawing}
+            onPointerMove={draw}
+            onPointerUp={stopDrawing}
+            onPointerCancel={stopDrawing}
+            onTouchStart={startDrawing}
+            onTouchMove={draw}
+            onTouchEnd={stopDrawing}
+            onTouchCancel={stopDrawing}
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            style={{
+              display: "block",
+              width: "100%",
+              height: "100%",
+              touchAction: mode === "draw" ? "none" : "auto",
+            }}
+          />
         </div>
       </div>
     );
@@ -445,12 +469,14 @@ const SignaturePad = forwardRef(
 SignaturePad.displayName = "SignaturePad";
 
 SignaturePad.propTypes = {
+  mode: PropTypes.oneOf(["draw", "auto"]),
+  name: PropTypes.string,
   height: PropTypes.number,
   strokeColor: PropTypes.string,
   strokeWidth: PropTypes.number,
   backgroundColor: PropTypes.string,
+  onChange: PropTypes.func,
   onEnd: PropTypes.func,
-  onClear: PropTypes.func,
   disabled: PropTypes.bool,
   placeholderText: PropTypes.string,
 };

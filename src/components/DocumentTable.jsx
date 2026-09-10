@@ -21,7 +21,7 @@ const DOC_CONFIG = {
   birth_certificate: { label: "Birth Certificate", sort: 16 },
   msic_card: { label: "MSIC Card", sort: 17 },
   control_room_certificate: { label: "Control Room Certificate", sort: 18 },
-  ras_certificate: { label: "RAS Certificate", sort: 19 },
+  rsa_certificate: { label: "RSA Certificate", sort: 19 },
   security_master_license: { label: "Security Master License", sort: 20 },
   public_liability: { label: "Public Liability", sort: 21 },
   workcover: { label: "Workcover", sort: 22 },
@@ -142,15 +142,68 @@ function getDocDisplayName(doc) {
   return raw;
 }
 
-function DocNameCell({ doc }) {
+const STAFF_DOCUMENT_POINTS = {
+  passport: 70,
+  citizen_ship: 70,
+  medicare: 25,
+  birth_certificate: 25,
+  security_license: 40,
+  driver_license_front: 70,
+  driver_license_back: 0,
+  working_with_children: 0,
+  first_aid: 0,
+  cpr: 0,
+  visa: 0,
+};
+
+const getStaffDocPoints = (doc) => {
+  if (!doc) return 0;
+  const rawKey = (doc.document_type || doc.document_name || "").toLowerCase().trim();
+  const normalizedKey = rawKey.replace(/[^a-z0-9]/g, "");
+
+  if (normalizedKey.includes("passport")) return 70;
+  if (normalizedKey.includes("citizenship") || normalizedKey.includes("citizenship")) return 70;
+  if (normalizedKey.includes("medicare")) return 25;
+  if (normalizedKey.includes("birthcertificate")) return 25;
+  if (normalizedKey.includes("driverlicensefront")) return 70;
+  if (normalizedKey.includes("driverlicenseback")) return 0;
+  if (normalizedKey.includes("securitylicense")) return 40;
+  if (normalizedKey.includes("workingwithchildren") || normalizedKey.includes("wwcc")) return 0;
+  if (normalizedKey.includes("firstaid")) return 0;
+  if (normalizedKey.includes("cpr")) return 0;
+  if (normalizedKey.includes("visa")) return 0;
+
+  return 0;
+};
+
+function DocNameCell({ doc, userType, isStaffooStaff }) {
   const status = getExpiryStatus(doc.document_expiry);
   const displayLabel = getDocDisplayName(doc);
+  const points = getStaffDocPoints(doc);
+
   return (
     <div className="doc-name">
       <span className="doc-icon">
         <i className="fa-regular fa-file-lines"></i>
       </span>
       <span>{displayLabel}</span>
+      {isStaffooStaff && (
+        <span
+          className="points-badge"
+          style={{
+            fontSize: "0.72rem",
+            backgroundColor: points > 0 ? "#E8F6F3" : "#F1F5F9",
+            color: points > 0 ? "#0A7C6E" : "#64748B",
+            border: `1px solid ${points > 0 ? "#B2DFDB" : "#CBD5E1"}`,
+            fontWeight: 700,
+            padding: "2px 7px",
+            borderRadius: "6px",
+            marginLeft: "2px",
+          }}
+        >
+          {points} pts
+        </span>
+      )}
       {status === "expiring" && (
         <span className="expiry-badge expiring">
           <i className="fa-solid fa-clock"></i> Expiring Soon
@@ -166,7 +219,7 @@ function DocNameCell({ doc }) {
 }
 
 // Renders one desktop table + mobile card set for a given list of docs.
-function DocumentSectionBody({ docs, onAddFile, showDocErrors }) {
+function DocumentSectionBody({ docs, onAddFile, showDocErrors, userType, isStaffooStaff }) {
   return (
     <>
       {/* Desktop Table */}
@@ -185,7 +238,7 @@ function DocumentSectionBody({ docs, onAddFile, showDocErrors }) {
             {docs.length > 0 ? (
               docs.map((doc) => (
                 <tr key={doc.id}>
-                  <td><DocNameCell doc={doc} /></td>
+                  <td><DocNameCell doc={doc} userType={userType} isStaffooStaff={isStaffooStaff} /></td>
                   <td><span className="doc-number">{doc.document_no || "—"}</span></td>
                   <td style={{ color: "#334155", fontWeight: 500 }}>{formatAUSDate(doc.document_expiry)}</td>
                   <td><DocRowActions doc={doc} onAddFile={onAddFile} showDocErrors={showDocErrors} /></td>
@@ -216,7 +269,7 @@ function DocumentSectionBody({ docs, onAddFile, showDocErrors }) {
                 <div className="doc-card">
                   <div className="doc-card-inner">
                     <div className="doc-card-header">
-                      <DocNameCell doc={doc} />
+                      <DocNameCell doc={doc} userType={userType} isStaffooStaff={isStaffooStaff} />
                       <button type="button" className="action-btn" onClick={() => onAddFile(doc)} title="Edit document">
                         <i className="fa fa-pencil"></i>
                       </button>
@@ -273,13 +326,21 @@ function StateGroupHeader({ label, uploaded, total, expanded, onToggle }) {
 }
 
 const DEFAULT_STAFF_DOC_TEMPLATES = [
+  { document_name: "Passport", document_type: "passport" },
+  { document_name: "Driver License Front", document_type: "driver_license_front" },
+  { document_name: "Driver License Back", document_type: "driver_license_back" },
   { document_name: "Security License", document_type: "security_license" },
+  { document_name: "Citizen Ship", document_type: "citizen_ship" },
+  { document_name: "Medicare", document_type: "medicare" },
+  { document_name: "Birth Certificate", document_type: "birth_certificate" },
+  { document_name: "Visa", document_type: "visa" },
   { document_name: "Working With Children Check", document_type: "working_with_children" },
-  { document_name: "White Card", document_type: "white_card" },
   { document_name: "First Aid Certificate", document_type: "first_aid" },
+  { document_name: "CPR Certificate", document_type: "cpr" },
+  { document_name: "White Card", document_type: "white_card" },
   { document_name: "MSIC Card", document_type: "msic_card" },
   { document_name: "Control Room Certificate", document_type: "control_room_certificate" },
-  { document_name: "RAS Certificate", document_type: "ras_certificate" },
+  { document_name: "RSA Certificate", document_type: "rsa_certificate" },
 ];
 
 const DEFAULT_CONTRACTOR_DOC_TEMPLATES = [
@@ -333,7 +394,7 @@ const matchDoc = (docA, docB) => {
   return false;
 };
 
-export default function DocumentTable({ documents, onAddFile, userType, showDocErrors }) {
+export default function DocumentTable({ documents, onAddFile, userType, showDocErrors, isStaffooStaff = false }) {
   const processedDocuments = useMemo(() => {
     const incomingDocs = Array.isArray(documents) ? documents : [];
 
@@ -702,7 +763,7 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
                   expanded={expanded}
                   onToggle={() => toggleGroup(group.category)}
                 />
-                {expanded && <DocumentSectionBody docs={group.docs} onAddFile={onAddFile} showDocErrors={showDocErrors} />}
+                {expanded && <DocumentSectionBody docs={group.docs} onAddFile={onAddFile} showDocErrors={showDocErrors} userType={userType} isStaffooStaff={false} />}
               </div>
             );
           })
@@ -721,9 +782,13 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
       {sharedStyles}
       <div className="table-header">
         <h3>Documents</h3>
-        <p>All documents associated with your profile.</p>
+        <p>
+          {isStaffooStaff
+            ? "Upload eligible identity documents to reach a minimum of 100 points."
+            : "All documents associated with your profile."}
+        </p>
       </div>
-      <DocumentSectionBody docs={processedDocuments} onAddFile={onAddFile} showDocErrors={showDocErrors} />
+      <DocumentSectionBody docs={processedDocuments} onAddFile={onAddFile} showDocErrors={showDocErrors} userType={userType} isStaffooStaff={isStaffooStaff} />
     </div>
   );
 }

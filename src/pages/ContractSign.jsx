@@ -90,6 +90,7 @@ export default function ContractSign() {
   const [signatureName, setSignatureName] = useState("");
   const [signatureImage, setSignatureImage] = useState("");
   const [hasSignature, setHasSignature] = useState(false);
+  const [sigMode, setSigMode] = useState("draw"); // "draw" | "auto"
   const [validationErrors, setValidationErrors] = useState({});
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -98,6 +99,17 @@ export default function ContractSign() {
   const [successResponseData, setSuccessResponseData] = useState(null);
 
   const sigPadRef = useRef(null);
+  const [sigPadHeight, setSigPadHeight] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth < 480 ? 170 : 200
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setSigPadHeight(window.innerWidth < 480 ? 170 : 200);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (showTermsModal) {
@@ -170,7 +182,7 @@ export default function ContractSign() {
   /**
    * Signature Pad Event Handlers
    */
-  const handleSignatureEnd = ({ isEmpty, dataUrl }) => {
+  const handleSignatureChange = ({ isEmpty, dataUrl }) => {
     setHasSignature(!isEmpty);
     setSignatureImage(dataUrl || "");
     if (!isEmpty && validationErrors.signature) {
@@ -178,9 +190,8 @@ export default function ContractSign() {
     }
   };
 
-  const handleSignatureClear = () => {
-    setHasSignature(false);
-    setSignatureImage("");
+  const handleSwitchMode = (mode) => {
+    setSigMode(mode);
   };
 
   /**
@@ -194,11 +205,11 @@ export default function ContractSign() {
     }
 
     // Get current signature data directly from canvas ref as fallback verification
-    const currentSigData = sigPadRef.current?.toDataURL();
+    const currentSigData = sigPadRef.current?.toDataURL() || signatureImage;
     const isSigEmpty = sigPadRef.current?.isEmpty ? sigPadRef.current.isEmpty() : !hasSignature;
 
     if (isSigEmpty || !currentSigData) {
-      errors.signature = "Please provide your signature.";
+      errors.signature = "Please provide your signature by entering your name above.";
     }
 
     if (!agreeTerms) {
@@ -295,6 +306,12 @@ export default function ContractSign() {
           content="Review and digitally sign your Staffoo contract securely online."
         />
         <link rel="icon" type="image/png" href="/staffo.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Great+Vibes&display=swap"
+          rel="stylesheet"
+        />
       </Helmet>
 
       <div className="cs-page">
@@ -329,7 +346,7 @@ export default function ContractSign() {
                 </div>
                 <h2 className="cs-error-title">Unable to Load Contract</h2>
                 <p className="cs-error-desc">{fetchError}</p>
-                <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+                <div className="cs-action-btns">
                   <button
                     type="button"
                     onClick={() => fetchContract(token)}
@@ -390,7 +407,7 @@ export default function ContractSign() {
                   </div>
                 )}
 
-                <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+                <div className="cs-action-btns">
                   <Link to="/" className="nh-btn nh-btn-solid" style={{ padding: "12px 28px" }}>
                     Go to Homepage
                   </Link>
@@ -406,7 +423,7 @@ export default function ContractSign() {
 
                   <h1 className="cs-title">Contract Signing</h1>
                   <p className="cs-subtitle">
-                    Please review your contract details and document below, then draw your digital signature to execute the agreement.
+                    Please review your contract details and document below, then draw your signature or choose Auto-Generate to execute the agreement.
                   </p>
                 </div>
 
@@ -499,7 +516,7 @@ export default function ContractSign() {
                         <div className="cs-doc-icon">
                           <i className="fa-solid fa-file-pdf" />
                         </div>
-                        <div>
+                        <div className="cs-doc-text">
                           <div className="cs-doc-title">
                            
                             <span className="cs-doc-filename">
@@ -540,7 +557,7 @@ export default function ContractSign() {
                     </div>
 
                     <p className="cs-sig-instruction">
-                      Please enter your legal name and draw your signature below. By clicking <strong>Sign &amp; Submit</strong>, you acknowledge that you have read, understood, and agreed to all terms outlined in the contract document.
+                      Please enter your legal name below. You can draw your signature manually or select Auto-Generate. By clicking <strong>Sign &amp; Submit</strong>, you acknowledge that you have read, understood, and agreed to all terms outlined in the contract document.
                     </p>
 
                     {/* Signature Name Field */}
@@ -555,7 +572,8 @@ export default function ContractSign() {
                         placeholder="Enter your full name"
                         value={signatureName}
                         onChange={(e) => {
-                          setSignatureName(e.target.value);
+                          const val = e.target.value;
+                          setSignatureName(val);
                           if (validationErrors.signatureName) {
                             setValidationErrors((prev) => ({ ...prev, signatureName: null }));
                           }
@@ -574,16 +592,48 @@ export default function ContractSign() {
 
                     {/* Signature Pad Area */}
                     <div className="cs-form-group">
-                      <label className="cs-form-label">
-                        Sign Here <span className="required">*</span>
-                      </label>
+                      <div className="cs-sig-header-bar">
+                        <label className="cs-form-label" style={{ marginBottom: 0 }}>
+                          Sign Here <span className="required">*</span>
+                        </label>
+
+                        {/* Mode Toggle: Draw Signature | Auto-Generate */}
+                        <div className="cs-sig-mode-toggle" role="tablist">
+                          <button
+                            type="button"
+                            role="tab"
+                            aria-selected={sigMode === "draw"}
+                            className={`cs-sig-tab-btn ${sigMode === "draw" ? "active" : ""}`}
+                            onClick={() => handleSwitchMode("draw")}
+                          >
+                            <i className="fa-solid fa-pen-nib" />
+                            <span>Draw Signature</span>
+                          </button>
+                          <button
+                            type="button"
+                            role="tab"
+                            aria-selected={sigMode === "auto"}
+                            className={`cs-sig-tab-btn ${sigMode === "auto" ? "active" : ""}`}
+                            onClick={() => handleSwitchMode("auto")}
+                          >
+                            <i className="fa-solid fa-wand-magic-sparkles" />
+                            <span>Auto-Generate</span>
+                          </button>
+                        </div>
+                      </div>
+
                       <SignaturePad
                         ref={sigPadRef}
-                        height={200}
-                        onEnd={handleSignatureEnd}
-                        onClear={handleSignatureClear}
+                        mode={sigMode}
+                        name={signatureName}
+                        height={sigPadHeight}
+                        onChange={handleSignatureChange}
                         disabled={isSubmitting}
-                        placeholderText="Draw your signature here"
+                        placeholderText={
+                          sigMode === "auto"
+                            ? "Enter your name above to generate signature"
+                            : "Draw your signature here"
+                        }
                       />
                       {validationErrors.signature && (
                         <div className="cs-field-error">
@@ -666,22 +716,6 @@ export default function ContractSign() {
           </div>
         </main>
 
-        {/* Resource Partner Terms & Conditions Modal Overlay */}
-        {showTermsModal && (
-          <ResourcePartnerTerms
-            isOpen={showTermsModal}
-            onClose={() => setShowTermsModal(false)}
-            onAccept={() => {
-              setAgreeTerms(true);
-              setShowTermsModal(false);
-              if (validationErrors.agreeTerms) {
-                setValidationErrors((prev) => ({ ...prev, agreeTerms: null }));
-              }
-              toast.success("Resource Partner Terms & Conditions accepted.");
-            }}
-          />
-        )}
-
         {/* Minimal Clean Footer */}
         <footer className="cs-simple-footer">
           <div className="cs-container">
@@ -689,6 +723,22 @@ export default function ContractSign() {
           </div>
         </footer>
       </div>
+
+      {/* Resource Partner Terms & Conditions Modal Overlay */}
+      {showTermsModal && (
+        <ResourcePartnerTerms
+          isOpen={showTermsModal}
+          onClose={() => setShowTermsModal(false)}
+          onAccept={() => {
+            setAgreeTerms(true);
+            setShowTermsModal(false);
+            if (validationErrors.agreeTerms) {
+              setValidationErrors((prev) => ({ ...prev, agreeTerms: null }));
+            }
+            toast.success("Resource Partner Terms & Conditions accepted.");
+          }}
+        />
+      )}
     </>
   );
 }

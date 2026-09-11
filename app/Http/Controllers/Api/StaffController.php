@@ -108,9 +108,9 @@ class StaffController extends Controller
                 $newStatus = ($baseScore >= $baseWeight && $totalDocPoints >= 100) ? 1 : 0;
 
             if ($newStatus == 1 && $oldStatus != 1) {
-                    dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
+                    dispatch(new \app\Jobs\SendAccountStatusEmailJob($user, 'active'));
                 } elseif ($newStatus == 0 && $oldStatus != 0) {
-                    dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
+                    dispatch(new \app\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
                 }
 
                 if ($user->is_active !== $newStatus) {

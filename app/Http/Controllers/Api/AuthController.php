@@ -176,7 +176,7 @@ class AuthController extends Controller
 
         $phone = $this->formatPhone($phone);
         $message = "{$otp} is your Staffoo OTP. Enter the code on Staffoo to verify your phone number.";
-
+return $message;
         $sendSmS = send_sms($phone, $message);
 
         return $sendSmS;

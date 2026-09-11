@@ -107,10 +107,10 @@ class StaffController extends Controller
                 $oldStatus = $user->is_active;
                 $newStatus = ($baseScore >= $baseWeight && $totalDocPoints >= 100) ? 1 : 0;
 
-            if ($newStatus == 1 && $oldStatus != 1) {
-                    dispatch(new \app\Jobs\SendAccountStatusEmailJob($user, 'active'));
+                if ($newStatus == 1 && $oldStatus != 1) {
+                    dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
                 } elseif ($newStatus == 0 && $oldStatus != 0) {
-                    dispatch(new \app\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
+                    dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
                 }
 
                 if ($user->is_active !== $newStatus) {
@@ -141,9 +141,9 @@ class StaffController extends Controller
                 $newStatus = ($baseScore >= $baseWeight && $hasSecurityLicenseWithExpiry) ? 1 : 0;
 
                 if ($newStatus == 1 && $oldStatus != 1) {
-                    dispatch(new \app\Jobs\SendAccountStatusEmailJob($user, 'active'));
+                    dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
                 } elseif ($newStatus == 0 && $oldStatus != 0) {
-                    dispatch(new \app\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
+                    dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
                 }
 
                 if ($user->is_active !== $newStatus) {
@@ -747,14 +747,17 @@ class StaffController extends Controller
             if ($percentage === 100) {
                 $user->is_active = 1;
                 $user->save();
+                dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
             }else{
                 $user->is_active = 0;
                 $user->save();
+                dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
             }
         }else{
             if ($percentage === 100 && (int) $user->is_active !== 1) {
                 $user->is_active = 1;
                 $user->save();
+                dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
             }
         }
     

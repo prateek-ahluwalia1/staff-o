@@ -287,14 +287,13 @@
 
             <div class="signature">
                 <p>Best regards,</p>
-                <div class="team-name">{{ $teamName }}</div>
                 <p style="color: #6b7280; margin-top: 5px;">STAFFOO</p>
             </div>
         </div>
 
         <div class="footer">
             <p>This is an automated response. Please do not reply to this email.</p>
-            <p>&copy; {{ $year }} {{ $appName }}. All rights reserved.</p>
+            <p>&copy; {{ $year }} STAFFOO. All rights reserved.</p>
             <p style="font-size: 11px; margin-top: 10px;">{{ $appUrl }}</p>
         </div>
     </div>

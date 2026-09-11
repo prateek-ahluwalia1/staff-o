@@ -32,7 +32,7 @@ class ContactAutoReply extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '✅ Thank You for Contacting ' . config('app.name'),
+            subject: '✅ Thank You for Contacting',
             tags: ['contact-form', 'auto-reply'],
             metadata: [
                 'contact_id' => $this->contact->id,

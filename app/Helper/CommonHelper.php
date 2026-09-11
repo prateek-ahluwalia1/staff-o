@@ -4,9 +4,9 @@ use App\Models\Site;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
-use App\Services\YeastarService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use App\Services\TwilioService;
 
 function returnImgPath($type, $image)
 {
@@ -464,76 +464,121 @@ function send_push_notification($data){
         }
     }
     
-    if (!function_exists('send_sms')) {
-        function send_sms(string $phone, string $message): bool
-        {
-            try {
-                return app(YeastarService::class)->sendSms($phone, $message);
-            } catch (\Exception $e) {
-                Log::error('SMS sending failed', [
-                    'phone' => $phone,
-                    'error' => $e->getMessage()
-                ]);
-                return false;
-            }
-        }
-    }
+    // if (!function_exists('send_sms')) {
+    //     function send_sms(string $phone, string $message): bool
+    //     {
+    //         try {
+    //             return app(YeastarService::class)->sendSms($phone, $message);
+    //         } catch (\Exception $e) {
+    //             Log::error('SMS sending failed', [
+    //                 'phone' => $phone,
+    //                 'error' => $e->getMessage()
+    //             ]);
+    //             return false;
+    //         }
+    //     }
+    // }
 
     if (!function_exists('generateSecurePassword')) {
-        function generateSecurePassword($length = 8)
-        {
-            $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            $lowercase = 'abcdefghijklmnopqrstuvwxyz';
-            $numbers = '0123456789';
-            $specialChars = '@';
-            
-            // Ensure at least one of each type
-            $password = [
-                $uppercase[random_int(0, strlen($uppercase) - 1)],
-                $lowercase[random_int(0, strlen($lowercase) - 1)],
-                $numbers[random_int(0, strlen($numbers) - 1)],
-                $specialChars[random_int(0, strlen($specialChars) - 1)]
-            ];
-            
-            // Fill the rest with random characters
-            $allChars = $uppercase . $lowercase . $numbers . $specialChars;
-            for ($i = 4; $i < $length; $i++) {
-                $password[] = $allChars[random_int(0, strlen($allChars) - 1)];
-            }
-            
-            // Shuffle the password array
-            shuffle($password);
-            
-            return implode('', $password);
-        }
+    function generateSecurePassword($length = 8)
+    {
+    $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    $numbers = '0123456789';
+    $specialChars = '@';
+
+    // Ensure at least one of each type
+    $password = [
+        $uppercase[random_int(0, strlen($uppercase) - 1)],
+        $lowercase[random_int(0, strlen($lowercase) - 1)],
+        $numbers[random_int(0, strlen($numbers) - 1)],
+        $specialChars[random_int(0, strlen($specialChars) - 1)]
+    ];
+
+    // Fill the rest with random characters
+    $allChars = $uppercase . $lowercase . $numbers . $specialChars;
+    for ($i = 4; $i < $length; $i++) {
+        $password[] = $allChars[random_int(0, strlen($allChars) - 1)];
+    }
+
+    // Shuffle the password array
+    shuffle($password);
+
+    return implode('', $password);
+    }
     }
 
     function sendPasswordEmail($user, $plainPassword)
     {
-        try {
-            $company = User::find($user->user_id);
-            $companyName = $company ? $company->contractor->company_name : 'your company';
-            
-            $data = [
-                'name' => $user->name,
-                'email' => $user->email,
-                'password' => $plainPassword,
-                'company_name' => $companyName,
-                'staffo_id' => $user->staffo_id,
-                'user_type' => $user->user_type,
-            ];
+    try {
+    $company = User::find($user->user_id);
+    $companyName = $company ? $company->contractor->company_name : 'your company';
 
-            Mail::send('emails.staff_welcome', $data, function ($message) use ($user) {
-                $message->to($user->email, $user->name)
-                        ->subject('Your Login Details');
-            });
+    $data = [
+        'name' => $user->name,
+        'email' => $user->email,
+        'password' => $plainPassword,
+        'company_name' => $companyName,
+        'staffo_id' => $user->staffo_id,
+        'user_type' => $user->user_type,
+    ];
 
-            Log::info('Welcome email sent to contractor: ' . $user->email);
-        } catch (\Exception $e) {
-            Log::error('Failed to send welcome email to contractor: ' . $e->getMessage(), [
-                'user_id' => $user->id,
-                'email' => $user->email
-            ]);
-            // Don't throw exception - email failure shouldn't stop the registration process
-        }
+    Mail::send('emails.staff_welcome', $data, function ($message) use ($user) {
+        $message->to($user->email, $user->name)
+                ->subject('Your Login Details');
+    });
+
+    Log::info('Welcome email sent to contractor: ' . $user->email);
+    } catch (\Exception $e) {
+    Log::error('Failed to send welcome email to contractor: ' . $e->getMessage(), [
+        'user_id' => $user->id,
+        'email' => $user->email
+    ]);
+    // Don't throw exception - email failure shouldn't stop the registration process
+    }
+    }
+
+    if (!function_exists('send_sms')) {
+    function send_sms(string $phone, string $message): bool
+    {
+    try {
+        return app(TwilioService::class)->sendSmsOrWhatsapp($phone, $message);
+    } catch (\Exception $e) {
+        Log::error('SMS/WhatsApp sending failed', [
+            'phone' => $phone,
+            'error' => $e->getMessage(),
+        ]);
+        return false;
+    }
+    }
+    }
+
+    if (!function_exists('send_whatsapp')) {
+    function send_whatsapp(string $phone, string $message): bool
+    {
+    try {
+        return app(TwilioService::class)->sendWhatsapp($phone, $message);
+    } catch (\Exception $e) {
+        Log::error('WhatsApp sending failed', [
+            'phone' => $phone,
+            'error' => $e->getMessage(),
+        ]);
+        return false;
+    }
+    }
+    }
+
+    if (!function_exists('make_call')) {
+    function make_call(string $phone, ?string $twimlUrl = null): bool
+    {
+    try {
+        return app(TwilioService::class)->makeCall($phone, $twimlUrl);
+    } catch (\Exception $e) {
+        Log::error('Call failed', [
+            'phone' => $phone,
+            'error' => $e->getMessage(),
+        ]);
+        return false;
+    }
+    }
     }

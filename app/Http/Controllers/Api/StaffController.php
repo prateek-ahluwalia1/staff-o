@@ -760,10 +760,7 @@ class StaffController extends Controller
     
         $user->profile_completion_percentage = $percentage;
     
-        // ============ NEW: charge_rate key for contractors ============
-        // true only if the contractor has a rate card in contractor_charge_rates
-        // for EVERY state listed in states_allowed. Empty/missing states_allowed
-        // also counts as false.
+      
        $chargeRateComplete = null;
  
     if ($user->user_type === 'contractor') {
@@ -788,12 +785,7 @@ class StaffController extends Controller
             $chargeRateComplete = true;
         }
     }
-        // ============ END NEW ============
-
-         // ============ NEW: available jobs count ============
-    // Simple count: unassigned + unaccepted upcoming jobs matching the
-    // user's allowed states (staff use Staffoo/contractor id 1's states,
-    // same as getAvailableJobs). No daily hour/job cap filtering here.
+        
     $availableJobsCount = 0;
  
     $allowedStatesForCount = $user->user_type === 'staff'

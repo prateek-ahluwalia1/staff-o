@@ -245,14 +245,6 @@ class StaffController extends Controller
             }
         }
 
-        if($user->user_type == 'contractor'){
-            if ($percentage === 100 && $user->is_active != 1) {
-                dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'active'));
-            }elseif($percentage <= 100 && $user->is_active != 0){
-                dispatch(new \App\Jobs\SendAccountStatusEmailJob($user, 'inactive'));
-            }
-        }
-
         return min($percentage, 100);
     }
 

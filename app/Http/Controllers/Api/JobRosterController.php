@@ -5943,6 +5943,21 @@ public function reject_charge_rate_request(Request $request, $id)
                 Log::error('Failed to send charge rate rejection email', ['error' => $e->getMessage()]);
             }
         }
+        if (!empty($contractor->notification_token)) {
+            try {
+                send_push_notification([
+                    'message' => "Your charge rate request rejected",
+                    'title' => 'Charge Rate Rejected',
+                    'notification_token' => $contractor->notification_token,
+                    'page' => 'charge-rates',
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send charge rate approval push notification', [
+                    'charge_rate_request_id' => $id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return response()->json([
             'success' => true,

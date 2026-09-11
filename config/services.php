@@ -57,4 +57,13 @@ return [
     'sendgrid' => [
     'api_key' => env('SENDGRID_API_KEY'),
     ],
+
+    'twilio' => [
+    'sid'           => env('TWILIO_SID'),
+    'auth_token'    => env('TWILIO_AUTH_TOKEN'),
+    'sms_from'      => env('TWILIO_SMS_FROM'),        // e.g. +61...
+    'whatsapp_from' => env('TWILIO_WHATSAPP_FROM'),   // e.g. whatsapp:+14155238886
+    'voice_from'    => env('TWILIO_VOICE_FROM'),
+    'voice_url'     => env('TWILIO_VOICE_URL'),       // TwiML endpoint for calls
+],
 ];

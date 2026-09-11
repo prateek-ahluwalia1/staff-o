@@ -81,15 +81,15 @@ class SendJobNotificationJob implements ShouldQueue
             return;
         }
 
-        Log::info("Site #{$siteId} - Processing " . $jobsToProcess->count() . " job(s) that need notification", [
-            'site_id' => $siteId,
-            'total_jobs_in_site' => $jobs->count(),
-            'jobs_to_process' => $jobsToProcess->pluck('id')->toArray(),
-            'all_job_ids' => $jobs->pluck('id')->toArray(),
-            'minutes_since_post' => $minutesSincePost,
-            'log_time' => now()->toDateTimeString(),
-            'process_id' => getmypid()
-        ]);
+        // Log::info("Site #{$siteId} - Processing " . $jobsToProcess->count() . " job(s) that need notification", [
+        //     'site_id' => $siteId,
+        //     'total_jobs_in_site' => $jobs->count(),
+        //     'jobs_to_process' => $jobsToProcess->pluck('id')->toArray(),
+        //     'all_job_ids' => $jobs->pluck('id')->toArray(),
+        //     'minutes_since_post' => $minutesSincePost,
+        //     'log_time' => now()->toDateTimeString(),
+        //     'process_id' => getmypid()
+        // ]);
 
         if (!$siteCoords) {
             Log::warning("Site #{$siteId}: No site coordinates – skipped.");

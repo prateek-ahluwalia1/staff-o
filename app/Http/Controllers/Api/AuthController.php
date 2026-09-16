@@ -175,8 +175,7 @@ class AuthController extends Controller
         }
 
         $phone = $this->formatPhone($phone);
-        // $message = "{$otp} is your Staffoo OTP. Enter the code on Staffoo to verify your phone number.";
-        $message = "sms_2fa";
+        $message = "{$otp} is your Staffoo OTP. Enter the code on Staffoo to verify your phone number.";
         $sendSmS = send_sms($phone, $message);
 
         return $sendSmS;

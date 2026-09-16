@@ -65,5 +65,6 @@ return [
     'whatsapp_from' => env('TWILIO_WHATSAPP_FROM'),   // e.g. whatsapp:+14155238886
     'voice_from'    => env('TWILIO_VOICE_FROM'),
     'voice_url'     => env('TWILIO_VOICE_URL'),       // TwiML endpoint for calls
+    'whatsapp_generic_template_sid' => env('TEMPLATE_SID'),
 ],
 ];

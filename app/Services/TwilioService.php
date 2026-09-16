@@ -68,10 +68,9 @@ class TwilioService
     public function sendWhatsapp(string $phone, string $message): bool
     {
         $this->client->messages->create('whatsapp:' . $this->normalize($phone), [
-            // config value already includes the "whatsapp:" prefix, e.g.
-            // 'whatsapp:+14155238886'
             'from' => config('services.twilio.whatsapp_from'),
-            'body' => $message,
+            'contentSid' => config('services.twilio.whatsapp_generic_template_sid'),
+            'contentVariables' => json_encode(['1' => $message]),
         ]);
 
         return true;

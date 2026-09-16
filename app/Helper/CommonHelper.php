@@ -539,18 +539,18 @@ function send_push_notification($data){
     }
 
     if (!function_exists('send_sms')) {
-    function send_sms(string $phone, string $message): bool
-    {
-    try {
-        return app(TwilioService::class)->sendSmsOrWhatsapp($phone, $message);
-    } catch (\Exception $e) {
-        Log::error('SMS/WhatsApp sending failed', [
-            'phone' => $phone,
-            'error' => $e->getMessage(),
-        ]);
-        return false;
-    }
-    }
+        function send_sms(string $phone, string $message): bool
+        {
+            try {
+                return app(TwilioService::class)->sendSmsOrWhatsapp($phone, $message);
+            } catch (\Exception $e) {
+                Log::error('SMS/WhatsApp sending failed', [
+                    'phone' => $phone,
+                    'error' => $e->getMessage(),
+                ]);
+                return false;
+            }
+        }
     }
 
     if (!function_exists('send_whatsapp')) {

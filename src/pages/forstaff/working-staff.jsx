@@ -53,7 +53,7 @@ export default function WorkingStaff() {
     // 3. How It Works Steps Data
     const guardSteps = [
         { num: "01", title: "Create your account", desc: "Email and mobile is all it takes to get started. No fee, no subscription." },
-        { num: "02", title: "Upload your documents", desc: "Security licence, ID and ABN. Photos from your phone are fine." },
+        { num: "02", title: "Upload your documents", desc: "Security license, ID and ABN. Photos from your phone are fine." },
         { num: "03", title: "Get verified", desc: "Our team checks your documents and switches your account on." },
         { num: "04", title: "Pick your shifts", desc: "Browse what's near you, check the rate and hours, tap accept. It's booked." },
     ];
@@ -62,7 +62,7 @@ export default function WorkingStaff() {
     const guardStory = {
         category: "Staff story — Sydney",
         title: "Verified on a Tuesday, working by the weekend",
-        description: "A crowd controller with six years' experience uploaded his licence and ABN on a Tuesday morning, was verified the next day, and had accepted three weekend shifts before the end of the week.",
+        description: "A crowd controller with six years' experience uploaded his license and ABN on a Tuesday morning, was verified the next day, and had accepted three weekend shifts before the end of the week.",
         quote: '"I could see what each one paid before I took it. No calls, no waiting to hear back — I just picked the ones that worked around my week."',
         stats: [
             { value: "1 day", label: "to get verified" },
@@ -85,7 +85,7 @@ export default function WorkingStaff() {
         },
         {
             q: "How long does verification take?",
-            a: "Usually within one business day. Upload your security licence, photo ID and ABN, and our team checks them and switches your account on. From that point you can start accepting shifts the same day.",
+            a: "Usually within one business day. Upload your security license, photo ID and ABN, and our team checks them and switches your account on. From that point you can start accepting shifts the same day.",
         },
         {
             q: "Do I need my own ABN?",
@@ -97,7 +97,7 @@ export default function WorkingStaff() {
         },
         {
             q: "Am I employed by Staffoo?",
-            a: "No. Staffoo is a marketplace, not an agency or an employer. We verify licences, host the shifts and handle payments — but we don't roster you, assign you work or tell you which jobs to take.",
+            a: "No. Staffoo is a marketplace, not an agency or an employer. We verify licenses, host the shifts and handle payments — but we don't roster you, assign you work or tell you which jobs to take.",
         },
         {
             q: "What if I can't make a shift I've accepted?",
@@ -105,7 +105,7 @@ export default function WorkingStaff() {
         },
         {
             q: "Can I work in more than one state?",
-            a: "Yes, as long as you hold a current licence valid in each state you want to work in. Add every licence you hold to your profile and the shifts you're eligible for appear automatically.",
+            a: "Yes, as long as you hold a current license valid in each state you want to work in. Add every license you hold to your profile and the shifts you're eligible for appear automatically.",
         },
     ];
 
@@ -153,7 +153,7 @@ export default function WorkingStaff() {
                 <WhatsCovered
                     kicker="Why staff work here"
                     title="No middleman, no guessing what a shift pays"
-                    description="Through an agency you take what you're given and often find out the rate afterwards. On Staffoo every shift is listed with its pay rate, hours, location and licence requirement up front so you decide with the full picture in front of you."
+                    description="Through an agency you take what you're given and often find out the rate afterwards. On Staffoo every shift is listed with its pay rate, hours, location and license requirement up front so you decide with the full picture in front of you."
                     items={guardBenefits}
                 />
 
@@ -179,7 +179,7 @@ export default function WorkingStaff() {
               
 
                 <CtaBand
-                    title="Your licence, your week, your full rate"
+                    title="Your license, your week, your full rate"
                     subtitle="Upload your documents today, get verified within a business day, and start picking up shifts near you."
                     primaryBtnText="Get verified"
                     primaryBtnUrl="#"

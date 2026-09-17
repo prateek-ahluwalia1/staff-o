@@ -62,7 +62,7 @@ export default function RetailSecurity() {
     const retailDashboardCards = [
         {
             title: "Post a job in minutes",
-            desc: "Set the store address, shift pattern and licence required. Duplicate it next time instead of starting over.",
+            desc: "Set the store address, shift pattern and license required. Duplicate it next time instead of starting over.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-line short"></div>
@@ -74,7 +74,7 @@ export default function RetailSecurity() {
         },
         {
             title: "Compare real applicants",
-            desc: "Verified licence, rate, past stores and reviews on every profile. Shortlist, message and confirm without leaving the page.",
+            desc: "Verified license, rate, past stores and reviews on every profile. Shortlist, message and confirm without leaving the page.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-box">
@@ -128,7 +128,7 @@ export default function RetailSecurity() {
     const retailFaqs = [
         {
             q: "Do I need a licensed guard for loss prevention?",
-            a: "Yes. Anyone deterring theft, monitoring the floor or managing a cash office watch needs a current security licence in every state, whether they're in uniform or plain clothed. Every guard on Staffoo has their licence verified before they can apply.",
+            a: "Yes. Anyone deterring theft, monitoring the floor or managing a cash office watch needs a current security license in every state, whether they're in uniform or plain clothed. Every guard on Staffoo has their license verified before they can apply.",
         },
         {
             q: "Can a security guard search or detain a customer?",
@@ -206,7 +206,7 @@ export default function RetailSecurity() {
                 <WhatsCovered
                     kicker="What's covered"
                     title="Everything your store needs, one job post"
-                    description="Every guard on Staffoo holds a valid licence for the work, checked before they're allowed to apply."
+                    description="Every guard on Staffoo holds a valid license for the work, checked before they're allowed to apply."
                     items={retailWhatsCovered}
                 />
 

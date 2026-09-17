@@ -8,7 +8,7 @@ export default function ComparisonSection() {
                 <div className="stf-wrap">
                     <div className="stf-cta-strip">
                         <div>
-                            <h3>Licence and ABN ready?</h3>
+                            <h3>License and ABN ready?</h3>
                             <p>Upload them today and you could be accepting shifts tomorrow.</p>
                         </div>
                         <a href="#" className="stf-btn stf-btn-solid stf-btn-lg">Get verified</a>

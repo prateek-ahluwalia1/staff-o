@@ -28,7 +28,7 @@ function Testamonial() {
               <div className="nh-case-industry">Construction</div>
               <h3>Overnight coverage for a 40-site rollout</h3>
               <p className="nh-case-quote">
-                "Licence verification alone saved us from two compliance headaches this year."
+                "License verification alone saved us from two compliance headaches this year."
               </p>
             </div>
           </div>

@@ -9,7 +9,6 @@ import Header from "../components/newHome/Header";
 import { apiURL } from "../utils/exports";
 import { normalizeAuthResponse, extractUserId } from "../utils/authResponseNormalizer";
 import googleIcon from "../assets/images/google-color.svg";
-import { ClientTerms, StaffTerms, ResourcePartnerTerms } from "../pages/terms";
 
 /* ── Design tokens ── */
 const G = "#0A7C6E";
@@ -57,7 +56,6 @@ export default function Register() {
 
   const [userType, setUserType] = useState(validRoles.includes(incomingRole) ? incomingRole : "");
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -67,7 +65,7 @@ export default function Register() {
   const [focusedField, setFocusedField] = useState(null);
 
   useEffect(() => {
-    if (showRoleModal || showVerifyModal || showTermsModal) {
+    if (showRoleModal || showVerifyModal) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -75,7 +73,7 @@ export default function Register() {
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [showRoleModal, showVerifyModal, showTermsModal]);
+  }, [showRoleModal, showVerifyModal]);
 
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -485,17 +483,18 @@ export default function Register() {
                   }}
                 >
                   I have read and agree to the{" "}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setShowTermsModal(true);
-                    }}
+                  <a
+                    href={
+                      userType === "customer"
+                        ? "/client-terms"
+                        : userType === "staff"
+                        ? "/staff-terms"
+                        : "/partner-terms"
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                     style={{
-                      background: "none",
-                      border: "none",
-                      padding: 0,
                       color: G,
                       fontWeight: 700,
                       textDecoration: "underline",
@@ -508,7 +507,7 @@ export default function Register() {
                     {userType === "customer" && "Client Terms & Conditions"}
                     {userType === "staff" && "Staff Terms & Conditions"}
                     {userType === "contractor" && "Resource Partner Terms & Conditions"}
-                  </button>
+                  </a>
                   .
                 </label>
               </div>
@@ -527,41 +526,6 @@ export default function Register() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* ── ROLE TERMS MODAL (OVERLAY ON SAME SCREEN) ── */}
-      {showTermsModal && userType === "customer" && (
-        <ClientTerms
-          isOpen={showTermsModal}
-          onClose={() => setShowTermsModal(false)}
-          onAccept={() => {
-            setAgreeTerms(true);
-            setShowTermsModal(false);
-            toast.success("Client Terms & Conditions accepted.");
-          }}
-        />
-      )}
-      {showTermsModal && userType === "staff" && (
-        <StaffTerms
-          isOpen={showTermsModal}
-          onClose={() => setShowTermsModal(false)}
-          onAccept={() => {
-            setAgreeTerms(true);
-            setShowTermsModal(false);
-            toast.success("Staff Terms & Conditions accepted.");
-          }}
-        />
-      )}
-      {showTermsModal && userType === "contractor" && (
-        <ResourcePartnerTerms
-          isOpen={showTermsModal}
-          onClose={() => setShowTermsModal(false)}
-          onAccept={() => {
-            setAgreeTerms(true);
-            setShowTermsModal(false);
-            toast.success("Resource Partner Terms & Conditions accepted.");
-          }}
-        />
       )}
 
       {/* ── EMAIL VERIFY MODAL ── */}

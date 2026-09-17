@@ -5,9 +5,9 @@ export default function HeroSection() {
   return (
     <section className="stf-hero">
       <div className="stf-wrap">
-        <div className="stf-hero-grid">
+        <div className="stf-hero-grid" style={{ alignItems: 'flex-start' }}>
           <div>
-            <span className="stf-eyebrow">For clients</span>
+            <span className="stf-eyebrow">How it works</span>
             <h1>Hiring security without an agency in the middle</h1>
             <p className="lead">
               Staffoo connects you directly with licensed security staff near your site. You post the job and set the rate, verified staff accept it from their phone, and you approve the hours afterwards. No quotes to chase and no lock in contract.
@@ -25,7 +25,7 @@ export default function HeroSection() {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">
                   <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>{" "}
-                Licences verified before anyone can accept
+                Licenses verified before anyone can accept
               </div>
               <div className="stf-trust-item">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">
@@ -94,7 +94,7 @@ export default function HeroSection() {
                       Job posted
                     </div>
                     <div style={{ fontSize: "11.5px", color: "var(--text-secondary)", marginTop: "1px" }}>
-                      Site, date, hours, licence class, rate
+                      Site, date, hours, license class, rate
                     </div>
                   </div>
                   <span

@@ -14,7 +14,7 @@ function Demographics() {
       <div className="nh-wrap">
         <div className="nh-cta-band">
           <h2>Ready to get started?</h2>
-          <p>Join in minutes — no setup fees, no lock-in contracts.</p>
+          <p>Join in minutes - no setup fees, no lock-in contracts.</p>
           <div className="nh-cta-actions">
             <Link to={postJobRoute} className="nh-btn nh-btn-solid nh-btn-lg">Post a job</Link>
             <Link to={findJobRoute} className="nh-btn nh-btn-outline nh-btn-lg">Sign up as a staff</Link>

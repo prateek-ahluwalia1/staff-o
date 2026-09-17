@@ -58,6 +58,7 @@ const PrivacyPolicy = lazy(() => import("./pages/privacy-policy"));
 const ClientTerms = lazy(() => import("./pages/terms/ClientTerms"));
 const StaffTerms = lazy(() => import("./pages/terms/StaffTerms"));
 const ResourcePartnerTerms = lazy(() => import("./pages/terms/ResourcePartnerTerms"));
+const ForPartner = lazy(() => import("./pages/forpartner/For-Partner"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Reports = lazy(() => import("./pages/Reports"));
 const TimeSheet = lazy(() => import("./pages/TimeSheet"));
@@ -626,6 +627,9 @@ function AppContent() {
                 <Route path="/terms/resource-partner-terms" element={<ProtectedRoute public><ResourcePartnerTerms /></ProtectedRoute>} />
                 <Route path="/resource-partner-terms" element={<ProtectedRoute public><ResourcePartnerTerms /></ProtectedRoute>} />
                 <Route path="/partner-terms" element={<ProtectedRoute public><ResourcePartnerTerms /></ProtectedRoute>} />
+                <Route path="/forpartner" element={<ProtectedRoute public><ForPartner /></ProtectedRoute>} />
+                <Route path="/forpartner/become-partner" element={<ProtectedRoute public><ForPartner /></ProtectedRoute>} />
+                <Route path="/forpartner/resource-partner" element={<ProtectedRoute public><ForPartner /></ProtectedRoute>} />
                 <Route path="/about-us" element={<ProtectedRoute public><AboutUs /></ProtectedRoute>} />
                 <Route path="/contact-us" element={<ProtectedRoute public><ContactUs /></ProtectedRoute>} />
                 <Route path="/contracts/sign" element={<ProtectedRoute public><ContractSign /></ProtectedRoute>} />

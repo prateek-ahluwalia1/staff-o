@@ -1,5 +1,4 @@
 import React from "react";
-import { Link } from "react-router-dom";
 
 export default function SafeguardsSection() {
   const safeguards = [
@@ -45,13 +44,7 @@ export default function SafeguardsSection() {
             </div>
           ))}
         </div>
-        <p style={{ fontSize: "14.5px", color: "var(--text-secondary)", maxWidth: "780px", marginTop: "26px" }}>
-          Hiring across several sites or on a recurring roster? The{" "}
-          <Link to="/register" style={{ color: "var(--green-dark)", fontWeight: 600, borderBottom: "1px solid #BFDCCC" }}>
-            hiring for a business page
-          </Link>{" "}
-          covers what is available at that scale.
-        </p>
+
       </div>
     </section>
   );

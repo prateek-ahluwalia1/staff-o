@@ -19,68 +19,98 @@ import "../../components/industries/event-crowd-comp/styles.css";
 
 export default function Postajob() {
   const postAJobStats = [
-    { value: "3,100", label: "verified licensed guards" },
+    { value: "3,100", label: "verified licensed staff" },
     { value: "3 hrs", label: "median time to first booking" },
     { value: "94%", label: "of jobs fill completely" },
-    { value: "4.9", label: "average guard rating" },
+    { value: "4.9", label: "average staff rating" },
   ];
+
 
   const needItems = [
     {
       title: "Where and when",
-      desc: "The site address, the date, and the start and finish times. Guards see distance from their own suburb, so precision here matters.",
+      desc: "The site address, the date, and the start and finish times. Security staff see distance from their own suburb, so precision here matters.",
       iconPath: "M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z",
     },
     {
-      title: "How many guards",
-      desc: "Each position is filled separately, so a job for six guards can be taken by six different people as they accept it.",
+      title: "How many staff",
+      desc: "Each position is filled separately, so a job for six security staff can be taken by six different people as they accept it.",
       iconPath: "M12 8v4l3 3 M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0",
     },
     {
-      title: "Licence required",
-      desc: "Security officer for static, retail and construction work, crowd controller for door and event work. Only guards holding it will see the job.",
+      title: "License required",
+      desc: "Security officer for static, retail and construction work, crowd controller for door and event work. Only security staff holding the required license will see the job.",
       iconPath: "M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7z",
     },
     {
       title: "The hourly rate",
-      desc: "You set it when you post, and it shows on the listing. Guards accept or pass at that figure, so there is no negotiating afterwards.",
+      desc: "You set it when you post, and it shows on the listing. Security staff accept or pass at that figure, so there is no negotiating afterwards.",
       iconPath: "M12 2v20M17 6H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6",
     },
   ];
 
+
+
+
   const postAJobSteps = [
-    { num: "01", title: "Post the job", desc: "Fill in the site, date, hours, guard numbers, licence class and rate. Free to post, and you can save it as a template for next time." },
-    { num: "02", title: "Guards accept it", desc: "Every verified guard nearby holding the right licence is notified. Each accepted position is booked on the spot." },
-    { num: "03", title: "Brief your team", desc: "Once a guard is booked you can see their licence, experience and reviews, message them directly and share the site brief." },
-    { num: "04", title: "Approve hours and pay", desc: "Guards check in and out on site. You approve the hours worked, and Staffoo handles paying them." },
+    {
+      num: "01",
+      title: "Post the job",
+      desc: "Fill in the site, date, hours, staff members, license class and rate. Free to post, and you can save it as a template for next time.",
+    },
+    {
+      num: "02",
+      title: "Security staff accept it",
+      desc: "Every verified security staff member nearby holding the right license is notified. Each accepted position is booked on the spot.",
+    },
+    {
+      num: "03",
+      title: "Brief your team",
+      desc: "Once a security staff member is booked you can see their license, experience and reviews, message them directly and share the site brief.",
+    },
+    {
+      num: "04",
+      title: "Approve hours and pay",
+      desc: "Security staff check in and out on site. You approve the hours worked, and Staffoo handles paying them.",
+    },
   ];
+
+
+
 
   const postAJobFaqs = [
     {
       q: "How much does it cost to post a job?",
-      a: "Nothing. Posting is free and you are only charged once guards are booked and the shift has been worked. Full fee detail is on our pricing page.",
+      a: "Nothing. Posting is free and you are only charged once security staff are booked and the shift has been worked. Full fee detail is on our pricing page.",
     },
+
     {
-      q: "Do I choose which guard gets the job?",
-      a: "No. Verified guards holding the right licence see your job and accept it directly, which is what makes filling so fast. Once someone is booked you can see their licence, experience and review history, and message them before the shift.",
+      q: "Do I choose which staff member gets the job?",
+      a: "No. Verified security staff holding the right license see your job and accept it directly, which is what makes filling so fast. Once someone is booked you can see their license, experience and review history, and message them before the shift.",
     },
+
     {
       q: "How quickly will my job fill?",
-      a: "Most jobs receive their first booking within about three hours, and the majority fill completely the same day. Marking a job urgent notifies every eligible guard in the area immediately.",
+      a: "Most jobs receive their first booking within about three hours, and the majority fill completely the same day. Marking a job urgent notifies every eligible security staff member in the area immediately.",
     },
+
     {
       q: "Who sets the hourly rate?",
-      a: "You do, when you post. The figure you enter is shown on the listing and is what the guard is paid. There is no bidding and no negotiating after the fact.",
+      a: "You do, when you post. The figure you enter is shown on the listing and is what the staff member is paid. There is no bidding and no negotiating after the fact.",
     },
+
     {
       q: "What if I need to change the job after posting?",
-      a: "You can edit any position that has not been booked yet, including the rate and hours. Guards who have already accepted keep the terms they agreed to, so changes only apply to what is still open.",
+      a: "You can edit any position that has not been booked yet, including the rate and hours. Security staff who have already accepted keep the terms they agreed to, so changes only apply to what is still open.",
     },
+
     {
-      q: "How do the guards get paid?",
-      a: "Staffoo pays them on a fortnightly cycle based on the hours you approve after each shift. You are not paying guards individually and there are no invoices from them to process.",
+      q: "How does the security staff member get paid?",
+      a: "Staffoo pays them on a fortnightly cycle based on the hours you approve after each shift. You are not paying security staff individually and there are no invoices from them to process.",
     },
   ];
+
+
 
   return (
     <>
@@ -120,14 +150,14 @@ export default function Postajob() {
         <WhatsCovered
           kicker="What you will need"
           title="Four things and your job is live"
-          description="No brief to write and no phone call to book. The form asks only for what a guard needs to know before deciding whether the shift suits them."
+          description="No brief to write and no phone call to book. The form asks only for what security staff need to know before deciding whether the shift suits them."
           items={needItems}
         />
 
         <HowItWorks
           kicker="How it works"
           title="From posting to guards on site"
-          description="Guards accept jobs directly, so there is no shortlist to review and no candidate to approve. The moment a licensed guard takes a position, it is booked."
+          description="Security staff accept jobs directly, so there is no shortlist to review and no candidate to approve. The moment a licensed security staff takes a position, it is booked."
           steps={postAJobSteps}
         />
 
@@ -136,16 +166,15 @@ export default function Postajob() {
         <ManagingJobSection />
 
         <FaqSection
-          kicker="FAQ"
+          kicker="FAQs"
           title="Posting a job, answered"
           faqs={postAJobFaqs}
         />
 
-        <RelatedLinksSection />
 
         <CtaBand
-          title="Post your job and let the guards come to you"
-          subtitle="Free to post, no lock in contract, and most jobs have their first guard booked within a few hours."
+          title="Post your job and let the security staff come to you"
+          subtitle="Free to post, no lock in contract, and most jobs have their first security staff booked within a few hours."
           primaryBtnText="Post your job"
           primaryBtnUrl="/register"
           secondaryBtnText="Talk to our team"

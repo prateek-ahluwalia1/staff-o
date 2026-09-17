@@ -18,12 +18,12 @@ export default function EligibilitySection() {
                                 <path d="M20 6L9 17l-5-5"></path>
                             </svg>
                         </div>
-                        <h3>A current security licence</h3>
+                        <h3>A current security license</h3>
                         <p>
                             Valid in the state you want to work in and the right class for the work — security officer for static, retail and construction, crowd controller for door and event work.
                         </p>
                         <a href="#" className="stf-btn stf-btn-outline stf-btn-sm" style={{ marginTop: "10px" }}>
-                            See licence classes by state →
+                            See license classes by state →
                         </a>
                     </div>
 
@@ -35,7 +35,7 @@ export default function EligibilitySection() {
                         </div>
                         <h3>Photo ID and work rights</h3>
                         <p>
-                            An Australian driver licence or passport, plus your visa if you're working here on one. This confirms you are the licence holder and are entitled to work.
+                            An Australian driver license or passport, plus your visa if you're working here on one. This confirms you are the licesce holder and are entitled to work.
                         </p>
                         <a href="#documents" className="stf-btn stf-btn-outline stf-btn-sm" style={{ marginTop: "10px" }}>
                             Full document list →
@@ -60,7 +60,7 @@ export default function EligibilitySection() {
 
                 <div className="stf-nolicence">
                     <div>
-                        <h3>Don't have a security licence yet?</h3>
+                        <h3>Don't have a security license yet?</h3>
                         <p>
                             You'll need one before you can work, but it's a shorter process than most people expect — a nationally recognised course and a police check, typically a few weeks. Our state-by-state guide walks through what's involved and roughly what it costs.
                         </p>

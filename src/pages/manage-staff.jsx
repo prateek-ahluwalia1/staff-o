@@ -1583,12 +1583,7 @@ const ManageStaff = () => {
                 />
               ) : activeModalTab === "documents" ? (
                 <div>
-                  <div className="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                      <h6 className="fw-bold mb-1">Documents</h6>
-                      <p className="text-muted small mb-0">Upload and manage staff documents.</p>
-                    </div>
-                  </div>
+
 
                   <DocumentTable
                     documents={staffDocuments}

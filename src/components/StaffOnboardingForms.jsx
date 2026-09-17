@@ -261,13 +261,12 @@ const PillRadioGroup = ({ name, value, onChange, options, required, error }) => 
                 return (
                     <label
                         key={opt.value}
-                        className={`btn d-flex align-items-center gap-2 px-4 py-2 border rounded-pill transition-all ${
-                            isSelected
-                                ? "btn-primary-custom shadow-sm"
-                                : error
+                        className={`btn d-flex align-items-center gap-2 px-4 py-2 border rounded-pill transition-all ${isSelected
+                            ? "btn-primary-custom shadow-sm"
+                            : error
                                 ? "btn-light border-danger text-danger"
                                 : "btn-light border-light-subtle text-muted"
-                        }`}
+                            }`}
                         style={{ cursor: "pointer", fontSize: "0.9rem" }}
                     >
                         <input
@@ -899,8 +898,8 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, onDownloadPDF
             </div>
             <FormCardFooter
                 loading={loading}
-                saveLabel="Save Superannuation"
-                saveIcon="fa-check"
+                saveLabel="Save and Submit"
+                // saveIcon="fa-check"
                 onPrev={onPrev}
                 prevLabel="Back to TFN Declaration"
             />
@@ -1108,8 +1107,8 @@ const EmployeeOnboardingForm = ({
                     <div className="border rounded-3 overflow-hidden mb-4">
                         {[
                             { label: "Birth Certificate, Passport, or Citizenship Certificate", points: 70, name: "chk_primary" },
-                            { label: "Driver Licence or Government Issued Photo ID", points: 40, name: "chk_driver" },
-                            { label: "Security Licence (Mandatory)", points: 40, name: "chk_security" },
+                            { label: "Driver License or Government Issued Photo ID", points: 40, name: "chk_driver" },
+                            { label: "Security License (Mandatory)", points: 40, name: "chk_security" },
                             { label: "Medicare Card, Utility Bill, or Bank Statement", points: 25, name: "chk_medicare" },
                         ].map((item, idx, arr) => (
                             <div
@@ -1250,7 +1249,7 @@ const EmployeeOnboardingForm = ({
                     <div className="row g-4 mb-4">
                         <div className="col-md-6">
                             <label className={labelCls}>
-                                Security Licence No. <span className="text-danger">*</span>
+                                Security License No. <span className="text-danger">*</span>
                             </label>
                             <div className={`input-group ${errors.o_seclic ? "border border-danger rounded-3" : ""}`}>
                                 <input
@@ -1272,7 +1271,7 @@ const EmployeeOnboardingForm = ({
                                     className="btn btn-outline-primary"
                                     onClick={onVerifySecurityLicense}
                                     disabled={verifyingSecurityLicense || !securityLicenceModified}
-                                    title={!securityLicenceModified ? "Change the licence number to verify" : "Verify licence"}
+                                    title={!securityLicenceModified ? "Change the license number to verify" : "Verify license"}
                                 >
                                     {verifyingSecurityLicense ? (
                                         <><span className="spinner-border spinner-border-sm me-1" /> Verifying...</>
@@ -1282,12 +1281,12 @@ const EmployeeOnboardingForm = ({
                             <FieldError error={errors.o_seclic} />
                             <div className="mt-3">
                                 <label className={labelCls}>
-                                    Upload Security Licence Document <span className="text-danger">*</span>
+                                    Upload Security License Document <span className="text-danger">*</span>
                                 </label>
                                 {!values.o_seclicexp ? (
                                     <div className="text-muted small bg-light p-3 rounded-3 border">
                                         <i className="fa-solid fa-circle-info me-1"></i>
-                                        Please verify the security licence first to enable document upload.
+                                        Please verify the security license first to enable document upload.
                                     </div>
                                 ) : (
                                     <DocumentUploadField
@@ -1302,28 +1301,32 @@ const EmployeeOnboardingForm = ({
                         </div>
                         <div className="col-md-6">
                             <label className={labelCls}>
-                                Security Licence Expiry <span className="text-danger">*</span>
+                                Security License Expiry <span className="text-danger">*</span>
                             </label>
                             <DateInput name="o_seclicexp" value={values.o_seclicexp} onChange={onChange}
                                 required disabled={true} error={errors.o_seclicexp} />
                         </div>
 
                         <div className="col-md-6">
-                            <label className={labelCls}>First Aid Certificate No.</label>
+                            <label className={labelCls}>
+                                First Aid Certificate No. <span className="text-danger">*</span>
+                            </label>
                             <input
                                 type="text"
-                                className="form-control border-light-subtle bg-light focus-ring focus-ring-primary py-2 px-3"
+                                className={`form-control ${errors.o_fa ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary py-2 px-3`}
+                                style={{ backgroundColor: errors.o_fa ? "#fff8f8" : undefined, fontSize: "1rem" }}
                                 name="o_fa"
                                 placeholder="FA-001234"
                                 maxLength="30"
                                 value={values.o_fa}
                                 onChange={onChange}
-                                style={{ fontSize: "1rem" }}
+                                required
                             />
+                            <FieldError error={errors.o_fa} />
                             <div className="mt-3">
                                 <DocumentUploadField
                                     label="Upload First Aid Document"
-                                    required={Boolean(values.o_fa?.trim())}
+                                    required
                                     filePath={values.first_aid_doc}
                                     onUpload={(e) => onDocUpload(e, "first_aid_doc")}
                                     error={errors.first_aid_doc}
@@ -1331,8 +1334,10 @@ const EmployeeOnboardingForm = ({
                             </div>
                         </div>
                         <div className="col-md-6">
-                            <label className={labelCls}>First Aid Expiry</label>
-                            <DateInput name="o_faexp" value={values.o_faexp} onChange={onChange} />
+                            <label className={labelCls}>
+                                First Aid Expiry <span className="text-danger">*</span>
+                            </label>
+                            <DateInput name="o_faexp" value={values.o_faexp} onChange={onChange} required error={errors.o_faexp} />
                         </div>
                     </div>
 
@@ -1486,13 +1491,13 @@ const validateOnboardForm = (values) => {
     if (!values.o_superusi?.trim()) errs.o_superusi = "Super USI is required";
     if (!values.o_member?.trim()) errs.o_member = "Member number is required";
 
-    if (!values.o_seclic?.trim()) errs.o_seclic = "Security licence number is required";
-    if (!values.o_seclicexp?.trim()) errs.o_seclicexp = "Please verify your security licence first";
-    if (!values.security_license_doc) errs.security_license_doc = "Security licence document upload is required";
+    if (!values.o_seclic?.trim()) errs.o_seclic = "Security license number is required";
+    if (!values.o_seclicexp?.trim()) errs.o_seclicexp = "Please verify your security license first";
+    if (!values.security_license_doc) errs.security_license_doc = "Security license document upload is required";
 
-    if (values.o_fa?.trim() && !values.first_aid_doc) {
-        errs.first_aid_doc = "First aid document upload is required";
-    }
+    if (!values.o_fa?.trim()) errs.o_fa = "First aid certificate number is required";
+    if (!values.first_aid_doc) errs.first_aid_doc = "First aid document upload is required";
+    if (!values.o_faexp?.trim()) errs.o_faexp = "First aid expiry date is required";
 
     if (!values.sig3?.trim()) errs.sig3 = "Employee signature is required";
     if (!values.date3?.trim()) errs.date3 = "Date is required";
@@ -1723,7 +1728,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     const handleVerifySecurityLicense = async () => {
         if (!userId || !onboardForm.o_seclic) {
-            toast.error("Please enter a Security Licence number first.");
+            toast.error("Please enter a Security License number first.");
             return;
         }
         const STATE_NAME_MAP = {
@@ -2073,12 +2078,12 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                     const isActive = subTab === idx;
                     const isLocked =
                         idx === 1 ? !savedForms.onboarding :
-                        idx === 2 ? (!savedForms.onboarding || !savedForms.tfn) :
-                        false;
+                            idx === 2 ? (!savedForms.onboarding || !savedForms.tfn) :
+                                false;
                     const isCompleted =
                         idx === 0 ? savedForms.onboarding :
-                        idx === 1 ? savedForms.tfn :
-                        savedForms.superannuation;
+                            idx === 1 ? savedForms.tfn :
+                                savedForms.superannuation;
 
                     return (
                         <button
@@ -2088,13 +2093,12 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                             disabled={formDataLoading}
                             aria-current={isActive ? "page" : undefined}
                             aria-label={tab.label}
-                            className={`btn rounded-pill flex-fill d-flex align-items-center justify-content-center gap-2 fw-semibold ${
-                                isActive
-                                    ? "btn-primary-custom shadow"
-                                    : isLocked
+                            className={`btn rounded-pill flex-fill d-flex align-items-center justify-content-center gap-2 fw-semibold ${isActive
+                                ? "btn-primary-custom shadow"
+                                : isLocked
                                     ? "btn-light border text-muted opacity-75"
                                     : "btn-light border text-dark"
-                            }`}
+                                }`}
                             style={{
                                 minHeight: "48px",
                                 minWidth: "130px",

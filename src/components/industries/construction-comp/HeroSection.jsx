@@ -11,7 +11,7 @@ export default function HeroSection() {
             <span className="stf-eyebrow">Construction site security</span>
             <h1>Licensed security guards for construction sites, without the agency markup</h1>
             <p className="lead">
-              Staffoo is a marketplace, not an agency. Post your job once and independent, licensed security officers near you apply with their rate, licence and reviews attached. You compare and confirm from your dashboard.
+              Staffoo is a marketplace, not an agency. Post your job once and independent, licensed security officers near you apply with their rate, license and reviews attached. You compare and confirm from your dashboard.
             </p>
 
             {/* Role Switcher Tabs */}
@@ -98,7 +98,7 @@ export default function HeroSection() {
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">
                       <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    Licences verified before anyone applies
+                    Licenses verified before anyone applies
                   </div>
                   <div className="stf-trust-item">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">
@@ -151,8 +151,8 @@ export default function HeroSection() {
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B6660" strokeWidth="2">
                         <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                       </svg>
-                      <select defaultValue="Licence type">
-                        <option>Licence type</option>
+                      <select defaultValue="License type">
+                        <option>License type</option>
                         <option>Security Officer unarmed</option>
                         <option>Mobile patrol</option>
                         <option>Control room operator</option>

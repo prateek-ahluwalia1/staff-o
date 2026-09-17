@@ -52,7 +52,7 @@ export default function CorporateOffice() {
 
     // 3. How It Works Steps Data
     const corporateSteps = [
-        { num: "01", title: "Post the job", desc: "Site address, shift pattern and licence type needed. Free, and takes two minutes." },
+        { num: "01", title: "Post the job", desc: "Site address, shift pattern and license type needed. Free, and takes two minutes." },
         { num: "02", title: "Compare applicants", desc: "Licensed security officers apply with their rate, experience and reviews attached." },
         { num: "03", title: "Confirm and brief", desc: "Message directly, share the site brief, lock in the shift." },
         { num: "04", title: "Sign off & pay", desc: "Digital check in on the day, payment releases once you confirm the job's done." },
@@ -62,7 +62,7 @@ export default function CorporateOffice() {
     const corporateDashboardCards = [
         {
             title: "Post a job in minutes",
-            desc: "Set the site address, shift pattern and licence required. Duplicate it next time instead of starting over.",
+            desc: "Set the site address, shift pattern and license required. Duplicate it next time instead of starting over.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-line short"></div>
@@ -74,7 +74,7 @@ export default function CorporateOffice() {
         },
         {
             title: "Compare real applicants",
-            desc: "Verified licence, rate, past sites and reviews on every profile. Shortlist, message and confirm without leaving the page.",
+            desc: "Verified license, rate, past sites and reviews on every profile. Shortlist, message and confirm without leaving the page.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-box">
@@ -128,7 +128,7 @@ export default function CorporateOffice() {
     const corporateFaqs = [
         {
             q: "Do I need a licensed security officer for my office or workplace?",
-            a: "Yes. Reception, patrols, access control and after hours lockup all count as licensable security work in every state, whether the guard is standing at your front desk or checking doors after everyone's gone home. Every guard on Staffoo has their licence verified before they can apply to a job.",
+            a: "Yes. Reception, patrols, access control and after hours lockup all count as licensable security work in every state, whether the guard is standing at your front desk or checking doors after everyone's gone home. Every guard on Staffoo has their license verified before they can apply to a job.",
         },
         {
             q: "Can a security officer also handle reception and deliveries?",
@@ -140,7 +140,7 @@ export default function CorporateOffice() {
         },
         {
             q: "What's the difference between a security officer and a crowd controller?",
-            a: "A Security Officer licence covers static guarding, patrols and access control at a fixed site, which is what most office and workplace jobs need. A Crowd Controller licence specifically covers screening, monitoring and removing people at licensed venues and events. Each application shows you exactly which licence that guard holds, so you're not comparing the wrong skill set.",
+            a: "A Security Officer license covers static guarding, patrols and access control at a fixed site, which is what most office and workplace jobs need. A Crowd Controller license specifically covers screening, monitoring and removing people at licensed venues and events. Each application shows you exactly which license that guard holds, so you're not comparing the wrong skill set.",
         },
         {
             q: "Can I set up an ongoing contract, not just one off shifts?",
@@ -148,7 +148,7 @@ export default function CorporateOffice() {
         },
         {
             q: "Does my building manager or landlord need to approve the guard?",
-            a: "That's between you and your building manager, Staffoo doesn't get involved in that approval. What we handle is the licence check: every application already shows a verified, current security licence, so whatever sign off your building requires, you're starting from a guard who's legally allowed to do the work.",
+            a: "That's between you and your building manager, Staffoo doesn't get involved in that approval. What we handle is the license check: every application already shows a verified, current security license, so whatever sign off your building requires, you're starting from a guard who's legally allowed to do the work.",
         },
     ];
 
@@ -206,7 +206,7 @@ export default function CorporateOffice() {
                 <WhatsCovered
                     kicker="What's covered"
                     title="Everything your workplace needs, one job post"
-                    description="Every security officer on Staffoo holds a valid licence for the work, checked before they're allowed to apply."
+                    description="Every security officer on Staffoo holds a valid license for the work, checked before they're allowed to apply."
                     items={corporateWhatsCovered}
                 />
 

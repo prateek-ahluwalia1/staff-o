@@ -3,7 +3,7 @@ import React from "react";
 const defaultCards = [
   {
     title: "Post a job in minutes",
-    desc: "Set the date, site address, licence required and how many guards. Duplicate it next time instead of starting over.",
+    desc: "Set the date, site address, license required and how many guards. Duplicate it next time instead of starting over.",
     renderShot: () => (
       <div className="stf-inside-shot">
         <div className="stf-mini-line short"></div>
@@ -15,7 +15,7 @@ const defaultCards = [
   },
   {
     title: "Compare real applicants",
-    desc: "Verified licence, rate, past events and reviews on every profile. Shortlist, message and confirm without leaving the page.",
+    desc: "Verified license, rate, past events and reviews on every profile. Shortlist, message and confirm without leaving the page.",
     renderShot: () => (
       <div className="stf-inside-shot">
         <div className="stf-mini-box">

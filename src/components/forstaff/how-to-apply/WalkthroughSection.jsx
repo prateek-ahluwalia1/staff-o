@@ -43,15 +43,15 @@ export default function WalkthroughSection() {
                                 Photograph each document with your phone and upload it. Verification happens immediately as you go — you'll see each one confirmed on screen before you move to the next, so you know straight away if a photo needs retaking.
                             </p>
                             <ul className="stf-tl-list">
-                                <li><b>Security licence</b>: Verify your eligibility to work as a licensed security professional.</li>
-                                <li><b>Driver licence</b>: Confirm your identity and driving eligibility.</li>
+                                <li><b>Security license</b>: Verify your eligibility to work as a licensed security professional.</li>
+                                <li><b>Driver license</b>: Confirm your identity and driving eligibility.</li>
                                 <li><b>Passport</b>: Used to verify your identity.</li>
                                 <li><b>Visa</b>: Confirm your work rights in Australia (if applicable).</li>
                                 <li><b>First aid certificate</b>: Confirm first aid qualification.</li>
                                 <li><b>CPR certificate</b> and <b>Working with Children Check</b></li>
                             </ul>
                             <div className="stf-tl-tip">
-                                <b>Tip:</b> the driver licence is the only document needing both sides. Everything else is a single photo — check the table below before you start so you're not going back and forth.
+                                <b>Tip:</b> the driver license is the only document needing both sides. Everything else is a single photo — check the table below before you start so you're not going back and forth.
                             </div>
                         </div>
 
@@ -87,7 +87,7 @@ export default function WalkthroughSection() {
                                         <path d="M20 6L9 17l-5-5"></path>
                                     </svg>
                                 </span>
-                                <span><b>Security licence</b><span className="side">Front only</span></span>
+                                <span><b>Security license</b><span className="side">Front only</span></span>
                             </div>
                             <div className="stf-doc-item">
                                 <span className="stf-doc-box">
@@ -95,7 +95,7 @@ export default function WalkthroughSection() {
                                         <path d="M20 6L9 17l-5-5"></path>
                                     </svg>
                                 </span>
-                                <span><b>Driver licence</b><span className="side">Front and back</span></span>
+                                <span><b>Driver license</b><span className="side">Front and back</span></span>
                             </div>
                             <div className="stf-doc-item">
                                 <span className="stf-doc-box">

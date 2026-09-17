@@ -52,7 +52,7 @@ export default function EventCrowdControl() {
 
     // 3. How It Works Steps Data
     const eventSteps = [
-        { num: "01", title: "Post the job", desc: "Date, location, guards needed and licence type. Free, and takes two minutes." },
+        { num: "01", title: "Post the job", desc: "Date, location, guards needed and license type. Free, and takes two minutes." },
         { num: "02", title: "Compare applicants", desc: "Licensed guards apply with their rate, experience and reviews attached." },
         { num: "03", title: "Confirm and brief", desc: "Message directly, share the run sheet, lock in the shift." },
         { num: "04", title: "Sign off & pay", desc: "Digital check-in on the day, payment releases once you confirm the job's done." },
@@ -62,7 +62,7 @@ export default function EventCrowdControl() {
     const eventDashboardCards = [
         {
             title: "Post a job in minutes",
-            desc: "Set the date, site address, licence required and how many guards. Duplicate it next time instead of starting over.",
+            desc: "Set the date, site address, license required and how many guards. Duplicate it next time instead of starting over.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-line short"></div>
@@ -74,7 +74,7 @@ export default function EventCrowdControl() {
         },
         {
             title: "Compare real applicants",
-            desc: "Verified licence, rate, past events and reviews on every profile. Shortlist, message and confirm without leaving the page.",
+            desc: "Verified license, rate, past events and reviews on every profile. Shortlist, message and confirm without leaving the page.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-box">
@@ -128,11 +128,11 @@ export default function EventCrowdControl() {
     const eventFaqs = [
         {
             q: "Do I need a licensed crowd controller for my event?",
-            a: "In most Australian states, any role involving screening, monitoring or removing patrons at a licensed venue or public event legally requires a Crowd Controller licence. Every guard on Staffoo has theirs verified before they can apply to a job.",
+            a: "In most Australian states, any role involving screening, monitoring or removing patrons at a licensed venue or public event legally requires a Crowd Controller license. Every guard on Staffoo has theirs verified before they can apply to a job.",
         },
         {
             q: "Why can't I browse guards before signing up?",
-            a: "Guard profiles include licence details, contact information and work history, so they're only visible to verified clients inside the platform. Posting a job is free and takes about two minutes — applications start arriving straight away.",
+            a: "Guard profiles include license details, contact information and work history, so they're only visible to verified clients inside the platform. Posting a job is free and takes about two minutes — applications start arriving straight away.",
         },
         {
             q: "How quickly can I book event security?",
@@ -140,7 +140,7 @@ export default function EventCrowdControl() {
         },
         {
             q: "What's the difference between a crowd controller and a general security guard?",
-            a: "A Crowd Controller licence specifically covers screening, monitoring and removing people from licensed venues and events. A general Security Officer licence covers static site and patrol work. Each application shows you exactly which licence that guard holds.",
+            a: "A Crowd Controller license specifically covers screening, monitoring and removing people from licensed venues and events. A general Security Officer license covers static site and patrol work. Each application shows you exactly which license that guard holds.",
         },
         {
             q: "Can I book guards for a single one-day event?",
@@ -206,7 +206,7 @@ export default function EventCrowdControl() {
                 <WhatsCovered
                     kicker="What's covered"
                     title="Everything your event needs, one job post"
-                    description="Every crowd controller on Staffoo holds a valid licence for the work — checked before they're allowed to apply."
+                    description="Every crowd controller on Staffoo holds a valid license for the work — checked before they're allowed to apply."
                     items={eventWhatsCovered}
                 />
 

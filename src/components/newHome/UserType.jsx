@@ -5,7 +5,7 @@ import "../../styles/staffoo.css"
 function UserType() {
   return (
     <div className="nh-platform-bar">
-      We connect you directly with independent, licensed staff —{' '}
+      We connect you directly with independent, licensed staff -{' '}
       <b>verified before they ever apply.</b>
     </div>
   )

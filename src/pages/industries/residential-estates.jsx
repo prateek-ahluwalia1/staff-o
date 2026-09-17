@@ -52,7 +52,7 @@ export default function ResidentialEstates() {
 
     // 3. How It Works Steps Data
     const residentialSteps = [
-        { num: "01", title: "Post the job", desc: "Property address, shift pattern and licence type needed. Free, and takes two minutes." },
+        { num: "01", title: "Post the job", desc: "Property address, shift pattern and license type needed. Free, and takes two minutes." },
         { num: "02", title: "Compare applicants", desc: "Licensed guards apply with their rate, experience and reviews attached." },
         { num: "03", title: "Confirm and brief", desc: "Message directly, share access details and any resident procedures, lock in the shift." },
         { num: "04", title: "Sign off & pay", desc: "Digital check in on the day, payment releases once you confirm the job's done." },
@@ -62,7 +62,7 @@ export default function ResidentialEstates() {
     const residentialDashboardCards = [
         {
             title: "Post a job in minutes",
-            desc: "Set the property address, shift pattern and licence required. Duplicate it next time instead of starting over.",
+            desc: "Set the property address, shift pattern and license required. Duplicate it next time instead of starting over.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-line short"></div>
@@ -74,7 +74,7 @@ export default function ResidentialEstates() {
         },
         {
             title: "Compare real applicants",
-            desc: "Verified licence, rate, past properties and reviews on every profile. Shortlist, message and confirm without leaving the page.",
+            desc: "Verified license, rate, past properties and reviews on every profile. Shortlist, message and confirm without leaving the page.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-box">
@@ -128,7 +128,7 @@ export default function ResidentialEstates() {
     const residentialFaqs = [
         {
             q: "Do I need a licensed guard for a residential estate?",
-            a: "Yes. Gatehouse duty, patrol and alarm response on residential property are licensable security work in every state, whether it's a single home or a full estate. Every guard on Staffoo has their licence verified before they can apply.",
+            a: "Yes. Gatehouse duty, patrol and alarm response on residential property are licensable security work in every state, whether it's a single home or a full estate. Every guard on Staffoo has their license verified before they can apply.",
         },
         {
             q: "Can a guard enter individual homes or private lots?",
@@ -148,7 +148,7 @@ export default function ResidentialEstates() {
         },
         {
             q: "Can residents see who the guard is before they start?",
-            a: "The person who posts the job reviews and confirms the guard, their profile including licence, experience and reviews is visible in the dashboard before you commit. Guard details aren't published publicly for privacy reasons.",
+            a: "The person who posts the job reviews and confirms the guard, their profile including license, experience and reviews is visible in the dashboard before you commit. Guard details aren't published publicly for privacy reasons.",
         },
     ];
 
@@ -206,7 +206,7 @@ export default function ResidentialEstates() {
                 <WhatsCovered
                     kicker="What's covered"
                     title="Everything your property needs, one job post"
-                    description="Every guard on Staffoo holds a valid licence for the work, checked before they're allowed to apply."
+                    description="Every guard on Staffoo holds a valid license for the work, checked before they're allowed to apply."
                     items={residentialWhatsCovered}
                 />
 

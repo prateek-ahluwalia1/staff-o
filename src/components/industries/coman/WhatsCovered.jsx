@@ -26,7 +26,7 @@ const defaultItems = [
 export default function WhatsCovered({
   kicker = "What's covered",
   title = "Everything your event needs, one job post",
-  description = "Every crowd controller on Staffoo holds a valid licence for the work — checked before they're allowed to apply.",
+  description = "Every crowd controller on Staffoo holds a valid license for the work — checked before they're allowed to apply.",
   items = defaultItems,
 }) {
   const itemList = Array.isArray(items) && items.length > 0 ? items : defaultItems;

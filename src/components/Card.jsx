@@ -13,7 +13,7 @@ export const Card = ({
   const [isHovered, setIsHovered] = useState(false);
   const cardIcon = icon || "fa-solid fa-layer-group";
 
-  const G = "#0F7A4A";
+  const G = "#0a7c6e";
   const G_LIGHT = "#E8F5EE";
   const INK = "#0F172A";
   const TEXT_SEC = "#64748B";
@@ -29,7 +29,7 @@ export const Card = ({
         height: "100%",
         background: "#ffffff",
         borderRadius: "28px",
-        border: isHovered ? "1px solid #0F7A4A" : "1px solid rgba(15, 122, 74, 0.25)",
+        border: isHovered ? "1px solid #0a7c6e" : "1px solid rgba(15, 122, 74, 0.25)",
         boxShadow: isHovered
           ? "0 30px 60px -12px rgba(15, 122, 74, 0.12), 0 18px 36px -18px rgba(0, 0, 0, 0.05)"
           : "0 10px 24px -8px rgba(15, 23, 42, 0.04)",
@@ -47,8 +47,8 @@ export const Card = ({
           height: "180px",
           borderRadius: "20px",
           // Reverted to the lighter gradient and added a green border to make it prominent
-          background: isHovered 
-            ? "linear-gradient(135deg, #F0FDF4, #E8F5EE)" 
+          background: isHovered
+            ? "linear-gradient(135deg, #F0FDF4, #E8F5EE)"
             : "linear-gradient(135deg, #F8FAFC, #F1F5F9)",
           border: "1px solid rgba(15, 122, 74, 0.15)",
           boxShadow: "none",
@@ -116,8 +116,8 @@ export const Card = ({
           alignItems: "center",
           justifyContent: "center",
           fontSize: "20px",
-          boxShadow: isHovered 
-            ? "0 10px 20px rgba(15, 122, 74, 0.25)" 
+          boxShadow: isHovered
+            ? "0 10px 20px rgba(15, 122, 74, 0.25)"
             : "0 8px 16px rgba(15, 23, 42, 0.08)",
           border: isHovered ? "none" : "1px solid #E2E8F0",
           transform: isHovered ? "translateY(-4px) rotate(5deg)" : "translateY(0) rotate(0)",
@@ -202,8 +202,8 @@ export const Card = ({
               transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
-            <i 
-              className="fa-solid fa-arrow-right" 
+            <i
+              className="fa-solid fa-arrow-right"
               style={{ fontSize: "12px", color: isHovered ? G : INK }}
             />
           </div>

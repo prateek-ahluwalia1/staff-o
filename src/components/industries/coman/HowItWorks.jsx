@@ -4,7 +4,7 @@ const defaultSteps = [
   {
     num: "01",
     title: "Post the job",
-    desc: "Date, location, guards needed and licence type. Free, and takes two minutes.",
+    desc: "Date, location, guards needed and license type. Free, and takes two minutes.",
   },
   {
     num: "02",

@@ -294,44 +294,65 @@ html { scroll-behavior: smooth; } */
   font-weight: 600;
 }
 
-/* ===== ROLE TABS ===== */
+/* ===== ROLE TABS (Segmented Toggle Control) ===== */
 .nh-role-tabs {
   display: inline-flex;
-  background: var(--nh-white);
-  border: 1px solid var(--nh-border);
-  border-radius: 10px;
+  align-items: center;
+  background: #E8EFEA;
+  border: 1.5px solid #D1DED5;
+  border-radius: 999px;
   padding: 4px;
   margin-bottom: 24px;
-  gap: 2px;
+  gap: 4px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(10, 124, 110, 0.08);
+  position: relative;
 }
 
 .nh-role-tab {
-  padding: 9px 18px;
-  border-radius: 7px;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--nh-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #55645C;
   cursor: pointer;
-  transition: all .15s ease;
-  border: none;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1.5px solid transparent;
   background: transparent;
   font-family: 'Inter', sans-serif;
+  user-select: none;
+  white-space: nowrap;
 }
 
-.nh-role-tab.active {
-  background: var(--nh-green);
-  color: white;
+.nh-role-tab svg {
+  flex-shrink: 0;
+  transition: transform 0.2s ease, stroke 0.2s ease;
 }
 
 .nh-role-tab:not(.active):hover {
-  color: var(--nh-ink);
+  color: var(--nh-ink, #14181C);
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.nh-role-tab.active {
+  background: var(--nh-green, #0A7C6E);
+  color: #ffffff;
+  border-color: var(--nh-green, #0A7C6E);
+  box-shadow: 0 4px 14px rgba(10, 124, 110, 0.35), 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.nh-role-tab.active svg {
+  transform: scale(1.08);
 }
 
 /* ===== HERO ===== */
 .nh-hero {
   background: var(--nh-tint);
   border-bottom: 1px solid var(--nh-border);
-  padding: 76px 0 0;
+  padding: 40px 0 0;
   overflow: hidden;
 }
 
@@ -611,7 +632,7 @@ html { scroll-behavior: smooth; } */
 
 /* ===== SECTION SHARED ===== */
 .nh-section {
-  padding: 88px 0;
+  padding: 40px 0;
 }
 
 .nh-section-tint {
@@ -648,7 +669,7 @@ html { scroll-behavior: smooth; } */
 /* ===== CATEGORIES ===== */
 .nh-cat-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
@@ -657,7 +678,7 @@ html { scroll-behavior: smooth; } */
   border-radius: var(--nh-radius);
   padding: 22px 18px;
   transition: all .18s ease;
-  cursor: pointer;
+  cursor: default;
   background: var(--nh-white);
   text-decoration: none;
   color: inherit;
@@ -946,11 +967,27 @@ html { scroll-behavior: smooth; } */
   padding: 64px 0 28px;
 }
 
+.nh-footer .nh-wrap {
+  max-width: 1400px;
+  padding: 0 24px;
+}
+
 .nh-foot-grid {
-  display: grid;
-  grid-template-columns: 1.4fr repeat(4, 1fr);
-  gap: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
   margin-bottom: 48px;
+  flex-wrap: wrap;
+}
+
+.nh-foot-grid>div:first-child {
+  max-width: 270px;
+  flex-shrink: 0;
+}
+
+.nh-foot-col {
+  flex: 0 1 auto;
 }
 
 .nh-foot-logo {
@@ -991,7 +1028,8 @@ html { scroll-behavior: smooth; } */
 .nh-foot-col a {
   display: block;
   font-size: 14px;
-  padding: 5px 0;
+  line-height: 1.6;
+  padding: 6px 0;
   color: #AAB3AE;
   text-decoration: none;
   transition: color .15s;
@@ -1007,8 +1045,14 @@ html { scroll-behavior: smooth; } */
   display: flex;
   justify-content: space-between;
   font-size: 12.5px;
+  line-height: 1.6;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
+}
+
+.nh-foot-bottom span,
+.nh-foot-bottom a {
+  line-height: 1.6;
 }
 
 .nh-foot-social {
@@ -1054,7 +1098,14 @@ html { scroll-behavior: smooth; } */
   }
 
   .nh-foot-grid {
+    display: grid;
     grid-template-columns: 1fr 1fr;
+    gap: 32px 24px;
+  }
+
+  .nh-foot-col a {
+    line-height: 1.6;
+    padding: 7px 0;
   }
 
   .nh-nav-links {
@@ -1100,14 +1151,36 @@ html { scroll-behavior: smooth; } */
     grid-template-columns: 1fr 1fr;
   }
 
+  .nh-footer .nh-wrap {
+    padding: 0 16px;
+  }
+
   /* Footer: brand column full-width, then nav columns 2-per-row */
   .nh-foot-grid {
+    display: grid;
     grid-template-columns: 1fr 1fr;
+    gap: 28px 16px;
   }
 
   /* Brand col spans full width */
   .nh-foot-grid>div:first-child {
     grid-column: 1 / -1;
+    max-width: 100%;
+  }
+
+  .nh-foot-col a {
+    line-height: 1.65;
+    padding: 7px 0;
+  }
+
+  .nh-foot-bottom {
+    line-height: 1.65;
+    gap: 12px;
+  }
+
+  .nh-foot-bottom span,
+  .nh-foot-bottom a {
+    line-height: 1.65;
   }
 
   .nh-trust-row {
@@ -1119,7 +1192,7 @@ html { scroll-behavior: smooth; } */
   }
 
   .nh-section {
-    padding: 56px 0;
+    padding: 40px 0;
   }
 }
 

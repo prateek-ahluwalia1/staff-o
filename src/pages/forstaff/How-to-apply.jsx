@@ -30,7 +30,7 @@ export default function HowToApply() {
     const applyStory = {
         category: "Staff story — Sydney",
         title: "Signed up on the bus, live before dinner",
-        description: "A crowd controller with six years' experience photographed his licence and certificates on the way home from a shift, uploaded them on the bus, and finished the three forms that evening.",
+        description: "A crowd controller with six years' experience photographed his license and certificates on the way home from a shift, uploaded them on the bus, and finished the three forms that evening.",
         quote: '"Every document came back verified as I uploaded it, so I knew nothing was going to bounce later. The forms took ten minutes and that was it — shifts were showing that night."',
         stats: [
             { value: "15 min", label: "start to finish" },
@@ -57,7 +57,7 @@ export default function HowToApply() {
         },
         {
             q: "Which side of each document do I photograph?",
-            a: "Your driver licence needs both sides. Everything else is a single photo: security licence front, passport front page, visa front, and one side each for first aid, CPR and your Working with Children Check.",
+            a: "Your driver license needs both sides. Everything else is a single photo: security license front, passport front page, visa front, and one side each for first aid, CPR and your Working with Children Check.",
         },
         {
             q: "Why do I need to complete three forms?",
@@ -77,11 +77,11 @@ export default function HowToApply() {
         },
         {
             q: "What if a document is rejected?",
-            a: "You'll see it immediately on screen with the reason, so you can retake the photo and upload again straight away. The most common causes are glare, a cropped edge, an unreadable expiry date, or only one side of a driver licence.",
+            a: "You'll see it immediately on screen with the reason, so you can retake the photo and upload again straight away. The most common causes are glare, a cropped edge, an unreadable expiry date, or only one side of a driver license.",
         },
         {
-            q: "Can I apply if my licence is from a different state?",
-            a: "You can apply with any current Australian security licence, but you can only accept shifts in a state where your licence is valid. If you hold licences in multiple states, upload them all and the eligible shifts appear automatically.",
+            q: "Can I apply if my license is from a different state?",
+            a: "You can apply with any current Australian security license, but you can only accept shifts in a state where your license is valid. If you hold licenses in multiple states, upload them all and the eligible shifts appear automatically.",
         },
     ];
 
@@ -146,7 +146,7 @@ export default function HowToApply() {
 
                 <CtaBand
                     title="Fifteen minutes now, shifts tonight"
-                    subtitle="Have your licence, ID and certificates on your phone, and your tax and super details handy. Documents verify on the spot and your profile goes live as soon as the forms are in."
+                    subtitle="Have your license, ID and certificates on your phone, and your tax and super details handy. Documents verify on the spot and your profile goes live as soon as the forms are in."
                     primaryBtnText="Start your application"
                     primaryBtnUrl="#"
                     secondaryBtnText="See what shifts pay"

@@ -877,9 +877,9 @@ export default function EditProfile() {
     if (isStaffooStaff) {
       const isPointsValid = totalStaffPoints >= 100;
       return {
-        isValid: isPointsValid && invalidDocs.length === 0,
+        isValid: isPointsValid,
         missingDocs: isPointsValid ? [] : missingDocs,
-        invalidDocs,
+        invalidDocs: isPointsValid ? [] : invalidDocs,
         totalPoints: totalStaffPoints,
         requiredPoints: 100,
       };
@@ -2124,7 +2124,9 @@ export default function EditProfile() {
                       color: "#fff",
                     }}
                   >
-                    {docValidation.totalPoints || 0} / 100 Points
+                    {(docValidation.totalPoints || 0) >= 100
+                      ? "100 points completed"
+                      : `${docValidation.totalPoints || 0} / 100 Points`}
                   </span>
                 </div>
               </div>

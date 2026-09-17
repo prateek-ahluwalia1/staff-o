@@ -43,10 +43,10 @@ function Header() {
     }
     return (
       <div style={{
-        ...style, backgroundColor: '#0F7A4A',
+        ...style, backgroundColor: '#0a7c6e',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         color: 'white', fontWeight: 700, fontSize: size * 0.36 + 'px',
-        border: '2px solid #0F7A4A',
+        border: '2px solid #0a7c6e',
       }}>
         {getInitials(userName)}
       </div>
@@ -89,11 +89,11 @@ function Header() {
           {/* Desktop Nav Links */}
           <nav className="nh-nav-links">
             <div>
-              <span className="nh-nav-item">For clients <span className="nh-caret" /></span>
+              <span className="nh-nav-item">For client <span className="nh-caret" /></span>
               <div className="nh-dropdown">
                 <NavLink to="/forclients/postajob" onClick={handleLinkClick}>Post a job</NavLink>
                 <NavLink to="/forclients/howitworks" onClick={handleLinkClick}>How it works</NavLink>
-                <NavLink to="/client-terms" onClick={handleLinkClick}>Client Terms</NavLink>
+                <NavLink to="/client-terms" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>Client Terms</NavLink>
               </div>
             </div>
 
@@ -102,7 +102,15 @@ function Header() {
               <div className="nh-dropdown">
                 <NavLink to="/forstaff/working-staff" onClick={handleLinkClick}>Working on Staffoo</NavLink>
                 <NavLink to="/forstaff/how-to-apply" onClick={handleLinkClick}>How to apply</NavLink>
-                <NavLink to="/staff-terms" onClick={handleLinkClick}>Staff Terms</NavLink>
+                <NavLink to="/staff-terms" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>Staff Terms</NavLink>
+              </div>
+            </div>
+
+            <div>
+              <span className="nh-nav-item">For resource partner<span className="nh-caret" /></span>
+              <div className="nh-dropdown">
+                <NavLink to="/forpartner/become-partner" onClick={handleLinkClick}>Become a partner</NavLink>
+                <NavLink to="/partner-terms" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>Partner Terms</NavLink>
               </div>
             </div>
 
@@ -124,6 +132,7 @@ function Header() {
                 <NavLink to="/contact-us" onClick={handleLinkClick}>Contact</NavLink>
                 <NavLink to="/privacy-policy" onClick={handleLinkClick}>Privacy Policy</NavLink>
                 <NavLink to="/terms-of-use" onClick={handleLinkClick}>Terms of Use</NavLink>
+                <NavLink to="/partner-terms" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>Partner Terms</NavLink>
               </div>
             </div>
           </nav>
@@ -149,7 +158,7 @@ function Header() {
                   >
                     {renderUserAvatar(36)}
                     <span style={{ fontWeight: 600, fontSize: '14px', color: '#14181C' }}>{displayName}</span>
-                    <span className="nh-caret" style={{ borderColor: '#0F7A4A' }} />
+                    <span className="nh-caret" style={{ borderColor: '#0a7c6e' }} />
                   </div>
 
                   {showUserMenu && (
@@ -158,12 +167,19 @@ function Header() {
                       background: 'white', border: '1px solid #E4E9E4', borderRadius: '12px',
                       boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: '210px', zIndex: 1000, overflow: 'hidden',
                     }}>
+                      <NavLink to="/dashboard" onClick={() => setShowUserMenu(false)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', color: '#232A2E', textDecoration: 'none', borderBottom: '1px solid #E4E9E4', fontSize: '14px', transition: 'background .15s' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#F5F8F5'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <i className="fa fa-th-large" style={{ color: '#0a7c6e', width: '16px' }} /> Dashboard
+                      </NavLink>
                       <NavLink to="/edit-profile" onClick={() => setShowUserMenu(false)}
                         style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', color: '#232A2E', textDecoration: 'none', borderBottom: '1px solid #E4E9E4', fontSize: '14px', transition: 'background .15s' }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = '#F5F8F5'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                       >
-                        <i className="fa fa-user" style={{ color: '#0F7A4A', width: '16px' }} /> My Profile
+                        <i className="fa fa-user" style={{ color: '#0a7c6e', width: '16px' }} /> My Profile
                       </NavLink>
                       <button onClick={handleLogout}
                         style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '12px 16px', color: '#e03535', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '14px', transition: 'background .15s' }}
@@ -212,6 +228,31 @@ function Header() {
               </div>
             </div>
 
+            {/* Dashboard button */}
+            <NavLink
+              to="/dashboard"
+              onClick={handleLinkClick}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '11px 14px', borderRadius: '10px',
+                background: '#fff', border: '1.5px solid #E4E9E4',
+                color: '#14181C', textDecoration: 'none',
+                fontSize: '14px', fontWeight: 600,
+                marginBottom: '8px',
+                fontFamily: "'Inter', sans-serif",
+                transition: 'border-color .15s',
+              }}
+            >
+              <span style={{
+                width: '30px', height: '30px', borderRadius: '50%',
+                background: '#E3F3EA', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <i className="fa fa-th-large" style={{ color: '#0a7c6e', fontSize: '13px' }} />
+              </span>
+              Dashboard
+              <i className="fa fa-chevron-right" style={{ marginLeft: 'auto', color: '#AAB3AE', fontSize: '11px' }} />
+            </NavLink>
+
             {/* My Profile button */}
             <NavLink
               to="/edit-profile"
@@ -231,7 +272,7 @@ function Header() {
                 width: '30px', height: '30px', borderRadius: '50%',
                 background: '#E3F3EA', display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <i className="fa fa-user" style={{ color: '#0F7A4A', fontSize: '13px' }} />
+                <i className="fa fa-user" style={{ color: '#0a7c6e', fontSize: '13px' }} />
               </span>
               My Profile
               <i className="fa fa-chevron-right" style={{ marginLeft: 'auto', color: '#AAB3AE', fontSize: '11px' }} />
@@ -263,10 +304,11 @@ function Header() {
         <div style={{ borderBottom: '1px solid #E4E9E4', paddingBottom: '8px', marginBottom: '8px' }}>
           <NavLink to="/forclients/postajob" onClick={handleLinkClick}>Post a job</NavLink>
           <NavLink to="/forclients/howitworks" onClick={handleLinkClick}>How it works</NavLink>
-          <NavLink to="/client-terms" onClick={handleLinkClick}>Client Terms</NavLink>
+          <NavLink to="/client-terms" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>Client Terms</NavLink>
           <NavLink to="/forstaff/working-staff" onClick={handleLinkClick}>Working on Staffoo</NavLink>
           <NavLink to="/forstaff/how-to-apply" onClick={handleLinkClick}>How to apply</NavLink>
-          <NavLink to="/staff-terms" onClick={handleLinkClick}>Staff Terms</NavLink>
+          <NavLink to="/staff-terms" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>Staff Terms</NavLink>
+          <NavLink to="/forpartner" onClick={handleLinkClick}>Resource Partners</NavLink>
           <NavLink to="/industries/event-crowd-control" onClick={handleLinkClick}>Event &amp; Crowd Control</NavLink>
           <NavLink to="/industries/retail-security" onClick={handleLinkClick}>Retail Security</NavLink>
           <NavLink to="/industries/corporate-office" onClick={handleLinkClick}>Corporate &amp; Office</NavLink>
@@ -277,6 +319,7 @@ function Header() {
           <NavLink to="/contact-us" onClick={handleLinkClick}>Contact</NavLink>
           <NavLink to="/privacy-policy" onClick={handleLinkClick}>Privacy Policy</NavLink>
           <NavLink to="/terms-of-use" onClick={handleLinkClick}>Terms of Use</NavLink>
+          <NavLink to="/partner-terms" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>Partner Terms</NavLink>
         </div>
 
         {/* CTA (logged-out only) */}

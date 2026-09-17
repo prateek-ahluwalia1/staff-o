@@ -5,7 +5,6 @@ import { toast } from "react-toastify";
 import staffoLogo from "../assets/images/staffo.png";
 import Loader from "../components/Loader";
 import SignaturePad from "../components/contracts/SignaturePad";
-import ResourcePartnerTerms from "./terms/ResourcePartnerTerms";
 import { apiURL } from "../utils/exports";
 import "./ContractSign.css";
 
@@ -93,7 +92,6 @@ export default function ContractSign() {
   const [sigMode, setSigMode] = useState("draw"); // "draw" | "auto"
   const [validationErrors, setValidationErrors] = useState({});
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittedSuccessfully, setIsSubmittedSuccessfully] = useState(false);
   const [successResponseData, setSuccessResponseData] = useState(null);
@@ -111,16 +109,6 @@ export default function ContractSign() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    if (showTermsModal) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [showTermsModal]);
 
   /**
    * Fetch Contract Details
@@ -662,13 +650,14 @@ export default function ContractSign() {
                         />
                         <span>
                           I have read and agree to the{" "}
-                          <button
-                            type="button"
-                            onClick={() => setShowTermsModal(true)}
+                          <a
+                            href="/resource-partner-terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="cs-terms-link-btn"
                           >
                             Resource Partner Terms &amp; Conditions
-                          </button>
+                          </a>
                           <span className="required" style={{ color: "#DC2626" }}> *</span>
                         </span>
                       </label>
@@ -723,22 +712,6 @@ export default function ContractSign() {
           </div>
         </footer>
       </div>
-
-      {/* Resource Partner Terms & Conditions Modal Overlay */}
-      {showTermsModal && (
-        <ResourcePartnerTerms
-          isOpen={showTermsModal}
-          onClose={() => setShowTermsModal(false)}
-          onAccept={() => {
-            setAgreeTerms(true);
-            setShowTermsModal(false);
-            if (validationErrors.agreeTerms) {
-              setValidationErrors((prev) => ({ ...prev, agreeTerms: null }));
-            }
-            toast.success("Resource Partner Terms & Conditions accepted.");
-          }}
-        />
-      )}
     </>
   );
 }

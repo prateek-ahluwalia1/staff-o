@@ -74,6 +74,23 @@ const Footer = memo(function Footer() {
           color: #fff !important; transition: all 0.15s;
         }
         .jw-footer .footer-social a:hover { background: #fff !important; color: #0A7C6E !important; transform: translateY(-2px); }
+
+        @media (max-width: 768px) {
+          .jw-footer .footer-links {
+            gap: 14px;
+          }
+          .jw-footer .footer-links a,
+          .jw-footer .footer-links li,
+          .jw-footer .footer-links li p {
+            line-height: 1.65;
+          }
+          .jw-footer .footer-contact {
+            gap: 16px;
+          }
+          .jw-footer .footer-contact li {
+            line-height: 1.65;
+          }
+        }
       `}</style>
       <div className="footer-main">
         <div className="container">

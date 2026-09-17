@@ -7,10 +7,11 @@ export default function HeroSection() {
       <div className="stf-wrap">
         <div className="stf-hero-grid">
           <div>
-            <span className="stf-eyebrow">For clients</span>
-            <h1>Post a security job and licensed guards near you take it</h1>
+            <span className="stf-eyebrow">Post a job</span>
+            <h1>Post a security job and connect with <span style={{ color: "#0a7c6e" }}> licensed security staff</span>
+            </h1>
             <p className="lead">
-              Set the date, the site and the rate you want to pay. Your job goes straight to verified guards in the area, and they accept it from their phone. No quotes to chase, no agency in the middle, and nothing to pay until a guard is booked.
+              Set the date, the site and the rate you want to pay. Your job goes straight to verified staff in the area, and they accept it from their phone. No quotes to chase, no agency in the middle, and nothing to pay until a staff member is booked.
             </p>
 
             <div className="stf-intent-card">
@@ -40,7 +41,7 @@ export default function HeroSection() {
                     <circle cx="12" cy="8" r="4"></circle>
                     <path d="M4 21v-1a8 8 0 0116 0v1"></path>
                   </svg>
-                  <input type="text" placeholder="Guards needed" />
+                  <input type="text" placeholder="Security staff needed" />
                 </div>
                 <div className="stf-field">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B6660" strokeWidth="2">
@@ -74,7 +75,7 @@ export default function HeroSection() {
               <div className="stf-trust-item">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">
                   <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg> Every guard licence verified before they can accept
+                </svg> Every security staff license verified before they can accept
               </div>
               <div className="stf-trust-item">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">

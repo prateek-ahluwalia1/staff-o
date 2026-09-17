@@ -83,7 +83,7 @@ export default function HeroSection() {
                                     <div className="stf-app-ico done">✓</div>
                                     <div>
                                         <div className="stf-app-name">Documents verified</div>
-                                        <div className="stf-app-meta">Security licence · Photo ID · Certificates</div>
+                                        <div className="stf-app-meta">Security license · Photo ID · Certificates</div>
                                     </div>
                                     <span className="stf-app-status ok">Verified</span>
                                 </div>

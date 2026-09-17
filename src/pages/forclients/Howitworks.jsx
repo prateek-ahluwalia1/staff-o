@@ -32,17 +32,17 @@ export default function Howitworks() {
     {
       num: "01",
       title: "Post the job",
-      desc: "Site, date, hours, how many staff, the licence class required and the hourly rate you want to pay.",
+      desc: "Site, date, hours, how many staff, the license class required and the hourly rate you want to pay.",
     },
     {
       num: "02",
       title: "Staff accept it",
-      desc: "Verified staff nearby holding the right licence are notified. Each position is booked the moment someone takes it.",
+      desc: "Verified staff nearby holding the right license are notified. Each position is booked the moment someone takes it.",
     },
     {
       num: "03",
       title: "Brief your team",
-      desc: "See who is booked, with their licence, experience and reviews. Message them and share the site brief before the shift.",
+      desc: "See who is booked, with their license, experience and reviews. Message them and share the site brief before the shift.",
     },
     {
       num: "04",
@@ -53,13 +53,13 @@ export default function Howitworks() {
 
   const verificationItems = [
     {
-      title: "Security licence",
+      title: "Security license",
       desc: "Checked against the state register for validity, class and expiry. Jobs stop reaching them the day it lapses.",
       iconPath: "M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7z",
     },
     {
       title: "Identity",
-      desc: "Photo identification matched to the licence holder, which is what prevents licence sharing.",
+      desc: "Photo identification matched to the license holder, which is what prevents license sharing.",
       iconPath: "M12 8v4l3 3 M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0",
     },
     {
@@ -77,11 +77,11 @@ export default function Howitworks() {
   const faqItems = [
     {
       q: "Is Staffoo a security company?",
-      a: "No. Staffoo is a platform connecting clients with licensed security staff. We verify licences, host the jobs and handle paying staff, but we do not supply guards ourselves or take on the security contract.",
+      a: "No. Staffoo is a platform connecting clients with licensed security staff. We verify licenses, host the jobs and handle paying staff, but we do not supply guards ourselves or take on the security contract.",
     },
     {
       q: "Do I choose which staff member gets the job?",
-      a: "Verified staff holding the right licence accept your job directly, which is what makes filling so fast. Once someone is booked you can see their licence, experience and reviews, and message them before the shift.",
+      a: "Verified staff holding the right license accept your job directly, which is what makes filling so fast. Once someone is booked you can see their license, experience and reviews, and message them before the shift.",
     },
     {
       q: "Who sets the hourly rate?",
@@ -157,12 +157,13 @@ export default function Howitworks() {
         <SafeguardsSection />
 
         <FaqSection
-          kicker="FAQ"
+          kicker="FAQs"
           title="Common questions"
           faqs={faqItems}
+        // style={{ textTransform: "none" }}
         />
 
-        <RelatedLinksSection />
+        {/* <RelatedLinksSection /> */}
 
         <CtaBand
           title="See how quickly your first job fills"

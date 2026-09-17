@@ -13,7 +13,7 @@ function HowItWorks() {
           <div className="nh-step">
             <div className="nh-step-num">01</div>
             <h3>Post the job</h3>
-            <p>Tell us the location, job time and licence type you need.</p>
+            <p>Tell us the location, job time and license type you need.</p>
           </div>
           <div className="nh-step">
             <div className="nh-step-num">02</div>
@@ -22,12 +22,12 @@ function HowItWorks() {
           </div>
           <div className="nh-step">
             <div className="nh-step-num">03</div>
-            <h3>Confirm &amp; brief</h3>
+            <h3>Confirm and brief</h3>
             <p>Message directly, share site details, lock in the job.</p>
           </div>
           <div className="nh-step">
             <div className="nh-step-num">04</div>
-            <h3>Track &amp; pay</h3>
+            <h3>Track and pay</h3>
             <p>Live check-in, digital sign-off, secure payment release.</p>
           </div>
         </div>

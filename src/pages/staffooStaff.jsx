@@ -682,7 +682,7 @@ const StaffooStaff = () => {
             document_type: selectedDoc?.document_type || docForm.document_type || ""
         };
         if (docForm.show_working_rights) payload.working_rights = docForm.working_rights_file_path || (selectedDoc?.working_rights ?? "");
-        
+
         const isExistingRealDoc = Boolean(
             selectedDoc?.id &&
             typeof selectedDoc.id === "number" &&
@@ -1095,7 +1095,9 @@ const StaffooStaff = () => {
                                                         color: "#fff",
                                                     }}
                                                 >
-                                                    {staffPointsData.totalPoints || 0} / 100 Points
+                                                    {(staffPointsData.totalPoints || 0) >= 100
+                                                        ? "100 points completed"
+                                                        : `${staffPointsData.totalPoints || 0} / 100 Points`}
                                                 </span>
                                             </div>
                                         </div>
@@ -1126,9 +1128,9 @@ const StaffooStaff = () => {
                                         )}
                                     </div>
 
-                                    <div className="d-flex justify-content-between align-items-center mb-4">
+                                    {/* <div className="d-flex justify-content-between align-items-center mb-4">
                                         <div><h6 className="fw-bold mb-1">Documents</h6><p className="text-muted small mb-0">Upload and manage staff documents.</p></div>
-                                    </div>
+                                    </div> */}
                                     <DocumentTable documents={staffDocuments} userType="staff" onAddFile={openDocumentModal} showDocErrors={showDocErrors} isStaffooStaff={true} />
                                 </div>
                             ) : (

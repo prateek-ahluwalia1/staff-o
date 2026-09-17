@@ -3,11 +3,11 @@ import React, { useState } from "react";
 const defaultFaqs = [
   {
     q: "Do I need a licensed crowd controller for my event?",
-    a: "In most Australian states, any role involving screening, monitoring or removing patrons at a licensed venue or public event legally requires a Crowd Controller licence. Every guard on Staffoo has theirs verified before they can apply to a job.",
+    a: "In most Australian states, any role involving screening, monitoring or removing patrons at a licensed venue or public event legally requires a Crowd Controller license. Every guard on Staffoo has theirs verified before they can apply to a job.",
   },
   {
     q: "Why can't I browse guards before signing up?",
-    a: "Guard profiles include licence details, contact information and work history, so they're only visible to verified clients inside the platform. Posting a job is free and takes about two minutes — applications start arriving straight away.",
+    a: "Guard profiles include license details, contact information and work history, so they're only visible to verified clients inside the platform. Posting a job is free and takes about two minutes — applications start arriving straight away.",
   },
   {
     q: "How quickly can I book event security?",
@@ -15,7 +15,7 @@ const defaultFaqs = [
   },
   {
     q: "What's the difference between a crowd controller and a general security guard?",
-    a: "A Crowd Controller licence specifically covers screening, monitoring and removing people from licensed venues and events. A general Security Officer licence covers static site and patrol work. Each application shows you exactly which licence that guard holds.",
+    a: "A Crowd Controller license specifically covers screening, monitoring and removing people from licensed venues and events. A general Security Officer license covers static site and patrol work. Each application shows you exactly which license that guard holds.",
   },
   {
     q: "Can I book guards for a single one-day event?",

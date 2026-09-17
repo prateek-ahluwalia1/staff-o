@@ -15,10 +15,10 @@ export default function ComparisonSection() {
     {
       label: "Who turns up",
       them: "Assigned internally, often confirmed on the day",
-      us: "You see the licence, experience and reviews",
+      us: "You see the license, experience and reviews",
     },
     {
-      label: "Licence checks",
+      label: "License checks",
       them: "Handled internally and rarely visible to you",
       us: "Verified by Staffoo and shown on every profile",
     },

@@ -782,11 +782,11 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
       {sharedStyles}
       <div className="table-header">
         <h3>Documents</h3>
-        <p>
+        {/* <p>
           {isStaffooStaff
             ? "Upload eligible identity documents to reach a minimum of 100 points."
             : "All documents associated with your profile."}
-        </p>
+        </p> */}
       </div>
       <DocumentSectionBody docs={processedDocuments} onAddFile={onAddFile} showDocErrors={showDocErrors} userType={userType} isStaffooStaff={isStaffooStaff} />
     </div>

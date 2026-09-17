@@ -17,40 +17,40 @@ export default function SeoGuideSection() {
 
             <h3 id="licence">Do you legally need a licensed security officer?</h3>
             <p>
-              Yes, in every state. Loss prevention, floor presence, cash office watch and store lockup all count as licensable security work, even when the guard is working plain clothed. A staff member without a licence can't be tasked with security duties.
+              Yes, in every state. Loss prevention, floor presence, cash office watch and store lockup all count as licensable security work, even when the guard is working plain clothed. A staff member without a license can't be tasked with security duties.
             </p>
             <table>
               <thead>
                 <tr>
                   <th>State</th>
-                  <th>Licence commonly required</th>
+                  <th>License commonly required</th>
                   <th>Regulator</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td>New South Wales</td>
-                  <td>Security Licence Class 1A, Security Officer</td>
+                  <td>Security License Class 1A, Security Officer</td>
                   <td>NSW Police SLED</td>
                 </tr>
                 <tr>
                   <td>Victoria</td>
-                  <td>Private Security Individual Operator Licence, security guard activity</td>
+                  <td>Private Security Individual Operator License, security guard activity</td>
                   <td>Victoria Police Licensing and Regulation Division</td>
                 </tr>
                 <tr>
                   <td>Queensland</td>
-                  <td>Security Provider Licence Class 1, unarmed security officer</td>
+                  <td>Security Provider License Class 1, unarmed security officer</td>
                   <td>Office of Fair Trading</td>
                 </tr>
                 <tr>
                   <td>Western Australia</td>
-                  <td>Security Officer licence</td>
+                  <td>Security Officer license</td>
                   <td>WA Police Licensing</td>
                 </tr>
                 <tr>
                   <td>South Australia</td>
-                  <td>Security Agents Licence, general guarding function</td>
+                  <td>Security Agents License, general guarding function</td>
                   <td>Consumer &amp; Business Services</td>
                 </tr>
               </tbody>
@@ -113,14 +113,14 @@ export default function SeoGuideSection() {
 
             <h3 id="checklist">What to check before you confirm a guard</h3>
             <ul>
-              <li><strong>Licence class and expiry:</strong> that it matches the work and is current in your state.</li>
+              <li><strong>License class and expiry:</strong> that it matches the work and is current in your state.</li>
               <li><strong>Relevant experience:</strong> retail floor experience is a different job to office or event work.</li>
               <li><strong>Reviews from similar stores:</strong> volume matters less than whether the stores looked like yours.</li>
               <li><strong>Availability across peak periods:</strong> weekends and sale events are when you need cover most.</li>
               <li><strong>Who's responsible for insurance:</strong> and what happens if a guard can't make a shift.</li>
             </ul>
             <p>
-              On Staffoo, licence verification happens before a guard can apply, and the licence class, experience and review history sit on every application you receive.
+              On Staffoo, license verification happens before a guard can apply, and the license class, experience and review history sit on every application you receive.
             </p>
 
             <h3 id="direct">Hiring direct instead of through an agency</h3>
@@ -134,7 +134,7 @@ export default function SeoGuideSection() {
             <div className="stf-recap">
               <div className="stf-kicker">Before you post</div>
               <p>
-                Confirm the licence type your state requires, size your cover from footprint and trading pattern rather than a guess, and treat agency quotes as a ceiling. Staffoo shows you each guard's real rate before you confirm anyone.
+                Confirm the license type your state requires, size your cover from footprint and trading pattern rather than a guess, and treat agency quotes as a ceiling. Staffoo shows you each guard's real rate before you confirm anyone.
               </p>
             </div>
           </article>
@@ -143,7 +143,7 @@ export default function SeoGuideSection() {
           <aside className="stf-seo-aside">
             <div className="stf-toc">
               <h4>On this page</h4>
-              <a href="#licence">Do you need a licensed guard?</a>
+              <a href="#license">Do you need a licensed guard?</a>
               <a href="#how-many">How many guards you need</a>
               <a href="#cost">What it costs</a>
               <a href="#vs">Loss prevention vs security officer</a>
@@ -170,7 +170,7 @@ export default function SeoGuideSection() {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">
                   <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                Every applicant's licence is checked before you see their profile.
+                Every applicant's license is checked before you see their profile.
               </div>
               <div className="stf-aside-trust-row">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">

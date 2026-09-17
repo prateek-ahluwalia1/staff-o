@@ -17,20 +17,20 @@ export default function SeoGuideSection() {
 
             <h3 id="licence">Do you legally need a licensed crowd controller?</h3>
             <p>
-              In most cases, yes. If someone is screening patrons, checking IDs, monitoring capacity or asking people to leave, that's crowd control work, and every Australian state requires a specific licence for it. A general security officer licence usually isn't enough on its own.
+              In most cases, yes. If someone is screening patrons, checking IDs, monitoring capacity or asking people to leave, that's crowd control work, and every Australian state requires a specific license for it. A general security officer license usually isn't enough on its own.
             </p>
             <table>
               <thead>
                 <tr>
                   <th>State</th>
-                  <th>Licence commonly required</th>
+                  <th>License commonly required</th>
                   <th>Regulator</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td>NSW</td>
-                  <td>Security Licence Class 1C (crowd control)</td>
+                  <td>Security License Class 1C (crowd control)</td>
                   <td>NSW Police SLED</td>
                 </tr>
                 <tr>
@@ -40,28 +40,28 @@ export default function SeoGuideSection() {
                 </tr>
                 <tr>
                   <td>QLD</td>
-                  <td>Crowd Controller licence</td>
+                  <td>Crowd Controller license</td>
                   <td>Office of Fair Trading</td>
                 </tr>
                 <tr>
                   <td>WA</td>
-                  <td>Crowd Controller licence</td>
+                  <td>Crowd Controller license</td>
                   <td>WA Police Licensing</td>
                 </tr>
                 <tr>
                   <td>SA</td>
-                  <td>Security agent licence (crowd control)</td>
+                  <td>Security agent license (crowd control)</td>
                   <td>Consumer &amp; Business Services</td>
                 </tr>
               </tbody>
             </table>
             <div className="stf-callout">
-              <b>Worth knowing:</b> licence conditions and category names change from time to time, and events serving alcohol often carry extra conditions. Confirm current requirements with your state regulator or your venue's liquor licence before you finalise numbers.
+              <b>Worth knowing:</b> license conditions and category names change from time to time, and events serving alcohol often carry extra conditions. Confirm current requirements with your state regulator or your venue's liquor license before you finalise numbers.
             </div>
 
             <h3 id="how-many">How many guards does your event need?</h3>
             <p>
-              There's no single national ratio, and venues, councils and liquor licences often set their own conditions. As a starting point, most organisers work from patron numbers and then adjust for risk:
+              There's no single national ratio, and venues, councils and liquor licenses often set their own conditions. As a starting point, most organisers work from patron numbers and then adjust for risk:
             </p>
             <ul>
               <li><strong>Guest numbers</strong> — a common baseline is one crowd controller per 100 patrons, tightening as numbers climb.</li>
@@ -81,7 +81,7 @@ export default function SeoGuideSection() {
             </p>
 
             <h3 id="vs">Crowd controller or security officer — which do you need?</h3>
-            <p>These are different licences covering different work, and booking the wrong one can leave you non-compliant on the night.</p>
+            <p>These are different licenses covering different work, and booking the wrong one can leave you non-compliant on the night.</p>
             <table>
               <thead>
                 <tr>
@@ -111,13 +111,13 @@ export default function SeoGuideSection() {
 
             <h3 id="checklist">What to check before you confirm a guard</h3>
             <ul>
-              <li><strong>Licence class and expiry</strong> — that it matches the work and is current in your state.</li>
+              <li><strong>License class and expiry</strong> — that it matches the work and is current in your state.</li>
               <li><strong>Relevant experience</strong> — festival work and private function work are different jobs.</li>
               <li><strong>Reviews from similar events</strong> — volume matters less than whether the events looked like yours.</li>
               <li><strong>Availability across the full bump-in and bump-out</strong>, not just the event window.</li>
               <li><strong>Who's responsible for insurance</strong> and what happens if someone can't make the shift.</li>
             </ul>
-            <p>On Staffoo, licence verification happens before a guard can apply, and the licence class, experience and review history sit on every application you receive.</p>
+            <p>On Staffoo, license verification happens before a guard can apply, and the license class, experience and review history sit on every application you receive.</p>
 
             <h3 id="direct">Hiring direct instead of through an agency</h3>
             <p>
@@ -130,7 +130,7 @@ export default function SeoGuideSection() {
             <div className="stf-recap">
               <div className="stf-kicker">Before you post</div>
               <p>
-                Confirm the licence class your state requires, size your headcount from patron numbers rather than a guess, and treat agency quotes as a ceiling — Staffoo shows you each guard's real rate on their application, before you confirm anyone.
+                Confirm the license class your state requires, size your headcount from patron numbers rather than a guess, and treat agency quotes as a ceiling — Staffoo shows you each guard's real rate on their application, before you confirm anyone.
               </p>
             </div>
           </article>
@@ -139,7 +139,7 @@ export default function SeoGuideSection() {
           <aside className="stf-seo-aside">
             <div className="stf-toc">
               <h4>On this page</h4>
-              <a href="#licence">Do you need a licensed guard?</a>
+              <a href="#license">Do you need a licensed guard?</a>
               <a href="#how-many">How many guards you need</a>
               <a href="#cost">What it costs</a>
               <a href="#vs">Crowd controller vs officer</a>
@@ -166,7 +166,7 @@ export default function SeoGuideSection() {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">
                   <path d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                Every applicant's licence is checked before you see their profile
+                Every applicant's license is checked before you see their profile
               </div>
               <div className="stf-aside-trust-row">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">

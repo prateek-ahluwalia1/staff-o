@@ -29,8 +29,8 @@ export default function HeroSection() {
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B6660" strokeWidth="2">
                                         <path d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7z"></path>
                                     </svg>
-                                    <select defaultValue="Licence you hold">
-                                        <option>Licence you hold</option>
+                                    <select defaultValue="License you hold">
+                                        <option>License you hold</option>
                                         <option>Security Officer (unarmed)</option>
                                         <option>Security Officer (armed)</option>
                                         <option>Crowd Controller</option>

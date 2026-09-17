@@ -52,7 +52,7 @@ export default function ConstructionSites() {
 
     // 3. How It Works Steps Data
     const constructionSteps = [
-        { num: "01", title: "Post the job", desc: "Site address, shift pattern and licence type needed. Free, and takes two minutes." },
+        { num: "01", title: "Post the job", desc: "Site address, shift pattern and license type needed. Free, and takes two minutes." },
         { num: "02", title: "Compare applicants", desc: "Licensed guards apply with their rate, experience and reviews attached." },
         { num: "03", title: "Confirm and brief", desc: "Message directly, share the site induction and access details, lock in the shift." },
         { num: "04", title: "Sign off & pay", desc: "Digital check in on the day, payment releases once you confirm the job's done." },
@@ -62,7 +62,7 @@ export default function ConstructionSites() {
     const constructionDashboardCards = [
         {
             title: "Post a job in minutes",
-            desc: "Set the site address, shift pattern and licence required. Duplicate it next time instead of starting over.",
+            desc: "Set the site address, shift pattern and license required. Duplicate it next time instead of starting over.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-line short"></div>
@@ -74,7 +74,7 @@ export default function ConstructionSites() {
         },
         {
             title: "Compare real applicants",
-            desc: "Verified licence, rate, past sites and reviews on every profile. Shortlist, message and confirm without leaving the page.",
+            desc: "Verified license, rate, past sites and reviews on every profile. Shortlist, message and confirm without leaving the page.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-box">
@@ -128,11 +128,11 @@ export default function ConstructionSites() {
     const constructionFaqs = [
         {
             q: "Do I need a licensed guard for an unattended site?",
-            a: "Yes. Patrolling or guarding a construction site after hours is licensable security work in every state, the same as any static guarding role. Every guard on Staffoo has their licence verified before they can apply.",
+            a: "Yes. Patrolling or guarding a construction site after hours is licensable security work in every state, the same as any static guarding role. Every guard on Staffoo has their license verified before they can apply.",
         },
         {
-            q: "Does the guard need a White Card as well as a security licence?",
-            a: "It depends on your site's access policy rather than the security licence itself, the security licence covers the guarding work, a White Card is a separate construction induction some sites require before anyone, guard included, is allowed past the gate. Mention it in your job post if your site requires one.",
+            q: "Does the guard need a White Card as well as a security license?",
+            a: "It depends on your site's access policy rather than the security license itself, the security license covers the guarding work, a White Card is a separate construction induction some sites require before anyone, guard included, is allowed past the gate. Mention it in your job post if your site requires one.",
         },
         {
             q: "Is a mobile patrol cheaper than a guard on each site?",
@@ -206,7 +206,7 @@ export default function ConstructionSites() {
                 <WhatsCovered
                     kicker="What's covered"
                     title="Everything your site needs, one job post"
-                    description="Every guard on Staffoo holds a valid licence for the work, checked before they're allowed to apply."
+                    description="Every guard on Staffoo holds a valid license for the work, checked before they're allowed to apply."
                     items={constructionWhatsCovered}
                 />
 

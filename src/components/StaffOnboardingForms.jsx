@@ -1758,7 +1758,12 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
         try {
             const res = await submitSecurityLicense(
                 "api/documents-online-verification-staffoo",
-                { document_type: "Security License", license_number: onboardForm.o_seclic, state: resolvedState },
+                {
+                    document_type: "Security License",
+                    license_number: onboardForm.o_seclic,
+                    state: resolvedState,
+                    user_type: "staff",
+                },
                 { method: "POST" }
             );
             if (res?.success && res?.expiry) {

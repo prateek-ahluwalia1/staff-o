@@ -1,4 +1,3 @@
-// ========== DocumentTable component (redesigned for premium UI, mobile card view) ==========
 import React, { useMemo, useState } from "react";
 import { apiURL } from "../utils/exports";
 
@@ -220,6 +219,12 @@ function DocNameCell({ doc, userType, isStaffooStaff }) {
 
 // Renders one desktop table + mobile card set for a given list of docs.
 function DocumentSectionBody({ docs, onAddFile, showDocErrors, userType, isStaffooStaff }) {
+  const handleOpenDocModal = (doc) => {
+    if (onAddFile) {
+      onAddFile({ ...doc, user_type: doc.user_type || userType }, userType);
+    }
+  };
+
   return (
     <>
       {/* Desktop Table */}
@@ -241,9 +246,9 @@ function DocumentSectionBody({ docs, onAddFile, showDocErrors, userType, isStaff
                   <td><DocNameCell doc={doc} userType={userType} isStaffooStaff={isStaffooStaff} /></td>
                   <td><span className="doc-number">{doc.document_no || "—"}</span></td>
                   <td style={{ color: "#334155", fontWeight: 500 }}>{formatAUSDate(doc.document_expiry)}</td>
-                  <td><DocRowActions doc={doc} onAddFile={onAddFile} showDocErrors={showDocErrors} /></td>
+                  <td><DocRowActions doc={doc} onAddFile={handleOpenDocModal} showDocErrors={showDocErrors} /></td>
                   <td style={{ textAlign: "center" }}>
-                    <button type="button" className="action-btn" onClick={() => onAddFile(doc)} title="Edit document">
+                    <button type="button" className="action-btn" onClick={() => handleOpenDocModal(doc)} title="Edit document">
                       <i className="fa fa-pencil"></i>
                     </button>
                   </td>
@@ -270,7 +275,7 @@ function DocumentSectionBody({ docs, onAddFile, showDocErrors, userType, isStaff
                   <div className="doc-card-inner">
                     <div className="doc-card-header">
                       <DocNameCell doc={doc} userType={userType} isStaffooStaff={isStaffooStaff} />
-                      <button type="button" className="action-btn" onClick={() => onAddFile(doc)} title="Edit document">
+                      <button type="button" className="action-btn" onClick={() => handleOpenDocModal(doc)} title="Edit document">
                         <i className="fa fa-pencil"></i>
                       </button>
                     </div>

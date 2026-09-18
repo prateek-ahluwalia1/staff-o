@@ -603,35 +603,61 @@ const StaffooStaff = () => {
         if (!editingUser?.id) { toast.error("Please save the profile first before verifying documents."); return; }
         if (!docForm.document_no || !docForm.document_name) { toast.error("Please enter a document number and select a document type."); return; }
 
-        if (docForm.document_name === "Security License") {
+        if (
+            docForm.document_name === "Security License" ||
+            docForm.document_name === "Security Master License"
+        ) {
             const STATE_NAME_MAP = {
+                contractor_document: "Victoria",
                 vic: "Victoria",
                 victoria: "Victoria",
+                nsw_document: "New South Wales",
                 nsw: "New South Wales",
                 "new south wales": "New South Wales",
+                qld_document: "Queensland",
                 qld: "Queensland",
                 queensland: "Queensland",
+                tas_document: "Tasmania",
                 tas: "Tasmania",
                 tasmania: "Tasmania",
+                wa_document: "Western Australia",
                 wa: "Western Australia",
                 "western australia": "Western Australia",
+                sa_document: "South Australia",
                 sa: "South Australia",
                 "south australia": "South Australia",
+                act_document: "Australian Capital Territory",
                 act: "Australian Capital Territory",
                 "australian capital territory": "Australian Capital Territory",
+                nt_document: "Northern Territory",
                 nt: "Northern Territory",
                 "northern territory": "Northern Territory",
             };
+            const cat = (docForm.document_category || selectedDoc?.document_category || "").toLowerCase();
             const rawState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
-            const staffState = STATE_NAME_MAP[rawState.toLowerCase()] || rawState;
+            const staffState = STATE_NAME_MAP[cat] || STATE_NAME_MAP[rawState.toLowerCase()] || rawState;
             if (!staffState) { toast.error("Please add your location first."); return; }
             setVerifyingDoc(true);
             try {
-                const res = await submitSecurityLicense("api/documents-online-verification-staffoo", { document_type: "Security License", license_number: docForm.document_no, state: staffState }, { method: "POST" });
+                const resolvedUserType =
+                    docForm.document_name === "Security Master License"
+                        ? "contractor"
+                        : editingUser?.user_type === "sub_contractor"
+                        ? "contractor"
+                        : editingUser?.user_type || docForm.user_type || "staff";
+
+                const payload = {
+                    document_type: docForm.document_name,
+                    license_number: docForm.document_no,
+                    state: staffState,
+                    user_type: resolvedUserType,
+                };
+
+                const res = await submitSecurityLicense("api/documents-online-verification-staffoo", payload, { method: "POST" });
                 if (res?.success && res?.expiry) {
                     const expiryStr = isoToDisplay(res.expiry.replace(/\\\//g, "/"));
                     setDocForm(prev => ({ ...prev, document_expiry: expiryStr, is_verified: true, show_working_rights: false }));
-                    toast.success("Security License verified. Expiry date locked.");
+                    toast.success(`${docForm.document_name} verified. Expiry date locked.`);
                 } else setDocForm(prev => ({ ...prev, is_verified: false }));
             } catch (err) { toast.error("Verification request failed."); }
             finally { setVerifyingDoc(false); }
@@ -881,7 +907,7 @@ const StaffooStaff = () => {
             <label className="form-label fw-semibold">Visa Grant Number <span className="text-danger">*</span></label>
             <input type="text" className="form-control" value={docForm.document_no} onChange={handleDocNumberChange} required />
         </>
-    ) : docForm.document_name === "Security License" ? (
+    ) : (docForm.document_name === "Security License" || docForm.document_name === "Security Master License") ? (
         <>
             <label className="form-label fw-semibold">Document Number <span className="text-danger">*</span></label>
             <div className="input-group">

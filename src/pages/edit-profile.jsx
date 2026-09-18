@@ -1314,10 +1314,20 @@ export default function EditProfile() {
 
       setVerifyingDoc(true);
       try {
+        const resolvedUserType =
+          docForm.document_name === "Security Master License"
+            ? "contractor"
+            : userType === "contractor" || userType === "staff"
+            ? userType
+            : profileData?.data?.user_type === "contractor" || profileData?.data?.user_type === "staff"
+            ? profileData.data.user_type
+            : docForm.user_type || "staff";
+
         const payload = {
           document_type: docForm.document_name,
           license_number: docForm.document_no,
           state: resolvedState,
+          user_type: resolvedUserType,
         };
 
         const res = await submitSecurityLicense(

@@ -192,12 +192,13 @@ class StaffController extends Controller
                             return false;
                         }
 
-                        if (!empty($doc->document_expiry)) {
+                        if ($doc->document_expiry === 'current, pending renewal') {
+                            return true;
+                        } else {
                             $expiryDate = \Carbon\Carbon::parse($doc->document_expiry);
                             return $expiryDate->isFuture();
                         }
 
-                        return false; 
                     })->count();
 
                     $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;

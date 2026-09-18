@@ -1058,7 +1058,9 @@ class StaffController extends Controller
                     'qld' => 'qld_document',
                     'tas' => 'tas_document',
                     'wa' => 'wa_document',
-                    'sa' => 'sa_document'
+                    'sa' => 'sa_document',
+                    'nt' => 'nt_document',
+                    'act' => 'act_document'
                 ];
 
                 // Get document categories for allowed states

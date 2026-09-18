@@ -354,7 +354,9 @@ private function isDocumentValid($document): bool
             'qld' => 'qld_document',
             'tas' => 'tas_document',
             'wa' => 'wa_document',
-            'sa' => 'sa_document'
+            'sa' => 'sa_document',
+            'act' => 'act_document',
+            'nt' => 'nt_document'
         ];
 
         // Get document categories for allowed states

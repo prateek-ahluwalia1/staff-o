@@ -25,7 +25,7 @@
             </div>
 
             <!-- Greeting -->
-            <div style="font-size: 20px; font-weight: 600; color: #1a237e; margin-bottom: 20px;">
+            <div style="font-size: 20px; font-weight: 600; color: #0A7C6E; margin-bottom: 20px;">
                 Hi {{ $name }},
             </div>
 

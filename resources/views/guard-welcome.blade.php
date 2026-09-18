@@ -132,7 +132,7 @@
                             <!-- Success Badge (VERIFIED) -->
                             <div style="margin-bottom: 20px;">
                                 <div class="success-badge">
-                                    <span style="color: #ffffff; font-weight: 700; font-size: 14px;">✓ VERIFIED</span>
+                                    <span style="color: #ffffff; font-weight: 700; font-size: 14px;">VERIFIED</span>
                                 </div>
                             </div>
 
@@ -160,7 +160,6 @@
                                 <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                     <tr>
                                         <td style="text-align: center;">
-                                            <span style="font-size: 32px; display: block; margin-bottom: 12px;">📄</span>
                                             <p style="font-size: 16px; color: #1a2b3c; line-height: 1.5; margin: 0 0 8px 0; font-weight: 600;">
                                                 Awaiting Document Verification
                                             </p>
@@ -178,7 +177,7 @@
                                     <td>
                                         <div style="text-align: center; margin-top: 10px;">
                                             <a href="https://staffoo.com.au/login" target="_blank" class="btn-login">
-                                                Go to Login →
+                                                Go to Login
                                             </a>
                                             <p style="font-size: 13px; color: #95a8b8; margin-top: 16px; margin-bottom: 0;">
                                                 You'll be able to sign in once your account is approved

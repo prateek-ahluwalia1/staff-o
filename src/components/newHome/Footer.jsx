@@ -241,8 +241,8 @@ function Footer() {
           {/* For clients */}
           <div className="nh-foot-col">
             <h4>For client</h4>
-            <Link to="/forclients/postajob">Post a job</Link>
-            <Link to="/forclients/howitworks">How it works</Link>
+            <Link to="/forclients/post-job">Post a job</Link>
+            <Link to="/forclients/how-it-works">How it works</Link>
             <Link to="/client-terms" target="_blank" rel="noopener noreferrer">Client Terms</Link>
           </div>
 
@@ -257,7 +257,7 @@ function Footer() {
           {/* For Partner */}
           <div className="nh-foot-col">
             <h4>For Partner</h4>
-            <Link to="/forpartner">Resource Partners</Link>
+            <Link to="/forpartner/become-partner">Resource Partners</Link>
             <Link to="/partner-terms" target="_blank" rel="noopener noreferrer">Partner Terms</Link>
           </div>
 

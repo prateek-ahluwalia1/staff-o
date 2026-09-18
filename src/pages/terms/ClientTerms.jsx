@@ -7,12 +7,12 @@ import "../../components/industries/event-crowd-comp/styles.css";
 import "./terms.css";
 
 const navItems = [
-  { id: "client-sec-1", title: "1. Nature of Platform & Subcontracting", icon: "fa-network-wired" },
-  { id: "client-sec-2", title: "2. Bookings, Holds & Settlement", icon: "fa-credit-card" },
+  { id: "client-sec-1", title: "1. Nature of Platform and Subcontracting", icon: "fa-network-wired" },
+  { id: "client-sec-2", title: "2. Bookings, Holds and Settlement", icon: "fa-credit-card" },
   { id: "client-sec-3", title: "3. Client WHS Obligations", icon: "fa-hard-hat" },
-  { id: "client-sec-4", title: "4. Cancellations & Disputes", icon: "fa-calendar-xmark" },
-  { id: "client-sec-5", title: "5. Non-Solicitation & Anti-Poaching", icon: "fa-user-lock" },
-  { id: "client-sec-6", title: "6. Limitation of Liability & ACL", icon: "fa-shield-halved" },
+  { id: "client-sec-4", title: "4. Cancellations and Disputes", icon: "fa-calendar-xmark" },
+  { id: "client-sec-5", title: "5. Non-Solicitation and Anti-Poaching", icon: "fa-user-lock" },
+  { id: "client-sec-6", title: "6. Limitation of Liability and ACL", icon: "fa-shield-halved" },
   { id: "client-sec-7", title: "7. Governing Law", icon: "fa-gavel" },
   { id: "client-sec-contact", title: "Operator Details", icon: "fa-building" },
 ];
@@ -48,7 +48,7 @@ export default function ClientTerms() {
   return (
     <>
       <Helmet>
-        <title>Customer Terms of Service &amp; Booking Agreement | Staffoo</title>
+        <title>Client Terms of Service and Booking Agreement | Staffoo</title>
         <meta
           name="description"
           content="Staffoo Customer Terms of Service and Booking Agreement operated by Capital Services Pty Ltd (ABN 48 613 317 838)."
@@ -70,7 +70,7 @@ export default function ClientTerms() {
             <div className="stf-breadcrumb">
               <Link className="text-black text-decoration-none" to="/">Home</Link>
               <span className="sep mx-2">/</span>
-              <span className="current text-muted">For Clients / Customer Terms of Service</span>
+              <span className="current text-muted">For Clients / Client Terms and condition</span>
             </div>
           </div>
         </div>
@@ -88,11 +88,11 @@ export default function ClientTerms() {
               <div className="terms-hero-card">
                 <div className="terms-hero-tag">
                   <i className="fa-solid fa-shield-halved"></i>
-                  Client &amp; Booking Terms
+                  Client Terms and conditions
                 </div>
 
                 <h2 className="terms-hero-title">
-                  Customer Terms of Service &amp; Booking Agreement
+                  Client Terms of Service and Booking Agreement
                 </h2>
 
                 <p className="terms-hero-desc">
@@ -124,7 +124,7 @@ export default function ClientTerms() {
                   {
                     icon: "fa-laptop",
                     title: "Platform Technology",
-                    desc: "WFM & CRM infrastructure connecting clients with certified security providers.",
+                    desc: "WFM and CRM infrastructure connecting clients with certified security providers.",
                   },
                   {
                     icon: "fa-credit-card",
@@ -138,7 +138,7 @@ export default function ClientTerms() {
                   },
                   {
                     icon: "fa-landmark",
-                    title: "Victorian Law & ACL",
+                    title: "Victorian Law and ACL",
                     desc: "Governed by Victorian jurisdiction with full statutory consumer protections preserved.",
                   },
                 ].map((item, idx) => (
@@ -163,7 +163,7 @@ export default function ClientTerms() {
                     1
                   </span>
                   <span className="terms-article-title-text">
-                    NATURE OF PLATFORM &amp; UNRESTRICTED SUBCONTRACTING RIGHTS
+                    NATURE OF PLATFORM AND UNRESTRICTED SUBCONTRACTING RIGHTS
                   </span>
                 </h3>
 
@@ -188,7 +188,7 @@ export default function ClientTerms() {
 
                   <div>
                     <h4 className="terms-subheading">
-                      1.3 Jurisdictional &amp; License Capacity Disclaimer
+                      1.3 Jurisdictional and License Capacity Disclaimer
                     </h4>
                     <p className="terms-paragraph" style={{ marginBottom: "10px" }}>
                       The existence or holding of a Master Security License or Labour Hire License by Capital Services Pty Ltd in any specific State or Territory shall not obligate Capital Services Pty Ltd to act as the principal direct service provider:
@@ -209,7 +209,7 @@ export default function ClientTerms() {
                     2
                   </span>
                   <span className="terms-article-title-text">
-                    BOOKINGS, PAYMENT HOLDS &amp; AUTOMATIC SETTLEMENT
+                    BOOKINGS, PAYMENT HOLDS AND AUTOMATIC SETTLEMENT
                   </span>
                 </h3>
 
@@ -243,7 +243,7 @@ export default function ClientTerms() {
 
                   <div>
                     <h4 className="terms-subheading">
-                      2.4 Invoicing &amp; Billing Agency
+                      2.4 Invoicing and Billing Agency
                     </h4>
                     <p className="terms-paragraph">
                       In instances where a Resource Partner fulfills the shift, invoices for security guarding services are generated under their Master Security License and ABN, with Staffoo acting as an authorized billing, collection, and technology intermediary agent.
@@ -259,7 +259,7 @@ export default function ClientTerms() {
                     3
                   </span>
                   <span className="terms-article-title-text">
-                    CLIENT WORKPLACE HEALTH &amp; SAFETY (WHS) OBLIGATIONS
+                    CLIENT WORKPLACE HEALTH AND SAFETY (WHS) OBLIGATIONS
                   </span>
                 </h3>
 
@@ -275,10 +275,10 @@ export default function ClientTerms() {
 
                   <div>
                     <h4 className="terms-subheading">
-                      3.2 Site Safety Inductions &amp; Hazard Mitigation
+                      3.2 Site Safety Inductions and Hazard Mitigation
                     </h4>
                     <p className="terms-paragraph">
-                      The Client is responsible for identifying, mitigating, or eliminating on-site physical hazards prior to guard mobilization. Clients must provide necessary site inductions, clear emergency evacuation procedures, and access to basic amenities.
+                      The Client is responsible for identifying, mitigating, or eliminating on-site physical hazards prior to staff mobilization. Clients must provide necessary site inductions, clear emergency evacuation procedures, and access to basic amenities.
                     </p>
                   </div>
 
@@ -300,14 +300,14 @@ export default function ClientTerms() {
                     4
                   </span>
                   <span className="terms-article-title-text">
-                    CANCELLATIONS, SHIFT MODIFICATIONS &amp; DISPUTES
+                    CANCELLATIONS, SHIFT MODIFICATIONS AND DISPUTES
                   </span>
                 </h3>
 
                 <div className="terms-article-body">
                   <div>
                     <h4 className="terms-subheading">
-                      4.1 Cancellation Policy &amp; Minimum Notice Charges
+                      4.1 Cancellation Policy and Minimum Notice Charges
                     </h4>
                     <p className="terms-paragraph">
                       Cancellations made more than 24 hours prior to shift commencement receive a full refund/release of held funds. Cancellations made within the short-notice window (less than 24 hours or within 1 hour) incur standardized cancellation fees (minimum 4-hour charge) to compensate mobilized personnel.
@@ -319,7 +319,7 @@ export default function ClientTerms() {
                       4.2 Dispute Resolution Protocol
                     </h4>
                     <p className="terms-paragraph">
-                      Operational disputes regarding guard attendance or performance must be submitted via the Platform within 24 hours post-shift, supported by time-stamped evidence. Staffoo mediates disputes in good faith utilizing GPS geofencing, timestamps, and platform audit logs.
+                      Operational disputes regarding security staff attendance or performance must be submitted via the Platform within 24 hours post-shift, supported by time-stamped evidence. Staffoo mediates disputes in good faith utilizing GPS geofencing, timestamps, and platform audit logs.
                     </p>
                   </div>
                 </div>
@@ -332,7 +332,7 @@ export default function ClientTerms() {
                     5
                   </span>
                   <span className="terms-article-title-text">
-                    NON-SOLICITATION &amp; ANTI-POACHING
+                    NON-SOLICITATION AND ANTI-POACHING
                   </span>
                 </h3>
 
@@ -342,7 +342,7 @@ export default function ClientTerms() {
                       5.1 Non-Circumvention Period
                     </h4>
                     <p className="terms-paragraph">
-                      The Client agrees that during active platform usage and for a period of six (6) months following the completion of any booking, it will not directly or indirectly engage, employ, solicit, or contract with any Resource Partner or individual guard introduced to the Client via Staffoo, outside of the Platform.
+                      The Client agrees that during active platform usage and for a period of six (6) months following the completion of any booking, it will not directly or indirectly engage, employ, solicit, or contract with any Resource Partner or individual security staff introduced to the Client via Staffoo, outside of the Platform.
                     </p>
                   </div>
                 </div>
@@ -355,7 +355,7 @@ export default function ClientTerms() {
                     6
                   </span>
                   <span className="terms-article-title-text">
-                    LIMITATION OF LIABILITY, STATUTORY WARRANTIES &amp; INDEMNITY
+                    LIMITATION OF LIABILITY, STATUTORY WARRANTIES AND INDEMNITY
                   </span>
                 </h3>
 
@@ -387,7 +387,7 @@ export default function ClientTerms() {
                     7
                   </span>
                   <span className="terms-article-title-text">
-                    GOVERNING LAW &amp; JURISDICTION
+                    GOVERNING LAW AND JURISDICTION
                   </span>
                 </h3>
 

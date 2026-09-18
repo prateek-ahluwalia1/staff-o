@@ -183,7 +183,7 @@ export default function Register() {
       if (!normalized?.token) return;
       toast.success("Account created successfully!");
       if (typeof window !== "undefined" && window.fbq) window.fbq("track", "CompleteRegistration");
-      setShowVerifyModal(true);
+      navigate("/thank-you", { state: { email: formData.email } });
     } else if (pendingAuthAction === "google") {
       try {
         const res = await submit("api/auth/google/callback", { credential: tempGoogleToken, user_type: userType });

@@ -1011,6 +1011,9 @@ export default function EditProfile() {
     if (userType === "contractor") {
       return hasStatesChanged ? "Next" : "Save Changes";
     }
+    if (userType === "client" || userType === "customer") {
+      return "Save Changes";
+    }
     return hasPersonalFormChanged ? "Next" : "Save Changes";
   }, [userType, hasAdminFormChanged, hasStatesChanged, hasPersonalFormChanged]);
 
@@ -1109,7 +1112,9 @@ export default function EditProfile() {
           abn: formData.abn || "",
           acn: formData.acn || "",
         });
-        setActiveTab("documents");
+        if (userType !== "client" && userType !== "customer") {
+          setActiveTab("documents");
+        }
       }
     },
     [formData, submit, userId, updateUserId, refetch, hasStatesChanged, hasAdminFormChanged, hasPersonalFormChanged, userType, getMissingFields]

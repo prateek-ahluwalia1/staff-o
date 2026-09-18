@@ -91,8 +91,8 @@ function Header() {
             <div>
               <span className="nh-nav-item">For client <span className="nh-caret" /></span>
               <div className="nh-dropdown">
-                <NavLink to="/forclients/postajob" onClick={handleLinkClick}>Post a job</NavLink>
-                <NavLink to="/forclients/howitworks" onClick={handleLinkClick}>How it works</NavLink>
+                <NavLink to="/forclients/post-job" onClick={handleLinkClick}>Post a job</NavLink>
+                <NavLink to="/forclients/how-it-works" onClick={handleLinkClick}>How it works</NavLink>
                 <NavLink to="/client-terms" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>Client Terms</NavLink>
               </div>
             </div>
@@ -302,8 +302,8 @@ function Header() {
 
         {/* Nav links */}
         <div style={{ borderBottom: '1px solid #E4E9E4', paddingBottom: '8px', marginBottom: '8px' }}>
-          <NavLink to="/forclients/postajob" onClick={handleLinkClick}>Post a job</NavLink>
-          <NavLink to="/forclients/howitworks" onClick={handleLinkClick}>How it works</NavLink>
+          <NavLink to="/forclients/post-job" onClick={handleLinkClick}>Post a job</NavLink>
+          <NavLink to="/forclients/how-it-works" onClick={handleLinkClick}>How it works</NavLink>
           <NavLink to="/client-terms" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>Client Terms</NavLink>
           <NavLink to="/forstaff/working-staff" onClick={handleLinkClick}>Working on Staffoo</NavLink>
           <NavLink to="/forstaff/how-to-apply" onClick={handleLinkClick}>How to apply</NavLink>

@@ -125,7 +125,7 @@ export default function RelatedLinksSection() {
             <Link style={{ display: "block", fontSize: "13.5px", color: "var(--ink-soft)", padding: "5px 0" }} to="/forstaff/working-staff">
               Types of security work
             </Link>
-            <Link style={{ display: "block", fontSize: "13.5px", color: "var(--ink-soft)", padding: "5px 0" }} to="/forclients/postajob">
+            <Link style={{ display: "block", fontSize: "13.5px", color: "var(--ink-soft)", padding: "5px 0" }} to="/forclients/post-job">
               Booking at short notice
             </Link>
             <Link style={{ display: "block", fontSize: "13.5px", color: "var(--ink-soft)", padding: "5px 0" }} to="/terms-of-use">

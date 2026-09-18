@@ -5,6 +5,7 @@ import {
     Route,
     useNavigate,
     useLocation,
+    Navigate
 } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import OneSignal from "react-onesignal";
@@ -59,6 +60,7 @@ const ClientTerms = lazy(() => import("./pages/terms/ClientTerms"));
 const StaffTerms = lazy(() => import("./pages/terms/StaffTerms"));
 const ResourcePartnerTerms = lazy(() => import("./pages/terms/ResourcePartnerTerms"));
 const ForPartner = lazy(() => import("./pages/forpartner/For-Partner"));
+const ThankYou = lazy(() => import("./pages/thank-you"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Reports = lazy(() => import("./pages/Reports"));
 const TimeSheet = lazy(() => import("./pages/TimeSheet"));
@@ -598,8 +600,10 @@ function AppContent() {
                 <Route path="/industries/residential-estates" element={<ProtectedRoute public><ResidentialEstates /></ProtectedRoute>} />
 
                 {/* for clients */}
-                <Route path="/forclients/postajob" element={<ProtectedRoute public><Postajob /></ProtectedRoute>} />
-                <Route path="/forclients/howitworks" element={<ProtectedRoute public><Howitworks /></ProtectedRoute>} />
+                <Route path="/forclients/post-job" element={<ProtectedRoute public><Postajob /></ProtectedRoute>} />
+                <Route path="/forclients/postajob" element={<Navigate to="/forclients/post-job" replace />} />
+                <Route path="/forclients/how-it-works" element={<ProtectedRoute public><Howitworks /></ProtectedRoute>} />
+                <Route path="/forclients/howitworks" element={<Navigate to="/forclients/how-it-works" replace />} />
 
 
 
@@ -637,6 +641,7 @@ function AppContent() {
                 {/* Auth */}
                 <Route path="/login" element={<ProtectedRoute guestOnly><Login /></ProtectedRoute>} />
                 <Route path="/register" element={<ProtectedRoute guestOnly><Register /></ProtectedRoute>} />
+                <Route path="/thank-you" element={<ProtectedRoute public><ThankYou /></ProtectedRoute>} />
 
                 {/* Protected Layout */}
                 <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>

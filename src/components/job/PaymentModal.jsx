@@ -57,6 +57,7 @@ function CardForm({
   const [processing, setProcessing] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
   const [cardHolderName, setCardHolderName] = useState("");
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const [paymentMode, setPaymentMode] = useState(savedCards.length > 0 ? "saved" : "new");
   const [selectedSavedIndex, setSelectedSavedIndex] = useState(0);
@@ -82,8 +83,14 @@ function CardForm({
   // Actual submit logic, called by parent footer button
   const handleSubmit = useCallback(async (e) => {
     if (e) e.preventDefault();
-    if (processing || !canSubmit) return;
+    if (processing) return;
 
+    if (!canSubmit) {
+      setSubmitAttempted(true);
+      return;
+    }
+
+    setSubmitAttempted(false);
     setCardError("");
     setProcessing(true);
     onProcessingChange?.(true)
@@ -148,7 +155,7 @@ function CardForm({
             <button
               type="button"
               className={paymentMode === "saved" ? "active" : ""}
-              onClick={() => { setPaymentMode("saved"); setCardError(""); }}
+              onClick={() => { setPaymentMode("saved"); setCardError(""); setSubmitAttempted(false); }}
               disabled={processing}
             >
               Use Saved Card
@@ -156,7 +163,7 @@ function CardForm({
             <button
               type="button"
               className={paymentMode === "new" ? "active" : ""}
-              onClick={() => { setPaymentMode("new"); setCardError(""); }}
+              onClick={() => { setPaymentMode("new"); setCardError(""); setSubmitAttempted(false); }}
               disabled={processing}
             >
               Enter New Card
@@ -203,22 +210,32 @@ function CardForm({
         <div className="mb-2">
           <input
             type="text"
-            className="form-control jw-pm-input"
+            className={`form-control jw-pm-input ${submitAttempted && !cardholderValid ? "is-invalid border-danger" : ""}`}
             value={cardHolderName}
-            onChange={(e) => setCardHolderName(e.target.value)}
+            onChange={(e) => {
+              setCardHolderName(e.target.value);
+              if (submitAttempted) setSubmitAttempted(false);
+            }}
             placeholder="Card Holder Name"
             disabled={processing}
           />
+          {submitAttempted && !cardholderValid && (
+            <div className="text-danger small mt-1">Please enter a valid cardholder name.</div>
+          )}
         </div>
-        <div className="jw-pm-card-element mb-2">
+        <div className={`jw-pm-card-element mb-2 ${submitAttempted && !cardComplete ? "border-danger" : ""}`}>
           <CardElement
             options={CARD_ELEMENT_OPTIONS}
             onChange={(e) => {
               setCardComplete(e.complete);
               setCardError(e.error ? e.error.message : "");
+              if (submitAttempted) setSubmitAttempted(false);
             }}
           />
         </div>
+        {submitAttempted && !cardComplete && !cardError && (
+          <div className="text-danger small mb-2">Please complete your card details.</div>
+        )}
       </div>
 
       {cardError && <div className="text-danger small mb-2">{cardError}</div>}

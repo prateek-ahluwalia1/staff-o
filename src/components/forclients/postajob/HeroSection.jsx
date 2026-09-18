@@ -103,7 +103,7 @@ export default function HeroSection() {
               <Link to="/industries/event-crowd-control">Event security</Link>
               <Link to="/industries/construction-sites">Overnight site cover</Link>
               <Link to="/industries/retail-security">Retail security</Link>
-              <Link to="/forclients/postajob">Ongoing rosters</Link>
+              <Link to="/forclients/post-job">Ongoing rosters</Link>
             </div>
           </div>
 

@@ -125,7 +125,7 @@ export default function Howitworks() {
             <div className="stf-breadcrumb">
               <Link className="text-black" to="/">Home</Link>
               <span className="sep">/</span>
-              <Link className="text-black" to="/forclients/postajob">For clients</Link>
+              <Link className="text-black" to="/forclients/post-job">For clients</Link>
               <span className="sep">/</span>
               <span className="current">How it works</span>
             </div>

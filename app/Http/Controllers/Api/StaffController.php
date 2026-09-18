@@ -1712,11 +1712,15 @@ class StaffController extends Controller
 
             // Only update if it exists
             if ($document) {
-            
-                if (str_contains($request->security_license_expiry, '/')) {
-                    $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->security_license_expiry)->format('Y-m-d');
+    
+                $expiry = $request->security_license_expiry;
+
+                if (in_array(strtolower(trim($expiry)), ['current', 'pending renewal', 'pending', 'n/a'])) {
+                    $formattedExpiry = $expiry;
+                } elseif (str_contains($expiry, '/')) {
+                    $formattedExpiry = Carbon::createFromFormat('d/m/Y', $expiry)->format('Y-m-d');
                 } else {
-                    $formattedExpiry = Carbon::parse($request->security_license_expiry)->format('Y-m-d');
+                    $formattedExpiry = Carbon::parse($expiry)->format('Y-m-d');
                 }
                 
                 $document->update([

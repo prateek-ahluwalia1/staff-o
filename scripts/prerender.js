@@ -1,8 +1,4 @@
-
-
-// for seo friendly urls 
-
-
+// for seo friendly urls
 
 const puppeteer = require("puppeteer");
 const express = require("express");
@@ -19,8 +15,41 @@ const routes = [
   "/forpartner/resource-partner"
 ];
 
+function getExecutablePath() {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH && fs.existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+    return process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+  const candidatePaths = [
+    // macOS
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    // Linux
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/brave-browser",
+    // Windows
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+  ];
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+  return undefined;
+}
+
 async function run() {
   console.log("Starting Prerender Process...");
+
+  if (!fs.existsSync(BUILD_DIR)) {
+    console.warn(`Build directory ${BUILD_DIR} does not exist. Skipping prerender.`);
+    return;
+  }
 
   // 1. Start a local server to serve the build folder
   const app = express();
@@ -29,13 +58,26 @@ async function run() {
     res.sendFile(path.join(BUILD_DIR, "index.html"));
   });
 
-  const server = app.listen(PORT, async () => {
-    console.log(`Local server started on port ${PORT}`);
-
-    // 2. Launch Puppeteer
-    const browser = await puppeteer.launch({
-      headless: "new"
+  const server = await new Promise((resolve) => {
+    const s = app.listen(PORT, () => {
+      console.log(`Local server started on port ${PORT}`);
+      resolve(s);
     });
+  });
+
+  let browser = null;
+  try {
+    const executablePath = getExecutablePath();
+    const launchOptions = {
+      headless: "new",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    };
+    if (executablePath) {
+      console.log(`Using browser at: ${executablePath}`);
+      launchOptions.executablePath = executablePath;
+    }
+
+    browser = await puppeteer.launch(launchOptions);
 
     for (const route of routes) {
       console.log(`Prerendering route: ${route}`);
@@ -63,13 +105,17 @@ async function run() {
       await page.close();
     }
 
-    await browser.close();
-    server.close();
     console.log("Prerendering Complete!");
-  });
+  } catch (err) {
+    console.warn("Prerender encountered an issue:", err.message);
+  } finally {
+    if (browser) {
+      try { await browser.close(); } catch (_) {}
+    }
+    server.close();
+  }
 }
 
 run().catch((err) => {
-  console.error("Prerender failed!", err);
-  process.exit(1);
+  console.warn("Prerender failed (non-fatal):", err.message);
 });

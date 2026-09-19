@@ -122,6 +122,66 @@ const Avatar = ({ src, name, size = 36 }) => {
   );
 };
 
+const checkIsDocSelfExpiry = (category, fallbackState) => {
+  const cat = (category || "").trim().toLowerCase();
+  if (cat) {
+    if (
+      cat === "tas_document" ||
+      cat === "tas" ||
+      cat === "tasmania" ||
+      cat === "sa_document" ||
+      cat === "sa" ||
+      cat === "south australia"
+    ) {
+      return true;
+    }
+    if (
+      cat === "contractor_document" ||
+      cat === "vic" ||
+      cat === "victoria" ||
+      cat === "nsw_document" ||
+      cat === "nsw" ||
+      cat === "new south wales" ||
+      cat === "qld_document" ||
+      cat === "qld" ||
+      cat === "queensland" ||
+      cat === "wa_document" ||
+      cat === "wa" ||
+      cat === "western australia" ||
+      cat === "act_document" ||
+      cat === "act" ||
+      cat === "australian capital territory" ||
+      cat === "nt_document" ||
+      cat === "nt" ||
+      cat === "northern territory"
+    ) {
+      return false;
+    }
+  }
+
+  const raw = (fallbackState || "").trim().toLowerCase();
+  return (
+    raw === "tas" ||
+    raw === "tasmania" ||
+    raw === "sa" ||
+    raw === "south australia"
+  );
+};
+
+const getNormalizedDocInfo = (docName, docType) => {
+  const norm = (docName || docType || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const isSecLicense = norm === "securitylicense" || norm === "securitylicence";
+  const isSecMasterLicense =
+    norm === "securitymasterlicense" ||
+    norm === "securitymasterlicence" ||
+    norm === "masterlicense";
+  return {
+    isSecLicense,
+    isSecMasterLicense,
+    isAnySecurityLicense: isSecLicense || isSecMasterLicense,
+  };
+};
+
 function capitalizeWords(str) {
   return str
     .split(' ')
@@ -662,15 +722,22 @@ const ManageStaff = () => {
       toast.error("Please enter a document number first.");
       return;
     }
-    if (!docForm.document_name) {
+    if (!docForm.document_name && !docForm.document_type) {
       toast.error("Please select a document type.");
       return;
     }
 
-    if (
-      docForm.document_name === "Security License" ||
-      docForm.document_name === "Security Master License"
-    ) {
+    const { isSecMasterLicense, isAnySecurityLicense } = getNormalizedDocInfo(
+      docForm.document_name,
+      docForm.document_type
+    );
+
+    if (isAnySecurityLicense) {
+      const cat = (docForm.document_category || selectedDoc?.document_category || "").toLowerCase();
+      const rawState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
+      if (checkIsDocSelfExpiry(cat, rawState)) {
+        return;
+      }
       const STATE_NAME_MAP = {
         contractor_document: "Victoria",
         vic: "Victoria",
@@ -698,8 +765,6 @@ const ManageStaff = () => {
         "northern territory": "Northern Territory",
       };
 
-      const cat = (docForm.document_category || selectedDoc?.document_category || "").toLowerCase();
-      const rawState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
       const staffState = STATE_NAME_MAP[cat] || STATE_NAME_MAP[rawState.toLowerCase()] || rawState;
       if (!staffState) {
         toast.error("Please add your location first.");
@@ -709,14 +774,14 @@ const ManageStaff = () => {
       setVerifyingDoc(true);
       try {
         const resolvedUserType =
-          docForm.document_name === "Security Master License"
+          isSecMasterLicense
             ? "contractor"
             : editingUser?.user_type === "sub_contractor"
             ? "contractor"
             : editingUser?.user_type || docForm.user_type || "staff";
 
         const payload = {
-          document_type: docForm.document_name,
+          document_type: isSecMasterLicense ? "Security Master License" : "Security License",
           license_number: docForm.document_no,
           state: staffState,
           user_type: resolvedUserType,
@@ -1641,8 +1706,19 @@ const ManageStaff = () => {
         </div>
       )}
 
-      {/* PREMIUM DOCUMENT MODAL – matching edit-profile design */}
       {(() => {
+        const isDocSelfExpiryState = checkIsDocSelfExpiry(
+          docForm.document_category || selectedDoc?.document_category || "",
+          editingUser?.state || editingUser?.staff?.state || formData?.state || ""
+        );
+
+        const { isAnySecurityLicense } = getNormalizedDocInfo(
+          docForm.document_name || selectedDoc?.document_name,
+          docForm.document_type || selectedDoc?.document_type
+        );
+
+        const isLicenseRequiringVerify = !isDocSelfExpiryState && isAnySecurityLicense;
+
         const documentNumberField = docForm.document_name === "Visa" ? (
           <>
             {passportDoc ? (
@@ -1664,7 +1740,7 @@ const ManageStaff = () => {
             <label className="form-label fw-semibold">Visa Grant Number <span className="text-danger">*</span></label>
             <input type="text" className="form-control" placeholder="e.g. ABC123456" value={docForm.document_no} onChange={handleDocNumberChange} required />
           </>
-        ) : (docForm.document_name === "Security License" || docForm.document_name === "Security Master License") ? (
+        ) : isLicenseRequiringVerify ? (
           <>
             <label className="form-label fw-semibold">Document Number <span className="text-danger">*</span></label>
             <div className="input-group">
@@ -1926,7 +2002,7 @@ const ManageStaff = () => {
                         <button type="button" className="input-group-text bg-white text-muted border-end-0"
                           onClick={(e) => { e.preventDefault(); const p = document.getElementById("doc_expiry_picker"); if (p) { try { p.showPicker(); } catch (_) { p.focus(); } } }}
                           style={{ cursor: "pointer", zIndex: 10 }}
-                          disabled={docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa"}
+                          disabled={isLicenseRequiringVerify || docForm.document_name === "Visa"}
                           title="Open Calendar">
                           <i className="fa-solid fa-calendar-days text-primary"></i>
                         </button>
@@ -1934,7 +2010,7 @@ const ManageStaff = () => {
                           style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
                           value={docForm.document_expiry ? (() => { const parts = docForm.document_expiry.split("/"); if (parts.length === 3) { const [d, m, y] = parts; return `${y}-${m}-${d}`; } return ""; })() : ""}
                           onChange={(e) => { const isoDate = e.target.value; if (isoDate) { const [y, m, d] = isoDate.split("-"); setDocForm((prev) => ({ ...prev, document_expiry: `${d}/${m}/${y}` })); } }}
-                          disabled={docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa"}
+                          disabled={isLicenseRequiringVerify || docForm.document_name === "Visa"}
                         />
                         <input type="text" className="form-control border-start-0 ps-0" name="document_expiry" placeholder="DD/MM/YYYY"
                           value={docForm.document_expiry}
@@ -1946,8 +2022,8 @@ const ManageStaff = () => {
                             setDocForm((prev) => ({ ...prev, document_expiry: value }));
                           }}
                           required maxLength={10} pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                          disabled={docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa"}
-                          style={{ backgroundColor: docForm.document_name === "Security License" || docForm.document_name === "Security Master License" || docForm.document_name === "Visa" ? "#e9ecef" : "white" }}
+                          disabled={isLicenseRequiringVerify || docForm.document_name === "Visa"}
+                          style={{ backgroundColor: isLicenseRequiringVerify || docForm.document_name === "Visa" ? "#e9ecef" : "white" }}
                         />
                       </div>
                     </div>

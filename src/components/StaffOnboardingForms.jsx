@@ -911,7 +911,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, onDownloadPDF
 const EmployeeOnboardingForm = ({
     values, loading, onChange, onSubmit,
     onDocUpload, verifyingSecurityLicense, onVerifySecurityLicense,
-    onDownloadPDF, securityLicenceModified, errors = {}
+    onDownloadPDF, securityLicenceModified, errors = {}, isTasOrSa = false
 }) => {
     return (
         <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white animate__animated animate__fadeIn">
@@ -1254,7 +1254,7 @@ const EmployeeOnboardingForm = ({
                             <div className={`input-group ${errors.o_seclic ? "border border-danger rounded-3" : ""}`}>
                                 <input
                                     type="text"
-                                    className={`form-control rounded-start py-2 px-3 ${errors.o_seclic ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
+                                    className={`form-control ${isTasOrSa ? "rounded-3" : "rounded-start"} py-2 px-3 ${errors.o_seclic ? "is-invalid border-danger" : "border-light-subtle bg-light"} focus-ring focus-ring-primary`}
                                     style={{
                                         backgroundColor: errors.o_seclic ? "#fff8f8" : undefined,
                                         fontSize: "1rem"
@@ -1266,24 +1266,26 @@ const EmployeeOnboardingForm = ({
                                     onChange={onChange}
                                     required
                                 />
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-primary"
-                                    onClick={onVerifySecurityLicense}
-                                    disabled={verifyingSecurityLicense || !securityLicenceModified}
-                                    title={!securityLicenceModified ? "Change the license number to verify" : "Verify license"}
-                                >
-                                    {verifyingSecurityLicense ? (
-                                        <><span className="spinner-border spinner-border-sm me-1" /> Verifying...</>
-                                    ) : "Verify"}
-                                </button>
+                                {!isTasOrSa && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-primary"
+                                        onClick={onVerifySecurityLicense}
+                                        disabled={verifyingSecurityLicense || !securityLicenceModified}
+                                        title={!securityLicenceModified ? "Change the license number to verify" : "Verify license"}
+                                    >
+                                        {verifyingSecurityLicense ? (
+                                            <><span className="spinner-border spinner-border-sm me-1" /> Verifying...</>
+                                        ) : "Verify"}
+                                    </button>
+                                )}
                             </div>
                             <FieldError error={errors.o_seclic} />
                             <div className="mt-3">
                                 <label className={labelCls}>
                                     Upload Security License Document <span className="text-danger">*</span>
                                 </label>
-                                {!values.o_seclicexp ? (
+                                {(!isTasOrSa && !values.o_seclicexp) ? (
                                     <div className="text-muted small bg-light p-3 rounded-3 border">
                                         <i className="fa-solid fa-circle-info me-1"></i>
                                         Please verify the security license first to enable document upload.
@@ -1304,7 +1306,7 @@ const EmployeeOnboardingForm = ({
                                 Security License Expiry <span className="text-danger">*</span>
                             </label>
                             <DateInput name="o_seclicexp" value={values.o_seclicexp} onChange={onChange}
-                                required disabled={true} error={errors.o_seclicexp} />
+                                required disabled={!isTasOrSa} error={errors.o_seclicexp} />
                         </div>
 
                         <div className="col-md-6">
@@ -1461,7 +1463,7 @@ const normalizeOnboardData = (apiData) => {
 };
 
 /* ---------- Validation Functions ---------- */
-const validateOnboardForm = (values) => {
+const validateOnboardForm = (values, isTasOrSa = false) => {
     const errs = {};
     if (!values.o_name?.trim()) errs.o_name = "Full name is required";
     if (!values.o_dob?.trim()) errs.o_dob = "Date of birth is required";
@@ -1492,7 +1494,9 @@ const validateOnboardForm = (values) => {
     if (!values.o_member?.trim()) errs.o_member = "Member number is required";
 
     if (!values.o_seclic?.trim()) errs.o_seclic = "Security license number is required";
-    if (!values.o_seclicexp?.trim()) errs.o_seclicexp = "Please verify your security license first";
+    if (!values.o_seclicexp?.trim()) {
+        errs.o_seclicexp = isTasOrSa ? "Security license expiry date is required" : "Please verify your security license first";
+    }
     if (!values.security_license_doc) errs.security_license_doc = "Security license document upload is required";
 
     if (!values.o_fa?.trim()) errs.o_fa = "First aid certificate number is required";
@@ -1580,6 +1584,11 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     const [verifyingSecurityLicense, setVerifyingSecurityLicense] = useState(false);
     const [staffState, setStaffState] = useState("");
+
+    const isTasOrSa = useMemo(() => {
+        const s = (staffState || "").trim().toLowerCase();
+        return s === "tas" || s === "tasmania" || s === "sa" || s === "south australia";
+    }, [staffState]);
 
     const { submit: submitSecurityLicense } = useSubmit({
         isAuth: true,
@@ -1727,6 +1736,9 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
     };
 
     const handleVerifySecurityLicense = async () => {
+        if (isTasOrSa) {
+            return;
+        }
         if (!userId || !onboardForm.o_seclic) {
             toast.error("Please enter a Security License number first.");
             return;
@@ -1866,7 +1878,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
         let validationErrors = {};
         if (tabIndex === 0) {
-            validationErrors = validateOnboardForm(onboardForm);
+            validationErrors = validateOnboardForm(onboardForm, isTasOrSa);
         } else if (tabIndex === 1) {
             validationErrors = validateTfnForm(tfnForm);
         } else if (tabIndex === 2) {
@@ -2182,6 +2194,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                     onDownloadPDF={downloadPDF}
                     securityLicenceModified={securityLicenceModified}
                     errors={errors}
+                    isTasOrSa={isTasOrSa}
                 />
             )}
 

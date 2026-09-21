@@ -3,8 +3,6 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { COUNTRIES } from "../utils/exports";
 import Select from "react-select";
-import { useSelector } from "react-redux";
-
 export default function ProfileForm({
   formData,
   onChange,
@@ -23,7 +21,6 @@ export default function ProfileForm({
   submitText = "Save Changes",
   showErrors = false,
 }) {
-  const { userdata } = useSelector((state) => state.auth);
   const parseDisplayDate = (str) => {
     if (!str || typeof str !== "string") return null;
     const parts = str.split("/");
@@ -34,19 +31,6 @@ export default function ProfileForm({
     }
     return null;
   };
-
-  const staffParentId = Number(
-    userdata?.data?.staff?.user_id ??
-    userdata?.staff?.user_id ??
-    userdata?.data?.user_id ??
-    userdata?.user_id ??
-    0
-  );
-
-  const showStaffAdvFields = forceShowAllStaffFields
-    ? true
-    : staffParentId === 1;
-
 
   const predefinedStatuses = [
     "student_visa",
@@ -574,7 +558,7 @@ export default function ProfileForm({
             {userType === "staff" && (
               <>
                 {/* Residential Status */}
-                {!hideFields.includes("staff_document_type") && showStaffAdvFields && (
+                {!hideFields.includes("staff_document_type") && (
 
                   <div className="col-md-6">
                     <label
@@ -673,7 +657,7 @@ export default function ProfileForm({
                 </div>
 
                 {/* Date of Birth */}
-                {!hideFields.includes("date_of_birth") && showStaffAdvFields && (
+                {!hideFields.includes("date_of_birth") && (
                   <div className="col-md-6">
                     <label htmlFor="date_of_birth" className="form-label fw-bold text-dark small mb-1">
                       Date of Birth <span className="text-danger">*</span>
@@ -767,7 +751,7 @@ export default function ProfileForm({
                 </div>
 
                 {/* Country of Origin */}
-                {!hideFields.includes("origin_country") && showStaffAdvFields && (
+                {!hideFields.includes("origin_country") && (
 
                   <div className="col-md-6">
                     <label htmlFor="origin_country" className="form-label fw-bold text-dark small mb-1">
@@ -855,7 +839,7 @@ export default function ProfileForm({
                 )}
 
                 {/* Control Room License Toggle */}
-                {userType === "staff" && showStaffAdvFields && !hideFields.includes("is_control_room_license") && (
+                {userType === "staff" && !hideFields.includes("is_control_room_license") && (
                   <div className="col-md-6">
                     <label className="form-label fw-bold text-dark small mb-1 d-block">
                       Control Room License

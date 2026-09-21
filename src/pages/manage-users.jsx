@@ -443,8 +443,6 @@ const ManageUsers = () => {
 
   const staffParentContractorId = Number(
     formData?.user_id ??
-    editingUser?.data?.staff?.user_id ??
-    editingUser?.staff?.user_id ??
     editingUser?.data?.user_id ??
     editingUser?.user_id ??
     0

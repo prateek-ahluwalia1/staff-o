@@ -433,10 +433,6 @@ export default function EditProfile() {
   } = useFetch(endpoint, { isAuth: true });
 
   const parentContractorId = Number(
-    profileData?.data?.staff?.user_id ??
-    profileData?.staff?.user_id ??
-    userdata?.data?.staff?.user_id ??
-    userdata?.staff?.user_id ??
     profileData?.data?.user_id ??
     profileData?.user_id ??
     userdata?.data?.user_id ??
@@ -593,7 +589,7 @@ export default function EditProfile() {
     setFormData({
       name: d.name || "",
       email: d.email || "",
-      user_id: staff.user_id || d.user_id || "",
+      user_id: d.user_id || staff.user_id || "",
       origin_country: staff.origin_country || d.origin_country || "",
       abn: userType === "admin" ? (business.contractor?.abn || business.abn || d.abn || "") : (d.abn || business.abn || contractor.abn || ""),
       acn: userType === "admin" ? (business.contractor?.acn || business.acn || d.acn || "") : (d.acn || business.acn || contractor.acn || ""),

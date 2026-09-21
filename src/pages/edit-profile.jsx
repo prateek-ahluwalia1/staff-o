@@ -369,19 +369,6 @@ const DOC_LABEL_MAP = {
   asic_report: "ASIC Report",
 };
 
-const STAFF_DOCUMENT_POINTS = {
-  passport: 70,
-  citizen_ship: 70,
-  medicare: 25,
-  birth_certificate: 25,
-  security_license: 40,
-  driver_license_front: 70,
-  driver_license_back: 0,
-  working_with_children: 0,
-  first_aid: 0,
-  cpr: 0,
-  visa: 0,
-};
 
 const getStaffDocPoints = (doc) => {
   if (!doc) return 0;
@@ -1383,10 +1370,10 @@ export default function EditProfile() {
           isSecMasterLicense
             ? "contractor"
             : userType === "contractor" || userType === "staff"
-            ? userType
-            : profileData?.data?.user_type === "contractor" || profileData?.data?.user_type === "staff"
-            ? profileData.data.user_type
-            : docForm.user_type || "staff";
+              ? userType
+              : profileData?.data?.user_type === "contractor" || profileData?.data?.user_type === "staff"
+                ? profileData.data.user_type
+                : docForm.user_type || "staff";
 
         const payload = {
           document_type: isSecMasterLicense ? "Security Master License" : "Security License",
@@ -1661,10 +1648,10 @@ export default function EditProfile() {
   const isDocSelfExpiryState = checkIsDocSelfExpiry(
     docForm.document_category || selectedDoc?.document_category || "",
     formData?.state ||
-      profileData?.data?.state ||
-      userdata?.data?.state ||
-      userdata?.state ||
-      ""
+    profileData?.data?.state ||
+    userdata?.data?.state ||
+    userdata?.state ||
+    ""
   );
 
   const { isAnySecurityLicense } = getNormalizedDocInfo(

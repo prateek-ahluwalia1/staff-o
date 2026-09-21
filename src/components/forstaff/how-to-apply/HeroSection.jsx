@@ -1,3 +1,4 @@
+import { color } from "framer-motion";
 import React from "react";
 
 export default function HeroSection() {
@@ -7,21 +8,19 @@ export default function HeroSection() {
                 <div className="stf-hero-grid">
                     <div>
                         <span className="stf-eyebrow">For licensed staff</span>
-                        <h1>How to apply: sign up, upload, activate</h1>
+                        <h1>How to apply as security staff: <span style={{ color: "#0a7c6e" }}> sign up, upload, activate</span></h1>
                         <p className="lead">
                             There's no interview and no waiting on a review queue. Your documents are checked on the spot as you upload them, and once your three activation forms are in, your profile goes live and you can start accepting jobs.
                         </p>
 
                         <div className="stf-hero-actions">
-                            <a href="#" className="stf-btn stf-btn-solid stf-btn-cta">
+                            <a href="/register" className="stf-btn stf-btn-solid stf-btn-cta">
                                 Start your application
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                                     <path d="M5 12h13M12 6l6 6-6 6"></path>
                                 </svg>
                             </a>
-                            <a href="#requirements" className="stf-btn stf-btn-outline stf-btn-lg">
-                                Check what you need first
-                            </a>
+
                         </div>
                         <p className="stf-hero-note">
                             Free to apply · No subscription · <a href="/login">Already registered? Log in</a>

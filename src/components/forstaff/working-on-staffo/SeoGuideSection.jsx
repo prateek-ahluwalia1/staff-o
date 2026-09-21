@@ -29,7 +29,7 @@ export default function SeoGuideSection() {
                                 <tr><td>VIC</td><td>Private Security Individual Operator Licese</td><td>Victoria Police LRD</td></tr>
                                 <tr><td>QLD</td><td>Security Provider License Class 1</td><td>Office of Fair Trading</td></tr>
                                 <tr><td>WA</td><td>Security Officer / Crowd Controller license</td><td>WA Police Licensing</td></tr>
-                                <tr><td>SA</td><td>Security Agents License</td><td>Consumer &amp; Business Services</td></tr>
+                                <tr><td>SA</td><td>Security Agents License</td><td>Consumer and Business Services</td></tr>
                             </tbody>
                         </table>
 
@@ -54,10 +54,10 @@ export default function SeoGuideSection() {
                             <p>Upload them today, get verified within a business day, and start picking shifts near you.</p>
                             <a href="#" className="stf-btn stf-btn-solid stf-btn-block">Get verified</a>
                             <div className="stf-aside-module" style={{ marginTop: "16px", background: "transparent", border: "none", padding: 0 }}>
-                                <a href="#">→ Licensing &amp; requirements</a>
+                                <a href="#">→ Licensing and requirements</a>
                                 <a href="#">→ How picking shifts works</a>
                                 <a href="#">→ Getting paid</a>
-                                <a href="#">→ Insurance &amp; your ABN</a>
+                                <a href="#">→ Insurance and your ABN</a>
                             </div>
                         </div>
                     </aside>

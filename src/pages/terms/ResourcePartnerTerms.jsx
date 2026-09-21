@@ -7,11 +7,11 @@ import "../../components/industries/event-crowd-comp/styles.css";
 import "./terms.css";
 
 const navItems = [
-  { id: "rp-sec-1", title: "1. Licensing & Compliance", icon: "fa-certificate" },
-  { id: "rp-sec-2", title: "2. Operational Standards & Uniforms", icon: "fa-user-clock" },
-  { id: "rp-sec-3", title: "3. Fair Work & WHS Compliance", icon: "fa-gavel" },
-  { id: "rp-sec-4", title: "4. Negligence, Deductions & Set-Off", icon: "fa-triangle-exclamation" },
-  { id: "rp-sec-5", title: "5. Platform Fees & Stripe Payouts", icon: "fa-credit-card" },
+  { id: "rp-sec-1", title: "1. Licensing and Compliance", icon: "fa-certificate" },
+  { id: "rp-sec-2", title: "2. Operational Standards and Uniforms", icon: "fa-user-clock" },
+  { id: "rp-sec-3", title: "3. Fair Work and WHS Compliance", icon: "fa-gavel" },
+  { id: "rp-sec-4", title: "4. Negligence, Deductions and Set-Off", icon: "fa-triangle-exclamation" },
+  { id: "rp-sec-5", title: "5. Platform Fees and Stripe Payouts", icon: "fa-credit-card" },
   { id: "rp-sec-6", title: "6. Insurance Policies", icon: "fa-shield-halved" },
   { id: "rp-sec-7", title: "7. Governing Law", icon: "fa-landmark" },
   { id: "rp-sec-contact", title: "Operator Details", icon: "fa-building" },
@@ -48,7 +48,7 @@ export default function ResourcePartnerTerms() {
   return (
     <>
       <Helmet>
-        <title>Resource Partner &amp; Subcontractor Agreement | Staffoo</title>
+        <title>Resource Partner and Subcontractor Agreement | Staffoo</title>
         <meta
           name="description"
           content="Staffoo Resource Partner and Subcontractor Agreement operated by Capital Services Pty Ltd (ABN 48 613 317 838)."
@@ -70,7 +70,7 @@ export default function ResourcePartnerTerms() {
             <div className="stf-breadcrumb">
               <Link className="text-black text-decoration-none" to="/">Home</Link>
               <span className="sep mx-2">/</span>
-              <span className="current text-muted">Resource Partner Terms &amp; Conditions</span>
+              <span className="current text-muted">Resource Partner Terms and Conditions</span>
             </div>
           </div>
         </div>
@@ -88,11 +88,11 @@ export default function ResourcePartnerTerms() {
               <div className="terms-hero-card">
                 <div className="terms-hero-tag">
                   <i className="fa-solid fa-file-contract"></i>
-                  B2B Subcontractor Agreement
+                  Resorce partner terms and conditions
                 </div>
 
                 <h2 className="terms-hero-title">
-                  Resource Partner &amp; Subcontractor Agreement
+                  Resource Partner and Subcontractor Agreement
                 </h2>
 
                 <p className="terms-hero-desc">
@@ -110,7 +110,7 @@ export default function ResourcePartnerTerms() {
                   </span>
                   <span className="terms-badge-item">
                     <i className="fa-solid fa-shield text-success"></i>
-                    <strong>Licensing:</strong> Master Security &amp; Labour Hire
+                    <strong>Licensing:</strong> Master Security and Labour Hire
                   </span>
                   <span className="terms-badge-item">
                     <i className="fa-solid fa-map-pin text-success"></i>
@@ -124,17 +124,17 @@ export default function ResourcePartnerTerms() {
                 {[
                   {
                     icon: "fa-certificate",
-                    title: "Master & Labour Hire",
-                    desc: "Must maintain Master Security & state Labour Hire registrations at all times.",
+                    title: "Master and Labour Hire",
+                    desc: "Must maintain Master Security and state Labour Hire registrations at all times.",
                   },
                   {
                     icon: "fa-clock",
                     title: "15-Min Early Arrival",
-                    desc: "Guards must arrive 15 minutes before shift for briefing and handover.",
+                    desc: "Security staff must arrive 15 minutes before shift for briefing and handover.",
                   },
                   {
                     icon: "fa-scale-balanced",
-                    title: "Award & Fair Work",
+                    title: "Award and Fair Work",
                     desc: "Sole employer responsible for Modern Award minimum rates and entitlements.",
                   },
                   {
@@ -164,14 +164,14 @@ export default function ResourcePartnerTerms() {
                     1
                   </span>
                   <span className="terms-article-title-text">
-                    LICENSING, STATUTORY WARRANTIES &amp; COMPLIANCE
+                    LICENSING, STATUTORY WARRANTIES and COMPLIANCE
                   </span>
                 </h3>
 
                 <div className="terms-article-body">
                   <div>
                     <h4 className="terms-subheading">
-                      1.1 Corporate Licensing &amp; Labour Hire Registration
+                      1.1 Corporate Licensing and Labour Hire Registration
                     </h4>
                     <p className="terms-paragraph">
                       The Resource Partner warrants that it holds and maintains at all times all necessary Master Security Licenses, Labour Hire Licenses (where mandated by state legislation, including Victoria, Queensland, and South Australia), and corporate registrations required to legally supply security personnel in all operating jurisdictions.
@@ -180,10 +180,10 @@ export default function ResourcePartnerTerms() {
 
                   <div>
                     <h4 className="terms-subheading">
-                      1.2 Personnel Qualifications &amp; VEVO Verification
+                      1.2 Personnel Qualifications and VEVO Verification
                     </h4>
                     <p className="terms-paragraph">
-                      The Resource Partner warrants that all guards assigned to Staffoo shifts possess valid, current individual security licenses, valid First Aid/CPR certifications, Responsible Service of Alcohol (RSA, where applicable), and legal Australian working rights verified via VEVO.
+                      The Resource Partner warrants that all security staff assigned to Staffoo shifts possess valid, current individual security licenses, valid First Aid/CPR certifications, Responsible Service of Alcohol (RSA, where applicable), and legal Australian working rights verified via VEVO.
                     </p>
                   </div>
                 </div>
@@ -196,14 +196,14 @@ export default function ResourcePartnerTerms() {
                     2
                   </span>
                   <span className="terms-article-title-text">
-                    OPERATIONAL STANDARDS, UNIFORMS &amp; SHIFT PUNCTUALITY
+                    OPERATIONAL STANDARDS, UNIFORMS and SHIFT PUNCTUALITY
                   </span>
                 </h3>
 
                 <div className="terms-article-body">
                   <div>
                     <h4 className="terms-subheading">
-                      2.1 Standard Uniform &amp; Presentation Requirements
+                      2.1 Standard Uniform and Presentation Requirements
                     </h4>
                     <p className="terms-paragraph">
                       The Resource Partner must ensure that all deployed personnel arrive on site wearing a neat, professional standard black security uniform (black trousers, black collared security shirt or blazer, and clean black safety footwear). Personnel must wear a high-visibility (hi-vis) safety vest where required by site safety protocols, client briefs, or WHS laws.
@@ -221,7 +221,7 @@ export default function ResourcePartnerTerms() {
 
                   <div>
                     <h4 className="terms-subheading">
-                      2.3 App Usage &amp; Attendance Logging
+                      2.3 App Usage and Attendance Logging
                     </h4>
                     <p className="terms-paragraph">
                       All time, attendance, site check-ins, break logging, and duress checks must be completed exclusively through the Staffoo mobile application. Unauthorized sub-subcontracting or secondary outsourcing of assigned shifts is strictly prohibited.
@@ -237,7 +237,7 @@ export default function ResourcePartnerTerms() {
                     3
                   </span>
                   <span className="terms-article-title-text">
-                    EMPLOYMENT OBLIGATIONS, FAIR WORK &amp; WHS COMPLIANCE
+                    EMPLOYMENT OBLIGATIONS, FAIR WORK and WHS COMPLIANCE
                   </span>
                 </h3>
 
@@ -253,7 +253,7 @@ export default function ResourcePartnerTerms() {
 
                   <div>
                     <h4 className="terms-subheading">
-                      3.2 Modern Award &amp; Fatigue Management
+                      3.2 Modern Award and Fatigue Management
                     </h4>
                     <p className="terms-paragraph">
                       The Resource Partner warrants strict compliance with the <em>Security Services Industry Award 2020 [MA000016]</em>, the <em>Fair Work Act 2009 (Cth)</em>, Superannuation Guarantee laws, and state Workers&apos; Compensation laws. This includes paying mandatory minimum hourly rates, penalty rates, and enforcing fatigue limits (including mandatory minimum 8-to-10 hour breaks between shifts).
@@ -269,14 +269,14 @@ export default function ResourcePartnerTerms() {
                     4
                   </span>
                   <span className="terms-article-title-text">
-                    CLIENT DEDUCTIONS, NEGLIGENCE LIABILITY &amp; FINANCIAL SET-OFF
+                    CLIENT DEDUCTIONS, NEGLIGENCE LIABILITY and FINANCIAL SET-OFF
                   </span>
                 </h3>
 
                 <div className="terms-article-body">
                   <div>
                     <h4 className="terms-subheading">
-                      4.1 Liability for Negligence &amp; Client Deductions
+                      4.1 Liability for Negligence and Client Deductions
                     </h4>
                     <p className="terms-paragraph">
                       If a Client reduces, deducts, or refuses payment for shift hours due to late arrival, abandonment, uniform non-compliance, misconduct, breach of site instructions, or negligence by the Resource Partner or its personnel, the Resource Partner shall be held fully responsible for all resulting financial losses, damages, and administrative costs suffered by Staffoo.
@@ -285,7 +285,7 @@ export default function ResourcePartnerTerms() {
 
                   <div>
                     <h4 className="terms-subheading">
-                      4.2 Right of Recovery &amp; Set-Off
+                      4.2 Right of Recovery and Set-Off
                     </h4>
                     <p className="terms-paragraph">
                       The Resource Partner expressly authorizes Staffoo to deduct, withhold, or set off the amount of any client payment deductions or loss claims directly from current or future funds held in the Resource Partner&apos;s Stripe account or pending payout ledger.
@@ -301,7 +301,7 @@ export default function ResourcePartnerTerms() {
                     5
                   </span>
                   <span className="terms-article-title-text">
-                    PLATFORM FEES, AUTOMATED DEDUCTIONS &amp; INSURANCE
+                    PLATFORM FEES, AUTOMATED DEDUCTIONS and INSURANCE
                   </span>
                 </h3>
 
@@ -340,14 +340,14 @@ export default function ResourcePartnerTerms() {
                 <div className="terms-article-body">
                   <div>
                     <h4 className="terms-subheading">
-                      6.1 Required Policies &amp; Minimum Cover
+                      6.1 Required Policies and Minimum Cover
                     </h4>
                     <p className="terms-paragraph" style={{ marginBottom: "10px" }}>
                       The Resource Partner must maintain at all times during this Agreement:
                     </p>
                     <ul className="terms-list">
                       <li>
-                        <strong>Public &amp; Products Liability Insurance:</strong> Minimum coverage of $10,000,000 per claim (or $20,000,000 where specified by site brief).
+                        <strong>Public and Products Liability Insurance:</strong> Minimum coverage of $10,000,000 per claim (or $20,000,000 where specified by site brief).
                       </li>
                       <li>
                         <strong>Workers&apos; Compensation Insurance:</strong> Statutory coverage for all employees in accordance with relevant state laws.
@@ -364,7 +364,7 @@ export default function ResourcePartnerTerms() {
                     7
                   </span>
                   <span className="terms-article-title-text">
-                    GOVERNING LAW &amp; JURISDICTION
+                    GOVERNING LAW and JURISDICTION
                   </span>
                 </h3>
 

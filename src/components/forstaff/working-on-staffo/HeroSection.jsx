@@ -7,9 +7,9 @@ export default function HeroSection() {
                 <div className="stf-hero-grid">
                     <div>
                         <span className="stf-eyebrow">For licensed staff</span>
-                        <h1>See the shift, see the rate, take it. No agency in between.</h1>
+                        <h1>Between the shift, see the rate, take it <span style={{ color: "#0a7c6e" }}> No agency in between</span></h1>
                         <p className="lead">
-                            Staffoo shows you security shifts near you with the pay rate on the job before you commit. Tap accept and it's yours — no application queue, no waiting on a callback, and no commission taken out of what you earn.
+                            Staffoo shows you security shifts near you with the pay rate on the job before you commit. Tap accept and it's yours no application queue, no waiting on a callback, and no commission taken out of what you earn.
                         </p>
 
                         <div className="stf-intent-card">
@@ -38,7 +38,7 @@ export default function HeroSection() {
                                     </select>
                                 </div>
                             </div>
-                            <a href="#" className="stf-btn stf-btn-solid stf-btn-cta stf-btn-block">
+                            <a href="/register" className="stf-btn stf-btn-solid stf-btn-cta stf-btn-block">
                                 Find shifts near you
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                                     <path d="M5 12h13M12 6l6 6-6 6"></path>
@@ -57,7 +57,7 @@ export default function HeroSection() {
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">
                                     <path d="M12 2v20M17 6H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"></path>
                                 </svg>
-                                Zero commission — the posted rate is yours
+                                Zero commission the posted rate is yours
                             </div>
                             <div className="stf-trust-item">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">
@@ -84,10 +84,10 @@ export default function HeroSection() {
 
                         <div className="stf-popular">
                             Popular:
-                            <a href="#">Event &amp; crowd control</a>
-                            <a href="#">Overnight patrols</a>
-                            <a href="#">Retail loss prevention</a>
-                            <a href="#">Ongoing rosters</a>
+                            <a >Event and crowd control</a>
+                            <a >Overnight patrols</a>
+                            <a >Retail loss prevention</a>
+                            <a >Ongoing rosters</a>
                         </div>
                     </div>
 
@@ -109,7 +109,6 @@ export default function HeroSection() {
                                         <div className="stf-pv-meta">Crowd control · Sat, 8 hrs · 6 km away</div>
                                     </div>
                                     <div style={{ textAlign: "right" }}>
-                                        <div className="stf-pv-rate">$52<span>/hr</span></div>
                                         <span className="stf-pv-accept">Accept</span>
                                     </div>
                                 </div>
@@ -120,7 +119,6 @@ export default function HeroSection() {
                                         <div className="stf-pv-meta">Overnight static · ongoing roster · 11 km</div>
                                     </div>
                                     <div style={{ textAlign: "right" }}>
-                                        <div className="stf-pv-rate">$47<span>/hr</span></div>
                                         <span className="stf-pv-accept">Accept</span>
                                     </div>
                                 </div>
@@ -131,7 +129,6 @@ export default function HeroSection() {
                                         <div className="stf-pv-meta">Loss prevention · 4 shifts · 3 km away</div>
                                     </div>
                                     <div style={{ textAlign: "right" }}>
-                                        <div className="stf-pv-rate">$44<span>/hr</span></div>
                                         <span className="stf-pv-accept">Accept</span>
                                     </div>
                                 </div>
@@ -142,7 +139,6 @@ export default function HeroSection() {
                                         <div className="stf-pv-meta">Site access control · 3 months · 14 km</div>
                                     </div>
                                     <div style={{ textAlign: "right" }}>
-                                        <div className="stf-pv-rate">$45<span>/hr</span></div>
                                         <span className="stf-pv-accept">Accept</span>
                                     </div>
                                 </div>

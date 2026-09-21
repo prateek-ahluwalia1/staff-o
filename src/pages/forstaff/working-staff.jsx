@@ -20,8 +20,8 @@ import "../../components/industries/event-crowd-comp/styles.css";
 export default function WorkingStaff() {
     // 1. Stats Counter Data
     const guardStats = [
-        { value: "1,240", label: "open shifts right now" },
-        { value: "$46", label: "median posted rate" },
+        { value: "139", label: "open shifts right now" },
+        { value: "98%", label: "median posted rate" },
         { value: "0%", label: "commission taken from you" },
         { value: "2 days", label: "median time to payment" },
     ];
@@ -60,7 +60,7 @@ export default function WorkingStaff() {
 
     // 4. Staff Story Data
     const guardStory = {
-        category: "Staff story — Sydney",
+        category: "Staff story Sydney",
         title: "Verified on a Tuesday, working by the weekend",
         description: "A crowd controller with six years' experience uploaded his license and ABN on a Tuesday morning, was verified the next day, and had accepted three weekend shifts before the end of the week.",
         quote: '"I could see what each one paid before I took it. No calls, no waiting to hear back — I just picked the ones that worked around my week."',
@@ -81,7 +81,7 @@ export default function WorkingStaff() {
         },
         {
             q: "What happens when I accept a shift?",
-            a: "It's booked immediately. There's no application to wait on and no client approval step — the moment you accept, the shift is yours and the site address, contact and run sheet appear in your dashboard.",
+            a: "It's booked immediately. There's no application to wait on and no client approval step the moment you accept, the shift is yours and the site address, contact and run sheet appear in your dashboard.",
         },
         {
             q: "How long does verification take?",
@@ -93,15 +93,15 @@ export default function WorkingStaff() {
         },
         {
             q: "When do I get paid?",
-            a: "The client's payment is held before the shift starts. Once you check out and the client signs the job off, funds are released — usually in your account within two business days.",
+            a: "The client's payment is held before the shift starts. Once you check out and the client signs the job off, funds are released usually in your account within two business days.",
         },
         {
             q: "Am I employed by Staffoo?",
-            a: "No. Staffoo is a marketplace, not an agency or an employer. We verify licenses, host the shifts and handle payments — but we don't roster you, assign you work or tell you which jobs to take.",
+            a: "No. Staffoo is a marketplace, not an agency or an employer. We verify licenses, host the shifts and handle payments but we don't roster you, assign you work or tell you which jobs to take.",
         },
         {
             q: "What if I can't make a shift I've accepted?",
-            a: "Cancel from your dashboard as early as you can so the client has time to refill it. Because accepting books the shift instantly, late cancellations leave the client short — frequent ones affect the reliability score shown on your profile.",
+            a: "Cancel from your dashboard as early as you can so the client has time to refill it. Because accepting books the shift instantly, late cancellations leave the client short frequent ones affect the reliability score shown on your profile.",
         },
         {
             q: "Can I work in more than one state?",
@@ -176,7 +176,7 @@ export default function WorkingStaff() {
                     faqs={guardFaqs}
                 />
 
-              
+
 
                 <CtaBand
                     title="Your license, your week, your full rate"

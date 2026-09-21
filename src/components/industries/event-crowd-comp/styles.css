@@ -1295,12 +1295,12 @@
 
 /* Guard Landing Specific Styles */
 .stf-pv-accept {
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--green-dark);
   background: var(--green-light);
-  padding: 3px 8px;
-  border-radius: 5px;
+  padding: 5px 10px;
+  border-radius: 50px;
   display: inline-block;
   margin-top: 4px;
 }

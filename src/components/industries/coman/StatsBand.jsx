@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 
 function parseStatValue(val) {
   if (typeof val === "number") {
-    return { number: val, prefix: "", suffix: "", decimals: Number.isInteger(val) ? 0 : 1 };
+    return { number: val, prefix: "", suffix: "", decimals: Number.isInteger(val) ? 0 : 1, hasNumber: true };
   }
   const str = String(val || "");
   const match = str.match(/^([^0-9.]*)([0-9.]+)(.*)$/);
@@ -14,13 +14,14 @@ function parseStatValue(val) {
       number: isNaN(num) ? 0 : num,
       suffix: match[3],
       decimals: dec,
+      hasNumber: true,
     };
   }
-  return { prefix: "", number: 0, suffix: str, decimals: 0 };
+  return { prefix: "", number: 0, suffix: str, decimals: 0, hasNumber: false };
 }
 
 function AnimatedStatNumber({ value }) {
-  const { prefix, number, suffix, decimals } = parseStatValue(value);
+  const { prefix, number, suffix, decimals, hasNumber } = parseStatValue(value);
   const [current, setCurrent] = useState(0);
   const elementRef = useRef(null);
   const hasAnimated = useRef(false);
@@ -61,6 +62,10 @@ function AnimatedStatNumber({ value }) {
   }, [number]);
 
   const formattedNum = decimals > 0 ? current.toFixed(decimals) : Math.floor(current).toLocaleString();
+
+  if (!hasNumber) {
+    return <b>{suffix}</b>;
+  }
 
   return (
     <b ref={elementRef}>

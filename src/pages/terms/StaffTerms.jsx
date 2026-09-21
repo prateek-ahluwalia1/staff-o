@@ -7,12 +7,12 @@ import "../../components/industries/event-crowd-comp/styles.css";
 import "./terms.css";
 
 const navItems = [
-  { id: "sec-1", title: "1. Account Security & Verification", icon: "fa-shield-halved" },
+  { id: "sec-1", title: "1. Account Security and Verification", icon: "fa-shield-halved" },
   { id: "sec-2", title: "2. Employment Status", icon: "fa-briefcase" },
-  { id: "sec-3", title: "3. Operational Standards & Uniforms", icon: "fa-shirt" },
-  { id: "sec-4", title: "4. Geofencing & Timesheets", icon: "fa-location-dot" },
+  { id: "sec-3", title: "3. Operational Standards and Uniforms", icon: "fa-shirt" },
+  { id: "sec-4", title: "4. Geofencing and Timesheets", icon: "fa-location-dot" },
   { id: "sec-5", title: "5. Prohibited Conduct & Termination", icon: "fa-ban" },
-  { id: "sec-contact", title: "Entity & Legal Details", icon: "fa-building-shield" },
+  { id: "sec-contact", title: "Entity and Legal Details", icon: "fa-building-shield" },
 ];
 
 export default function StaffTerms() {
@@ -46,7 +46,7 @@ export default function StaffTerms() {
   return (
     <>
       <Helmet>
-        <title>App User Terms &amp; Conditions (Staff) | Staffoo</title>
+        <title>App User Terms and Conditions (Staff) | Staffoo</title>
         <meta
           name="description"
           content="Staffoo App User Terms and Conditions for internal and external security staff operated by Capital Services Pty Ltd (ABN 48 613 317 838)."
@@ -68,7 +68,7 @@ export default function StaffTerms() {
             <div className="stf-breadcrumb">
               <Link className="text-black text-decoration-none" to="/">Home</Link>
               <span className="sep mx-2">/</span>
-              <span className="current text-muted"> For Staff / Staff Terms &amp; Conditions</span>
+              <span className="current text-muted"> For Staff / Staff Terms and Conditions</span>
             </div>
           </div>
         </div>
@@ -86,16 +86,16 @@ export default function StaffTerms() {
               <div className="terms-hero-card">
                 <div className="terms-hero-tag">
                   <i className="fa-solid fa-scale-balanced"></i>
-                  Official Workforce Agreement
+                  staff terms and conditions
                 </div>
 
                 <h2 className="terms-hero-title">
-                  App User Terms &amp; Conditions (Internal &amp; External Staff)
+                  App User Terms and Conditions (Internal and External Staff)
                 </h2>
 
                 <p className="terms-hero-desc">
                   Operated by <strong>Capital Services Pty Ltd</strong> (ABN 48 613 317 838).
-                  These terms establish the operational and legal conditions governing security guards,
+                  These terms establish the operational and legal conditions governing security staff,
                   crowd controllers, and workforce personnel utilizing the Staffoo platform.
                 </p>
 
@@ -126,7 +126,7 @@ export default function StaffTerms() {
                   },
                   {
                     icon: "fa-shirt",
-                    title: "Black & White Uniform",
+                    title: "Black And White Uniform",
                     desc: "Black collared shirt/blazer, black trousers, enclosed safety footwear.",
                   },
                   {
@@ -161,7 +161,7 @@ export default function StaffTerms() {
                     1
                   </span>
                   <span className="terms-article-title-text">
-                    ACCOUNT SECURITY &amp; VERIFICATION
+                    ACCOUNT SECURITY AND VERIFICATION
                   </span>
                 </h3>
 
@@ -171,7 +171,7 @@ export default function StaffTerms() {
                       1.1 Intended Use
                     </h4>
                     <p className="terms-paragraph">
-                      The Staffoo mobile application is intended for use by individual security guards, crowd
+                      The Staffoo mobile application is intended for use by individual security staff, crowd
                       controllers, and workforce personnel (&quot;<strong>Users</strong>&quot;).
                     </p>
                   </div>
@@ -189,7 +189,7 @@ export default function StaffTerms() {
 
                   <div>
                     <h4 className="terms-subheading">
-                      1.3 Statutory Licensing &amp; Mandatory Reporting
+                      1.3 Statutory Licensing and Mandatory Reporting
                     </h4>
                     <p className="terms-paragraph">
                       Users must upload genuine, accurate, and unexpired licensing (e.g., State Security License,
@@ -215,7 +215,7 @@ export default function StaffTerms() {
                 <div className="terms-article-body">
                   <div>
                     <h4 className="terms-subheading">
-                      2.1 Independence &amp; Direct Engagement
+                      2.1 Independence and Direct Engagement
                     </h4>
                     <p className="terms-paragraph">
                       Accessing the Staffoo app does not create an employment or contractor relationship between the
@@ -245,7 +245,7 @@ export default function StaffTerms() {
                     3
                   </span>
                   <span className="terms-article-title-text">
-                    OPERATIONAL STANDARDS &amp; UNIFORMS
+                    OPERATIONAL STANDARDS and UNIFORMS
                   </span>
                 </h3>
 
@@ -267,7 +267,7 @@ export default function StaffTerms() {
 
                   <div>
                     <h4 className="terms-subheading">
-                      3.2 Professionalism &amp; Code of Conduct
+                      3.2 Professionalism and Code of Conduct
                     </h4>
                     <p className="terms-paragraph">
                       Users must use the platform and conduct themselves on-site responsibly, professionally, and in full compliance with the private security code of conduct applicable in their state or territory.
@@ -283,14 +283,14 @@ export default function StaffTerms() {
                     4
                   </span>
                   <span className="terms-article-title-text">
-                    GEOFENCING, LOCATION DATA &amp; TIMESHEETS
+                    GEOFENCING, LOCATION DATA and TIMESHEETS
                   </span>
                 </h3>
 
                 <div className="terms-article-body">
                   <div>
                     <h4 className="terms-subheading">
-                      4.1 Location Tracking &amp; Explicit Shift Consent
+                      4.1 Location Tracking and Explicit Shift Consent
                     </h4>
                     <p className="terms-paragraph">
                       The Staffoo platform utilizes location-based services to verify site attendance and ensure workplace safety. By clocking into a shift, the User explicitly consents to the app capturing GPS location coordinates during active shift hours.
@@ -299,7 +299,7 @@ export default function StaffTerms() {
 
                   <div>
                     <h4 className="terms-subheading">
-                      4.2 Device Tampering &amp; Location Spoofing
+                      4.2 Device Tampering and Location Spoofing
                     </h4>
                     <p className="terms-paragraph">
                       Users must not use GPS-spoofing software, VPNs, jailbroken devices, or location-masking tools to falsify their geographical data.
@@ -308,7 +308,7 @@ export default function StaffTerms() {
 
                   <div>
                     <h4 className="terms-subheading">
-                      4.3 Timesheet Accuracy &amp; Time Theft
+                      4.3 Timesheet Accuracy and Time Theft
                     </h4>
                     <p className="terms-paragraph">
                       Shift timesheets must accurately reflect the exact hours physically worked on-site. Deliberate time-theft or manipulation of the check-in/check-out system will result in permanent removal from the Staffoo network and forfeiture of disputed payments.
@@ -324,14 +324,14 @@ export default function StaffTerms() {
                     5
                   </span>
                   <span className="terms-article-title-text">
-                    PROHIBITED CONDUCT, PERFORMANCE &amp; APP TERMINATION
+                    PROHIBITED CONDUCT, PERFORMANCE AND APP TERMINATION
                   </span>
                 </h3>
 
                 <div className="terms-article-body">
                   <div>
                     <h4 className="terms-subheading">
-                      5.1 Unlawful Acts &amp; System Interference
+                      5.1 Unlawful Acts and System Interference
                     </h4>
                     <p className="terms-paragraph">
                       Staffoo strictly prohibits any unlawful acts, including harassing or stalking other users, hacking or interfering with the app&apos;s infrastructure, infecting the app with viruses, or circumventing the platform&apos;s computer security systems. Users must not impersonate any person or misrepresent their association with any security firm or client site.

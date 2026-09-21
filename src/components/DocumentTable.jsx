@@ -141,20 +141,6 @@ function getDocDisplayName(doc) {
   return raw;
 }
 
-const STAFF_DOCUMENT_POINTS = {
-  passport: 70,
-  citizen_ship: 70,
-  medicare: 25,
-  birth_certificate: 25,
-  security_license: 40,
-  driver_license_front: 70,
-  driver_license_back: 0,
-  working_with_children: 0,
-  first_aid: 0,
-  cpr: 0,
-  visa: 0,
-};
-
 const getStaffDocPoints = (doc) => {
   if (!doc) return 0;
   const rawKey = (doc.document_type || doc.document_name || "").toLowerCase().trim();
@@ -348,6 +334,15 @@ const DEFAULT_STAFF_DOC_TEMPLATES = [
   { document_name: "RSA Certificate", document_type: "rsa_certificate" },
 ];
 
+const DEFAULT_CONTRACTOR_STAFF_DOC_TEMPLATES = [
+  { document_name: "Security License", document_type: "security_license" },
+  { document_name: "Working With Children Check", document_type: "working_with_children" },
+  { document_name: "First Aid Certificate", document_type: "first_aid" },
+  { document_name: "CPR Certificate", document_type: "cpr" },
+  { document_name: "White Card", document_type: "white_card" },
+  { document_name: "RSA Certificate", document_type: "rsa_certificate" },
+];
+
 const DEFAULT_CONTRACTOR_DOC_TEMPLATES = [
   { document_name: "Security Master License", document_type: "security_master_license" },
   { document_name: "Public Liability", document_type: "public_liability" },
@@ -404,8 +399,27 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
     const incomingDocs = Array.isArray(documents) ? documents : [];
 
     if (userType === "staff") {
+      const templates = isStaffooStaff
+        ? DEFAULT_STAFF_DOC_TEMPLATES
+        : DEFAULT_CONTRACTOR_STAFF_DOC_TEMPLATES;
+
       if (incomingDocs.length > 0) {
-        return [...incomingDocs].sort((a, b) => {
+        let filtered = incomingDocs;
+        if (!isStaffooStaff) {
+          const nonStaffooTypes = [
+            "security_license",
+            "working_with_children",
+            "first_aid",
+            "cpr",
+            "white_card",
+            "rsa_certificate",
+          ];
+          filtered = incomingDocs.filter((doc) => {
+            const t = (doc.document_type || doc.document_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+            return nonStaffooTypes.some((allowed) => t.includes(allowed.replace(/[^a-z0-9]/g, "")));
+          });
+        }
+        return [...filtered].sort((a, b) => {
           const typeA = (a.document_type || a.document_name || "").toLowerCase().replace(/[\s-]+/g, "_");
           const typeB = (b.document_type || b.document_name || "").toLowerCase().replace(/[\s-]+/g, "_");
           const orderA = DOC_CONFIG[typeA]?.sort || 99;
@@ -414,7 +428,7 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
         });
       }
 
-      return DEFAULT_STAFF_DOC_TEMPLATES.map((tmpl) => ({
+      return templates.map((tmpl) => ({
         id: `temp_${tmpl.document_type}`,
         document_name: tmpl.document_name,
         document_type: tmpl.document_type,
@@ -431,7 +445,7 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
       const orderB = DOC_CONFIG[typeB]?.sort || 99;
       return orderA - orderB;
     });
-  }, [documents, userType]);
+  }, [documents, userType, isStaffooStaff]);
 
   // Contractors: group documents by state (document_category) — each state
   // has its own repeated set of document types (public_liability, workcover, etc).

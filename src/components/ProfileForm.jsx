@@ -35,9 +35,17 @@ export default function ProfileForm({
     return null;
   };
 
+  const staffParentId = Number(
+    userdata?.data?.staff?.user_id ??
+    userdata?.staff?.user_id ??
+    userdata?.data?.user_id ??
+    userdata?.user_id ??
+    0
+  );
+
   const showStaffAdvFields = forceShowAllStaffFields
     ? true
-    : Number(userdata?.data?.user_id ?? userdata?.user_id ?? 0) > 0;
+    : staffParentId === 1;
 
 
   const predefinedStatuses = [
@@ -847,7 +855,7 @@ export default function ProfileForm({
                 )}
 
                 {/* Control Room License Toggle */}
-                {userType === "staff" && !hideFields.includes("is_control_room_license") && (
+                {userType === "staff" && showStaffAdvFields && !hideFields.includes("is_control_room_license") && (
                   <div className="col-md-6">
                     <label className="form-label fw-bold text-dark small mb-1 d-block">
                       Control Room License

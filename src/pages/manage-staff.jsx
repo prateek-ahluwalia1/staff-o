@@ -37,31 +37,6 @@ const normalizeToDisplay = (dateStr) => {
   return dateStr;
 };
 
-const getExpiryStatus = (dateString) => {
-  if (!dateString) return "no-expiry";
-  let expiry;
-  const ddMatch = dateString.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (ddMatch) {
-    const [, d, m, y] = ddMatch;
-    expiry = new Date(y, m - 1, d);
-  } else {
-    const isoMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (isoMatch) {
-      const [, y, m, d] = isoMatch;
-      expiry = new Date(y, m - 1, d);
-    } else {
-      expiry = new Date(dateString);
-    }
-  }
-  if (isNaN(expiry.getTime())) return "no-expiry";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diffDays = (expiry - today) / (1000 * 60 * 60 * 24);
-  if (diffDays < 0) return "expired";
-  if (diffDays <= 30) return "expiring";
-  return "valid";
-};
-
 
 
 const DOC_TYPES = [
@@ -328,7 +303,6 @@ const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
 
 const ManageStaff = () => {
   const [showErrors, setShowErrors] = useState(false);
-  const [showDocErrors, setShowDocErrors] = useState(false);
   const { userdata } = useSelector((state) => state.auth);
   const loggedInContractorId = userdata?.id || userdata?.data?.id || null;
   const parentContractorId = Number(
@@ -454,14 +428,26 @@ const ManageStaff = () => {
     const rawDocs = editingUser.documents || editingUser.staff?.documents || [];
     const contractorCategories = ["contractor_document", "nsw_document", "qld_document", "tas_document", "wa_document", "sa_document"];
     const contractorTypes = ["security_master_license", "public_liability", "workcover", "security_membership", "labour_hire", "asic_report"];
+    const isStaffooStaff = parentContractorId === 1;
+    const nonStaffooTypes = [
+      "security_license",
+      "working_with_children",
+      "first_aid",
+      "cpr",
+      "white_card",
+      "rsa_certificate",
+    ];
     return rawDocs.filter((doc) => {
       if (doc.document_category && contractorCategories.includes(doc.document_category)) return false;
       const normalizedType = (doc.document_type || "").toLowerCase().replace(/[^a-z0-9]/g, "");
       const normalizedName = (doc.document_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
       if (contractorTypes.some((t) => normalizedType.includes(t.replace(/[^a-z0-9]/g, "")) || normalizedName.includes(t.replace(/[^a-z0-9]/g, "")))) return false;
+      if (!isStaffooStaff) {
+        return nonStaffooTypes.some((allowed) => normalizedType.includes(allowed.replace(/[^a-z0-9]/g, "")) || normalizedName.includes(allowed.replace(/[^a-z0-9]/g, "")));
+      }
       return true;
     });
-  }, [editingUser]);
+  }, [editingUser, parentContractorId]);
 
   const isDocumentsComplete = useMemo(() => {
     return true;
@@ -783,8 +769,8 @@ const ManageStaff = () => {
           isSecMasterLicense
             ? "contractor"
             : editingUser?.user_type === "sub_contractor"
-            ? "contractor"
-            : editingUser?.user_type || docForm.user_type || "staff";
+              ? "contractor"
+              : editingUser?.user_type || docForm.user_type || "staff";
 
         const payload = {
           document_type: isSecMasterLicense ? "Security Master License" : "Security License",
@@ -1101,8 +1087,8 @@ const ManageStaff = () => {
         toast.success(editingUser ? "Staff member updated successfully!" : "Staff member created successfully!");
         refetch();
         const createdUser = res.data?.user || res.data?.guard || res.data || res.user || (res.id ? res : { id: res.data?.id, ...payload });
-        const newUserId = createdUser?.id || res.data?.id || res.id;
-        let docs = createdUser?.documents || [];
+        const newUserId = createdUser?.id || res.data?.id || res.id || editingUser?.id;
+        let docs = createdUser?.documents || editingUser?.documents || editingUser?.staff?.documents || [];
 
         if ((!docs || docs.length === 0) && newUserId) {
           try {
@@ -1119,9 +1105,8 @@ const ManageStaff = () => {
 
         const userToSet = {
           ...payload,
-          id: newUserId,
           documents: docs,
-          staff: createdUser?.staff || {
+          staff: createdUser?.staff || editingUser?.staff || {
             phone: payload.phone,
             gender: payload.gender,
             staff_document_type: payload.staff_document_type,
@@ -1130,6 +1115,7 @@ const ManageStaff = () => {
             origin_country: payload.origin_country,
           },
           ...createdUser,
+          id: newUserId,
         };
         setEditingUser(userToSet);
         setActiveModalTab("documents");
@@ -1635,7 +1621,7 @@ const ManageStaff = () => {
                 </button>
                 <button
                   type="button"
-                  className={`btn ${activeModalTab === "documents" ? "btn-dark" : "btn-light"} ${showDocErrors && !isDocumentsComplete ? "shake-red" : ""} border-0`}
+                  className={`btn ${activeModalTab === "documents" ? "btn-dark" : "btn-light"} ${!isDocumentsComplete ? "shake-red" : ""} border-0`}
                   onClick={() => handleTabClick("documents")}
                   style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
                 >
@@ -1689,7 +1675,6 @@ const ManageStaff = () => {
                     documents={staffDocuments}
                     userType="staff"
                     onAddFile={openDocumentModal}
-                    showDocErrors={showDocErrors}
                     isStaffooStaff={false}
                   />
                 </div>

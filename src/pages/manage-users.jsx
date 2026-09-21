@@ -443,10 +443,10 @@ const ManageUsers = () => {
 
   const staffParentContractorId = Number(
     formData?.user_id ??
-    editingUser?.data?.user_id ??
-    editingUser?.user_id ??
     editingUser?.data?.staff?.user_id ??
     editingUser?.staff?.user_id ??
+    editingUser?.data?.user_id ??
+    editingUser?.user_id ??
     0
   );
 
@@ -476,17 +476,29 @@ const ManageUsers = () => {
     if (activeTab === "staff") {
       const contractorCategories = ["contractor_document", "nsw_document", "qld_document", "tas_document", "wa_document", "sa_document"];
       const contractorTypes = ["security_master_license", "public_liability", "workcover", "security_membership", "labour_hire", "asic_report"];
+      const isStaffooStaff = staffParentContractorId === 1;
+      const nonStaffooTypes = [
+        "security_license",
+        "working_with_children",
+        "first_aid",
+        "cpr",
+        "white_card",
+        "rsa_certificate",
+      ];
       return docs.filter((doc) => {
         if (doc.document_category && contractorCategories.includes(doc.document_category)) return false;
         const normalizedType = (doc.document_type || "").toLowerCase().replace(/[^a-z0-9]/g, "");
         const normalizedName = (doc.document_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
         if (contractorTypes.some((t) => normalizedType.includes(t.replace(/[^a-z0-9]/g, "")) || normalizedName.includes(t.replace(/[^a-z0-9]/g, "")))) return false;
+        if (!isStaffooStaff) {
+          return nonStaffooTypes.some((allowed) => normalizedType.includes(allowed.replace(/[^a-z0-9]/g, "")) || normalizedName.includes(allowed.replace(/[^a-z0-9]/g, "")));
+        }
         return true;
       });
     }
 
     return docs;
-  }, [editingUser, activeTab, formData.states_allowed]);
+  }, [editingUser, activeTab, formData.states_allowed, staffParentContractorId]);
 
   const passportDoc = useMemo(() => {
     return (documents || []).find(
@@ -1325,12 +1337,20 @@ const ManageUsers = () => {
 
         if (activeTab === "staff" || activeTab === "sub_contractor") {
           const createdUser = res.data?.user || res.data?.guard || res.data?.contractor || res.data || res.user || (res.id ? res : { id: res.data?.id, ...payload });
-          const newUserId = createdUser?.user_id || res.data?.user_id || createdUser?.id || res.data?.id || res.id;
-          let docs = createdUser?.documents || [];
+          const targetUserId =
+            activeTab === "staff"
+              ? (editingUser?.id || createdUser?.id || res.data?.id || res.id)
+              : (editingUser?.id || createdUser?.user_id || res.data?.user_id || createdUser?.id || res.data?.id || res.id);
+          let docs =
+            createdUser?.documents ||
+            editingUser?.documents ||
+            editingUser?.staff?.documents ||
+            editingUser?.contractor?.documents ||
+            [];
 
-          if ((!docs || docs.length === 0) && newUserId) {
+          if ((!docs || docs.length === 0) && targetUserId) {
             try {
-              const editRes = await submit(`api/user-edit/${newUserId}`, undefined, { method: "GET" });
+              const editRes = await submit(`api/user-edit/${targetUserId}`, undefined, { method: "GET" });
               if (editRes?.data?.documents && editRes.data.documents.length > 0) {
                 docs = editRes.data.documents;
               } else if (editRes?.documents && editRes.documents.length > 0) {
@@ -1344,7 +1364,7 @@ const ManageUsers = () => {
           const userToSet = {
             ...payload,
             documents: docs,
-            staff: createdUser?.staff || {
+            staff: createdUser?.staff || editingUser?.staff || {
               phone: payload.phone,
               gender: payload.gender,
               staff_document_type: payload.staff_document_type,
@@ -1352,7 +1372,7 @@ const ManageUsers = () => {
               date_of_birth: payload.date_of_birth,
               origin_country: payload.origin_country,
             },
-            contractor: createdUser?.contractor || {
+            contractor: createdUser?.contractor || editingUser?.contractor || {
               phone: payload.phone,
               gender: payload.gender,
               security_license_no: payload.security_license_no,
@@ -1362,7 +1382,7 @@ const ManageUsers = () => {
               acn: payload.acn,
             },
             ...createdUser,
-            id: newUserId,
+            id: targetUserId,
           };
           setEditingUser(userToSet);
           setActiveModalTab("documents");
@@ -2190,7 +2210,12 @@ const ManageUsers = () => {
                   showErrors={showErrors}
                   hideFields={[
                     ...(activeTab !== "staff" || staffParentContractorId !== 1
-                      ? ["is_control_room_license"]
+                      ? [
+                          "is_control_room_license",
+                          "staff_document_type",
+                          "date_of_birth",
+                          "origin_country",
+                        ]
                       : []),
                   ]}
                   profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
@@ -2241,6 +2266,7 @@ const ManageUsers = () => {
                     userType={activeTab === "sub_contractor" ? "contractor" : activeTab}
                     onAddFile={openDocumentModal}
                     showDocErrors={showDocErrors}
+                    isStaffooStaff={activeTab === "staff" && staffParentContractorId === 1}
                   />
                 </div>
               ) : null}

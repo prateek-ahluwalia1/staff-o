@@ -433,10 +433,14 @@ export default function EditProfile() {
   } = useFetch(endpoint, { isAuth: true });
 
   const parentContractorId = Number(
+    profileData?.data?.staff?.user_id ??
+    profileData?.staff?.user_id ??
+    userdata?.data?.staff?.user_id ??
+    userdata?.staff?.user_id ??
+    profileData?.data?.user_id ??
+    profileData?.user_id ??
     userdata?.data?.user_id ??
     userdata?.user_id ??
-    profileData?.data?.user_id ??
-    profileData?.data?.staff?.user_id ??
     0
   );
   const isStaffooStaff = userType === "staff" && parentContractorId === 1;
@@ -519,8 +523,7 @@ export default function EditProfile() {
     if (!data.address) missing.push("Address");
     if (userType === "staff") {
       if (!data.security_license_no) missing.push("Security License No");
-      const showStaffAdvFields = Number(userdata?.data?.user_id ?? userdata?.user_id ?? 0) > 0;
-      if (showStaffAdvFields) {
+      if (isStaffooStaff) {
         if (!data.staff_document_type) missing.push("Visa Status");
         if (!data.date_of_birth) missing.push("Date of Birth");
         if (!data.origin_country) missing.push("Country of Birth");
@@ -533,7 +536,7 @@ export default function EditProfile() {
     if ((userType === "contractor" || userType === "admin") && (!data.states_allowed || data.states_allowed.length === 0))
       missing.push("States You Operate In");
     return missing;
-  }, [userType, userdata]);
+  }, [userType, isStaffooStaff]);
   const missingFields = getMissingFields(formData);
 
   useEffect(() => {
@@ -590,6 +593,7 @@ export default function EditProfile() {
     setFormData({
       name: d.name || "",
       email: d.email || "",
+      user_id: staff.user_id || d.user_id || "",
       origin_country: staff.origin_country || d.origin_country || "",
       abn: userType === "admin" ? (business.contractor?.abn || business.abn || d.abn || "") : (d.abn || business.abn || contractor.abn || ""),
       acn: userType === "admin" ? (business.contractor?.acn || business.acn || d.acn || "") : (d.acn || business.acn || contractor.acn || ""),
@@ -1097,7 +1101,7 @@ export default function EditProfile() {
       Object.keys(formData).forEach((key) => {
         if (key === "profile_image" || key === "email") return;
         if (userType === "admin" && (key === "name" || key === "phone" || key === "gender" || key === "date_of_birth" || key === "staff_document_type" || key === "security_license_no" || key === "is_control_room_license")) return;
-        if ((userType !== "staff" || !isStaffooStaff) && key === "is_control_room_license") return;
+        if ((userType !== "staff" || !isStaffooStaff) && (key === "is_control_room_license" || key === "staff_document_type" || key === "date_of_birth" || key === "origin_country")) return;
 
         if (key === "bank_details") {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
@@ -2030,7 +2034,16 @@ export default function EditProfile() {
             setShowPhoneModal(true);
           }}
           isEdit={true}
-          hideFields={!isStaffooStaff ? ["is_control_room_license"] : []}
+          hideFields={
+            !isStaffooStaff
+              ? [
+                  "is_control_room_license",
+                  "staff_document_type",
+                  "date_of_birth",
+                  "origin_country",
+                ]
+              : []
+          }
         />
       )}
 

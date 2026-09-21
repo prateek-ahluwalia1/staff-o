@@ -331,6 +331,12 @@ const ManageStaff = () => {
   const [showDocErrors, setShowDocErrors] = useState(false);
   const { userdata } = useSelector((state) => state.auth);
   const loggedInContractorId = userdata?.id || userdata?.data?.id || null;
+  const parentContractorId = Number(
+    userdata?.data?.user_id ??
+    userdata?.user_id ??
+    loggedInContractorId ??
+    0
+  );
   const [page, setPage] = useState(1);
 
   const {
@@ -1083,7 +1089,11 @@ const ManageStaff = () => {
     const payload = { ...formData };
     delete payload.password;
     payload.user_id = loggedInContractorId;
-    payload.is_control_room_license = formData.is_control_room_license ? 1 : 0;
+    if (parentContractorId === 1) {
+      payload.is_control_room_license = formData.is_control_room_license ? 1 : 0;
+    } else {
+      delete payload.is_control_room_license;
+    }
 
     try {
       const res = await submit(url, payload, { method });
@@ -1636,7 +1646,12 @@ const ManageStaff = () => {
               {activeModalTab === "personal" ? (
                 <ProfileForm
                   showErrors={showErrors}
-                  hideFields={["staff_document_type", "date_of_birth", "origin_country"]}
+                  hideFields={[
+                    "staff_document_type",
+                    "date_of_birth",
+                    "origin_country",
+                    ...(parentContractorId !== 1 ? ["is_control_room_license"] : []),
+                  ]}
                   profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
                   formData={{
                     name: formData.name,

@@ -1097,7 +1097,7 @@ export default function EditProfile() {
       Object.keys(formData).forEach((key) => {
         if (key === "profile_image" || key === "email") return;
         if (userType === "admin" && (key === "name" || key === "phone" || key === "gender" || key === "date_of_birth" || key === "staff_document_type" || key === "security_license_no" || key === "is_control_room_license")) return;
-        if (userType !== "staff" && key === "is_control_room_license") return;
+        if ((userType !== "staff" || !isStaffooStaff) && key === "is_control_room_license") return;
 
         if (key === "bank_details") {
           payload.append("bank_details", JSON.stringify(formData.bank_details));
@@ -1164,7 +1164,7 @@ export default function EditProfile() {
         }
       }
     },
-    [formData, submit, userId, updateUserId, refetch, hasStatesChanged, hasAdminFormChanged, hasPersonalFormChanged, userType, getMissingFields]
+    [formData, submit, userId, updateUserId, refetch, hasStatesChanged, hasAdminFormChanged, hasPersonalFormChanged, userType, getMissingFields, isStaffooStaff]
   );
 
   const handleClosePhoneModal = () => {
@@ -2030,6 +2030,7 @@ export default function EditProfile() {
             setShowPhoneModal(true);
           }}
           isEdit={true}
+          hideFields={!isStaffooStaff ? ["is_control_room_license"] : []}
         />
       )}
 

@@ -441,6 +441,15 @@ const ManageUsers = () => {
 
   const [formData, setFormData] = useState(defaultFormState);
 
+  const staffParentContractorId = Number(
+    formData?.user_id ??
+    editingUser?.data?.user_id ??
+    editingUser?.user_id ??
+    editingUser?.data?.staff?.user_id ??
+    editingUser?.staff?.user_id ??
+    0
+  );
+
 
   const documents = useMemo(() => {
     if (!editingUser) return [];
@@ -1292,7 +1301,7 @@ const ManageUsers = () => {
 
     const payload = { ...formData };
     delete payload.password;
-    if (activeTab === "staff") {
+    if (activeTab === "staff" && staffParentContractorId === 1) {
       payload.is_control_room_license = formData.is_control_room_license ? 1 : 0;
     } else {
       delete payload.is_control_room_license;
@@ -2179,6 +2188,11 @@ const ManageUsers = () => {
               {activeModalTab === "personal" ? (
                 <ProfileForm
                   showErrors={showErrors}
+                  hideFields={[
+                    ...(activeTab !== "staff" || staffParentContractorId !== 1
+                      ? ["is_control_room_license"]
+                      : []),
+                  ]}
                   profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
                   formData={{
                     name: formData.name,

@@ -397,6 +397,8 @@ const STATE_CATEGORY_LABELS_MAP = {
   tas_document: "Tasmania",
   wa_document: "Western Australia",
   sa_document: "South Australia",
+  act_document: "Australian Capital Territory",
+  nt_document: "Northern Territory",
 };
 
 const getDocDisplayName = (doc, showStateLabel = false) => {
@@ -792,6 +794,8 @@ export default function EditProfile() {
     tas: "tas_document",
     wa: "wa_document",
     sa: "sa_document",
+    act: "act_document",
+    nt: "nt_document",
   };
 
   const filteredDocuments = useMemo(() => {
@@ -829,7 +833,7 @@ export default function EditProfile() {
     }
 
     if (userType === "staff") {
-      const contractorCategories = ["contractor_document", "nsw_document", "qld_document", "tas_document", "wa_document", "sa_document"];
+      const contractorCategories = ["contractor_document", "nsw_document", "qld_document", "tas_document", "wa_document", "sa_document", "act_document", "nt_document"];
       const contractorTypes = ["security_master_license", "public_liability", "workcover", "security_membership", "labour_hire", "asic_report"];
       return allDocs.filter((doc) => {
         if (doc.document_category && contractorCategories.includes(doc.document_category)) return false;

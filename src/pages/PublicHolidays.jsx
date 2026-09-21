@@ -14,6 +14,7 @@ const AUSTRALIAN_STATES = [
     { code: 'wa', name: 'Western Australia' },
     { code: 'sa', name: 'South Australia' },
     { code: 'act', name: 'ACT' },
+    { code: 'nt', name: 'Northern Territory' },
 ];
 
 const getMonthLabel = (date) =>

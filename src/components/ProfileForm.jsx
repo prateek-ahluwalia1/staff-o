@@ -58,6 +58,8 @@ export default function ProfileForm({
     { code: "tas", label: "Tasmania" },
     { code: "wa", label: "Western Australia" },
     { code: "sa", label: "South Australia" },
+    { code: "act", label: "Australian Capital Territory" },
+    { code: "nt", label: "Northern Territory" },
   ];
 
   const showCustomStatus =

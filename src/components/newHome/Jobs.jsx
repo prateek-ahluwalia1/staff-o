@@ -10,7 +10,8 @@ const AUSTRALIAN_STATES = [
   "Western Australia",
   "South Australia",
   "Tasmania",
-  "Australian Capital Territory"
+  "Australian Capital Territory",
+  "Northern Territory",
 ];
 
 function mapSiteToState(siteId) {

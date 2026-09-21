@@ -27,6 +27,8 @@ const STATE_CATEGORY_MAP = {
   tas: "tas_document",
   wa: "wa_document",
   sa: "sa_document",
+  act: "act_document",
+  nt: "nt_document",
 };
 const roleLabels = {
   customer: "Client",
@@ -472,7 +474,7 @@ const ManageUsers = () => {
     }
 
     if (activeTab === "staff") {
-      const contractorCategories = ["contractor_document", "nsw_document", "qld_document", "tas_document", "wa_document", "sa_document"];
+      const contractorCategories = ["contractor_document", "nsw_document", "qld_document", "tas_document", "wa_document", "sa_document", "act_document", "nt_document"];
       const contractorTypes = ["security_master_license", "public_liability", "workcover", "security_membership", "labour_hire", "asic_report"];
       const isStaffooStaff = staffParentContractorId === 1;
       const nonStaffooTypes = [

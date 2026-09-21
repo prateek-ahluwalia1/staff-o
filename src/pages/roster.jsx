@@ -34,7 +34,8 @@ const states_array = [
   { label: 'Tasmania', value: 'tas' },
   { label: 'Western Australia', value: 'wa' },
   { label: 'South Australia', value: 'sa' },
-  { label: 'ACT', value: 'act' }
+  { label: 'ACT', value: 'act' },
+  { label: 'Northern Territory', value: 'nt' }
 ];
 
 // react-select theming

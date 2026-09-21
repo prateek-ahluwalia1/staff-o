@@ -36,6 +36,8 @@ const STATE_CATEGORY_ORDER = [
   "tas_document",
   "wa_document",
   "sa_document",
+  "act_document",
+  "nt_document",
 ];
 
 const STATE_CATEGORY_LABELS = {
@@ -45,6 +47,8 @@ const STATE_CATEGORY_LABELS = {
   tas_document: "Tasmania",
   wa_document: "Western Australia",
   sa_document: "South Australia",
+  act_document: "Australian Capital Territory",
+  nt_document: "Northern Territory",
 };
 
 const formatAUSDate = (dateString) => {

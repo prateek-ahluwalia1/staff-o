@@ -426,7 +426,7 @@ const ManageStaff = () => {
   const staffDocuments = useMemo(() => {
     if (!editingUser) return [];
     const rawDocs = editingUser.documents || editingUser.staff?.documents || [];
-    const contractorCategories = ["contractor_document", "nsw_document", "qld_document", "tas_document", "wa_document", "sa_document"];
+    const contractorCategories = ["contractor_document", "nsw_document", "qld_document", "tas_document", "wa_document", "sa_document", "act_document", "nt_document"];
     const contractorTypes = ["security_master_license", "public_liability", "workcover", "security_membership", "labour_hire", "asic_report"];
     const isStaffooStaff = parentContractorId === 1;
     const nonStaffooTypes = [

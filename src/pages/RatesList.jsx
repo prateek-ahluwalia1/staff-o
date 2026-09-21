@@ -26,6 +26,8 @@ const CONTRACTOR_STATES = [
   { value: "wa", label: "Western Australia (WA)" },
   { value: "sa", label: "South Australia (SA)" },
   { value: "tas", label: "Tasmania (TAS)" },
+  { value: "act", label: "Australian Capital Territory (ACT)" },
+  { value: "nt", label: "Northern Territory (NT)" },
 ];
 
 const STATE_NAME_MAP = {

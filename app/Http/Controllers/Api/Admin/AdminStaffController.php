@@ -335,7 +335,7 @@ class AdminStaffController extends Controller
                 'security_license_no' => 'nullable|string|max:100',
                 'date_of_birth' => 'nullable|string',
                 'origin_country' => 'nullable|string',
-                'is_control_room_license' => 'nullable|string'
+                'is_control_room_license' => 'nullable'
 
             ]);
 

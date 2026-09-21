@@ -1280,7 +1280,7 @@ const ManageUsers = () => {
         ? `api/admin/customers-update/${editingUser.id}`
         : `api/admin/customers-store`;
     } else if (activeTab === "sub_contractor") {
-      const contractorId = editingUser.user_id || editingUser.contractor?.user_id || editingUser.id;
+      const contractorId = editingUser?.user_id || editingUser?.contractor?.user_id || editingUser?.id;
       url = editingUser
         ? `api/admin/contractors-update/${contractorId}`
         : `api/admin/contractors-store`;
@@ -1334,7 +1334,6 @@ const ManageUsers = () => {
 
           const userToSet = {
             ...payload,
-            id: newUserId,
             documents: docs,
             staff: createdUser?.staff || {
               phone: payload.phone,

@@ -1587,7 +1587,18 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     const isTasOrSa = useMemo(() => {
         const s = (staffState || "").trim().toLowerCase();
-        return s === "tas" || s === "tasmania" || s === "sa" || s === "south australia";
+        return (
+            s === "tas" ||
+            s === "tasmania" ||
+            s === "sa" ||
+            s === "south australia" ||
+            s === "qld" ||
+            s === "queensland" ||
+            s === "act" ||
+            s === "australian capital territory" ||
+            s === "nt" ||
+            s === "northern territory"
+        );
     }, [staffState]);
 
     const { submit: submitSecurityLicense } = useSubmit({

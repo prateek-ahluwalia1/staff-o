@@ -211,20 +211,6 @@ const getExpiryStatus = (dateString) => {
     return "valid";
 };
 
-const STAFF_DOCUMENT_POINTS = {
-    passport: 70,
-    citizen_ship: 70,
-    medicare: 25,
-    birth_certificate: 25,
-    security_license: 40,
-    driver_license_front: 70,
-    driver_license_back: 0,
-    working_with_children: 0,
-    first_aid: 0,
-    cpr: 0,
-    visa: 0,
-};
-
 const getStaffDocPoints = (doc) => {
     if (!doc) return 0;
     const rawKey = (doc.document_type || doc.document_name || "").toLowerCase().trim();
@@ -254,7 +240,16 @@ const checkIsDocSelfExpiry = (category, fallbackState) => {
             cat === "tasmania" ||
             cat === "sa_document" ||
             cat === "sa" ||
-            cat === "south australia"
+            cat === "south australia" ||
+            cat === "qld_document" ||
+            cat === "qld" ||
+            cat === "queensland" ||
+            cat === "act_document" ||
+            cat === "act" ||
+            cat === "australian capital territory" ||
+            cat === "nt_document" ||
+            cat === "nt" ||
+            cat === "northern territory"
         ) {
             return true;
         }
@@ -265,18 +260,9 @@ const checkIsDocSelfExpiry = (category, fallbackState) => {
             cat === "nsw_document" ||
             cat === "nsw" ||
             cat === "new south wales" ||
-            cat === "qld_document" ||
-            cat === "qld" ||
-            cat === "queensland" ||
             cat === "wa_document" ||
             cat === "wa" ||
-            cat === "western australia" ||
-            cat === "act_document" ||
-            cat === "act" ||
-            cat === "australian capital territory" ||
-            cat === "nt_document" ||
-            cat === "nt" ||
-            cat === "northern territory"
+            cat === "western australia"
         ) {
             return false;
         }
@@ -287,7 +273,13 @@ const checkIsDocSelfExpiry = (category, fallbackState) => {
         raw === "tas" ||
         raw === "tasmania" ||
         raw === "sa" ||
-        raw === "south australia"
+        raw === "south australia" ||
+        raw === "qld" ||
+        raw === "queensland" ||
+        raw === "act" ||
+        raw === "australian capital territory" ||
+        raw === "nt" ||
+        raw === "northern territory"
     );
 };
 
@@ -708,8 +700,8 @@ const StaffooStaff = () => {
                     isSecMasterLicense
                         ? "contractor"
                         : editingUser?.user_type === "sub_contractor"
-                        ? "contractor"
-                        : editingUser?.user_type || docForm.user_type || "staff";
+                            ? "contractor"
+                            : editingUser?.user_type || docForm.user_type || "staff";
 
                 const payload = {
                     document_type: isSecMasterLicense ? "Security Master License" : "Security License",

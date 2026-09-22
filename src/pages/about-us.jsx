@@ -11,13 +11,13 @@ const aboutPageSchema = {
   name: "About Staffoo",
   url: "https://staffoo.com.au/about-us",
   description:
-    "Staffoo is a marketplace connecting Australian businesses with licensed, verified security guards, with zero commission taken from guard pay.",
+    "Staffoo is a marketplace connecting Australian businesses with licensed, verified security staff, with zero commission taken from security staff pay.",
   mainEntity: {
     "@type": "Organization",
     name: "Staffoo",
     url: "https://staffoo.com.au",
     description:
-      "A marketplace platform connecting clients across Australia with independent, licensed security guards.",
+      "A marketplace platform connecting clients across Australia with independent, licensed security staff.",
   },
 };
 
@@ -38,14 +38,14 @@ export default function AboutUs() {
         <title>About Staffoo | Australia's Security Staffing Marketplace</title>
         <meta
           name="description"
-          content="Meet Staffoo, the marketplace connecting Australian businesses with licensed, verified security guards. Read our story, mission and values."
+          content="Meet Staffoo, the marketplace connecting Australian businesses with licensed, verified security staff. Read our story, mission and values."
         />
         <link rel="canonical" href="https://staffoo.com.au/about-us" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="About Staffoo | Australia's Security Staffing Marketplace" />
         <meta
           property="og:description"
-          content="Meet Staffoo, the marketplace connecting Australian businesses with licensed, verified security guards. Read our story, mission and values."
+          content="Meet Staffoo, the marketplace connecting Australian businesses with licensed, verified security staff. Read our story, mission and values."
         />
         <meta property="og:url" content="https://staffoo.com.au/about-us" />
         <link rel="preconnect" href="https://fonts.googleapis.com/" />
@@ -216,7 +216,7 @@ export default function AboutUs() {
           .stf-about-page .about-hero {
             min-height: 0 !important;
             height: auto !important;
-            padding: 70px 0 70px !important;
+            padding: 40px 0 40px !important;
             margin: 0 !important;
             text-align: center !important;
             width: 100% !important;
@@ -632,7 +632,7 @@ export default function AboutUs() {
                 A fairer marketplace for security work in Australia
               </h1>
               <p className="lead">
-                Staffoo connects businesses that need security coverage with independent, licensed guards who pick up the work. No agency in between setting rates, taking a cut or slowing things down.
+                Staffoo connects businesses that need security coverage with independent, licensed security staff who pick up the work. No agency in between setting rates, taking a cut or slowing things down.
               </p>
               <div className="proof">
                 <div className="avatars">
@@ -641,7 +641,7 @@ export default function AboutUs() {
                   <i />
                 </div>
                 <p className="proof-text">
-                  <b>3,100+ licensed guards</b> and a growing number of Australian businesses use Staffoo every week
+                  <b>3,100+ licensed security staff</b> and a growing number of Australian businesses use Staffoo every week
                 </p>
               </div>
             </div>
@@ -654,15 +654,15 @@ export default function AboutUs() {
             <div className="stats-grid">
               <div className="stat">
                 <b data-src="stats.guards.total">3,100+</b>
-                <span>licensed guards</span>
+                <span>licensed security staff</span>
               </div>
               <div className="stat">
-                <b data-src="stats.jobs.open_now">1,240</b>
+                <b data-src="stats.jobs.open_now">139</b>
                 <span>open shifts right now</span>
               </div>
               <div className="stat">
                 <b data-src="stats.platform.guard_commission">0%</b>
-                <span>commission taken from guards</span>
+                <span>commission taken from security staff</span>
               </div>
               <div className="stat">
                 <b data-src="stats.coverage.states">6</b>
@@ -678,10 +678,10 @@ export default function AboutUs() {
             <div className="kicker">Our story</div>
             <h2>Built by people who had worked on both sides of the industry</h2>
             <p>
-              Businesses that needed security coverage were going through an agency, waiting on a quote, and hoping the guard who turned up matched what was promised. Guards on the other side often accepted a shift without knowing exactly what it paid until the job was done. Both were paying, in time or in money, for coordination that a well built platform could handle in seconds.
+              Businesses that needed security coverage were going through an agency, waiting on a quote, and hoping the security staff who turned up matched what was promised. Security staff on the other side often accepted a shift without knowing exactly what it paid until the job was done. Both were paying, in time or in money, for coordination that a well built platform could handle in seconds.
             </p>
             <p>
-              So we built Staffoo: a business posts a shift with its own rate, a licensed guard sees that shift and its pay before accepting, and the booking happens the moment the guard taps accept.
+              So we built Staffoo: a business posts a shift with its own rate, licensed security staff see that shift and its pay before accepting, and the booking happens the moment the security staff tap accept.
             </p>
             <p className="quote-block">
               Our goal was never to replace people with technology. It was to remove the delay and cost that added no real value for either side.
@@ -731,7 +731,7 @@ export default function AboutUs() {
                   </svg>
                 </div>
                 <h3>Fair pay</h3>
-                <p>The rate a client posts is the rate a guard is paid in full, with nothing taken from their earnings.</p>
+                <p>The rate a client posts is the rate security staff are paid in full, with nothing taken from their earnings.</p>
               </div>
               <div className="cov-card">
                 <div className="cov-icon">
@@ -768,7 +768,7 @@ export default function AboutUs() {
                   </svg>
                 </div>
                 <h3>Trust and safety</h3>
-                <p>Every guard holds a current security license, checked before their first shift.</p>
+                <p>All security staff hold a current security license, checked before their first shift.</p>
               </div>
             </div>
           </div>
@@ -779,16 +779,14 @@ export default function AboutUs() {
           <div className="wrap">
             <div className="cta-band">
               <h2>Join the marketplace built for a fairer security industry</h2>
-              <p>Post your first job today, or get verified as a guard and start picking up shifts near you.</p>
+              <p>Post your first job today, or get verified as security staff and start picking up shifts near you.</p>
               <div className="cta-actions">
                 <Link to="/forclients/postajob" className="btn btn-solid btn-lg">
                   Post a job
                 </Link>
-                <Link to="/forstaff/how-to-apply" className="btn btn-outline btn-lg">
-                  Get verified
-                </Link>
+
               </div>
-              <p className="fine">Free to join · No subscription · Zero commission on guard pay</p>
+              <p className="fine">Free to join · No subscription · Zero commission on security staff pay</p>
             </div>
           </div>
         </section>

@@ -51,7 +51,7 @@ export default function SeoGuideSection() {
                 <tr>
                   <td>SA</td>
                   <td>Security agent license (crowd control)</td>
-                  <td>Consumer &amp; Business Services</td>
+                  <td>Consumer and Business Services</td>
                 </tr>
               </tbody>
             </table>

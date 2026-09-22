@@ -8,7 +8,7 @@ export default function WalkthroughSection() {
                     <div className="stf-kicker">Step by step</div>
                     <h2>What the application actually involves</h2>
                     <p>
-                        Three stages, all done in one sitting from your Staffoo app. Nothing is sent away to be reviewed later — each document is checked as it's uploaded, and the only thing standing between you and a live profile is the three activation forms at the end.
+                        Three stages, all done in one sitting from your Staffoo app. Nothing is sent away to be reviewed later each document is checked as it's uploaded, and the only thing standing between you and a live profile is the three activation forms at the end.
                     </p>
                 </div>
 
@@ -40,7 +40,7 @@ export default function WalkthroughSection() {
                                 <span className="stf-tl-time">Verified on the spot</span>
                             </div>
                             <p>
-                                Photograph each document with your phone and upload it. Verification happens immediately as you go — you'll see each one confirmed on screen before you move to the next, so you know straight away if a photo needs retaking.
+                                Photograph each document with your phone and upload it. Verification happens immediately as you go you'll see each one confirmed on screen before you move to the next, so you know straight away if a photo needs retaking.
                             </p>
                             <ul className="stf-tl-list">
                                 <li><b>Security license</b>: Verify your eligibility to work as a licensed security professional.</li>
@@ -51,7 +51,7 @@ export default function WalkthroughSection() {
                                 <li><b>CPR certificate</b> and <b>Working with Children Check</b></li>
                             </ul>
                             <div className="stf-tl-tip">
-                                <b>Tip:</b> the driver license is the only document needing both sides. Everything else is a single photo — check the table below before you start so you're not going back and forth.
+                                <b>Tip:</b> the driver license is the only document needing both sides. Everything else is a single photo check the table below before you start so you're not going back and forth.
                             </div>
                         </div>
 
@@ -62,15 +62,15 @@ export default function WalkthroughSection() {
                                 <span className="stf-tl-time">8–10 minutes</span>
                             </div>
                             <p>
-                                The last step, and the one people most often leave half-finished. All three forms are completed in the app — no printing, no PDFs to email back — and your profile stays inactive until every one is submitted.
+                                The last step, and the one people most often leave half-finished. All three forms are completed in the app no printing, no PDFs to email back and your profile stays inactive until every one is submitted.
                             </p>
                             <ul className="stf-tl-list">
-                                <li><b>Tax file number form</b> — your TFN declaration</li>
-                                <li><b>Superannuation form</b> — your nominated fund and member number</li>
-                                <li><b>Onboarding form</b> — your personal, contact and payment details</li>
+                                <li><b>Tax file number form</b> - your TFN declaration</li>
+                                <li><b>Superannuation form</b> - your nominated fund and member number</li>
+                                <li><b>Onboarding form</b> - your personal, contact and payment details</li>
                             </ul>
                             <div className="stf-tl-tip warnbox">
-                                <b>Important:</b> all three forms are mandatory. Verified documents alone won't activate your profile — you won't see any shifts until the last form is submitted.
+                                <b>Important:all three forms are mandatory. Verified documents alone won't activate your profile you won't see any shifts until the last form is submitted.</b>
                             </div>
                         </div>
                     </div>
@@ -170,7 +170,7 @@ export default function WalkthroughSection() {
                         <div className="stf-side-cta">
                             <h4>Got everything?</h4>
                             <p>Start now and your profile could be live within the hour.</p>
-                            <a href="#" className="stf-btn stf-btn-solid stf-btn-block">Start your application</a>
+                            <a href="/register" className="stf-btn stf-btn-solid stf-btn-block">Start your application</a>
                         </div>
                     </aside>
                 </div>

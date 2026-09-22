@@ -23,13 +23,13 @@ export default function ComparisonSection() {
                         <div className="stf-kicker">Staffoo vs an agency</div>
                         <h2>What changes when there's no agency in the middle</h2>
                         <p>
-                            Agencies exist to coordinate guards on the client's behalf, and that coordination gets paid for out of the gap between what the client pays and what you receive. Staffoo removes the gap: the client posts a rate, you see it, and you're paid it in full.
+                            Agencies exist to coordinate security staff on the client's behalf, and that coordination gets paid for out of the gap between what the client pays and what you receive. Staffoo removes the gap: the client posts a rate, you see it, and you're paid it in full.
                         </p>
                     </div>
                     <table className="stf-compare">
                         <thead>
                             <tr>
-                                <th></th>
+                                <th className="them">What matters</th>
                                 <th className="them">Working through an agency</th>
                                 <th className="us">Working on Staffoo</th>
                             </tr>

@@ -23,15 +23,15 @@ export default function HowToApply() {
         { value: "15 min", label: "to complete the whole thing" },
         { value: "Instant", label: "document verification" },
         { value: "$0", label: "cost to apply or join" },
-        { value: "1,240", label: "shifts open once you're live" },
+        { value: "139", label: "shifts open once you're live" },
     ];
 
     // 2. Staff Story Data
     const applyStory = {
-        category: "Staff story — Sydney",
+        category: "Staff story Sydney",
         title: "Signed up on the bus, live before dinner",
         description: "A crowd controller with six years' experience photographed his license and certificates on the way home from a shift, uploaded them on the bus, and finished the three forms that evening.",
-        quote: '"Every document came back verified as I uploaded it, so I knew nothing was going to bounce later. The forms took ten minutes and that was it — shifts were showing that night."',
+        quote: '"Every document came back verified as I uploaded it, so I knew nothing was going to bounce later. The forms took ten minutes and that was it shifts were showing that night."',
         stats: [
             { value: "15 min", label: "start to finish" },
             { value: "Same day", label: "profile live" },
@@ -45,11 +45,11 @@ export default function HowToApply() {
     const applyFaqs = [
         {
             q: "How long does the application take?",
-            a: "About fifteen minutes in total if your documents are on your phone. Verification is instant as you upload, and the three activation forms take under ten minutes together — most guards finish everything in one sitting.",
+            a: "About fifteen minutes in total if your documents are on your phone. Verification is instant as you upload, and the three activation forms take under ten minutes together most guards finish everything in one sitting.",
         },
         {
             q: "Can I sign up with just my phone number?",
-            a: "No — accounts are created with an email address, and that's what you sign in with each time. We do ask for your mobile number so shift confirmations and site updates can reach you, but it isn't a login method.",
+            a: "No accounts are created with an email address, and that's what you sign in with each time. We do ask for your mobile number so shift confirmations and site updates can reach you, but it isn't a login method.",
         },
         {
             q: "How long does document verification take?",
@@ -61,11 +61,11 @@ export default function HowToApply() {
         },
         {
             q: "Why do I need to complete three forms?",
-            a: "The tax file number and superannuation forms make sure you're taxed correctly and your super goes to the right fund, and the onboarding form captures your contact, emergency and payment details. All three are mandatory — your profile won't go live until the last one is submitted.",
+            a: "The tax file number and superannuation forms make sure you're taxed correctly and your super goes to the right fund, and the onboarding form captures your contact, emergency and payment details. All three are mandatory your profile won't go live until the last one is submitted.",
         },
         {
             q: "My documents are verified but I can't see any shifts. Why?",
-            a: "Almost always because one of the three activation forms is still outstanding. Verified documents alone don't switch your profile on. Check your application tracker — it shows exactly which form is still open.",
+            a: "Almost always because one of the three activation forms is still outstanding. Verified documents alone don't switch your profile on. Check your application tracker it shows exactly which form is still open.",
         },
         {
             q: "Do I need a Working with Children Check?",
@@ -86,7 +86,7 @@ export default function HowToApply() {
     ];
 
     // 4. Coverage Grid Data
-   
+
 
     return (
         <>
@@ -114,7 +114,7 @@ export default function HowToApply() {
                         <div className="stf-breadcrumb">
                             <a className="text-black" href="/">Home</a>
                             <span className="sep">/</span>
-                            <a className="text-black" href="#">For Staff</a>
+                            <a className="text-black" >For Staff</a>
                             <span className="sep">/</span>
                             <span className="current">How to apply</span>
                         </div>
@@ -148,7 +148,7 @@ export default function HowToApply() {
                     title="Fifteen minutes now, shifts tonight"
                     subtitle="Have your license, ID and certificates on your phone, and your tax and super details handy. Documents verify on the spot and your profile goes live as soon as the forms are in."
                     primaryBtnText="Start your application"
-                    primaryBtnUrl="#"
+                    primaryBtnUrl="/register"
                     secondaryBtnText="See what shifts pay"
                     secondaryBtnUrl="#"
                 />

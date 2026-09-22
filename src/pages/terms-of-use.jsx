@@ -11,7 +11,7 @@ export default function TermsOfUse() {
         <title>Terms of Use | Staffoo</title>
         <meta
           name="description"
-          content="The terms that apply to clients, guards, and resource partners using the Staffoo platform to post, accept, and manage security bookings."
+          content="The terms that apply to clients, security staff, and resource partners using the Staffoo platform to post, accept, and manage security bookings."
         />
         <link rel="canonical" href="https://staffoo.com.au/terms-of-use" />
         <link rel="preconnect" href="https://fonts.googleapis.com/" />
@@ -94,7 +94,7 @@ export default function TermsOfUse() {
 
           /* Page Header */
           .stf-terms-page .page-head {
-            padding: 56px 0 40px;
+            padding: 40px 0 40px;
           }
           .stf-terms-page .eyebrow-pill {
             display: inline-flex;
@@ -145,6 +145,15 @@ export default function TermsOfUse() {
             gap: 8px;
             color: var(--ink);
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+          .stf-terms-page .audience-pill:hover {
+            border-color: var(--green);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            color: var(--ink);
           }
           .stf-terms-page .audience-pill .dot {
             width: 7px;
@@ -413,21 +422,22 @@ export default function TermsOfUse() {
           {/* Page Head */}
           <div className="wrap page-head">
             <span className="eyebrow-pill">Legal</span>
-            <h1>Terms of Use</h1>
-
+            <h1>
+              Terms of <span style={{ color: "#0a7c6e" }}>Use</span>
+            </h1>
             <p className="intro">
-              These terms govern how clients, guards, and resource partners use the Staffoo platform. Staffoo is operated by Capital Services Pty Ltd, ABN 48 613 317 838. By creating an account or using Staffoo in any way, you agree to the terms that apply to your account type.
+              These terms govern how clients, security staff, and resource partners use the Staffoo platform. Staffoo is operated by Capital Services Pty Ltd, ABN 48 613 317 838. By creating an account or using Staffoo in any way, you agree to the terms that apply to your account type.
             </p>
             <div className="audience-row">
-              <span className="audience-pill">
+              <a href="#clients" className="audience-pill">
                 <span className="dot" /> Clients
-              </span>
-              <span className="audience-pill">
-                <span className="dot" /> Guards
-              </span>
-              <span className="audience-pill">
+              </a>
+              <a href="#security-staff" className="audience-pill">
+                <span className="dot" /> Security Staff
+              </a>
+              <a href="#partners" className="audience-pill">
                 <span className="dot" /> Resource partners
-              </span>
+              </a>
             </div>
           </div>
 
@@ -444,7 +454,7 @@ export default function TermsOfUse() {
                   <a href="#clients">Terms for clients</a>
                 </li>
                 <li>
-                  <a href="#guards">Terms for Staff</a>
+                  <a href="#security-staff">Terms for Staff</a>
                 </li>
                 <li>
                   <a href="#partners">Terms for resource partners</a>
@@ -482,8 +492,8 @@ export default function TermsOfUse() {
                 <ul>
                   <li>You must provide accurate information when you register and keep it up to date</li>
                   <li>You are responsible for anything that happens under your account, so keep your login details secure</li>
-                  <li>Guards and resource partners must hold the licenses their role requires, and keep them current for as long as they use Staffoo</li>
-                  <li>You must be old enough to work in the security industry under Australian law to register as a guard</li>
+                  <li>Security staff and resource partners must hold the licenses their role requires, and keep them current for as long as they use Staffoo</li>
+                  <li>You must be old enough to work in the security industry under Australian law to register as security staff</li>
                 </ul>
               </section>
 
@@ -493,17 +503,17 @@ export default function TermsOfUse() {
                 <div className="role-note">Applies to businesses and individuals posting security jobs on Staffoo</div>
                 <ul>
                   <li>You post jobs with an accurate description of the role, location, timing, and rate</li>
-                  <li>A booking is confirmed once a guard accepts your posted shift</li>
+                  <li>A booking is confirmed once security staff accepts your posted shift</li>
                   <li>Timesheets submitted after a shift are approved automatically twenty four hours after the shift ends unless you raise a dispute within that window</li>
-                  <li>Bookings may be filled by an independent guard or by a guard employed through a resource partner agency</li>
-                  <li>You are responsible for providing a safe worksite for the guard assigned to your booking</li>
+                  <li>Bookings may be filled by independent security staff or by security staff employed through a resource partner agency</li>
+                  <li>You are responsible for providing a safe worksite for the security staff assigned to your booking</li>
                 </ul>
               </section>
 
-              {/* 3. Guards / Staff */}
-              <section id="guards">
+              {/* 3. Security Staff / Staff */}
+              <section id="security-staff">
                 <h2>Terms for Staff</h2>
-                <div className="role-note">Applies to individual guards working shifts through Staffoo directly</div>
+                <div className="role-note">Applies to individual security staff working shifts through Staffoo directly</div>
                 <ul>
                   <li>You browse available jobs and choose the shifts you want to work</li>
                   <li>Accepting a shift books it instantly, so only accept a shift you can commit to</li>
@@ -516,14 +526,14 @@ export default function TermsOfUse() {
               {/* 4. Resource Partners */}
               <section id="partners">
                 <h2>Terms for resource partners</h2>
-                <div className="role-note">Applies to security agencies that employ their own guards and assign them to bookings</div>
+                <div className="role-note">Applies to security agencies that employ their own security staff and assign them to bookings</div>
                 <ul>
-                  <li>You register your guards on the Staffoo portal and are responsible for verifying their licenses and eligibility to work</li>
-                  <li>You remain the employer of your guards and are responsible for their pay and workplace obligations</li>
-                  <li>You assign your registered guards to bookings through the Staffoo portal</li>
+                  <li>You register your security staff on the Staffoo portal and are responsible for verifying their licenses and eligibility to work</li>
+                  <li>You remain the employer of your security staff and are responsible for their pay and workplace obligations</li>
+                  <li>You assign your registered security staff to bookings through the Staffoo portal</li>
                   <li>You submit a charge rate for each state you operate in. Once approved, a contract is issued for your signature before bookings at that rate begin</li>
                   <li>Client timesheets for your bookings follow the same twenty four hour automatic approval described in the client terms above</li>
-                  <li>Control room operator bookings can only be assigned to guards who hold a valid control room license</li>
+                  <li>Control room operator bookings can only be assigned to security staff who hold a valid control room license</li>
                 </ul>
               </section>
 
@@ -532,7 +542,7 @@ export default function TermsOfUse() {
                 <h2>Payments and fees</h2>
                 <ul>
                   <li>Client payments are collected through our payment processor when a booking is confirmed or a timesheet is approved</li>
-                  <li>Guards are paid the rate set on the job post, on a fortnightly cycle, with no commission deducted</li>
+                  <li>Security staff are paid the rate set on the job post, on a fortnightly cycle, with no commission deducted</li>
                   <li>Resource partner payouts are released through our payment processor once the related timesheet is approved. A platform service fee applies to bookings filled through a resource partner and is set out in your partner contract</li>
                   <li>Invoices are generated automatically and are available in your account</li>
                 </ul>
@@ -542,7 +552,7 @@ export default function TermsOfUse() {
               <section id="conduct">
                 <h2>Acceptable use</h2>
                 <ul>
-                  <li>Do not post false information about a job, a guard, or a business</li>
+                  <li>Do not post false information about a job, security staff, or a business</li>
                   <li>Do not use Staffoo to arrange work outside the platform in order to avoid these terms</li>
                   <li>Do not attempt to access another user's account or interfere with the platform's normal operation</li>
                   <li>Follow all licensing, safety, and workplace laws that apply to security work in your state</li>
@@ -558,7 +568,7 @@ export default function TermsOfUse() {
               {/* 8. Liability */}
               <section id="liability">
                 <h2>Liability</h2>
-                <p>Staffoo provides the platform that connects clients, guards, and resource partners. We are not the employer of independent guards, and we are not the employer of guards placed through a resource partner. To the extent permitted by law, Staffoo is not liable for the conduct of a guard on a shift, the conditions of a client worksite, or disputes between users, though we will assist in good faith to help resolve them. Nothing in this section limits any right you have under the Australian Consumer Law that cannot be excluded.</p>
+                <p>Staffoo provides the platform that connects clients, security staff, and resource partners. We are not the employer of independent security staff, and we are not the employer of security staff placed through a resource partner. To the extent permitted by law, Staffoo is not liable for the conduct of security staff on a shift, the conditions of a client worksite, or disputes between users, though we will assist in good faith to help resolve them. Nothing in this section limits any right you have under the Australian Consumer Law that cannot be excluded.</p>
               </section>
 
               {/* 9. Intellectual Property */}
@@ -587,10 +597,10 @@ export default function TermsOfUse() {
           {/* Subfooter Note */}
 
         </main>
-      </div>
+      </div >
 
       {/* Global Footer */}
-      <Footer />
-    </div>
+      < Footer />
+    </div >
   );
 }

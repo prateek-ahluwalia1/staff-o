@@ -17,17 +17,17 @@ export default function AfterActivationSection() {
                             <div className="stf-mini-box">
                                 <div className="stf-mini-dot"></div>
                                 <div className="stf-mini-line" style={{ width: "48%" }}></div>
-                                <span className="stf-mini-pill">$52/hr</span>
+                                <span className="stf-mini-pill">Active</span>
                             </div>
                             <div className="stf-mini-box">
                                 <div className="stf-mini-dot" style={{ background: "linear-gradient(160deg,#14181C,#075E53)" }}></div>
                                 <div className="stf-mini-line" style={{ width: "56%" }}></div>
-                                <span className="stf-mini-pill">$47/hr</span>
+                                <span className="stf-mini-pill">Active</span>
                             </div>
                             <div className="stf-mini-box">
                                 <div className="stf-mini-dot" style={{ background: "linear-gradient(160deg,#075E53,#0A7C6E)" }}></div>
                                 <div className="stf-mini-line" style={{ width: "42%" }}></div>
-                                <span className="stf-mini-pill">$44/hr</span>
+                                <span className="stf-mini-pill">Active</span>
                             </div>
                         </div>
                         <div className="stf-inside-body">
@@ -70,13 +70,11 @@ export default function AfterActivationSection() {
                         </div>
                         <div className="stf-inside-body">
                             <h3>Work it, then get paid</h3>
-                            <p>Check in on site from your phone. Once the client signs off, your pay is released — usually within two business days.</p>
+                            <p>Check in on site from your phone. Once the client signs off, your pay is released usually within two business days.</p>
                         </div>
                     </div>
                 </div>
-                <p style={{ fontSize: "14.5px", color: "var(--text-secondary)", marginTop: "26px" }}>
-                    More on what the day-to-day looks like on <a href="/forstaff/working-staff" style={{ color: "var(--green-dark)", fontWeight: 600, borderBottom: "1px solid #BFDCCC" }}>working on Staffoo</a>, or read <a href="#" style={{ color: "var(--green-dark)", fontWeight: 600, borderBottom: "1px solid #BFDCCC" }}>how getting paid works</a>.
-                </p>
+
             </div>
         </section>
     );

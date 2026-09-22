@@ -19,7 +19,7 @@ function Ticker() {
           <span>average rating</span>
         </div>
         <div className="nh-stat">
-          <b>34 min</b>
+          <b>3-5 min</b>
           <span>avg. time to fill</span>
         </div>
       </div>

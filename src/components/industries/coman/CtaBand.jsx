@@ -20,11 +20,11 @@ export default function CtaBand({
                 {primaryBtnText}
               </a>
             )}
-            {secondaryBtnText && (
+            {/* {secondaryBtnText && (
               <a href={secondaryBtnUrl || "#"} className="stf-btn stf-btn-outline stf-btn-lg">
                 {secondaryBtnText}
               </a>
-            )}
+            )} */}
           </div>
         </div>
       </div>

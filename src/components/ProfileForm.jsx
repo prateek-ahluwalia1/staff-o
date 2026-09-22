@@ -469,15 +469,22 @@ export default function ProfileForm({
 
     .state-picker-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       gap: 10px;
+    }
+
+    @media (min-width: 992px) {
+      .state-picker-grid {
+        grid-template-columns: repeat(5, 1fr);
+      }
     }
 
     .state-picker-chip {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 11px 14px;
+      gap: 8px;
+      padding: 10px 12px;
+      min-height: 48px;
       border-radius: 10px;
       border: 1.5px solid #e2e8f0;
       background: #f8fafc;
@@ -523,9 +530,10 @@ export default function ProfileForm({
     }
 
     .state-picker-label {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 600;
       color: #475569;
+      line-height: 1.25;
     }
     .state-picker-chip.selected .state-picker-label {
       color: #075e53;

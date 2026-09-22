@@ -113,6 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('documents-online-verification', [StaffController::class, 'documentsOnlineVerification']);
     Route::any('accept-policy/{id}', [StaffController::class, 'updatePolicyAccepted']);
     Route::any('update-coordinates/{userId}', [StaffController::class, 'updateCurrentCoordinates']);
+    Route::get('/licence/search', [StaffController::class, 'searchLicence']);
     
     
     //Staff Forms

@@ -15,6 +15,7 @@ use App\Models\Staff;
 use App\Models\Superannuation;
 use App\Models\TfnDeclaration;
 use App\Models\User;
+use App\Services\NTLicenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +28,41 @@ use Carbon\Carbon;
 
 class StaffController extends Controller
 {
-    
+    public function __construct(private NTLicenceService $licenceService) {}
+
+    public function searchLicence(Request $request)
+    {
+        $request->validate([
+            'licence_number' => 'required|string|min:2|max:50',
+        ]);
+
+        try {
+            $results = $this->licenceService->searchByLicenceNumber(
+                $request->input('licence_number')
+            );
+
+            if (empty($results)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No results found for the given licence number.',
+                    'data'    => [],
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Licence results fetched successfully.',
+                'data'    => $results,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch licence data.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
     private function calculateProfileCompletion(User $user): int
     {
         $baseWeight = 50;

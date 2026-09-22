@@ -1,5 +1,6 @@
 import React from "react";
-import { Link, useLocation, Navigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { Helmet } from "react-helmet";
 
 /* ── Project Design tokens ── */
 const G = "#0A7C6E";
@@ -10,16 +11,19 @@ const TINT = "#F5F8F5";
 const INK = "#14181C";
 const TEXT_SEC = "#5B6660";
 
-export default function ThankYou() {
+export default function StaffThankYou() {
     const location = useLocation();
-    const email = location.state?.email;
-
-    if (!email) {
-        return <Navigate to="/register" replace />;
-    }
+    const searchParams = new URLSearchParams(location.search);
+    const email = location.state?.email || searchParams.get("email");
+    const displayEmail = email || "your email address";
 
     return (
         <>
+            <Helmet>
+                <title>Staff Registration Complete | Staffoo</title>
+                <meta name="description" content="Thank you for registering as security staff with Staffoo. Verify your email to complete onboarding and start receiving job alerts." />
+            </Helmet>
+
             <div style={{
                 minHeight: "calc(100vh - 80px)",
                 background: TINT,
@@ -39,13 +43,34 @@ export default function ThankYou() {
                         borderRadius: "18px",
                         boxShadow: "0 24px 60px rgba(20,24,28,0.08)",
                         padding: "40px 40px 32px",
-                        maxWidth: "520px",
+                        maxWidth: "540px",
                         width: "100%",
                         textAlign: "center"
                     }}>
+                        {/* Role Badge */}
                         <div style={{
-                            width: "64px",
-                            height: "64px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            padding: "6px 14px",
+                            borderRadius: "20px",
+                            background: G_LIGHT,
+                            color: G_DARK,
+                            fontSize: "12.5px",
+                            fontWeight: 700,
+                            letterSpacing: "0.4px",
+                            textTransform: "uppercase",
+                            fontFamily: "'Inter', sans-serif",
+                            marginBottom: "18px"
+                        }}>
+                            <i className="fa-solid fa-user-shield" style={{ fontSize: "12px" }}></i>
+                            Staff Account Created
+                        </div>
+
+                        {/* Icon */}
+                        <div style={{
+                            width: "68px",
+                            height: "68px",
                             borderRadius: "50%",
                             background: G_LIGHT,
                             display: "flex",
@@ -53,57 +78,54 @@ export default function ThankYou() {
                             justifyContent: "center",
                             margin: "0 auto 20px"
                         }}>
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "30px", height: "30px" }}>
-                                <path d="M3 7.5C3 6.11929 4.11929 5 5.5 5H18.5C19.8807 5 21 6.11929 21 7.5V16.5C21 17.8807 19.8807 19 18.5 19H5.5C4.11929 19 3 17.8807 3 16.5V7.5Z" stroke={G} strokeWidth="1.8"></path>
-                                <path d="M4 7L11.1056 11.5528C11.6686 11.9128 12.3314 11.9128 12.8944 11.5528L20 7" stroke={G} strokeWidth="1.8" strokeLinecap="round"></path>
-                            </svg>
+                            <i className="fa-solid fa-user-shield" style={{ fontSize: "24px", color: G_DARK }}></i>
                         </div>
 
                         <h1 style={{
                             fontFamily: "'Barlow Semi Condensed', sans-serif",
-                            fontSize: "26px",
+                            fontSize: "27px",
                             fontWeight: 700,
                             color: INK,
-                            margin: "0 0 10px",
+                            margin: "0 0 12px",
                             letterSpacing: "-0.3px"
                         }}>
-                            Thank you for signing up
+                            Thank you for joining Staffoo!
                         </h1>
 
                         <p style={{
                             color: TEXT_SEC,
-                            fontSize: "15.5px",
+                            fontSize: "15px",
                             lineHeight: 1.6,
-                            margin: "0 0 4px",
+                            margin: "0 0 6px",
                             fontFamily: "'Inter', sans-serif"
                         }}>
-                            We have sent a verification link to
+                            We have sent an activation link to
                         </p>
                         <p style={{
                             color: TEXT_SEC,
-                            fontSize: "15.5px",
+                            fontSize: "15px",
                             lineHeight: 1.6,
-                            margin: "0 0 20px",
+                            margin: "0 0 24px",
                             fontFamily: "'Inter', sans-serif"
                         }}>
-                            <span style={{ color: INK, fontWeight: 700 }}>{email}</span>. Please check your inbox and click the link to activate your account.
+                            <span style={{ color: INK, fontWeight: 700 }}>{displayEmail}</span>. Please check your inbox and click the link to activate your account.
                         </p>
 
                         <div style={{
                             display: "flex",
                             gap: "12px",
                             width: "100%",
-                            marginBottom: "16px"
+                            marginBottom: "24px"
                         }}>
                             <Link to="/" style={{
                                 flex: 1,
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                padding: "12px 22px",
+                                padding: "12px 20px",
                                 borderRadius: "9px",
                                 fontWeight: 700,
-                                fontSize: "15.5px",
+                                fontSize: "14.5px",
                                 textDecoration: "none",
                                 background: TINT,
                                 color: INK,
@@ -127,10 +149,10 @@ export default function ThankYou() {
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                padding: "12px 22px",
+                                padding: "12px 20px",
                                 borderRadius: "9px",
                                 fontWeight: 700,
-                                fontSize: "15.5px",
+                                fontSize: "14.5px",
                                 textDecoration: "none",
                                 background: `linear-gradient(135deg, ${G}, ${G_DARK})`,
                                 color: "#fff",
@@ -139,7 +161,7 @@ export default function ThankYou() {
                                 transition: "all .15s"
                             }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.opacity = "0.85";
+                                    e.currentTarget.style.opacity = "0.88";
                                     e.currentTarget.style.boxShadow = "0 4px 12px rgba(10, 124, 110, 0.25)";
                                 }}
                                 onMouseLeave={(e) => {
@@ -151,42 +173,67 @@ export default function ThankYou() {
                             </Link>
                         </div>
 
+                        {/* Step-by-Step Next Steps */}
                         <div style={{
                             textAlign: "left",
                             borderTop: `1px solid ${BORDER}`,
-                            paddingTop: "16px",
-                            marginBottom: "0"
+                            paddingTop: "20px",
+                            marginBottom: "20px"
                         }}>
+                            <div style={{
+                                fontSize: "13px",
+                                fontWeight: 700,
+                                color: INK,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                                marginBottom: "14px",
+                                fontFamily: "'Inter', sans-serif"
+                            }}>
+                                What happens next?
+                            </div>
+
                             {[
-                                { num: 1, title: "Open your inbox.", desc: "The email arrives within a minute or two of signing up." },
-                                { num: 2, title: "Click the verification link.", desc: "This confirms the email belongs to you." },
-                                { num: 3, title: "Log in and get started.", desc: "Your account is ready the moment it is verified." },
+                                {
+                                    num: 1,
+                                    title: "Verify your email.",
+                                    desc: "Open your inbox and click the verification link. The email arrives within a minute or two."
+                                },
+                                {
+                                    num: 2,
+                                    title: "Complete your onboarding.",
+                                    desc: "Log in to add your state security license, certifications (First Aid, RSA), and bank details."
+                                },
+                                {
+                                    num: 3,
+                                    title: "Get matched with shifts.",
+                                    desc: "Receive instant notifications for security bookings and start accepting jobs that match your schedule."
+                                }
                             ].map((step, idx) => (
                                 <div key={idx} style={{
                                     display: "flex",
                                     gap: "14px",
-                                    marginBottom: idx === 2 ? "0" : "12px"
+                                    marginBottom: idx === 2 ? "0" : "14px"
                                 }}>
                                     <div style={{
-                                        width: "24px",
-                                        height: "24px",
+                                        width: "26px",
+                                        height: "26px",
                                         borderRadius: "50%",
-                                        background: TINT,
-                                        color: TEXT_SEC,
+                                        background: G_LIGHT,
+                                        color: G_DARK,
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
                                         fontSize: "12px",
                                         fontWeight: 800,
                                         flexShrink: 0,
-                                        marginTop: "2px",
+                                        marginTop: "1px",
                                         fontFamily: "'Inter', sans-serif"
                                     }}>
                                         {step.num}
                                     </div>
                                     <p style={{
                                         margin: 0,
-                                        fontSize: "14px",
+                                        fontSize: "13.5px",
                                         color: TEXT_SEC,
                                         lineHeight: 1.5,
                                         fontFamily: "'Inter', sans-serif"
@@ -196,54 +243,33 @@ export default function ThankYou() {
                                 </div>
                             ))}
                         </div>
-                    </div>
-                </main>
 
-                {/* <footer style={{ padding: "26px 0 40px", background: TINT }}>
-                    <div style={{ maxWidth: "1180px", margin: "0 auto", padding: "0 32px", width: "100%" }}>
+                        {/* Security Staff Trust Pill */}
                         <div style={{
+                            background: TINT,
+                            border: `1px solid ${BORDER}`,
+                            borderRadius: "10px",
+                            padding: "12px 14px",
                             display: "flex",
-                            gap: "26px",
+                            alignItems: "center",
+                            justifyContent: "space-between",
                             flexWrap: "wrap",
-                            justifyContent: "center"
+                            gap: "8px",
+                            fontSize: "12.5px",
+                            color: TEXT_SEC,
+                            fontFamily: "'Inter', sans-serif"
                         }}>
-                            {[
-                                "Licence verified",
-                                "Trusted by real clients",
-                                "Secure account access"
-                            ].map((text, idx) => (
-                                <div key={idx} style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "8px",
-                                    fontSize: "13.5px",
-                                    color: TEXT_SEC,
-                                    fontWeight: 600,
-                                    fontFamily: "'Inter', sans-serif"
-                                }}>
-                                    <span style={{
-                                        width: "16px",
-                                        height: "16px",
-                                        borderRadius: "50%",
-                                        background: G,
-                                        color: "#fff",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        fontSize: "9.5px",
-                                        flexShrink: 0
-                                    }}>✓</span>
-                                    {text}
-                                </div>
-                            ))}
+                            <span><i className="fa-solid fa-circle-check" style={{ color: G, marginRight: "6px" }}></i>Direct Payroll</span>
+                            <span><i className="fa-solid fa-circle-check" style={{ color: G, marginRight: "6px" }}></i>Verified Shifts</span>
+                            <span><i className="fa-solid fa-circle-check" style={{ color: G, marginRight: "6px" }}></i>24/7 Support</span>
                         </div>
                     </div>
-                </footer> */}
+                </main>
             </div>
 
             <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@600;700&display=swap');
-      `}</style>
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@600;700&display=swap');
+            `}</style>
         </>
     );
 }

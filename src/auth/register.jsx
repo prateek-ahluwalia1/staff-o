@@ -57,7 +57,6 @@ export default function Register() {
   const [userType, setUserType] = useState(validRoles.includes(incomingRole) ? incomingRole : "");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [pendingAuthAction, setPendingAuthAction] = useState(null);
   const [tempGoogleToken, setTempGoogleToken] = useState(null);
@@ -65,7 +64,7 @@ export default function Register() {
   const [focusedField, setFocusedField] = useState(null);
 
   useEffect(() => {
-    if (showRoleModal || showVerifyModal) {
+    if (showRoleModal) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -73,7 +72,7 @@ export default function Register() {
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [showRoleModal, showVerifyModal]);
+  }, [showRoleModal]);
 
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -183,7 +182,15 @@ export default function Register() {
       if (!normalized?.token) return;
       toast.success("Account created successfully!");
       if (typeof window !== "undefined" && window.fbq) window.fbq("track", "CompleteRegistration");
-      navigate("/thank-you", { state: { email: formData.email } });
+      const thankYouRoutes = {
+        customer: "/client-thank-you",
+        client: "/client-thank-you",
+        contractor: "/partner-thank-you",
+        partner: "/partner-thank-you",
+        staff: "/staff-thank-you",
+      };
+      const targetUrl = thankYouRoutes[userType] || "/staff-thank-you";
+      navigate(targetUrl, { state: { email: formData.email } });
     } else if (pendingAuthAction === "google") {
       try {
         const res = await submit("api/auth/google/callback", { credential: tempGoogleToken, user_type: userType });
@@ -488,8 +495,8 @@ export default function Register() {
                       userType === "customer"
                         ? "/client-terms"
                         : userType === "staff"
-                        ? "/staff-terms"
-                        : "/partner-terms"
+                          ? "/staff-terms"
+                          : "/partner-terms"
                     }
                     target="_blank"
                     rel="noopener noreferrer"
@@ -524,26 +531,6 @@ export default function Register() {
                 {loading ? "Processing..." : "Continue"}
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── EMAIL VERIFY MODAL ── */}
-      {showVerifyModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(20,24,28,0.5)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", overflowY: "auto" }}>
-          <div style={{ background: "#fff", border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "40px", maxWidth: "440px", width: "100%", boxShadow: "0 24px 60px rgba(20,24,28,0.15)", textAlign: "center" }}>
-            <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: G_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
-              <i className="fa-solid fa-envelope-open-text" style={{ fontSize: "28px", color: G }} />
-            </div>
-            <h3 style={{ fontFamily: "'Barlow Semi Condensed', sans-serif", fontSize: "24px", fontWeight: 700, color: INK, marginBottom: "12px" }}>Verify your email</h3>
-            <p style={{ fontSize: "14px", color: TEXT_SEC, marginBottom: "28px", lineHeight: 1.6 }}>
-              We've sent a verification link to{" "}
-              <strong style={{ color: INK }}>{formData.email}</strong>. Please check your inbox and click the link to activate your account.
-            </p>
-            <button type="button" onClick={() => navigate("/login")}
-              style={{ width: "100%", padding: "13px", borderRadius: "9px", background: `linear-gradient(135deg, ${G}, ${G_DARK})`, border: "none", color: "#fff", fontSize: "15px", fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
-              Go to login page
-            </button>
           </div>
         </div>
       )}

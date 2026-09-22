@@ -60,7 +60,9 @@ const ClientTerms = lazy(() => import("./pages/terms/ClientTerms"));
 const StaffTerms = lazy(() => import("./pages/terms/StaffTerms"));
 const ResourcePartnerTerms = lazy(() => import("./pages/terms/ResourcePartnerTerms"));
 const ForPartner = lazy(() => import("./pages/forpartner/For-Partner"));
-const ThankYou = lazy(() => import("./pages/thank-you"));
+const StaffThankYou = lazy(() => import("./pages/StaffThankYou"));
+const ClientThankYou = lazy(() => import("./pages/ClientThankYou"));
+const PartnerThankYou = lazy(() => import("./pages/PartnerThankYou"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Reports = lazy(() => import("./pages/Reports"));
 const TimeSheet = lazy(() => import("./pages/TimeSheet"));
@@ -641,7 +643,9 @@ function AppContent() {
                 {/* Auth */}
                 <Route path="/login" element={<ProtectedRoute guestOnly><Login /></ProtectedRoute>} />
                 <Route path="/register" element={<ProtectedRoute guestOnly><Register /></ProtectedRoute>} />
-                <Route path="/thank-you" element={<ProtectedRoute public><ThankYou /></ProtectedRoute>} />
+                <Route path="/partner-thank-you" element={<ProtectedRoute public><PartnerThankYou /></ProtectedRoute>} />
+                <Route path="/client-thank-you" element={<ProtectedRoute public><ClientThankYou /></ProtectedRoute>} />
+                <Route path="/staff-thank-you" element={<ProtectedRoute public><StaffThankYou /></ProtectedRoute>} />
 
                 {/* Protected Layout */}
                 <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>

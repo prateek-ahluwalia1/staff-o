@@ -131,11 +131,11 @@ export default function ContactUs() {
         </div>
 
         {/* Banner Section */}
-        <section style={{ padding: "80px 0 60px" }}>
+        <section style={{ padding: "40px 0 40px" }}>
           <div className="stf-wrap">
 
-            <h1 style={{ fontSize: "4.5rem", fontWeight: 800, margin: "0 0 24px 0", lineHeight: 1.05, letterSpacing: "-1px" }}>
-              Let&apos;s Build <span style={{ color: "var(--green)" }}>Your Team</span> Faster
+            <h1 style={{ fontSize: "48px", fontWeight: 800, margin: "0 0 24px 0", lineHeight: 1.05, letterSpacing: "-1px" }}>
+              Let&apos;s Build Your <span style={{ color: "var(--green)" }}>Team Faster</span>
             </h1>
             <p style={{ fontSize: "1.125rem", color: "var(--text-secondary)", maxWidth: "650px", lineHeight: 1.6, margin: 0 }}>
               Send us your hiring needs, billing questions, or platform
@@ -150,87 +150,9 @@ export default function ContactUs() {
           <div className="stf-wrap">
             <div className="row g-5">
 
-              {/* Left Column: Contact Info */}
-              <div className="col-lg-5">
-                <div style={{ backgroundColor: "var(--tint)", border: "1px solid var(--border)", borderRadius: "14px", padding: "48px", height: "100%" }}>
-                  <h2 style={{ fontSize: "2.25rem", color: "var(--ink)", margin: "0 0 16px 0" }}>Get in Touch</h2>
-                  <p style={{ color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: "48px", fontSize: "1rem" }}>
-                    Reach us by email, phone, or by using this form. For urgent
-                    account issues, include your registered email and a short
-                    summary so we can prioritize your case.
-                  </p>
-
-                  <ul style={{ listStyle: "none", padding: 0, margin: "0 0 48px 0" }}>
-                    <li style={{ display: "flex", alignItems: "flex-start", marginBottom: "32px", gap: "20px" }}>
-                      <span style={{ color: "var(--green)", fontSize: "1.25rem", marginTop: "4px" }}>
-                        <i className="fa fa-map-marker" aria-hidden="true"></i>
-                      </span>
-                      <div>
-                        <h5 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600 }}>Admin Office</h5>
-                        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.95rem" }}>21 Tanglewood Bvd, Truganina VIC 3029, Australia</p>
-                      </div>
-                    </li>
-                    <li style={{ display: "flex", alignItems: "flex-start", marginBottom: "32px", gap: "20px" }}>
-                      <span style={{ color: "var(--green)", fontSize: "1.25rem", marginTop: "4px" }}>
-                        <i className="fa fa-envelope" aria-hidden="true"></i>
-                      </span>
-                      <div>
-                        <h5 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600 }}>Email</h5>
-                        <a href="mailto:admin@staffoo.com.au" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.95rem", transition: "color 0.2s" }} onMouseEnter={(e) => e.target.style.color = 'var(--green)'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>
-                          admin@staffoo.com.au
-                        </a>
-                      </div>
-                    </li>
-                    <li style={{ display: "flex", alignItems: "flex-start", marginBottom: "32px", gap: "20px" }}>
-                      <span style={{ color: "var(--green)", fontSize: "1.25rem", marginTop: "4px" }}>
-                        <i className="fa fa-phone" aria-hidden="true"></i>
-                      </span>
-                      <div>
-                        <h5 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600 }}>Phone</h5>
-                        <Link to="tel:1800 782 366" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.95rem", transition: "color 0.2s" }} onMouseEnter={(e) => e.target.style.color = 'var(--green)'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>1800 782 366</Link>
-                      </div>
-                    </li>
-                    <li style={{ display: "flex", alignItems: "flex-start", marginBottom: "32px", gap: "20px" }}>
-                      <span style={{ color: "var(--green)", fontSize: "1.25rem", marginTop: "4px" }}>
-                        <i className="fa fa-clock" aria-hidden="true"></i>
-                      </span>
-                      <div>
-                        <h5 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600 }}>Business Hours</h5>
-                        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.95rem" }}>Mon - Fri, 9:00 AM - 6:00 PM (AEST)</p>
-                      </div>
-                    </li>
-                  </ul>
-
-                  <div style={{ display: "flex", gap: "16px" }}>
-                    <Link to="https://www.facebook.com/profile.php?id=61582204185867" target="_blank" rel="noopener noreferrer"
-                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "8px", backgroundColor: "var(--white)", color: "var(--green)", border: "1px solid var(--border)", textDecoration: "none", fontSize: "1.2rem", transition: "all 0.2s ease" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--green)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--green)' }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--white)'; e.currentTarget.style.color = 'var(--green)'; e.currentTarget.style.borderColor = 'var(--border)' }}
-                    >
-                      <i className="fab fa-facebook" aria-hidden="true"></i>
-                    </Link>
-                    <Link to="https://www.instagram.com/staffoo_/" target="_blank" rel="noopener noreferrer"
-                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "8px", backgroundColor: "var(--white)", color: "var(--green)", border: "1px solid var(--border)", textDecoration: "none", fontSize: "1.2rem", transition: "all 0.2s ease" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--green)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--green)' }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--white)'; e.currentTarget.style.color = 'var(--green)'; e.currentTarget.style.borderColor = 'var(--border)' }}
-                    >
-                      <i className="fab fa-instagram" aria-hidden="true"></i>
-                    </Link>
-                    <Link to="https://www.linkedin.com/company/staff-o/" target="_blank" rel="noopener noreferrer"
-                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "8px", backgroundColor: "var(--white)", color: "var(--green)", border: "1px solid var(--border)", textDecoration: "none", fontSize: "1.2rem", transition: "all 0.2s ease" }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--green)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--green)' }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--white)'; e.currentTarget.style.color = 'var(--green)'; e.currentTarget.style.borderColor = 'var(--border)' }}
-                    >
-                      <i className="fab fa-linkedin" aria-hidden="true"></i>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Form */}
               <div className="col-lg-7">
                 <div style={{ backgroundColor: "var(--white)", border: "1px solid var(--border)", borderRadius: "14px", padding: "48px", height: "100%", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
-                  <h2 style={{ fontSize: "2.25rem", color: "var(--ink)", margin: "0 0 16px 0" }}>Send a Message</h2>
+                  <h2 style={{ fontSize: "1.80rem", color: "var(--ink)", margin: "0 0 16px 0" }}>Send a Message</h2>
                   <p style={{ color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: "40px", fontSize: "1rem" }}>
                     Tell us what you need and we will route your message to the
                     right team.
@@ -420,6 +342,86 @@ export default function ContactUs() {
                   </form>
                 </div>
               </div>
+
+              {/* Left Column: Contact Info */}
+              <div className="col-lg-5">
+                <div style={{ backgroundColor: "var(--tint)", border: "1px solid var(--border)", borderRadius: "14px", padding: "48px", height: "100%" }}>
+                  <h2 style={{ fontSize: "1.80rem", color: "var(--ink)", margin: "0 0 16px 0" }}>Get in Touch</h2>
+                  <p style={{ color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: "48px", fontSize: "1rem" }}>
+                    Reach us by email, phone, or by using this form. For urgent
+                    account issues, include your registered email and a short
+                    summary so we can prioritize your case.
+                  </p>
+
+                  <ul style={{ listStyle: "none", padding: 0, margin: "0 0 48px 0" }}>
+                    <li style={{ display: "flex", alignItems: "flex-start", marginBottom: "32px", gap: "20px" }}>
+                      <span style={{ color: "var(--green)", fontSize: "1.25rem", marginTop: "4px" }}>
+                        <i className="fa fa-map-marker" aria-hidden="true"></i>
+                      </span>
+                      <div>
+                        <h5 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600 }}>Admin Office</h5>
+                        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.95rem" }}>21 Tanglewood Bvd, Truganina VIC 3029, Australia</p>
+                      </div>
+                    </li>
+                    <li style={{ display: "flex", alignItems: "flex-start", marginBottom: "32px", gap: "20px" }}>
+                      <span style={{ color: "var(--green)", fontSize: "1.25rem", marginTop: "4px" }}>
+                        <i className="fa fa-envelope" aria-hidden="true"></i>
+                      </span>
+                      <div>
+                        <h5 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600 }}>Email</h5>
+                        <a href="mailto:admin@staffoo.com.au" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.95rem", transition: "color 0.2s" }} onMouseEnter={(e) => e.target.style.color = 'var(--green)'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>
+                          admin@staffoo.com.au
+                        </a>
+                      </div>
+                    </li>
+                    <li style={{ display: "flex", alignItems: "flex-start", marginBottom: "32px", gap: "20px" }}>
+                      <span style={{ color: "var(--green)", fontSize: "1.25rem", marginTop: "4px" }}>
+                        <i className="fa fa-phone" aria-hidden="true"></i>
+                      </span>
+                      <div>
+                        <h5 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600 }}>Phone</h5>
+                        <Link to="tel:1800 782 366" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.95rem", transition: "color 0.2s" }} onMouseEnter={(e) => e.target.style.color = 'var(--green)'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>1800 782 366</Link>
+                      </div>
+                    </li>
+                    <li style={{ display: "flex", alignItems: "flex-start", marginBottom: "32px", gap: "20px" }}>
+                      <span style={{ color: "var(--green)", fontSize: "1.25rem", marginTop: "4px" }}>
+                        <i className="fa fa-clock" aria-hidden="true"></i>
+                      </span>
+                      <div>
+                        <h5 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", color: "var(--ink)", fontWeight: 600 }}>Business Hours</h5>
+                        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.95rem" }}>Mon - Fri, 9:00 AM - 6:00 PM (AEST)</p>
+                      </div>
+                    </li>
+                  </ul>
+
+                  <div style={{ display: "flex", gap: "16px" }}>
+                    <Link to="https://www.facebook.com/profile.php?id=61582204185867" target="_blank" rel="noopener noreferrer"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "8px", backgroundColor: "var(--white)", color: "var(--green)", border: "1px solid var(--border)", textDecoration: "none", fontSize: "1.2rem", transition: "all 0.2s ease" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--green)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--green)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--white)'; e.currentTarget.style.color = 'var(--green)'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                    >
+                      <i className="fab fa-facebook" aria-hidden="true"></i>
+                    </Link>
+                    <Link to="https://www.instagram.com/staffoo_/" target="_blank" rel="noopener noreferrer"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "8px", backgroundColor: "var(--white)", color: "var(--green)", border: "1px solid var(--border)", textDecoration: "none", fontSize: "1.2rem", transition: "all 0.2s ease" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--green)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--green)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--white)'; e.currentTarget.style.color = 'var(--green)'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                    >
+                      <i className="fab fa-instagram" aria-hidden="true"></i>
+                    </Link>
+                    <Link to="https://www.linkedin.com/company/staff-o/" target="_blank" rel="noopener noreferrer"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "44px", height: "44px", borderRadius: "8px", backgroundColor: "var(--white)", color: "var(--green)", border: "1px solid var(--border)", textDecoration: "none", fontSize: "1.2rem", transition: "all 0.2s ease" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--green)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--green)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--white)'; e.currentTarget.style.color = 'var(--green)'; e.currentTarget.style.borderColor = 'var(--border)' }}
+                    >
+                      <i className="fab fa-linkedin" aria-hidden="true"></i>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Form */}
+
 
             </div>
           </div>

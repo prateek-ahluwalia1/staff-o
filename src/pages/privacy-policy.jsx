@@ -11,7 +11,7 @@ export default function PrivacyPolicy() {
         <title>Privacy Policy | Staffoo</title>
         <meta
           name="description"
-          content="How Staffoo collects, uses, and protects the personal information of clients, guards, and resource partners on the Staffoo platform."
+          content="How Staffoo collects, uses, and protects the personal information of clients, security staff, and resource partners on the Staffoo platform."
         />
         <link rel="canonical" href="https://staffoo.com.au/privacy-policy" />
         <link rel="preconnect" href="https://fonts.googleapis.com/" />
@@ -447,10 +447,10 @@ export default function PrivacyPolicy() {
         <main>
           {/* Page Head */}
           <div className="wrap page-head">
-            <span className="eyebrow-pill">Legal</span>
-            <h1>Privacy Policy</h1>
+            <span className="eyebrow-pill">Privacy Policy</span>
+            <h1 style={{ fontSize: "48px" }}>How we handle <span style={{ color: "#0a7c6e" }}> your information</span></h1>
             <p className="intro">
-              This policy explains what personal information Staffoo collects from clients, guards, and resource partners, why we collect it, and how we keep it safe. Staffoo is operated by Capital Services Pty Ltd, ABN 48 613 317 838.
+              This policy explains what personal information Staffoo collects from clients, security staff, and resource partners, why we collect it, and how we keep it safe. Staffoo is operated by Capital Services Pty Ltd, ABN 48 613 317 838.
             </p>
           </div>
 
@@ -518,7 +518,7 @@ export default function PrivacyPolicy() {
                 <h3>If you sign up as a resource partner</h3>
                 <ul>
                   <li>Your business name, license details.</li>
-                  <li>Details of the guards you employ and register on the platform</li>
+                  <li>Details of the security staff you employ and register on the platform</li>
                   <li>Charge rate requests and the contracts generated once a rate is approved</li>
                   <li>Payout details, processed securely through our payment provider</li>
                 </ul>
@@ -535,7 +535,7 @@ export default function PrivacyPolicy() {
                 <h2>How we use it</h2>
                 <ul>
                   <li>To verify your identity and confirm your licenses meet security industry requirements</li>
-                  <li>To match guards with jobs, and to let clients and resource partners post and fill bookings</li>
+                  <li>To match security staff with jobs, and to let clients and resource partners post and fill bookings</li>
                   <li>To process pay, invoices, and payouts</li>
                   <li>To generate contracts and rate cards, and to capture your signature on them</li>
                   <li>To send you shift confirmations, messages, and notifications relevant to your account</li>
@@ -559,15 +559,15 @@ export default function PrivacyPolicy() {
                     <tbody>
                       <tr>
                         <td>Resource partners</td>
-                        <td>Booking and shift details for the guards they employ, so they can assign and manage their team</td>
+                        <td>Booking and shift details for the security staff they employ, so they can assign and manage their team</td>
                       </tr>
                       <tr>
                         <td>Clients</td>
-                        <td>The name, license status, and relevant experience of the guard assigned to their booking</td>
+                        <td>The name, license status, and relevant experience of the security staff assigned to their booking</td>
                       </tr>
                       <tr>
                         <td>Payment processor</td>
-                        <td>Payment and payout details, to process client payments and pay guards and resource partners</td>
+                        <td>Payment and payout details, to process client payments and pay security staff and resource partners</td>
                       </tr>
                       <tr>
                         <td>Email delivery provider</td>
@@ -619,7 +619,7 @@ export default function PrivacyPolicy() {
               <section id="children">
                 <h2>Information about minors</h2>
                 <p>
-                  Staffoo is intended for people old enough to work in the security industry under Australian law. We do not knowingly collect personal information from children. Where a guard is required to hold a working with children check for a job, we collect only the check result needed to confirm their eligibility.
+                  Staffoo is intended for people old enough to work in the security industry under Australian law. We do not knowingly collect personal information from children. Where a security staff is required to hold a working with children check for a job, we collect only the check result needed to confirm their eligibility.
                 </p>
               </section>
 
@@ -649,10 +649,10 @@ export default function PrivacyPolicy() {
           {/* Subfooter Jurisdiction Note */}
 
         </main>
-      </div>
+      </div >
 
       {/* Global Footer */}
-      <Footer />
-    </div>
+      < Footer />
+    </div >
   );
 }

@@ -132,7 +132,7 @@ function Header() {
                 <NavLink to="/contact-us" onClick={handleLinkClick}>Contact</NavLink>
                 <NavLink to="/privacy-policy" onClick={handleLinkClick}>Privacy Policy</NavLink>
                 <NavLink to="/terms-of-use" onClick={handleLinkClick}>Terms of Use</NavLink>
-                <NavLink to="/partner-terms" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>Partner Terms</NavLink>
+                {/* <NavLink to="/partner-terms" target="_blank" rel="noopener noreferrer" onClick={handleLinkClick}>Partner Terms</NavLink> */}
               </div>
             </div>
           </nav>

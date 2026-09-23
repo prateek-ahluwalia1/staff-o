@@ -408,7 +408,7 @@ const STATE_CATEGORY_LABELS_MAP = {
 const getDocDisplayName = (doc, showStateLabel = false) => {
   const baseName = DOC_LABEL_MAP[doc.document_type] || doc.document_name || doc.document_type || "Document";
   const stateLabel = STATE_CATEGORY_LABELS_MAP[doc.document_category];
-  if (showStateLabel && stateLabel) {
+  if (showStateLabel && stateLabel && doc.document_category !== "company_document") {
     return `${baseName} (${stateLabel})`;
   }
   return baseName;
@@ -833,7 +833,30 @@ export default function EditProfile() {
       const allowedCategories = (formData.states_allowed || [])
         .map((code) => STATE_CATEGORY_MAP[code])
         .filter(Boolean);
-      return allDocs.filter((doc) => allowedCategories.includes(doc.document_category));
+
+      const commonContractorTypes = ["public_liability", "asic_report", "security_membership"];
+      const commonDocsMap = new Map();
+      const stateDocs = [];
+
+      allDocs.forEach((doc) => {
+        const normType = (doc.document_type || doc.document_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const matchedCommon = commonContractorTypes.find((ct) => normType.includes(ct.replace(/[^a-z0-9]/g, "")));
+
+        if (matchedCommon) {
+          const existing = commonDocsMap.get(matchedCommon);
+          const hasFile = Boolean(doc.file || doc.file_path);
+          if (!existing || (!existing.file && !existing.file_path && hasFile)) {
+            commonDocsMap.set(matchedCommon, {
+              ...doc,
+              document_category: doc.document_category || "company_document",
+            });
+          }
+        } else if (allowedCategories.includes(doc.document_category)) {
+          stateDocs.push(doc);
+        }
+      });
+
+      return [...Array.from(commonDocsMap.values()), ...stateDocs];
     }
 
     if (userType === "staff") {

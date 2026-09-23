@@ -298,16 +298,40 @@ function DocumentSectionBody({ docs, onAddFile, showDocErrors, userType, isStaff
   );
 }
 
-/* ── Collapsible header bar used above each state's document set ── */
-function StateGroupHeader({ label, uploaded, total, expanded, onToggle }) {
+/* ── Collapsible header bar used above company docs and each state's document set ── */
+function StateGroupHeader({
+  label,
+  subtitle,
+  icon = "fa-location-dot",
+  uploaded,
+  total,
+  expanded,
+  onToggle,
+  isCompany = false,
+}) {
   const allDone = total > 0 && uploaded === total;
   return (
-    <button type="button" className="state-group-bar" onClick={onToggle}>
+    <button
+      type="button"
+      className={`state-group-bar ${isCompany ? "company-group-bar" : ""}`}
+      onClick={onToggle}
+      title={`Click to ${expanded ? "collapse" : "expand"} ${label}`}
+    >
       <span className="state-group-bar-left">
-        <span className="state-group-icon">
-          <i className="fa-solid fa-location-dot"></i>
+        <span className={`state-group-icon ${isCompany ? "company-icon" : ""}`}>
+          <i className={`fa-solid ${icon}`}></i>
         </span>
-        <span className="state-group-title">{label}</span>
+        <span className="state-group-title-wrap">
+          <span className="state-group-title">{label}</span>
+          {subtitle && (
+            <span
+              className="state-group-subtitle d-none d-md-inline ms-2 text-muted"
+              style={{ fontSize: "0.8rem", fontWeight: 500 }}
+            >
+              {subtitle}
+            </span>
+          )}
+        </span>
       </span>
       <span className="state-group-bar-right">
         <span className={`state-group-progress ${allDone ? "complete" : ""}`}>
@@ -347,14 +371,18 @@ const DEFAULT_CONTRACTOR_STAFF_DOC_TEMPLATES = [
   { document_name: "RSA Certificate", document_type: "rsa_certificate" },
 ];
 
-const DEFAULT_CONTRACTOR_DOC_TEMPLATES = [
-  { document_name: "Security Master License", document_type: "security_master_license" },
+const COMMON_CONTRACTOR_DOC_TEMPLATES = [
   { document_name: "Public Liability", document_type: "public_liability" },
-  { document_name: "Workcover", document_type: "workcover" },
-  { document_name: "Security Industry Membership Certificate", document_type: "security_membership" },
-  { document_name: "Labour Hire", document_type: "labour_hire" },
   { document_name: "ASIC Report", document_type: "asic_report" },
+  { document_name: "Security Industry Membership Certificate", document_type: "security_membership" },
 ];
+
+const STATE_CONTRACTOR_DOC_TEMPLATES = [
+  { document_name: "Security Master License", document_type: "security_master_license" },
+  { document_name: "Workcover", document_type: "workcover" },
+  { document_name: "Labour Hire", document_type: "labour_hire" },
+];
+
 
 const normalizeKey = (str) => {
   if (!str) return "";
@@ -451,8 +479,41 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
     });
   }, [documents, userType, isStaffooStaff]);
 
-  // Contractors: group documents by state (document_category) — each state
-  // has its own repeated set of document types (public_liability, workcover, etc).
+  // Common company documents (Public Liability, ASIC Report, Membership Certificate)
+  // These are common across all states for contractors.
+  const commonCompanyDocs = useMemo(() => {
+    if (userType !== "contractor" && userType !== "admin") return [];
+    const incomingDocs = Array.isArray(documents) ? documents : [];
+    const usedIds = new Set();
+
+    return COMMON_CONTRACTOR_DOC_TEMPLATES.map((tmpl) => {
+      const matches = incomingDocs.filter(
+        (d) => !usedIds.has(d.id || d) && matchDoc(tmpl, d)
+      );
+      const found = matches.find((d) => d.file || d.file_path) || matches[0];
+      if (found) {
+        if (found.id) usedIds.add(found.id);
+        else usedIds.add(found);
+        return {
+          ...found,
+          document_name: found.document_name || tmpl.document_name,
+          document_type: found.document_type || tmpl.document_type,
+          document_category: found.document_category || "company_document",
+        };
+      }
+      return {
+        id: `temp_common_${tmpl.document_type}`,
+        document_name: tmpl.document_name,
+        document_type: tmpl.document_type,
+        document_category: "company_document",
+        file: null,
+        document_no: "",
+        document_expiry: "",
+      };
+    });
+  }, [documents, userType]);
+
+  // Contractors: group state-specific documents by state (document_category)
   const stateGroups = useMemo(() => {
     if (userType !== "contractor" && userType !== "admin") return null;
     const incomingDocs = Array.isArray(documents) ? documents : [];
@@ -465,9 +526,12 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
     });
 
     return STATE_CATEGORY_ORDER.filter((cat) => byCategory[cat]?.length).map((cat) => {
-      const catDocs = byCategory[cat] || [];
+      // Exclude common company docs from state sets
+      const catDocs = (byCategory[cat] || []).filter(
+        (d) => !COMMON_CONTRACTOR_DOC_TEMPLATES.some((tmpl) => matchDoc(tmpl, d))
+      );
       const usedIds = new Set();
-      const mergedCatDocs = DEFAULT_CONTRACTOR_DOC_TEMPLATES.map((tmpl) => {
+      const mergedCatDocs = STATE_CONTRACTOR_DOC_TEMPLATES.map((tmpl) => {
         const found = catDocs.find(
           (d) => !usedIds.has(d.id || d) && matchDoc(tmpl, d)
         );
@@ -495,7 +559,7 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
       const extraCatDocs = catDocs.filter(
         (d) =>
           !usedIds.has(d.id || d) &&
-          !DEFAULT_CONTRACTOR_DOC_TEMPLATES.some((tmpl) => matchDoc(tmpl, d)) &&
+          !STATE_CONTRACTOR_DOC_TEMPLATES.some((tmpl) => matchDoc(tmpl, d)) &&
           (d.document_type || d.document_name)
       );
 
@@ -564,12 +628,29 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
         text-align: left;
       }
       .state-group-bar:hover { background: #eafaf3; }
+      .company-group-bar {
+        background: linear-gradient(90deg, #f0fdf9 0%, #ffffff 65%);
+        border-left: 4px solid #0f766e;
+      }
+      .company-group-bar:hover { background: #e6f7f2; }
       .state-group-bar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
       .state-group-icon {
         width: 30px; height: 30px; border-radius: 50%;
         background: #0A7C6E; color: #fff;
         display: flex; align-items: center; justify-content: center;
         font-size: 0.8rem; flex-shrink: 0;
+      }
+      .company-icon {
+        background: #0f766e;
+      }
+      .state-docs-divider {
+        padding: 14px 24px 8px;
+        background: #f8fafc;
+        border-top: 2px solid #e2e8f0;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
       }
       .state-group-title {
         font-size: 0.95rem; font-weight: 750; color: #0f172a;
@@ -766,36 +847,86 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
   );
 
   if (userType === "contractor" || userType === "admin") {
+    const commonUploaded = commonCompanyDocs.filter((d) => d.file || d.file_path).length;
+    const isCompanyExpanded = collapsedGroups["company_document"] !== true;
+
     return (
       <div className="document-table-wrapper">
         {sharedStyles}
         <div className="table-header">
           <h3>Documents</h3>
-          <p>Documents required for each state you operate in.</p>
+          <p>Upload your company documents and state-specific operating documents.</p>
         </div>
-        {stateGroups && stateGroups.length > 0 ? (
-          stateGroups.map((group) => {
-            const expanded = collapsedGroups[group.category] !== true; // default expanded
-            const uploaded = group.docs.filter((d) => d.file).length;
-            return (
-              <div className="state-group-wrapper" key={group.category}>
-                <StateGroupHeader
-                  label={group.label}
-                  uploaded={uploaded}
-                  total={group.docs.length}
-                  expanded={expanded}
-                  onToggle={() => toggleGroup(group.category)}
-                />
-                {expanded && <DocumentSectionBody docs={group.docs} onAddFile={onAddFile} showDocErrors={showDocErrors} userType={userType} isStaffooStaff={false} />}
-              </div>
-            );
-          })
-        ) : (
-          <div className="text-center text-muted py-5" style={{ textTransform: "none" }}>
-            <i className="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
-            No states selected yet. Select your operating states from previous step to view the required documents.
+
+        {/* ── Separate Section: Company Documents (Common for all states) ── */}
+        <div className="company-docs-wrapper">
+          <div className="state-group-wrapper">
+            <StateGroupHeader
+              label="Company Documents"
+              subtitle="(Applies across all operating states)"
+              icon="fa-building"
+              isCompany={true}
+              uploaded={commonUploaded}
+              total={commonCompanyDocs.length}
+              expanded={isCompanyExpanded}
+              onToggle={() => toggleGroup("company_document")}
+            />
+            {isCompanyExpanded && (
+              <DocumentSectionBody
+                docs={commonCompanyDocs}
+                onAddFile={onAddFile}
+                showDocErrors={showDocErrors}
+                userType={userType}
+                isStaffooStaff={false}
+              />
+            )}
           </div>
-        )}
+        </div>
+
+        {/* ── Separate Section: State Specific Documents ── */}
+        <div className="state-docs-wrapper">
+          <div className="state-docs-divider">
+            <span style={{ fontSize: "0.82rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", color: "#475569" }}>
+              <i className="fa-solid fa-map-location-dot me-2" style={{ color: "#0A7C6E" }}></i>
+              State Specific Documents
+            </span>
+            <span className="text-muted d-none d-sm-inline" style={{ fontSize: "0.78rem" }}>
+              Licenses and permits for operating states
+            </span>
+          </div>
+
+          {stateGroups && stateGroups.length > 0 ? (
+            stateGroups.map((group) => {
+              const expanded = collapsedGroups[group.category] !== true;
+              const uploaded = group.docs.filter((d) => d.file || d.file_path).length;
+              return (
+                <div className="state-group-wrapper" key={group.category}>
+                  <StateGroupHeader
+                    label={group.label}
+                    uploaded={uploaded}
+                    total={group.docs.length}
+                    expanded={expanded}
+                    onToggle={() => toggleGroup(group.category)}
+                  />
+                  {expanded && (
+                    <DocumentSectionBody
+                      docs={group.docs}
+                      onAddFile={onAddFile}
+                      showDocErrors={showDocErrors}
+                      userType={userType}
+                      isStaffooStaff={false}
+                    />
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center text-muted py-4" style={{ textTransform: "none" }}>
+              <i className="fa-regular fa-folder-open fa-2x mb-2 d-block opacity-50"></i>
+              No operating states selected yet. Select your operating states from the previous step to view state-specific licenses.
+            </div>
+          )}
+        </div>
       </div>
     );
   }

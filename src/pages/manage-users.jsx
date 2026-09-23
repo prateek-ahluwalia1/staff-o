@@ -468,13 +468,35 @@ const ManageUsers = () => {
         .map((code) => STATE_CATEGORY_MAP[code])
         .filter(Boolean);
 
+      const commonContractorTypes = ["public_liability", "asic_report", "security_membership"];
+      const commonDocsMap = new Map();
+      const stateDocs = [];
+
+      docs.forEach((doc) => {
+        const normType = (doc.document_type || doc.document_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const matchedCommon = commonContractorTypes.find((ct) => normType.includes(ct.replace(/[^a-z0-9]/g, "")));
+
+        if (matchedCommon) {
+          const existing = commonDocsMap.get(matchedCommon);
+          const hasFile = Boolean(doc.file || doc.file_path);
+          if (!existing || (!existing.file && !existing.file_path && hasFile)) {
+            commonDocsMap.set(matchedCommon, {
+              ...doc,
+              document_category: doc.document_category || "company_document",
+            });
+          }
+        } else if (allowedCategories.includes(doc.document_category)) {
+          stateDocs.push(doc);
+        }
+      });
+
       if (docs.length === 0 && allowedCategories.length > 0) {
         return allowedCategories.map((cat) => ({
           document_category: cat,
         }));
       }
 
-      return docs.filter((doc) => allowedCategories.includes(doc.document_category));
+      return [...Array.from(commonDocsMap.values()), ...stateDocs];
     }
 
     if (activeTab === "staff") {

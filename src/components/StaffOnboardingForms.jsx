@@ -1592,8 +1592,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             s === "tasmania" ||
             s === "sa" ||
             s === "south australia" ||
-            s === "qld" ||
-            s === "queensland" ||
             s === "act" ||
             s === "australian capital territory" ||
             s === "nt" ||

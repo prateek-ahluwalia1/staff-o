@@ -107,9 +107,6 @@ const checkIsDocSelfExpiry = (category, fallbackState) => {
       cat === "sa_document" ||
       cat === "sa" ||
       cat === "south australia" ||
-      cat === "qld_document" ||
-      cat === "qld" ||
-      cat === "queensland" ||
       cat === "act_document" ||
       cat === "act" ||
       cat === "australian capital territory" ||
@@ -126,6 +123,9 @@ const checkIsDocSelfExpiry = (category, fallbackState) => {
       cat === "nsw_document" ||
       cat === "nsw" ||
       cat === "new south wales" ||
+      cat === "qld_document" ||
+      cat === "qld" ||
+      cat === "queensland" ||
       cat === "wa_document" ||
       cat === "wa" ||
       cat === "western australia"
@@ -140,8 +140,6 @@ const checkIsDocSelfExpiry = (category, fallbackState) => {
     raw === "tasmania" ||
     raw === "sa" ||
     raw === "south australia" ||
-    raw === "qld" ||
-    raw === "queensland" ||
     raw === "act" ||
     raw === "australian capital territory" ||
     raw === "nt" ||

@@ -586,7 +586,7 @@ private function sendJobInvoice(
             }
         }
 
- public function getContractorStaff(Request $request, $id)
+public function getContractorStaff(Request $request, $id)
 {
     $query = User::where('user_id', $id)
         ->where('user_type', 'staff')
@@ -633,7 +633,7 @@ private function sendJobInvoice(
         ];
 
         $input  = strtolower(trim($request->state));
-        $values = [$input]; // fallback
+        $values = [$input];
 
         foreach ($stateMap as $aliases) {
             if (in_array($input, $aliases, true)) {
@@ -650,12 +650,12 @@ private function sendJobInvoice(
         $query->where('country', $request->country);
     }
 
-    // Order
     $query->orderBy('created_at', 'desc');
 
-    // If limit is passed → paginate with that limit; otherwise return all
+    // If limit is passed → paginate; otherwise return all
     if ($request->filled('limit')) {
-        $guards = $query->paginate((int) $request->limit);
+        $paginator = $query->paginate((int) $request->limit);
+        $guards    = collect($paginator->items()); // <-- unwrap the array
     } else {
         $guards = $query->get();
     }
@@ -669,7 +669,6 @@ private function sendJobInvoice(
         ]);
     }
 
-    // Calculate profile completion for each staff member
     foreach ($guards as $staff) {
         $this->calculateStaffProfileCompletion($staff);
     }

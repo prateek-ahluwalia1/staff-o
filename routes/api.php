@@ -313,6 +313,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('customers/{id}/toggle-status', [CustomerController::class, 'toggleStatus']);
 
         Route::get('get-staff', [AdminStaffController::class, 'index']);
+        Route::get('get-rp-staff', [AdminStaffController::class, 'getRPStaff']);
         Route::get('get-staffoo-staff', [AdminStaffController::class, 'staffooStaff']);
         Route::any('update-staff/{id}',  [AdminStaffController::class, 'updateStaff'])->name('update.staff');
         Route::any('create-staff',  [AdminStaffController::class, 'createStaff'])->name('create.staff');

@@ -96,6 +96,82 @@ class AdminStaffController extends Controller
         ]);
     }
 
+    public function getRPStaff(Request $request)
+    {
+        $query = User::where('user_type', 'staff')->where('user_id', '!=', 1)
+            ->with('staff', 'documents');
+
+        // Search functionality
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->has('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', 1);
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', 0);
+            }
+        }
+
+        // Filter by city/state/country
+        if ($request->has('city')) {
+            $query->where('city', $request->city);
+        }
+        
+         if ($request->filled('state')) {
+            $stateMap = [
+                'vic' => ['vic', 'victoria'],
+                'nsw' => ['nsw', 'new south wales'],
+                'qld' => ['qld', 'queensland'],
+                'sa'  => ['sa',  'south australia'],
+                'wa'  => ['wa',  'western australia'],
+                'tas' => ['tas', 'tasmania'],
+                'act' => ['act', 'australian capital territory'],
+                'nt'  => ['nt',  'northern territory'],
+            ];
+
+            $input  = strtolower(trim($request->state));
+            $values = [$input]; // fallback
+
+            foreach ($stateMap as $aliases) {
+                // Only match if input is EXACTLY one of the aliases
+                if (in_array($input, $aliases, true)) {
+                    $values = $aliases;
+                    break;
+                }
+            }
+
+            $query->whereIn(DB::raw('LOWER(state)'), $values);
+        }
+        
+        if ($request->has('country')) {
+            $query->where('country', $request->country);
+        }
+
+        // Get all staff before pagination to check their status
+        $staffList = $query->get();
+        
+        // Calculate profile completion and update status for each staff member
+        foreach ($staffList as $staff) {
+            $this->calculateProfileCompletion($staff);
+        }
+
+        // Re-query with pagination after status updates
+        $staff = $query->orderBy('id', 'desc')->paginate($request->get('per_page', $request->limit));
+
+        return response()->json([
+            'success' => true,
+            'data' => $staff,
+            'message' => 'Staff retrieved successfully'
+        ]);
+    }
+
     private function calculateProfileCompletion(User $user): int
     {
         $baseWeight = 50;

@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 
 const BRAND = "#0A7C6E";
 const BRAND_LIGHT = "#E6F4F2";
-const BRAND_DARK = "#065E54";
 
 const formatDateToDDMMYYYY = (dateStr) => {
     if (!dateStr) return "N/A";

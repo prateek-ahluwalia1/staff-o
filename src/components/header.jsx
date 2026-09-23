@@ -33,7 +33,7 @@ const Header = memo(function Header({ withSidebar = false }) {
   const { submit } = useSubmit({ isAuth: true });
 
   // Only fetch if we haven't already populated the store
-  const { data: notificationsData, refetch: refetchNotifications } = useFetch(
+  const { data: notificationsData } = useFetch(
     notificationsEndpoint,
     {
       isAuth: true,

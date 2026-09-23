@@ -3,7 +3,6 @@ import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
 import Loader from "../components/Loader";
-import { Link } from "react-router-dom";
 import { COUNTRIES } from "../utils/exports";
 import Select from "react-select";
 
@@ -273,9 +272,6 @@ export default function VisaManagement() {
     const doc = selectedCheckDetail?.document || {};
     const visa = selectedCheckDetail?.visa?.australia || {};
     const result = selectedCheckDetail?.result || {};
-    const attachment = Array.isArray(selectedCheckDetail?.attachments)
-        ? selectedCheckDetail.attachments[0]
-        : null;
     const isCompleted = selectedCheckDetail?.status === "completed";
     const isSuccess = result.code === "SUCCESS" || !!selectedCheckDetail?.expired_at || !!visa.expiry_date;
 

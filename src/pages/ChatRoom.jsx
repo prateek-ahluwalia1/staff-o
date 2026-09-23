@@ -6,7 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   setConversations,
   setActiveChat,
@@ -71,7 +71,6 @@ const Avatar = ({ src, name, size = 40 }) => {
 const ChatRoom = () => {
   const { category } = useParams();
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { user, userdata, token } = useSelector((state) => state.auth);
   const { conversations, activeConversation, messages } = useSelector(
     (state) => state.chat,

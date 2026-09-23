@@ -32,8 +32,6 @@ export default function AvatarUpload({
   onPhotoChange,
   loading = false,
 }) {
-  const { userdata } = useSelector((state) => state.auth);
-  const userRole = userdata?.user_type || userdata?.data?.user_type;
   const fileInputRef = useRef(null);
 
   const handleFileChange = async (e) => {

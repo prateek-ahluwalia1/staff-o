@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Select from "react-select";
-import AttachmentGrid from "./AttachmentGrid";
 
 export default function DetailsStep({ form, setField, handleFile, attachmentPreviews, removeAttachment }) {
   const [validationErrors, setValidationErrors] = useState({});
@@ -304,7 +303,7 @@ export default function DetailsStep({ form, setField, handleFile, attachmentPrev
                 onToggle={(val) => toggleDocument('rsa_certificate', val)}
               />
             </div>
-            
+
           </div>
         </div>
       </div>

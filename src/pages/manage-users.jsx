@@ -2483,6 +2483,7 @@ const ManageUsers = () => {
                   }
                   onChangePhone={handleOpenPhoneModal}
                   isPhoneVerified={false}
+                  isStaffooStaff={activeTab === "staff" && staffParentContractorId === 1}
                   footer={<></>}
 
                 />

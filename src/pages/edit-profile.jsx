@@ -461,6 +461,38 @@ export default function EditProfile() {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [activeTab, setActiveTab] = useState("personal");
 
+  const isOperatingState = useCallback((stateStr) => {
+    if (!stateStr) return true;
+    const s = String(stateStr).trim().toLowerCase();
+    return s === "vic" || s === "victoria" || s === "nsw" || s === "new south wales";
+  }, []);
+
+  const isStaffooOutOfState = Boolean(isStaffooStaff && formData.state && !isOperatingState(formData.state));
+
+  const userStateDisplay = useMemo(() => {
+    if (!formData.state) return "";
+    const s = String(formData.state).trim().toLowerCase();
+    const map = {
+      vic: "Victoria",
+      victoria: "Victoria",
+      nsw: "New South Wales",
+      "new south wales": "New South Wales",
+      qld: "Queensland",
+      queensland: "Queensland",
+      wa: "Western Australia",
+      "western australia": "Western Australia",
+      sa: "South Australia",
+      "south australia": "South Australia",
+      tas: "Tasmania",
+      tasmania: "Tasmania",
+      act: "Australian Capital Territory",
+      "australian capital territory": "Australian Capital Territory",
+      nt: "Northern Territory",
+      "northern territory": "Northern Territory",
+    };
+    return map[s] || formData.state;
+  }, [formData.state]);
+
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [cardForm, setCardForm] = useState(INITIAL_CARD_STATE);
   const [editingCardIndex, setEditingCardIndex] = useState(null);
@@ -1983,6 +2015,43 @@ export default function EditProfile() {
         </div>
       )}
 
+      {/* ⚠️ Non-operating State Notice for Staffoo Staff */}
+      {isStaffooStaff && isStaffooOutOfState && (
+        <div
+          className="d-flex align-items-center gap-3 px-4 py-3 rounded-3 shadow-sm mb-4"
+          style={{
+            backgroundColor: "#fff7ed",
+            border: "1px solid #fed7aa",
+            borderLeft: "6px solid #ea580c",
+            color: "#9a3412",
+          }}
+          role="alert"
+        >
+          <div
+            className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+            style={{ width: "42px", height: "42px", backgroundColor: "#ffedd5", color: "#ea580c" }}
+          >
+            <i className="fa-solid fa-map-location-dot fs-5"></i>
+          </div>
+          <div>
+            <div className="d-flex align-items-center gap-2 mb-1">
+              <strong className="d-block fw-bold" style={{ fontSize: "0.98rem", color: "#9a3412" }}>
+                Service Area Notice
+              </strong>
+              <span
+                className="badge rounded-pill"
+                style={{ backgroundColor: "#ffedd5", color: "#c2410c", fontSize: "0.75rem", border: "1px solid #fdba74" }}
+              >
+                {userStateDisplay}
+              </span>
+            </div>
+            <span style={{ textTransform: "none", fontSize: "0.9rem", color: "#7c2d12", lineHeight: "1.45" }}>
+              We are currently not operating in your state (<strong>{userStateDisplay}</strong>). We are currently operating in <strong>Victoria</strong> and <strong>New South Wales</strong>. Stay with us until we start operating in your area!
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="tabs-modern">
         <button
@@ -2032,6 +2101,7 @@ export default function EditProfile() {
           submitText={submitText}
           showPhoneOtp={true}
           showErrors={showErrors}
+          isStaffooStaff={isStaffooStaff}
           onChange={(e) => {
             const { id, name, value } = e.target;
             const fieldId = id || name;

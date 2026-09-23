@@ -20,6 +20,7 @@ export default function ProfileForm({
   forceShowAllStaffFields = false,
   submitText = "Save Changes",
   showErrors = false,
+  isStaffooStaff = false,
 }) {
   const parseDisplayDate = (str) => {
     if (!str || typeof str !== "string") return null;
@@ -61,6 +62,15 @@ export default function ProfileForm({
     { code: "act", label: "Australian Capital Territory" },
     { code: "nt", label: "Northern Territory" },
   ];
+
+  const isOperatingState = (stateStr) => {
+    if (!stateStr) return true;
+    const s = String(stateStr).trim().toLowerCase();
+    return s === "vic" || s === "victoria" || s === "nsw" || s === "new south wales";
+  };
+
+  const isStaffooOutOfState = Boolean(isStaffooStaff && formData.state && !isOperatingState(formData.state));
+  const userStateDisplay = AU_STATE_MAP[formData.state?.toLowerCase()] || formData.state || "";
 
   const showCustomStatus =
     formData.staff_document_type &&
@@ -1015,15 +1025,22 @@ export default function ProfileForm({
             </div>
 
             <div className="col-md-4">
-              <label htmlFor="state" className="form-label fw-bold text-muted small mb-1">State / Province</label>
+              <label htmlFor="state" className="form-label fw-bold text-muted small mb-1 d-flex align-items-center justify-content-between">
+                <span>State / Province</span>
+                {isStaffooOutOfState && (
+                  <span className="badge rounded-pill" style={{ backgroundColor: "#ffedd5", color: "#c2410c", border: "1px solid #fdba74", fontSize: "0.68rem" }}>
+                    VIC &amp; NSW only
+                  </span>
+                )}
+              </label>
               <input
                 type="text"
-                className="form-control bg-light border text-muted"
+                className={`form-control bg-light border ${isStaffooOutOfState ? "border-warning text-dark fw-semibold" : "text-muted"}`}
                 id="state"
                 placeholder="Auto-filled"
                 value={AU_STATE_MAP[formData.state?.toLowerCase()] || formData.state || ""}
                 readOnly
-                style={{ textTransform: "capitalize" }}
+                style={{ textTransform: "capitalize", ...(isStaffooOutOfState ? { backgroundColor: "#fff7ed", borderColor: "#f97316" } : {}) }}
               />
             </div>
 
@@ -1038,6 +1055,31 @@ export default function ProfileForm({
                 readOnly
               />
             </div>
+
+            {isStaffooOutOfState && (
+              <div className="col-12 mt-3">
+                <div
+                  className="p-3 rounded-3 d-flex align-items-start gap-3"
+                  style={{
+                    backgroundColor: "#fff7ed",
+                    border: "1px solid #fed7aa",
+                    borderLeft: "4px solid #ea580c",
+                    color: "#9a3412",
+                  }}
+                  role="alert"
+                >
+                  <i className="fa-solid fa-map-location-dot mt-1 fs-5 flex-shrink-0" style={{ color: "#ea580c" }}></i>
+                  <div>
+                    <strong className="d-block mb-1" style={{ color: "#9a3412", fontSize: "0.92rem" }}>
+                      Service Area Notice ({userStateDisplay})
+                    </strong>
+                    <div style={{ fontSize: "0.85rem", lineHeight: "1.45", color: "#7c2d12" }}>
+                      We are currently not operating in your state (<strong>{userStateDisplay}</strong>). We are operating in <strong>Victoria</strong> and <strong>New South Wales</strong>. Stay with us until we start operating in your area!
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {extraFields && <div className="row mt-4 pt-3">{extraFields}</div>}

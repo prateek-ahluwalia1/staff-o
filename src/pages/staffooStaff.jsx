@@ -99,7 +99,7 @@ const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          flex-shrink: 0;
+          flex-shrink: 0;x
           overflow: hidden;
         }
         .modal-header-premium::after {
@@ -1272,103 +1272,103 @@ const StaffooStaff = () => {
             {/* Table card */}
             <div className="content-card mb-4" style={{ overflow: "hidden" }}>
                 <div className="table-responsive position-relative" style={{ overflowX: "auto", minHeight: "320px" }}>
-                {loading && (
-                    <div
-                        className="d-flex align-items-center justify-content-center"
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            background: "rgba(255, 255, 255, 0.65)",
-                            backdropFilter: "blur(3px)",
-                            zIndex: 20,
-                        }}
-                    >
-                        <Loader />
-                    </div>
-                )}
-                <table className="table-modern m-0">
-                    <thead>
-                        <tr>
-                            <th style={{ textAlign: "center", width: "60px" }}>Photo</th>
-                            <th style={{ textAlign: "left" }}>Name and Email</th>
-                            <th style={{ textAlign: "left" }}>Phone</th>
-                            <th style={{ textAlign: "left" }}>Status</th>
-                            <th style={{ textAlign: "left" }}>Location</th>
-                            <th style={{ textAlign: "left" }}>Created At</th>
-                            <th style={{ textAlign: "center" }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {staff.length > 0 ? (
-                            staff.map(user => {
-                                const profileImage = user?.staff?.profile_image || null;
-                                const imageUrl = profileImage
-                                    ? profileImage.startsWith("http") ? profileImage : `${apiURL}storage/${profileImage}`
-                                    : null;
-                                const userCity = (user.city || "").trim();
-                                const userState = (user.state || user.staff?.state || "").trim();
-                                const displayState = userState ? (userState.length <= 3 ? userState.toUpperCase() : (userState.charAt(0).toUpperCase() + userState.slice(1))) : "";
-                                return (
-                                    <tr key={user.id}>
-                                        <td style={{ textAlign: "center", verticalAlign: "middle" }}>
-                                            <div className="d-flex justify-content-center"><Avatar src={imageUrl} name={user.name} size={40} /></div>
-                                        </td>
-                                        <td>
-                                            <div className="fw-bold text-dark">{user.name}</div>
-                                            <div className="text-muted small" style={{ textTransform: "none" }}>{user.email}</div>
-                                        </td>
-                                        <td><div className="text-dark small">{user.staff?.phone || "N/A"}</div></td>
-                                        <td><span className={getStatusBadgeClass(user?.is_active)}>{user?.is_active ? "Active" : "Inactive"}</span></td>
-                                        <td>
-                                            {userCity && displayState ? (
-                                                <>
-                                                    {userCity}{" "}
-                                                    <span className="text-muted small">({displayState})</span>
-                                                </>
-                                            ) : userCity ? (
-                                                userCity
-                                            ) : displayState ? (
-                                                displayState
-                                            ) : (
-                                                "—"
-                                            )}
-                                        </td>
-                                        <td><span className="small">{user.created_at ? new Date(user.created_at).toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}</span></td>
-                                        <td style={{ textAlign: "center" }}>
-                                            <div className="d-flex gap-2 justify-content-center">
-                                                <button className="btn btn-outline-premium btn-sm" onClick={() => openModal(user)}><i className="fa-solid fa-pen-to-square"></i></button>
-                                                <button className="btn btn-outline-premium btn-sm" onClick={() => openDeleteModal(user)}><i className="fa-solid fa-trash text-danger"></i></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        ) : (
+                    {loading && (
+                        <div
+                            className="d-flex align-items-center justify-content-center"
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                background: "rgba(255, 255, 255, 0.65)",
+                                backdropFilter: "blur(3px)",
+                                zIndex: 20,
+                            }}
+                        >
+                            <Loader />
+                        </div>
+                    )}
+                    <table className="table-modern m-0">
+                        <thead>
                             <tr>
-                                <td colSpan={7} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
-                                    <i className="fa-solid fa-users-slash d-block fs-3 mb-2 opacity-50"></i>
-                                    No staff records found{selectedState !== 'all' ? ` for ${AUSTRALIAN_STATE_PILLS.find(p => p.value === selectedState)?.label || selectedState}` : ""}{debouncedSearch ? ` matching "${debouncedSearch}"` : ""}.
-                                </td>
+                                <th style={{ textAlign: "center", width: "60px" }}>Photo</th>
+                                <th style={{ textAlign: "left" }}>Name and Email</th>
+                                <th style={{ textAlign: "left" }}>Phone</th>
+                                <th style={{ textAlign: "left" }}>Status</th>
+                                <th style={{ textAlign: "left" }}>Location</th>
+                                <th style={{ textAlign: "left" }}>Created At</th>
+                                <th style={{ textAlign: "center" }}>Actions</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {staff.length > 0 ? (
+                                staff.map(user => {
+                                    const profileImage = user?.staff?.profile_image || null;
+                                    const imageUrl = profileImage
+                                        ? profileImage.startsWith("http") ? profileImage : `${apiURL}storage/${profileImage}`
+                                        : null;
+                                    const userCity = (user.city || "").trim();
+                                    const userState = (user.state || user.staff?.state || "").trim();
+                                    const displayState = userState ? (userState.length <= 3 ? userState.toUpperCase() : (userState.charAt(0).toUpperCase() + userState.slice(1))) : "";
+                                    return (
+                                        <tr key={user.id}>
+                                            <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                                                <div className="d-flex justify-content-center"><Avatar src={imageUrl} name={user.name} size={40} /></div>
+                                            </td>
+                                            <td>
+                                                <div className="fw-bold text-dark">{user.name}</div>
+                                                <div className="text-muted small" style={{ textTransform: "none" }}>{user.email}</div>
+                                            </td>
+                                            <td><div className="text-dark small">{user.staff?.phone || "N/A"}</div></td>
+                                            <td><span className={getStatusBadgeClass(user?.is_active)}>{user?.is_active ? "Active" : "Inactive"}</span></td>
+                                            <td>
+                                                {userCity && displayState ? (
+                                                    <>
+                                                        {userCity}{" "}
+                                                        <span className="text-muted small">({displayState})</span>
+                                                    </>
+                                                ) : userCity ? (
+                                                    userCity
+                                                ) : displayState ? (
+                                                    displayState
+                                                ) : (
+                                                    "—"
+                                                )}
+                                            </td>
+                                            <td><span className="small">{user.created_at ? new Date(user.created_at).toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}</span></td>
+                                            <td style={{ textAlign: "center" }}>
+                                                <div className="d-flex gap-2 justify-content-center">
+                                                    <button className="btn btn-outline-premium btn-sm" onClick={() => openModal(user)}><i className="fa-solid fa-pen-to-square"></i></button>
+                                                    <button className="btn btn-outline-premium btn-sm" onClick={() => openDeleteModal(user)}><i className="fa-solid fa-trash text-danger"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            ) : (
+                                <tr>
+                                    <td colSpan={7} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
+                                        <i className="fa-solid fa-users-slash d-block fs-3 mb-2 opacity-50"></i>
+                                        No staff records found{selectedState !== 'all' ? ` for ${AUSTRALIAN_STATE_PILLS.find(p => p.value === selectedState)?.label || selectedState}` : ""}{debouncedSearch ? ` matching "${debouncedSearch}"` : ""}.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
 
-            {/* Pagination inside card footer */}
-            <TablePagination
-                currentPage={page}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                perPage={perPage}
-                onPageChange={(newPage) => setPage(newPage)}
-                onPerPageChange={(newPerPage) => {
-                    setPerPage(newPerPage);
-                    setPage(1);
-                }}
-                loading={loading}
-            />
-        </div>
+                {/* Pagination inside card footer */}
+                <TablePagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    totalItems={totalItems}
+                    perPage={perPage}
+                    onPageChange={(newPage) => setPage(newPage)}
+                    onPerPageChange={(newPerPage) => {
+                        setPerPage(newPerPage);
+                        setPage(1);
+                    }}
+                    loading={loading}
+                />
+            </div>
 
             {/* Main modal (unchanged) */}
             {isModalOpen && (
@@ -1398,6 +1398,7 @@ const StaffooStaff = () => {
                                     userType="staff"
                                     onChangePhone={() => { }}
                                     isPhoneVerified={false}
+                                    isStaffooStaff={true}
                                     footer={<></>}
                                 />
                             ) : activeModalTab === "documents" ? (

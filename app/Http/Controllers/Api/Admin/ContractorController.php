@@ -105,9 +105,31 @@ class ContractorController extends Controller
         $query->where('city', $request->city);
     }
     
-    if ($request->has('state')) {
-        $query->where('state', $request->state);
-    }
+     if ($request->filled('state')) {
+            $stateMap = [
+                'vic' => ['vic', 'victoria'],
+                'nsw' => ['nsw', 'new south wales'],
+                'qld' => ['qld', 'queensland'],
+                'sa'  => ['sa',  'south australia'],
+                'wa'  => ['wa',  'western australia'],
+                'tas' => ['tas', 'tasmania'],
+                'act' => ['act', 'australian capital territory'],
+                'nt'  => ['nt',  'northern territory'],
+            ];
+
+            $input  = strtolower(trim($request->state));
+            $values = [$input]; // fallback
+
+            foreach ($stateMap as $aliases) {
+                // Only match if input is EXACTLY one of the aliases
+                if (in_array($input, $aliases, true)) {
+                    $values = $aliases;
+                    break;
+                }
+            }
+
+            $query->whereIn(DB::raw('LOWER(state)'), $values);
+        }
     
     if ($request->has('country')) {
         $query->where('country', $request->country);

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 
 /* ── Project Design tokens ── */
@@ -13,9 +13,12 @@ const TEXT_SEC = "#5B6660";
 
 export default function ClientThankYou() {
     const location = useLocation();
-    const searchParams = new URLSearchParams(location.search);
-    const email = location.state?.email || searchParams.get("email");
-    const displayEmail = email || "your email address";
+    const email = location.state?.email;
+    const userType = location.state?.userType;
+
+    if (!email || (userType && userType !== "customer" && userType !== "client")) {
+        return <Navigate to="/register" replace />;
+    }
 
     return (
         <>
@@ -108,7 +111,7 @@ export default function ClientThankYou() {
                             margin: "0 0 24px",
                             fontFamily: "'Inter', sans-serif"
                         }}>
-                            <span style={{ color: INK, fontWeight: 700 }}>{displayEmail}</span>. Please check your inbox and click the link to activate your client account.
+                            <span style={{ color: INK, fontWeight: 700 }}>{email}</span>. Please check your inbox and click the link to activate your client account.
                         </p>
 
                         <div style={{

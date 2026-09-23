@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 
 /* ── Project Design tokens ── */
@@ -11,11 +11,14 @@ const TINT = "#F5F8F5";
 const INK = "#14181C";
 const TEXT_SEC = "#5B6660";
 
-export default function PartnerThankYou() {
+export default function ThankYou() {
     const location = useLocation();
-    const searchParams = new URLSearchParams(location.search);
-    const email = location.state?.email || searchParams.get("email");
-    const displayEmail = email || "your email address";
+    const email = location.state?.email;
+    const userType = location.state?.userType;
+
+    if (!email || (userType && userType !== "contractor" && userType !== "partner")) {
+        return <Navigate to="/register" replace />;
+    }
 
     return (
         <>
@@ -78,7 +81,10 @@ export default function PartnerThankYou() {
                             justifyContent: "center",
                             margin: "0 auto 20px"
                         }}>
-                            <i className="fa-solid fa-handshake" style={{ fontSize: "24px", color: G_DARK }}></i>
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "32px", height: "32px" }}>
+                                <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke={G} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M10 14h4" stroke={G} strokeWidth="2" strokeLinecap="round" />
+                            </svg>
                         </div>
 
                         <h1 style={{
@@ -108,7 +114,7 @@ export default function PartnerThankYou() {
                             margin: "0 0 24px",
                             fontFamily: "'Inter', sans-serif"
                         }}>
-                            <span style={{ color: INK, fontWeight: 700 }}>{displayEmail}</span>. Please check your inbox and click the link to activate your partner agency account.
+                            <span style={{ color: INK, fontWeight: 700 }}>{email}</span>. Please check your inbox and click the link to activate your partner agency account.
                         </p>
 
                         <div style={{
@@ -200,9 +206,14 @@ export default function PartnerThankYou() {
                                 },
                                 {
                                     num: 2,
-                                    title: "Upload master license and set charge rates.",
+                                    title: "Upload master license & set charge rates.",
                                     desc: "Log in to submit your Security Master License and state-by-state charge rate requests."
                                 },
+                                {
+                                    num: 3,
+                                    title: "Add guards & fulfill bookings.",
+                                    desc: "Register your security team, assign them to high-value client shifts, and track automated payouts."
+                                }
                             ].map((step, idx) => (
                                 <div key={idx} style={{
                                     display: "flex",

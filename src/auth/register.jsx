@@ -185,12 +185,12 @@ export default function Register() {
       const thankYouRoutes = {
         customer: "/client-thank-you",
         client: "/client-thank-you",
-        contractor: "/partner-thank-you",
-        partner: "/partner-thank-you",
+        contractor: "/thank-you",
+        partner: "/thank-you",
         staff: "/staff-thank-you",
       };
-      const targetUrl = thankYouRoutes[userType] || "/staff-thank-you";
-      navigate(targetUrl, { state: { email: formData.email } });
+      const targetUrl = thankYouRoutes[userType] || "/thank-you";
+      navigate(targetUrl, { state: { email: formData.email, userType } });
     } else if (pendingAuthAction === "google") {
       try {
         const res = await submit("api/auth/google/callback", { credential: tempGoogleToken, user_type: userType });

@@ -599,8 +599,7 @@ private function sendJobInvoice(
             $q->where('name', 'like', "%{$search}%")
               ->orWhere('email', 'like', "%{$search}%")
               ->orWhereHas('staff', function ($q) use ($search) {
-                  $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
+                  $q->where('name', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%");
               });
         });

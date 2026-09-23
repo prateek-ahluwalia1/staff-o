@@ -496,7 +496,6 @@ function Footer() {
             <h4>Company</h4>
             <Link to="/about-us">About</Link>
             <Link to="/contact-us">Contact</Link>
-            <Link to="/careers">Careers</Link>
             <Link to="/privacy-policy">Privacy Policy</Link>
             <Link to="/terms-of-use">Terms of Use</Link>
           </div>

@@ -286,11 +286,16 @@ const checkIsDocSelfExpiry = (category, fallbackState) => {
 
 const getNormalizedDocInfo = (docName, docType) => {
   const norm = (docName || docType || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const isSecLicense = norm === "securitylicense" || norm === "securitylicence";
   const isSecMasterLicense =
-    norm === "securitymasterlicense" ||
-    norm === "securitymasterlicence" ||
-    norm === "masterlicense";
+    norm.includes("securitymasterlicense") ||
+    norm.includes("securitymasterlicence") ||
+    norm.includes("masterlicense") ||
+    norm.includes("masterlicence");
+  const isSecLicense =
+    !isSecMasterLicense &&
+    (norm.includes("securitylicense") ||
+      norm.includes("securitylicence") ||
+      norm.includes("seclic"));
   return {
     isSecLicense,
     isSecMasterLicense,

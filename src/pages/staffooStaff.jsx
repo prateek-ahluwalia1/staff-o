@@ -279,11 +279,16 @@ const checkIsDocSelfExpiry = (category, fallbackState) => {
 
 const getNormalizedDocInfo = (docName, docType) => {
     const norm = (docName || docType || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const isSecLicense = norm === "securitylicense" || norm === "securitylicence";
     const isSecMasterLicense =
-        norm === "securitymasterlicense" ||
-        norm === "securitymasterlicence" ||
-        norm === "masterlicense";
+        norm.includes("securitymasterlicense") ||
+        norm.includes("securitymasterlicence") ||
+        norm.includes("masterlicense") ||
+        norm.includes("masterlicence");
+    const isSecLicense =
+        !isSecMasterLicense &&
+        (norm.includes("securitylicense") ||
+            norm.includes("securitylicence") ||
+            norm.includes("seclic"));
     return {
         isSecLicense,
         isSecMasterLicense,
@@ -1101,6 +1106,9 @@ const StaffooStaff = () => {
                                 const imageUrl = profileImage
                                     ? profileImage.startsWith("http") ? profileImage : `${apiURL}storage/${profileImage}`
                                     : null;
+                                const userCity = (user.city || "").trim();
+                                const userState = (user.state || user.staff?.state || "").trim();
+                                const displayState = userState ? (userState.length <= 3 ? userState.toUpperCase() : (userState.charAt(0).toUpperCase() + userState.slice(1))) : "";
                                 return (
                                     <tr key={user.id}>
                                         <td style={{ textAlign: "center", verticalAlign: "middle" }}>
@@ -1112,7 +1120,20 @@ const StaffooStaff = () => {
                                         </td>
                                         <td><div className="text-dark small">{user.staff?.phone || "N/A"}</div></td>
                                         <td><span className={getStatusBadgeClass(user?.is_active)}>{user?.is_active ? "Active" : "Inactive"}</span></td>
-                                        <td>{user.city || "—"} <span className="text-muted small">({user.country || "N/A"})</span></td>
+                                        <td>
+                                            {userCity && displayState ? (
+                                                <>
+                                                    {userCity}{" "}
+                                                    <span className="text-muted small">({displayState})</span>
+                                                </>
+                                            ) : userCity ? (
+                                                userCity
+                                            ) : displayState ? (
+                                                displayState
+                                            ) : (
+                                                "—"
+                                            )}
+                                        </td>
                                         <td><span className="small">{user.created_at ? new Date(user.created_at).toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}</span></td>
                                         <td style={{ textAlign: "center" }}>
                                             <div className="d-flex gap-2 justify-content-center">

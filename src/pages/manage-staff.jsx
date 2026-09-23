@@ -145,11 +145,16 @@ const checkIsDocSelfExpiry = (category, fallbackState) => {
 
 const getNormalizedDocInfo = (docName, docType) => {
   const norm = (docName || docType || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const isSecLicense = norm === "securitylicense" || norm === "securitylicence";
   const isSecMasterLicense =
-    norm === "securitymasterlicense" ||
-    norm === "securitymasterlicence" ||
-    norm === "masterlicense";
+    norm.includes("securitymasterlicense") ||
+    norm.includes("securitymasterlicence") ||
+    norm.includes("masterlicense") ||
+    norm.includes("masterlicence");
+  const isSecLicense =
+    !isSecMasterLicense &&
+    (norm.includes("securitylicense") ||
+      norm.includes("securitylicence") ||
+      norm.includes("seclic"));
   return {
     isSecLicense,
     isSecMasterLicense,
@@ -1497,59 +1502,75 @@ const ManageStaff = () => {
           </thead>
           <tbody>
             {staff.length > 0 ? (
-              staff.map((user) => (
-                <tr key={user.id}>
-                  <td style={{ textAlign: "center", verticalAlign: "middle" }}>
-                    <div className="d-flex justify-content-center">
-                      <Avatar
-                        src={getProfileImageUrlFromUserdata(user)}
-                        name={user.name}
-                        size={36}
-                      />
-                    </div>
-                  </td>
+              staff.map((user) => {
+                const userCity = (user.city || "").trim();
+                const userState = (user.state || user.staff?.state || user.contractor?.state || "").trim();
+                const displayState = userState ? (userState.length <= 3 ? userState.toUpperCase() : (userState.charAt(0).toUpperCase() + userState.slice(1))) : "";
 
-                  <td>
-                    <div className="fw-bold text-dark">{user.name}</div>
-                    <div className="text-muted small" style={{ textTransform: "none" }}>
-                      {user.email}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="text-dark small">{user.staff?.phone || "N/A"}</div>
-                  </td>
-                  <td>
-                    {user.city || "—"}{" "}
-                    <span className="text-muted small">({user.country || "N/A"})</span>
-                  </td>
-                  <td>
-                    <span className={getStatusBadgeClass(user?.is_active)}>
-                      {user?.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="small">
-                      {normalizeToDisplay(user.created_at) || "—"}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    <div className="d-flex gap-2 justify-content-center">
-                      <button
-                        className="btn btn-outline-premium btn-sm"
-                        onClick={() => openModal(user)}
-                      >
-                        <i className="fa-solid fa-pen-to-square"></i>
-                      </button>
-                      <button
-                        className="btn btn-outline-premium btn-sm"
-                        onClick={() => openDeleteModal(user)}
-                      >
-                        <i className="fa-solid fa-trash text-danger"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                return (
+                  <tr key={user.id}>
+                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      <div className="d-flex justify-content-center">
+                        <Avatar
+                          src={getProfileImageUrlFromUserdata(user)}
+                          name={user.name}
+                          size={36}
+                        />
+                      </div>
+                    </td>
+
+                    <td>
+                      <div className="fw-bold text-dark">{user.name}</div>
+                      <div className="text-muted small" style={{ textTransform: "none" }}>
+                        {user.email}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="text-dark small">{user.staff?.phone || "N/A"}</div>
+                    </td>
+                    <td>
+                      {userCity && displayState ? (
+                        <>
+                          {userCity}{" "}
+                          <span className="text-muted small">({displayState})</span>
+                        </>
+                      ) : userCity ? (
+                        userCity
+                      ) : displayState ? (
+                        displayState
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td>
+                      <span className={getStatusBadgeClass(user?.is_active)}>
+                        {user?.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="small">
+                        {normalizeToDisplay(user.created_at) || "—"}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <div className="d-flex gap-2 justify-content-center">
+                        <button
+                          className="btn btn-outline-premium btn-sm"
+                          onClick={() => openModal(user)}
+                        >
+                          <i className="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button
+                          className="btn btn-outline-premium btn-sm"
+                          onClick={() => openDeleteModal(user)}
+                        >
+                          <i className="fa-solid fa-trash text-danger"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td colSpan={7} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>

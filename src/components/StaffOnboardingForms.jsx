@@ -1591,11 +1591,7 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             s === "tas" ||
             s === "tasmania" ||
             s === "sa" ||
-            s === "south australia" ||
-            s === "act" ||
-            s === "australian capital territory" ||
-            s === "nt" ||
-            s === "northern territory"
+            s === "south australia"
         );
     }, [staffState]);
 

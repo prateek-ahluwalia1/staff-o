@@ -106,13 +106,7 @@ const checkIsDocSelfExpiry = (category, fallbackState) => {
       cat === "tasmania" ||
       cat === "sa_document" ||
       cat === "sa" ||
-      cat === "south australia" ||
-      cat === "act_document" ||
-      cat === "act" ||
-      cat === "australian capital territory" ||
-      cat === "nt_document" ||
-      cat === "nt" ||
-      cat === "northern territory"
+      cat === "south australia"
     ) {
       return true;
     }
@@ -128,7 +122,13 @@ const checkIsDocSelfExpiry = (category, fallbackState) => {
       cat === "queensland" ||
       cat === "wa_document" ||
       cat === "wa" ||
-      cat === "western australia"
+      cat === "western australia" ||
+      cat === "act_document" ||
+      cat === "act" ||
+      cat === "australian capital territory" ||
+      cat === "nt_document" ||
+      cat === "nt" ||
+      cat === "northern territory"
     ) {
       return false;
     }
@@ -139,11 +139,7 @@ const checkIsDocSelfExpiry = (category, fallbackState) => {
     raw === "tas" ||
     raw === "tasmania" ||
     raw === "sa" ||
-    raw === "south australia" ||
-    raw === "act" ||
-    raw === "australian capital territory" ||
-    raw === "nt" ||
-    raw === "northern territory"
+    raw === "south australia"
   );
 };
 

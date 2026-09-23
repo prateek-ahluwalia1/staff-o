@@ -23,20 +23,20 @@ class CustomerController extends Controller
             ->with('customer');
 
         // Search functionality
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhereHas('customer', function($q) use ($search) {
-                      $q->where('company_name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhereHas('customer', function ($q) use ($search) {
+                    $q->where('company_name', 'like', "%{$search}%")
                         ->orWhere('phone', 'like', "%{$search}%");
-                  });
+                });
             });
         }
 
         // Filter by status
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             if ($request->status === 'active') {
                 $query->where('is_active', 1);
             } elseif ($request->status === 'inactive') {
@@ -44,11 +44,12 @@ class CustomerController extends Controller
             }
         }
 
-        // Filter by city/state/country
-        if ($request->has('city')) {
+        // Filter by city
+        if ($request->filled('city')) {
             $query->where('city', $request->city);
         }
-        
+
+        // Filter by state (accepts "Victoria" OR "VIC", case-insensitive)
         if ($request->filled('state')) {
             $stateMap = [
                 'vic' => ['vic', 'victoria'],
@@ -65,7 +66,6 @@ class CustomerController extends Controller
             $values = [$input]; // fallback
 
             foreach ($stateMap as $aliases) {
-                // Only match if input is EXACTLY one of the aliases
                 if (in_array($input, $aliases, true)) {
                     $values = $aliases;
                     break;
@@ -74,18 +74,25 @@ class CustomerController extends Controller
 
             $query->whereIn(DB::raw('LOWER(state)'), $values);
         }
-        
-        if ($request->has('country')) {
+
+        // Filter by country
+        if ($request->filled('country')) {
             $query->where('country', $request->country);
         }
 
-        // Pagination
-        $customers = $query->orderBy('id', 'desc')->paginate($request->get('per_page', $request->limit));
+        $query->orderBy('id', 'desc');
+
+        // If limit is passed → paginate with that limit; otherwise return all
+        if ($request->filled('limit')) {
+            $customers = $query->paginate((int) $request->limit);
+        } else {
+            $customers = $query->get();
+        }
 
         return response()->json([
             'success' => true,
-            'data' => $customers,
-            'message' => 'Customers retrieved successfully'
+            'data'    => $customers,
+            'message' => 'Customers retrieved successfully',
         ]);
     }
 

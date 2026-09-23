@@ -605,7 +605,7 @@ private function sendJobInvoice(
         });
     }
 
-    // Filter by status (optional — you can drop this if not needed)
+    // Filter by status
     if ($request->filled('status')) {
         if ($request->status === 'active') {
             $query->where('is_active', 1);
@@ -650,7 +650,15 @@ private function sendJobInvoice(
         $query->where('country', $request->country);
     }
 
-    $guards = $query->orderBy('created_at', 'desc')->get();
+    // Order
+    $query->orderBy('created_at', 'desc');
+
+    // If limit is passed → paginate with that limit; otherwise return all
+    if ($request->filled('limit')) {
+        $guards = $query->paginate((int) $request->limit);
+    } else {
+        $guards = $query->get();
+    }
 
     if ($guards->isEmpty()) {
         return response()->json([
@@ -661,19 +669,9 @@ private function sendJobInvoice(
         ]);
     }
 
-    // Calculate profile completion and update status for each staff member
+    // Calculate profile completion for each staff member
     foreach ($guards as $staff) {
         $this->calculateStaffProfileCompletion($staff);
-    }
-
-    // Refresh the collection with updated status (same filters re-applied)
-    $query->orderBy('created_at', 'desc');
-
-    // If limit is passed → paginate with that limit; otherwise return all
-    if ($request->filled('limit')) {
-        $guards = $query->paginate((int) $request->limit);
-    } else {
-        $guards = $query->get();
     }
 
     return response()->json([

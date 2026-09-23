@@ -442,6 +442,11 @@ export default function Register() {
                     <div>
                       <div style={{ fontWeight: 700, color: isActive ? G_DARK : INK, fontSize: "14.5px", marginBottom: "2px", fontFamily: "'Inter', sans-serif" }}>{role.label}</div>
                       <div style={{ fontSize: "13px", color: TEXT_SEC }}>{role.desc}</div>
+                      {role.key === "contractor" && (
+                        <div style={{ fontSize: "11.5px", color: "#e03535", fontWeight: 600, marginTop: "3px" }}>
+                          Requires ACN &amp; Security Master License
+                        </div>
+                      )}
                     </div>
                   </button>
                 );

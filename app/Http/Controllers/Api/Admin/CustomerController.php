@@ -49,7 +49,11 @@ class CustomerController extends Controller
         }
         
         if ($request->has('state')) {
-            $query->where('state', $request->state);
+            $state = $request->state;
+             $query->where(function ($q) use ($state) {
+                $q->where('state', $state)
+                ->orWhere('state', 'like', "%{$state}%");
+            });
         }
         
         if ($request->has('country')) {

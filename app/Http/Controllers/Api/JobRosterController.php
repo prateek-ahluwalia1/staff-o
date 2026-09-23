@@ -586,39 +586,79 @@ private function sendJobInvoice(
             }
         }
 
-        // public function getContractorStaff($id)
-        // {
-        //     $guards = User::where('user_id', $id)->with('staff','documents')->where('user_type', 'staff')->get();
-
-        //     if (!$guards) {
-        //         return response()->json([
-        //             'code' => 200,
-        //             'success' => false,
-        //             'message' => 'Staff Not Found.',
-        //             'guards' => null
-        //         ]);
-        //     }
-
-        //     return response()->json([
-        //         'code' => 200,
-        //         'success' => true,
-        //         'message' => 'Staff Found.',
-        //         'guards' => $guards
-        //     ]);
-        // }
-        public function getContractorStaff($id)
+ public function getContractorStaff(Request $request, $id)
 {
-    $guards = User::where('user_id', $id)
-        ->with('staff', 'documents')
+    $query = User::where('user_id', $id)
         ->where('user_type', 'staff')
-        ->get();
+        ->with('staff', 'documents');
 
-    if (!$guards || $guards->isEmpty()) {
+    // Search functionality
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%")
+              ->orWhereHas('staff', function ($q) use ($search) {
+                  $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+              });
+        });
+    }
+
+    // Filter by status (optional — you can drop this if not needed)
+    if ($request->filled('status')) {
+        if ($request->status === 'active') {
+            $query->where('is_active', 1);
+        } elseif ($request->status === 'inactive') {
+            $query->where('is_active', 0);
+        }
+    }
+
+    // Filter by city
+    if ($request->filled('city')) {
+        $query->where('city', $request->city);
+    }
+
+    // Filter by state (accepts "Victoria" OR "VIC", case-insensitive)
+    if ($request->filled('state')) {
+        $stateMap = [
+            'vic' => ['vic', 'victoria'],
+            'nsw' => ['nsw', 'new south wales'],
+            'qld' => ['qld', 'queensland'],
+            'sa'  => ['sa',  'south australia'],
+            'wa'  => ['wa',  'western australia'],
+            'tas' => ['tas', 'tasmania'],
+            'act' => ['act', 'australian capital territory'],
+            'nt'  => ['nt',  'northern territory'],
+        ];
+
+        $input  = strtolower(trim($request->state));
+        $values = [$input]; // fallback
+
+        foreach ($stateMap as $aliases) {
+            if (in_array($input, $aliases, true)) {
+                $values = $aliases;
+                break;
+            }
+        }
+
+        $query->whereIn(DB::raw('LOWER(state)'), $values);
+    }
+
+    // Filter by country
+    if ($request->filled('country')) {
+        $query->where('country', $request->country);
+    }
+
+    $guards = $query->orderBy('created_at', 'desc')->get();
+
+    if ($guards->isEmpty()) {
         return response()->json([
-            'code' => 200,
+            'code'    => 200,
             'success' => false,
             'message' => 'Staff Not Found.',
-            'guards' => null
+            'guards'  => null,
         ]);
     }
 
@@ -627,18 +667,14 @@ private function sendJobInvoice(
         $this->calculateStaffProfileCompletion($staff);
     }
 
-    // Refresh the collection with updated status
-    $guards = User::where('user_id', $id)
-        ->with('staff', 'documents')
-        ->where('user_type', 'staff')
-        ->orderBy('created_at', 'desc')
-        ->get();
+    // Refresh the collection with updated status (same filters re-applied)
+    $guards = (clone $query)->get();
 
     return response()->json([
-        'code' => 200,
+        'code'    => 200,
         'success' => true,
         'message' => 'Staff Found.',
-        'guards' => $guards
+        'guards'  => $guards,
     ]);
 }
 

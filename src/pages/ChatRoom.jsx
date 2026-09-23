@@ -104,9 +104,9 @@ const ChatRoom = () => {
   let userEndpoint = null;
   if (showUserPicker) {
     if (userType === "admin") {
-      if (category === "staff") userEndpoint = "api/admin/get-staff?limit=500";
-      else if (category === "customers") userEndpoint = "api/admin/get-customers?limit=500";
-      else if (category === "contractors") userEndpoint = "api/admin/get-contractors?limit=500";
+      if (category === "staff") userEndpoint = "api/admin/get-staff";
+      else if (category === "customers") userEndpoint = "api/admin/get-customers";
+      else if (category === "contractors") userEndpoint = "api/admin/get-contractors";
     } else {
       userEndpoint = "api/admin";
     }

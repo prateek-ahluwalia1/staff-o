@@ -333,7 +333,7 @@ const DateFilterInput = ({ value, onChange, placeholder }) => {
 const JobTracker = () => {
   const { submit, loading } = useSubmit({ isAuth: true });
   const { data: customerResponse, loading: customerLoading } = useFetch(
-    "api/admin/get-customers?limit=1000",
+    "api/admin/get-customers",
     { isAuth: true },
   );
 

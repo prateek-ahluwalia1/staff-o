@@ -98,7 +98,7 @@ export default function PaymentHistory() {
 
   // --- Custom Hooks ---
   const { data: customersResponse } = useFetch(
-    isAdmin ? "api/admin/get-customers?limit=1000" : null,
+    isAdmin ? "api/admin/get-customers" : null,
     { isAuth: true }
   );
 
@@ -120,8 +120,10 @@ export default function PaymentHistory() {
 
   // --- Derived Data ---
   const customersList = useMemo(() => {
-    return customersResponse?.data?.data || [];
-  }, [customersResponse?.data?.data]);
+    return Array.isArray(customersResponse?.data)
+      ? customersResponse.data
+      : customersResponse?.data?.data || [];
+  }, [customersResponse]);
 
   const customerOptions = useMemo(() => {
     return customersList.map((c) => ({
@@ -759,10 +761,10 @@ export default function PaymentHistory() {
                                     disabled={tx.status !== "captured" || !tx.accepted_by || payoutLoading}
                                     onClick={() => handlePayoutClick(tx)}
                                     title={
-                                      tx.status !== "captured" 
-                                        ? "Payout can only be released when status is captured" 
-                                        : !tx.accepted_by 
-                                          ? "Payout can only be released when it is accepted by a contractor" 
+                                      tx.status !== "captured"
+                                        ? "Payout can only be released when status is captured"
+                                        : !tx.accepted_by
+                                          ? "Payout can only be released when it is accepted by a contractor"
                                           : "Release Payout"
                                     }
                                   >
@@ -950,8 +952,8 @@ export default function PaymentHistory() {
                     </div>
                   ) : historyError || invoiceHistory.length === 0 ? (
                     <div className="text-center py-4 px-3 bg-white rounded-3 border" style={{ borderStyle: "dashed !important", borderColor: "#cbd5e1" }}>
-                      <div 
-                        className="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" 
+                      <div
+                        className="d-inline-flex align-items-center justify-content-center rounded-circle mb-2"
                         style={{ width: "46px", height: "46px", backgroundColor: "#f8fafc" }}
                       >
                         <i className="fa-regular fa-paper-plane text-muted fs-5"></i>

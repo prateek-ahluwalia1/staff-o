@@ -256,7 +256,7 @@ const PaySlip = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const { data: staffResponse, loading: staffLoading } = useFetch(
-    "api/admin/get-staff?limit=1000",
+    "api/admin/get-staff",
     { isAuth: true },
   );
 

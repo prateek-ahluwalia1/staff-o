@@ -473,7 +473,7 @@ export default function TimeSheet() {
     isAuth: true,
   });
   const { data: customersResponse, loading: customersLoading } = useFetch(
-    "api/admin/get-customers?limit=1000",
+    "api/admin/get-customers",
     { isAuth: true }
   );
 

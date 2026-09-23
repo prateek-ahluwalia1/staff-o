@@ -25,10 +25,12 @@ const Invoice = () => {
   const { submit: uploadFile } = useSubmit({ isAuth: true });
 
   const { data: customersResponse } = useFetch(
-    "api/admin/get-customers?limit=1000",
+    "api/admin/get-customers",
     { isAuth: true },
   );
-  const customersList = customersResponse?.data?.data || [];
+  const customersList = Array.isArray(customersResponse?.data)
+    ? customersResponse.data
+    : customersResponse?.data?.data || [];
 
   const [invoiceNo, setInvoiceNo] = useState(
     `ST-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`,

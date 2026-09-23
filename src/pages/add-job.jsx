@@ -364,12 +364,19 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   );
 
   const { data: customersRes, loading: loadingCustomers, refetch: refetchCustomers } = useFetch(
-    isAdmin ? "api/admin/get-customers?limit=1000" : null,
+    isAdmin ? "api/admin/get-customers" : null,
     { isAuth: true }
   );
 
   const activeCustomers = useMemo(() => {
-    return customersRes?.data?.data?.filter((c) => c.is_active) || [];
+    const rawList = Array.isArray(customersRes?.data)
+      ? customersRes.data
+      : Array.isArray(customersRes?.data?.data)
+        ? customersRes.data.data
+        : Array.isArray(customersRes)
+          ? customersRes
+          : [];
+    return rawList.filter((c) => c && c.is_active !== false && c.is_active !== 0 && c.is_active !== "0");
   }, [customersRes]);
 
   const { data: detailRes, loading: loadingSites } = useFetch(
@@ -484,7 +491,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   const clientOptions = useMemo(() => {
     const opts = activeCustomers.map((cust) => ({
       value: cust.id.toString(),
-      label: `${cust.name} (${cust.id})`,
+      label: `${cust.name || cust.email || "Client"} (${cust.id})`,
       customer: cust
     }));
     return [

@@ -1,14 +1,28 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import { toast } from "react-toastify";
 import DocumentTable from "../components/DocumentTable";
 import ProfileForm from "../components/ProfileForm";
+import TablePagination from "../components/TablePagination";
 import { apiURL } from "../utils/exports";
 import Select from "react-select";
 import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
+import ContractorRatesView from "./ContractorRatesView";
+
+const AUSTRALIAN_STATE_PILLS = [
+  { label: "All", value: "all" },
+  { label: "Victoria", value: "vic" },
+  { label: "New South Wales", value: "nsw" },
+  { label: "Queensland", value: "qld" },
+  { label: "Western Australia", value: "wa" },
+  { label: "South Australia", value: "sa" },
+  { label: "Tasmania", value: "tas" },
+  { label: "ACT", value: "act" },
+  { label: "Northern Territory", value: "nt" },
+];
 const STATE_MAP = {
   'Victoria': 'vic',
   'New South Wales': 'nsw',
@@ -346,29 +360,88 @@ const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
   );
 };
 
+const ENDPOINT_MAP = {
+  customer: "api/admin/get-customers",
+  sub_contractor: "api/admin/get-contractors",
+  staff: "api/admin/get-rp-staff",
+};
+
 const ManageUsers = () => {
   const [showErrors, setShowErrors] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [activeTab, setActiveTab] = useState(location.state?.targetTab || "customer");
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(20);
+  const stateFromUrl = searchParams.get("state") || "all";
+  const [selectedState, setSelectedState] = useState(stateFromUrl);
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
 
-  const endpointMap = {
-    customer: "api/admin/get-customers",
-    sub_contractor: "api/admin/get-contractors",
-    staff: "api/admin/get-staff",
+  useEffect(() => {
+    const s = searchParams.get("state") || "all";
+    if (s !== selectedState) {
+      setSelectedState(s);
+    }
+  }, [searchParams, selectedState]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (search.trim()) {
+          next.set("search", search.trim());
+        } else {
+          next.delete("search");
+        }
+        return next;
+      });
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search, setSearchParams]);
+
+  const handleSelectState = (stateValue) => {
+    setSelectedState(stateValue);
+    setPage(1);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (stateValue === "all") {
+        next.delete("state");
+      } else {
+        next.set("state", stateValue);
+      }
+      return next;
+    });
   };
+
+  const fetchEndpoint = useMemo(() => {
+    const base = ENDPOINT_MAP[activeTab];
+    const params = new URLSearchParams();
+    params.set("page", page);
+    params.set("per_page", perPage);
+    params.set("limit", perPage);
+    if (selectedState && selectedState !== "all") {
+      params.set("state", selectedState);
+    }
+    if (debouncedSearch && debouncedSearch.trim()) {
+      params.set("search", debouncedSearch.trim());
+    }
+    return `${base}?${params.toString()}`;
+  }, [activeTab, page, perPage, selectedState, debouncedSearch]);
 
   const {
     data: apiResponse,
     loading,
     error,
     refetch,
-  } = useFetch(`${endpointMap[activeTab]}?page=${page}`, { isAuth: true });
+  } = useFetch(fetchEndpoint, { isAuth: true });
 
   const { data: contractorsResponse } = useFetch(
-    "api/admin/get-contractors?limit=1000",
+    "api/admin/get-contractors",
     { isAuth: true }
   );
 
@@ -581,6 +654,11 @@ const ManageUsers = () => {
       return;
     }
 
+    if (tab === "rates") {
+      setActiveModalTab("rates");
+      return;
+    }
+
     const missing = getMissingPersonalFields();
     if (missing.length > 0) {
       setShowErrors(false);
@@ -589,7 +667,7 @@ const ManageUsers = () => {
       return;
     }
 
-    if (tab === "onboarding" || tab === "rates") {
+    if (tab === "onboarding") {
       if (!isDocumentsComplete) {
         setShowDocErrors(false);
         setTimeout(() => setShowDocErrors(true), 10);
@@ -605,12 +683,6 @@ const ManageUsers = () => {
     if (role === activeTab) return;
     setActiveTab(role);
     setPage(1);
-  };
-
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setPage(newPage);
-    }
   };
 
   const getNestedData = useCallback((user) => {
@@ -729,21 +801,16 @@ const ManageUsers = () => {
   }, [isModalOpen, showDocModal, isDeleteModalOpen, showPhoneModal]);
 
   useEffect(() => {
-    if (apiResponse?.success && apiResponse?.data?.data) {
-      const fetchedUsers = apiResponse.data.data;
-      const filteredUsers =
-        activeTab === "staff"
-          ? fetchedUsers.filter((user) => {
-            const partnerId = user.user_id ?? user.staff?.user_id;
-            return partnerId !== 1;
-          })
-          : fetchedUsers;
-      setUsers(filteredUsers);
-      setTotalPages(apiResponse.data.last_page || 1);
-      setTotalItems(filteredUsers.length);
+    if (apiResponse?.success && apiResponse?.data) {
+      const fetchedUsers = Array.isArray(apiResponse.data.data)
+        ? apiResponse.data.data
+        : (Array.isArray(apiResponse.data) ? apiResponse.data : []);
+      setUsers(fetchedUsers);
+      setTotalPages(apiResponse.data?.last_page || apiResponse.last_page || 1);
+      setTotalItems(apiResponse.data?.total ?? apiResponse.total ?? fetchedUsers.length);
 
       if (location.state?.editUserId) {
-        const userToEdit = filteredUsers.find((u) => u.id === location.state.editUserId);
+        const userToEdit = fetchedUsers.find((u) => u.id === location.state.editUserId);
         if (userToEdit) {
           openModal(userToEdit);
         } else {
@@ -756,7 +823,7 @@ const ManageUsers = () => {
       setTotalPages(1);
       setTotalItems(0);
     }
-  }, [apiResponse, location.state, location.pathname, navigate, openModal, activeTab]);
+  }, [apiResponse, location.state, location.pathname, navigate, openModal]);
 
   // Google Maps Autocomplete
   const autocompleteRef = useRef(null);
@@ -966,10 +1033,10 @@ const ManageUsers = () => {
     const isDocSelfExpiryInChange = checkIsDocSelfExpiry(
       docForm.document_category || selectedDoc?.document_category || "",
       editingUser?.state ||
-        editingUser?.staff?.state ||
-        editingUser?.contractor?.state ||
-        formData?.state ||
-        ""
+      editingUser?.staff?.state ||
+      editingUser?.contractor?.state ||
+      formData?.state ||
+      ""
     );
     if (
       name === "document_expiry" &&
@@ -1074,12 +1141,12 @@ const ManageUsers = () => {
           isSecMasterLicense
             ? "contractor"
             : activeTab === "sub_contractor"
-            ? "contractor"
-            : activeTab === "staff"
-            ? "staff"
-            : editingUser?.user_type === "sub_contractor"
-            ? "contractor"
-            : editingUser?.user_type || docForm.user_type || "staff";
+              ? "contractor"
+              : activeTab === "staff"
+                ? "staff"
+                : editingUser?.user_type === "sub_contractor"
+                  ? "contractor"
+                  : editingUser?.user_type || docForm.user_type || "staff";
 
         const payload = {
           document_type: isSecMasterLicense ? "Security Master License" : "Security License",
@@ -1523,10 +1590,10 @@ const ManageUsers = () => {
   const isDocSelfExpiryState = checkIsDocSelfExpiry(
     docForm.document_category || selectedDoc?.document_category || "",
     editingUser?.state ||
-      editingUser?.staff?.state ||
-      editingUser?.contractor?.state ||
-      formData?.state ||
-      ""
+    editingUser?.staff?.state ||
+    editingUser?.contractor?.state ||
+    formData?.state ||
+    ""
   );
 
   const { isAnySecurityLicense } = getNormalizedDocInfo(
@@ -1934,7 +2001,7 @@ const ManageUsers = () => {
         </p>
       </div>
 
-      {/* Tabs and Add button */}
+      {/* Tabs, Search, and Add button */}
       <div className="content-card p-3">
         <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap">
           <ul className="nav nav-pills tabs-nav gap-2 mb-0">
@@ -1959,17 +2026,143 @@ const ManageUsers = () => {
               </li>
             ))}
           </ul>
-          <button
-            className="btn add-btn px-4"
-            onClick={() => openModal()}
-          >
-            <i className="fa-solid fa-plus me-1"></i> Add{" "}
-            {activeTab === "sub_contractor"
-              ? "Resource Partner"
-              : activeTab === "customer"
-                ? "Client"
-                : "Staff"}
-          </button>
+
+          <div className="d-flex align-items-center gap-2 flex-wrap flex-grow-1 justify-content-md-end">
+            {/* Search Bar */}
+            <div className="position-relative" style={{ minWidth: "220px", maxWidth: "340px", flex: "1 1 220px" }}>
+              <i className="fa-solid fa-magnifying-glass position-absolute text-muted" style={{ left: "14px", top: "50%", transform: "translateY(-50%)", fontSize: "0.85rem", pointerEvents: "none" }}></i>
+              <input
+                type="text"
+                className="form-control"
+                placeholder={`Search ${activeTab === "sub_contractor" ? "resource partners" : activeTab === "customer" ? "clients" : "staff"}...`}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{
+                  paddingLeft: "38px",
+                  paddingRight: search ? "36px" : "14px",
+                  height: "38px",
+                  borderRadius: "50px",
+                  border: "1px solid #cbd5e1",
+                  fontSize: "0.85rem",
+                  background: "#f8fafc",
+                  transition: "all 0.15s ease",
+                }}
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="btn btn-link position-absolute p-0 text-muted"
+                  style={{ right: "14px", top: "50%", transform: "translateY(-50%)", textDecoration: "none", fontSize: "0.8rem" }}
+                  title="Clear search"
+                >
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
+              )}
+            </div>
+
+            {/* Rows per page dropdown */}
+            <div className="d-flex align-items-center gap-1.5">
+              <select
+                className="form-select"
+                value={perPage}
+                onChange={(e) => {
+                  setPerPage(Number(e.target.value));
+                  setPage(1);
+                }}
+                title="Rows per page"
+                style={{
+                  height: "38px",
+                  borderRadius: "50px",
+                  borderColor: "#cbd5e1",
+                  fontSize: "0.825rem",
+                  fontWeight: 600,
+                  color: "#334155",
+                  padding: "0 28px 0 14px",
+                  cursor: "pointer",
+                  background: "#f8fafc",
+                  minWidth: "110px",
+                }}
+              >
+                <option value={20}>20 / page</option>
+                <option value={50}>50 / page</option>
+                <option value={100}>100 / page</option>
+                <option value={200}>200 / page</option>
+              </select>
+            </div>
+
+            <button
+              className="btn add-btn px-4"
+              onClick={() => openModal()}
+              style={{ height: '38px', display: 'inline-flex', alignItems: 'center' }}
+            >
+              <i className="fa-solid fa-plus me-1"></i> Add{" "}
+              {activeTab === "sub_contractor"
+                ? "Resource Partner"
+                : activeTab === "customer"
+                  ? "Client"
+                  : "Staff"}
+            </button>
+          </div>
+        </div>
+
+        {/* State Filter Pills */}
+        <div className="state-pills-bar d-flex align-items-center justify-content-between gap-3 flex-wrap mt-3 pt-3 border-top">
+          <div className="d-flex align-items-center gap-3 flex-wrap">
+            <div className="d-flex align-items-center gap-2 ms-2 me-1" style={{ paddingLeft: "4px" }}>
+              <span
+                className="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  background: "rgba(10, 124, 110, 0.1)",
+                  color: "#0A7C6E",
+                  fontSize: "0.85rem",
+                }}
+              >
+                <i className="fa-solid fa-location-dot"></i>
+              </span>
+              <span className="fw-semibold text-slate-700 text-nowrap" style={{ fontSize: "0.875rem", color: "#334155" }}>
+                Filter by State:
+              </span>
+            </div>
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              {AUSTRALIAN_STATE_PILLS.map((pill) => {
+                const isActive = selectedState === pill.value;
+                return (
+                  <button
+                    key={pill.value}
+                    type="button"
+                    onClick={() => handleSelectState(pill.value)}
+                    className={`state-pill-btn ${isActive ? "active" : ""}`}
+                    style={{
+                      border: isActive ? "none" : "1px solid #e2e8f0",
+                      background: isActive
+                        ? "linear-gradient(135deg, #0A7C6E 0%, #075e53 100%)"
+                        : "#ffffff",
+                      color: isActive ? "#ffffff" : "#475569",
+                      padding: "6px 14px",
+                      borderRadius: "50px",
+                      fontSize: "0.825rem",
+                      fontWeight: isActive ? 600 : 500,
+                      cursor: "pointer",
+                      transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                      boxShadow: isActive
+                        ? "0 4px 12px rgba(10, 124, 110, 0.3)"
+                        : "0 1px 2px rgba(0,0,0,0.03)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    {pill.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="text-muted small fw-semibold pe-2">
+            Total: <strong>{totalItems}</strong> records
+          </div>
         </div>
       </div>
 
@@ -1980,169 +2173,161 @@ const ManageUsers = () => {
       )}
 
       {/* Table card */}
-      <div className="content-card table-responsive position-relative" style={{ overflowX: "auto", minHeight: "300px" }}>
-        {loading && (
-          <div
-            className="d-flex align-items-center justify-content-center"
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "rgba(255, 255, 255, 0.65)",
-              backdropFilter: "blur(3px)",
-              zIndex: 20,
-            }}
-          >
-            <Loader />
-          </div>
-        )}
+      <div className="content-card mb-4" style={{ overflow: "hidden" }}>
+        <div className="table-responsive position-relative" style={{ overflowX: "auto", minHeight: "300px" }}>
+          {loading && (
+            <div
+              className="d-flex align-items-center justify-content-center"
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "rgba(255, 255, 255, 0.65)",
+                backdropFilter: "blur(3px)",
+                zIndex: 20,
+              }}
+            >
+              <Loader />
+            </div>
+          )}
 
-        <table className="table-modern m-0">
-          <thead>
-            <tr>
-              <th style={{ textAlign: "center", width: "60px" }}>Photo</th>
-              <th style={{ textAlign: "left" }}>Name and Email</th>
-              {activeTab === "sub_contractor" ? (
-                <th style={{ textAlign: "left" }}>Business and Phone</th>
-              ) : activeTab === "staff" ? (
-                <th style={{ textAlign: "left" }}>Resource Partner</th>
-              ) : (
-                <th style={{ textAlign: "left" }}>Phone</th>
-              )}
-              <th style={{ textAlign: "left" }}>Status</th>
-              <th style={{ textAlign: "left" }}>Location</th>
-              <th style={{ textAlign: "left" }}>Created At</th>
-              <th style={{ textAlign: "center" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length > 0 ? (
-              users.map((user) => {
-                const status = getUserStatus(user);
-                const userCity = (user.city || "").trim();
-                const userState = (user.state || user.staff?.state || user.contractor?.state || "").trim();
-                const displayState = userState ? (userState.length <= 3 ? userState.toUpperCase() : (userState.charAt(0).toUpperCase() + userState.slice(1))) : "";
-                return (
-                  <tr key={user.id}>
-                    <td style={{ textAlign: "center", verticalAlign: "middle" }}>
-                      <div className="d-flex justify-content-center">
-                        <Avatar
-                          src={getProfileImageUrlFromUserdata(user)}
-                          name={user.name}
-                          size={36}
-                        />
-                      </div>
-                    </td>
-                    <td>
-                      <div className="fw-bold text-dark">{user.name}</div>
-                      <div className="text-muted small" style={{ textTransform: "none" }}>
-                        {user.email}
-                      </div>
-                    </td>
-                    {activeTab === "sub_contractor" ? (
-                      <td>
-                        <div className="fw-medium text-dark">
-                          {getNestedData(user).company_name || "—"}
-                        </div>
-                        <div className="text-muted small">
-                          {user.phone || getNestedData(user).phone || "N/A"}
-                        </div>
-                      </td>
-                    ) : activeTab === "staff" ? (
-                      <td>
-                        {(() => {
-                          const contractorId = user.user_id || user.staff?.user_id;
-                          const contractor = contractorsList.find(c => c.id === contractorId);
-                          return (
-                            <div className="fw-medium text-dark">
-                              {contractor ? contractor.name : "—"}
-                            </div>
-                          );
-                        })()}
-                      </td>
-                    ) : (
-                      <td>
-                        <div className="text-muted small">
-                          {user.phone || getNestedData(user).phone || "N/A"}
-                        </div>
-                      </td>
-                    )}
-                    <td>
-                      <span className={getStatusBadgeClass(status)}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </span>
-                    </td>
-                    <td>
-                      {userCity && displayState ? (
-                        <>
-                          {userCity}{" "}
-                          <span className="text-muted small">({displayState})</span>
-                        </>
-                      ) : userCity ? (
-                        userCity
-                      ) : displayState ? (
-                        displayState
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td>
-                      <span className="small">
-                        {normalizeToDisplay(user.created_at) || "—"}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "center" }}>
-                      <div className="d-flex gap-2 justify-content-center">
-                        <button
-                          className="btn btn-outline-premium btn-sm"
-                          onClick={() => openModal(user)}
-                        >
-                          <i className="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button
-                          className="btn btn-outline-premium btn-sm"
-                          onClick={() => openDeleteModal(user)}
-                        >
-                          <i className="fa-solid fa-trash text-danger"></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
+          <table className="table-modern m-0">
+            <thead>
               <tr>
-                <td colSpan={7} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
-                  No records found for this category.
-                </td>
+                <th style={{ textAlign: "center", width: "60px" }}>Photo</th>
+                <th style={{ textAlign: "left" }}>Name and Email</th>
+                {activeTab === "sub_contractor" ? (
+                  <th style={{ textAlign: "left" }}>Business and Phone</th>
+                ) : activeTab === "staff" ? (
+                  <th style={{ textAlign: "left" }}>Resource Partner</th>
+                ) : (
+                  <th style={{ textAlign: "left" }}>Phone</th>
+                )}
+                <th style={{ textAlign: "left" }}>Status</th>
+                <th style={{ textAlign: "left" }}>Location</th>
+                <th style={{ textAlign: "left" }}>Created At</th>
+                <th style={{ textAlign: "center" }}>Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center mt-4 pt-3">
-        <span className="text-muted small mb-2 mb-sm-0">
-          Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong>
-          <span className="mx-2">•</span>
-          Total <strong>{totalItems}</strong> records
-        </span>
-        <div className="d-flex gap-2">
-          <button
-            className="page-btn"
-            onClick={() => handlePageChange(page - 1)}
-            disabled={page === 1}
-          >
-            <i className="fa-solid fa-chevron-left"></i>
-          </button>
-          <button
-            className="page-btn"
-            onClick={() => handlePageChange(page + 1)}
-            disabled={page === totalPages || totalPages === 0}
-          >
-            <i className="fa-solid fa-chevron-right"></i>
-          </button>
+            </thead>
+            <tbody>
+              {users.length > 0 ? (
+                users.map((user) => {
+                  const status = getUserStatus(user);
+                  const userCity = (user.city || "").trim();
+                  const userState = (user.state || user.staff?.state || user.contractor?.state || "").trim();
+                  const displayState = userState ? (userState.length <= 3 ? userState.toUpperCase() : (userState.charAt(0).toUpperCase() + userState.slice(1))) : "";
+                  return (
+                    <tr key={user.id}>
+                      <td style={{ textAlign: "center", verticalAlign: "middle" }}>
+                        <div className="d-flex justify-content-center">
+                          <Avatar
+                            src={getProfileImageUrlFromUserdata(user)}
+                            name={user.name}
+                            size={36}
+                          />
+                        </div>
+                      </td>
+                      <td>
+                        <div className="fw-bold text-dark">{user.name}</div>
+                        <div className="text-muted small" style={{ textTransform: "none" }}>
+                          {user.email}
+                        </div>
+                      </td>
+                      {activeTab === "sub_contractor" ? (
+                        <td>
+                          <div className="fw-medium text-dark">
+                            {getNestedData(user).company_name || "—"}
+                          </div>
+                          <div className="text-muted small">
+                            {user.phone || getNestedData(user).phone || "N/A"}
+                          </div>
+                        </td>
+                      ) : activeTab === "staff" ? (
+                        <td>
+                          {(() => {
+                            const contractorId = user.user_id || user.staff?.user_id;
+                            const contractor = contractorsList.find(c => c.id === contractorId);
+                            return (
+                              <div className="fw-medium text-dark">
+                                {contractor ? contractor.name : "—"}
+                              </div>
+                            );
+                          })()}
+                        </td>
+                      ) : (
+                        <td>
+                          <div className="text-muted small">
+                            {user.phone || getNestedData(user).phone || "N/A"}
+                          </div>
+                        </td>
+                      )}
+                      <td>
+                        <span className={getStatusBadgeClass(status)}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </span>
+                      </td>
+                      <td>
+                        {userCity && displayState ? (
+                          <>
+                            {userCity}{" "}
+                            <span className="text-muted small">({displayState})</span>
+                          </>
+                        ) : userCity ? (
+                          userCity
+                        ) : displayState ? (
+                          displayState
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td>
+                        <span className="small">
+                          {normalizeToDisplay(user.created_at) || "—"}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: "center" }}>
+                        <div className="d-flex gap-2 justify-content-center">
+                          <button
+                            className="btn btn-outline-premium btn-sm"
+                            onClick={() => openModal(user)}
+                          >
+                            <i className="fa-solid fa-pen-to-square"></i>
+                          </button>
+                          <button
+                            className="btn btn-outline-premium btn-sm"
+                            onClick={() => openDeleteModal(user)}
+                          >
+                            <i className="fa-solid fa-trash text-danger"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
+                    <i className="fa-solid fa-users-slash d-block fs-3 mb-2 opacity-50"></i>
+                    No records found{selectedState !== 'all' ? ` for ${AUSTRALIAN_STATE_PILLS.find(p => p.value === selectedState)?.label || selectedState}` : ""}{debouncedSearch ? ` matching "${debouncedSearch}"` : ""}.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
+
+        {/* Pagination inside card footer */}
+        <TablePagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          perPage={perPage}
+          onPageChange={(newPage) => setPage(newPage)}
+          onPerPageChange={(newPerPage) => {
+            setPerPage(newPerPage);
+            setPage(1);
+          }}
+          loading={loading}
+        />
       </div>
 
       {/* FULL SCREEN MODAL – profile editing */}
@@ -2241,6 +2426,16 @@ const ManageUsers = () => {
                     </button>
                   </>
                 )}
+                {activeTab === "sub_contractor" && editingUser && (
+                  <button
+                    type="button"
+                    className={`btn ${activeModalTab === "rates" ? "btn-dark" : "btn-light"} border-0`}
+                    onClick={() => handleTabClick("rates")}
+                    style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
+                  >
+                    Rates
+                  </button>
+                )}
               </div>
 
               {activeModalTab === "personal" ? (
@@ -2249,11 +2444,11 @@ const ManageUsers = () => {
                   hideFields={[
                     ...(activeTab !== "staff" || staffParentContractorId !== 1
                       ? [
-                          "is_control_room_license",
-                          "staff_document_type",
-                          "date_of_birth",
-                          "origin_country",
-                        ]
+                        "is_control_room_license",
+                        "staff_document_type",
+                        "date_of_birth",
+                        "origin_country",
+                      ]
                       : []),
                   ]}
                   profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
@@ -2305,6 +2500,18 @@ const ManageUsers = () => {
                     onAddFile={openDocumentModal}
                     showDocErrors={showDocErrors}
                     isStaffooStaff={activeTab === "staff" && staffParentContractorId === 1}
+                  />
+                </div>
+              ) : activeModalTab === "rates" && editingUser ? (
+                <div>
+                  <ContractorRatesView
+                    contractorId={editingUser.id}
+                    selectedStates={
+                      formData.states_allowed && formData.states_allowed.length > 0
+                        ? formData.states_allowed
+                        : editingUser.states_allowed || editingUser.contractor?.states_allowed || []
+                    }
+                    readOnly={true}
                   />
                 </div>
               ) : null}

@@ -103,14 +103,16 @@ const checkIfFormChanged = (currentForm, initialForm, states) => {
   return false;
 };
 
-const ContractorRatesView = ({ selectedStates = [] }) => {
+const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnly = false }) => {
   const { userdata } = useSelector((state) => state.auth || {});
   const userId = userdata?.data?.id || userdata?.id;
   const userType = userdata?.data?.user_type || userdata?.user_type;
 
+  const targetContractorId = contractorId || userId;
+
   const endpoint = useMemo(
-    () => (userId ? `api/get-contractor-rates/${userId}` : null),
-    [userId]
+    () => (targetContractorId ? `api/get-contractor-rates/${targetContractorId}` : null),
+    [targetContractorId]
   );
 
   const { data, loading, error, refetch: refetchActiveRates } = useFetch(endpoint, {
@@ -123,7 +125,18 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   const [isSavingAndExiting, setIsSavingAndExiting] = useState(false);
   const [isSavingAndSubmitting, setIsSavingAndSubmitting] = useState(false);
 
-  const [activeView, setActiveView] = useState(() => selectedStates?.[0] || null);
+  const parsedSelectedStates = useMemo(() => {
+    if (!selectedStates) return [];
+    if (Array.isArray(selectedStates)) return selectedStates;
+    try {
+      const parsed = typeof selectedStates === "string" ? JSON.parse(selectedStates) : selectedStates;
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      return [];
+    }
+  }, [selectedStates]);
+
+  const [activeView, setActiveView] = useState(() => parsedSelectedStates?.[0] || null);
 
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [modalMode, setModalMode] = useState("update"); // "add" or "update"
@@ -131,7 +144,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   const [activeStateTab, setActiveStateTab] = useState(null);
   const [modalStates, setModalStates] = useState([]);
   const [referenceRates, setReferenceRates] = useState({});
-  const [requestForm, setRequestForm] = useState(() => makeBlankForm(selectedStates));
+  const [requestForm, setRequestForm] = useState(() => makeBlankForm(parsedSelectedStates));
   const [initialFormState, setInitialFormState] = useState(null);
   const [editingRequestId, setEditingRequestId] = useState(null);
   const [formErrors, setFormErrors] = useState({});
@@ -144,8 +157,8 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   const [mainTab, setMainTab] = useState("active");
 
   const historyEndpoint = useMemo(
-    () => (userId ? `api/charge-rate-requests?user_id=${userId}` : null),
-    [userId]
+    () => (targetContractorId ? `api/charge-rate-requests?user_id=${targetContractorId}` : null),
+    [targetContractorId]
   );
 
   const {
@@ -161,25 +174,48 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
     if (!requestsData) return [];
     const arr = requestsData?.data ?? requestsData;
     const reqs = Array.isArray(arr) ? arr : [];
-    if (!userId) return reqs;
+    if (!targetContractorId) return reqs;
     return reqs.filter(r => 
-      String(r.user_id) === String(userId) || 
-      String(r.contractor_id) === String(userId) ||
-      String(r.user?.id) === String(userId) ||
+      String(r.user_id) === String(targetContractorId) || 
+      String(r.contractor_id) === String(targetContractorId) ||
+      String(r.user?.id) === String(targetContractorId) ||
       (!r.user_id && !r.contractor_id)
     );
-  }, [requestsData, userId]);
+  }, [requestsData, targetContractorId]);
 
   const rows = useMemo(() => {
     if (!data) return [];
     return Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
   }, [data]);
 
+  const displayStates = useMemo(() => {
+    const map = new Map();
+    parsedSelectedStates.forEach((s) => {
+      if (s) map.set(normalizeState(s), s);
+    });
+    rows.forEach((r) => {
+      if (r?.state && !map.has(normalizeState(r.state))) {
+        map.set(normalizeState(r.state), r.state);
+      }
+    });
+    return Array.from(map.values());
+  }, [parsedSelectedStates, rows]);
+
+  const missingStates = useMemo(() => {
+    return parsedSelectedStates.filter(
+      (s) => !rows.some((r) => normalizeState(r.state) === normalizeState(s))
+    );
+  }, [parsedSelectedStates, rows]);
+
   useEffect(() => {
-    if (selectedStates?.length > 0 && (!activeView || !selectedStates.includes(activeView))) {
-      setActiveView(selectedStates[0]);
+    if (displayStates.length > 0) {
+      if (!activeView || !displayStates.some(s => normalizeState(s) === normalizeState(activeView))) {
+        setActiveView(displayStates[0]);
+      }
+    } else {
+      setActiveView(null);
     }
-  }, [selectedStates, activeView]);
+  }, [displayStates, activeView]);
 
   useEffect(() => {
     if (showRequestModal || viewRequestRates) {
@@ -196,12 +232,6 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
     () => rows.find((r) => normalizeState(r.state) === normalizeState(activeView)),
     [rows, activeView]
   );
-
-  const missingStates = useMemo(() => {
-    return selectedStates.filter(
-      (s) => !rows.some((r) => normalizeState(r.state) === normalizeState(s))
-    );
-  }, [selectedStates, rows]);
 
   // ── Open Add Rate Modal (Sequential flow for missing states) ─────────────
   const openAddRateFlow = (initialState = null, customStatesList = null) => {
@@ -563,7 +593,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   };
 
   const handleResubmit = (req) => {
-    const s = selectedStates.find(st => st.toLowerCase() === (req.state || "").toLowerCase()) || req.state;
+    const s = parsedSelectedStates.find(st => st.toLowerCase() === (req.state || "").toLowerCase()) || req.state;
     const form = makeBlankForm([s]);
 
     if (form[s]) {
@@ -596,7 +626,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   };
 
   // ── Guards ───────────────────────────────────────────────────────────────
-  if (userType !== "contractor") {
+  if (!readOnly && !contractorId && userType !== "contractor") {
     return (
       <div className="d-flex align-items-center justify-content-center bg-light fade-in" style={{ minHeight: "100vh" }}>
         <div className="text-center p-5 bg-white rounded-4 shadow-sm border" style={{ maxWidth: "400px" }}>
@@ -613,12 +643,12 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   if (error) {
     const errMsg = typeof error === "string" ? error : error?.message || "We couldn't retrieve your rates at this time.";
     return (
-      <div className="d-flex align-items-center justify-content-center bg-light fade-in" style={{ minHeight: "100vh" }}>
-        <div className="text-center p-5 bg-white rounded-4 shadow-sm border" style={{ maxWidth: "450px" }}>
+      <div className="d-flex align-items-center justify-content-center bg-light fade-in" style={{ minHeight: readOnly ? "250px" : "100vh" }}>
+        <div className="text-center p-4 bg-white rounded-4 shadow-sm border" style={{ maxWidth: "450px" }}>
           <div className="mb-3"><i className="fa fa-exclamation-triangle text-warning" style={{ fontSize: "2.5rem" }}></i></div>
           <h4 className="fw-bold text-dark mb-2">Failed to load rates</h4>
           <p className="text-muted text-break mb-4">{errMsg}</p>
-          <button type="button" className="btn btn-dark px-4 py-2 rounded-pill fw-bold" onClick={() => window.location.reload()}>
+          <button type="button" className="btn btn-dark px-4 py-2 rounded-pill fw-bold" onClick={() => (readOnly ? refetchActiveRates() : window.location.reload())}>
             Try Again
           </button>
         </div>
@@ -627,7 +657,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
   }
 
   return (
-    <div className="container-fluid p-3 p-md-4 fade-in" style={{ minHeight: "100vh" }}>
+    <div className={`fade-in ${readOnly ? "px-1 py-1" : "container-fluid p-3 p-md-4"}`} style={readOnly ? { minHeight: "auto" } : { minHeight: "100vh" }}>
       <style>{`
         :root {
           --navy-950: #0a1930;
@@ -874,14 +904,16 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
       {mainTab === "active" && (
         <>
           {/* ── Rates View ── */}
-          {selectedStates.length === 0 ? (
+          {displayStates.length === 0 ? (
             <div className="rate-card text-center py-5 fade-in">
               <div className="mb-3">
                 <i className="fa fa-map text-muted" style={{ fontSize: "3rem" }}></i>
               </div>
               <h5 className="fw-bold text-dark mb-2">No States Selected</h5>
               <p className="text-muted mx-auto mb-4" style={{ maxWidth: "400px" }}>
-                You haven't selected any states in your profile. Please update your profile to request charge rates.
+                {readOnly
+                  ? "This contractor has not been assigned any states yet."
+                  : "You haven't selected any states in your profile. Please update your profile to request charge rates."}
               </p>
             </div>
           ) : (
@@ -895,40 +927,49 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                           <i className="fa fa-exclamation-triangle fs-4 text-warning"></i>
                           <div>
                             <strong>Rates Missing!</strong>
-                            <div className="small mt-1">Rates for <strong>{missingStates.map(s => getStateLabel(s)).join(", ")}</strong> are missing. Please add rates to continue.</div>
+                            <div className="small mt-1">Rates for <strong>{missingStates.map(s => getStateLabel(s)).join(", ")}</strong> are missing. {readOnly ? "Rates have not been added yet for these states." : "Please add rates to continue."}</div>
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          className="btn fw-bold px-4 py-2 shadow-sm"
-                          style={{ backgroundColor: "#ffc107", color: "#000", borderRadius: "8px", whiteSpace: "nowrap" }}
-                          onClick={() => openAddRateFlow(missingStates[0], missingStates)}
-                        >
-                          Add Rates
-                        </button>
+                        {!readOnly && (
+                          <button
+                            type="button"
+                            className="btn fw-bold px-4 py-2 shadow-sm"
+                            style={{ backgroundColor: "#ffc107", color: "#000", borderRadius: "8px", whiteSpace: "nowrap" }}
+                            onClick={() => openAddRateFlow(missingStates[0], missingStates)}
+                          >
+                            Add Rates
+                          </button>
+                        )}
                       </div>
                     )}
 
-                    {selectedStates.length > 1 && (
+                    {displayStates.length > 0 && (
                       <div className="rate-tabs flex-wrap mb-4">
-                        {selectedStates.map((stateVal) => {
-                          const isMissing = missingStates.includes(stateVal);
+                        {displayStates.map((stateVal) => {
+                          const isMissing = missingStates.some(ms => normalizeState(ms) === normalizeState(stateVal));
                           return (
                             <button
                               key={stateVal}
                               type="button"
-                              className={`rate-tab justify-content-center position-relative ${stateVal === activeView ? "active" : ""}`}
-                              style={isMissing && stateVal !== activeView ? { color: "#ef4444" } : {}}
+                              className={`rate-tab justify-content-center position-relative ${normalizeState(stateVal) === normalizeState(activeView) ? "active" : ""}`}
+                              style={isMissing && normalizeState(stateVal) !== normalizeState(activeView) ? { color: "#ef4444" } : {}}
                               onClick={() => setActiveView(stateVal)}
                               aria-label={`Select state: ${getStateLabel(stateVal)}`}
                             >
                               <i className="fa fa-map-marker-alt me-2"></i> {getStateLabel(stateVal)}
-                              {isMissing && (
+                              {isMissing ? (
                                 <span 
-                                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
-                                  style={{ fontSize: "0.6rem", padding: "0.35em 0.65em", border: "2px solid #e2e8f0", zIndex: 2 }}
+                                  className="badge rounded-pill bg-danger ms-2" 
+                                  style={{ fontSize: "0.65rem", padding: "0.3em 0.6em" }}
                                 >
                                   Missing
+                                </span>
+                              ) : (
+                                <span 
+                                  className="badge rounded-pill ms-2" 
+                                  style={{ fontSize: "0.65rem", padding: "0.3em 0.6em", backgroundColor: "rgba(10, 124, 110, 0.15)", color: "#0A7C6E" }}
+                                >
+                                  Active
                                 </span>
                               )}
                             </button>
@@ -944,16 +985,20 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                         </div>
                         <h5 className="fw-bold text-dark mb-2">No Rates Assigned</h5>
                         <p className="text-muted mx-auto mb-4" style={{ maxWidth: "400px" }}>
-                          You currently do not have any active rates assigned for {getStateLabel(activeView)}. Please add your rates.
+                          {readOnly
+                            ? `No active rates have been submitted for ${getStateLabel(activeView)}.`
+                            : `You currently do not have any active rates assigned for ${getStateLabel(activeView)}. Please add your rates.`}
                         </p>
-                        <button
-                          type="button"
-                          className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2"
-                          style={{ backgroundColor: "var(--teal)", border: "none" }}
-                          onClick={() => openAddRateFlow(activeView)}
-                        >
-                          <i className="fa-solid fa-plus"></i> Add Rate
-                        </button>
+                        {!readOnly && (
+                          <button
+                            type="button"
+                            className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2"
+                            style={{ backgroundColor: "var(--teal)", border: "none" }}
+                            onClick={() => openAddRateFlow(activeView)}
+                          >
+                            <i className="fa-solid fa-plus"></i> Add Rate
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <div className="rate-card mt-2 fade-in">
@@ -961,17 +1006,19 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                           <div className="d-flex align-items-center gap-3">
                             <span className="icon-badge mb-0"><i className="fa fa-clock"></i></span>
                             <div>
-                              <h6 className="mb-0">My Rates for {getStateLabel(activeView)}</h6>
+                              <h6 className="mb-0">{readOnly ? `Rates for ${getStateLabel(activeView)}` : `My Rates for ${getStateLabel(activeView)}`}</h6>
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2 mt-2 mt-md-0"
-                            style={{ backgroundColor: "var(--teal)", border: "none" }}
-                            onClick={() => openUpdateRequestFlow(activeView)}
-                          >
-                            <i className="fa-solid fa-paper-plane"></i> Request Rate Update
-                          </button>
+                          {!readOnly && (
+                            <button
+                              type="button"
+                              className="btn text-white rounded-pill px-4 py-2 fw-bold shadow-sm d-inline-flex align-items-center gap-2 mt-2 mt-md-0"
+                              style={{ backgroundColor: "var(--teal)", border: "none" }}
+                              onClick={() => openUpdateRequestFlow(activeView)}
+                            >
+                              <i className="fa-solid fa-paper-plane"></i> Request Rate Update
+                            </button>
+                          )}
                         </div>
                         {SLOT_ROWS.map((row) => {
                           const metroVal = rate ? rate[`def_${row.metro}`] : 0;
@@ -1073,25 +1120,43 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
                               Approved
                             </span>
                           ) : isRejected ? (
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-teal rounded-pill fw-bold"
-                              style={{ width: "95px", height: "32px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
-                              onClick={() => handleResubmit(req)}
-                              title="Edit & Resubmit"
-                            >
-                              <i className="fa fa-pencil me-1"></i> Resubmit
-                            </button>
+                            readOnly ? (
+                              <span
+                                className="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill fw-bold"
+                                style={{ width: "95px", height: "32px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "0.82rem" }}
+                              >
+                                Rejected
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-teal rounded-pill fw-bold"
+                                style={{ width: "95px", height: "32px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                                onClick={() => handleResubmit(req)}
+                                title="Edit & Resubmit"
+                              >
+                                <i className="fa fa-pencil me-1"></i> Resubmit
+                              </button>
+                            )
                           ) : isDraft ? (
-                            <button
-                              type="button"
-                              className="btn btn-sm btn-outline-primary rounded-pill fw-bold"
-                              style={{ width: "95px", height: "32px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
-                              onClick={() => handleResubmit(req)}
-                              title="Submit Request"
-                            >
-                              <i className="fa fa-paper-plane me-1"></i> Submit
-                            </button>
+                            readOnly ? (
+                              <span
+                                className="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill fw-bold"
+                                style={{ width: "95px", height: "32px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "0.82rem" }}
+                              >
+                                Draft
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-primary rounded-pill fw-bold"
+                                style={{ width: "95px", height: "32px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                                onClick={() => handleResubmit(req)}
+                                title="Submit Request"
+                              >
+                                <i className="fa fa-paper-plane me-1"></i> Submit
+                              </button>
+                            )
                           ) : (
                             <span
                               className="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill fw-bold"
@@ -1112,7 +1177,7 @@ const ContractorRatesView = ({ selectedStates = [] }) => {
       )}
 
       {/* ── Request Rate Adjustment Modal ── */}
-      {showRequestModal && createPortal(
+      {!readOnly && showRequestModal && createPortal(
         <div className="modal-overlay-premium" onClick={() => setShowRequestModal(false)}>
           <div
             className="modal-content-premium w-100"

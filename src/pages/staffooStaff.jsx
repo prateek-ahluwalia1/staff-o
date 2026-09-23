@@ -1,13 +1,27 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import DocumentTable from "../components/DocumentTable";
 import StaffOnboardingForms from "../components/StaffOnboardingForms";
 import ProfileForm from "../components/ProfileForm";
+import TablePagination from "../components/TablePagination";
 import { toast } from "react-toastify";
 import { apiURL } from "../utils/exports";
 import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
+
+const AUSTRALIAN_STATE_PILLS = [
+    { label: "All", value: "all" },
+    { label: "Victoria", value: "vic" },
+    { label: "New South Wales", value: "nsw" },
+    { label: "Queensland", value: "qld" },
+    { label: "Western Australia", value: "wa" },
+    { label: "South Australia", value: "sa" },
+    { label: "Tasmania", value: "tas" },
+    { label: "ACT", value: "act" },
+    { label: "Northern Territory", value: "nt" },
+];
 
 /* ──────────────────────────────────────────
    Premium Modal Component (inline)
@@ -338,7 +352,67 @@ const DOC_TYPES = [
 
 const StaffooStaff = () => {
     const [page, setPage] = useState(1);
-    const { data: apiResponse, loading, error, refetch } = useFetch(`api/get-contractor-staff/1`, { isAuth: true });
+    const [perPage, setPerPage] = useState(20);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const stateFromUrl = searchParams.get("state") || "all";
+    const [selectedState, setSelectedState] = useState(stateFromUrl);
+    const [search, setSearch] = useState(searchParams.get("search") || "");
+    const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+    useEffect(() => {
+        const s = searchParams.get("state") || "all";
+        if (s !== selectedState) {
+            setSelectedState(s);
+        }
+    }, [searchParams, selectedState]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setPage(1);
+            setSearchParams((prev) => {
+                const next = new URLSearchParams(prev);
+                if (search.trim()) {
+                    next.set("search", search.trim());
+                } else {
+                    next.delete("search");
+                }
+                return next;
+            });
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [search, setSearchParams]);
+
+    const handleSelectState = (stateValue) => {
+        setSelectedState(stateValue);
+        setPage(1);
+        setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            if (stateValue === "all") {
+                next.delete("state");
+            } else {
+                next.set("state", stateValue);
+            }
+            return next;
+        });
+    };
+
+    const fetchEndpoint = useMemo(() => {
+        const base = `api/get-contractor-staff/1`;
+        const params = new URLSearchParams();
+        params.set("page", page);
+        params.set("per_page", perPage);
+        params.set("limit", perPage);
+        if (selectedState && selectedState !== "all") {
+            params.set("state", selectedState);
+        }
+        if (debouncedSearch && debouncedSearch.trim()) {
+            params.set("search", debouncedSearch.trim());
+        }
+        return `${base}?${params.toString()}`;
+    }, [page, perPage, selectedState, debouncedSearch]);
+
+    const { data: apiResponse, loading, error, refetch } = useFetch(fetchEndpoint, { isAuth: true });
     const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
     const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
     const { submit: submitSecurityLicense } = useSubmit({ isAuth: true, BaseURL: "https://apis.thescouts.com.au/" });
@@ -487,16 +561,15 @@ const StaffooStaff = () => {
     }, [isModalOpen, showDocModal, isDeleteModalOpen]);
 
     useEffect(() => {
-        if (apiResponse?.success && apiResponse?.guards) {
-            setStaff(apiResponse.guards || []);
-            setTotalPages(apiResponse.data?.last_page || 1);
-            setTotalItems(apiResponse.data?.total || apiResponse.guards.length || 0);
+        if (apiResponse?.success) {
+            const list = apiResponse.guards || apiResponse.data?.data || apiResponse.data || [];
+            setStaff(Array.isArray(list) ? list : []);
+            setTotalPages(apiResponse.data?.last_page || apiResponse.last_page || 1);
+            setTotalItems(apiResponse.data?.total ?? apiResponse.total ?? (Array.isArray(list) ? list.length : 0));
         } else {
             setStaff([]); setTotalPages(1); setTotalItems(0);
         }
     }, [apiResponse]);
-
-    const handlePageChange = (newPage) => { if (newPage >= 1 && newPage <= totalPages) setPage(newPage); };
     const getStatusBadgeClass = (isActive) => isActive ? "badge-premium badge-success" : "badge-premium badge-danger";
 
     const openModal = (user = null) => {
@@ -1059,9 +1132,134 @@ const StaffooStaff = () => {
                         </div>
                         <h3 className="mb-0 fw-bold" style={{ color: "#1e293b" }}>Team Members</h3>
                     </div>
-                    <button className="btn add-btn px-4" onClick={() => openModal()}>
-                        <i className="fa-solid fa-plus me-1"></i> Add Staff
-                    </button>
+
+                    <div className="d-flex align-items-center gap-2 flex-wrap flex-grow-1 justify-content-md-end">
+                        {/* Search Bar */}
+                        <div className="position-relative" style={{ minWidth: "220px", maxWidth: "340px", flex: "1 1 220px" }}>
+                            <i className="fa-solid fa-magnifying-glass position-absolute text-muted" style={{ left: "14px", top: "50%", transform: "translateY(-50%)", fontSize: "0.85rem", pointerEvents: "none" }}></i>
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Search staff..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                style={{
+                                    paddingLeft: "38px",
+                                    paddingRight: search ? "36px" : "14px",
+                                    height: "38px",
+                                    borderRadius: "50px",
+                                    border: "1px solid #cbd5e1",
+                                    fontSize: "0.85rem",
+                                    background: "#f8fafc",
+                                    transition: "all 0.15s ease",
+                                }}
+                            />
+                            {search && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearch("")}
+                                    className="btn btn-link position-absolute p-0 text-muted"
+                                    style={{ right: "14px", top: "50%", transform: "translateY(-50%)", textDecoration: "none", fontSize: "0.8rem" }}
+                                    title="Clear search"
+                                >
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Rows per page dropdown */}
+                        <div className="d-flex align-items-center gap-1.5">
+                            <select
+                                className="form-select"
+                                value={perPage}
+                                onChange={(e) => {
+                                    setPerPage(Number(e.target.value));
+                                    setPage(1);
+                                }}
+                                title="Rows per page"
+                                style={{
+                                    height: "38px",
+                                    borderRadius: "50px",
+                                    borderColor: "#cbd5e1",
+                                    fontSize: "0.825rem",
+                                    fontWeight: 600,
+                                    color: "#334155",
+                                    padding: "0 28px 0 14px",
+                                    cursor: "pointer",
+                                    background: "#f8fafc",
+                                    minWidth: "110px",
+                                }}
+                            >
+                                <option value={20}>20 / page</option>
+                                <option value={50}>50 / page</option>
+                                <option value={100}>100 / page</option>
+                                <option value={200}>200 / page</option>
+                            </select>
+                        </div>
+
+                        <button className="btn add-btn px-4" onClick={() => openModal()} style={{ height: '38px', display: 'inline-flex', alignItems: 'center' }}>
+                            <i className="fa-solid fa-plus me-1"></i> Add Staff
+                        </button>
+                    </div>
+                </div>
+
+                {/* State Filter Pills */}
+                <div className="state-pills-bar d-flex align-items-center justify-content-between gap-3 flex-wrap mt-3 pt-3 border-top">
+                    <div className="d-flex align-items-center gap-3 flex-wrap">
+                        <div className="d-flex align-items-center gap-2 ms-2 me-1" style={{ paddingLeft: "4px" }}>
+                            <span
+                                className="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                style={{
+                                    width: "28px",
+                                    height: "28px",
+                                    background: "rgba(10, 124, 110, 0.1)",
+                                    color: "#0A7C6E",
+                                    fontSize: "0.85rem",
+                                }}
+                            >
+                                <i className="fa-solid fa-location-dot"></i>
+                            </span>
+                            <span className="fw-semibold text-slate-700 text-nowrap" style={{ fontSize: "0.875rem", color: "#334155" }}>
+                                Filter by State:
+                            </span>
+                        </div>
+                        <div className="d-flex align-items-center gap-2 flex-wrap">
+                            {AUSTRALIAN_STATE_PILLS.map((pill) => {
+                                const isActive = selectedState === pill.value;
+                                return (
+                                    <button
+                                        key={pill.value}
+                                        type="button"
+                                        onClick={() => handleSelectState(pill.value)}
+                                        className={`state-pill-btn ${isActive ? "active" : ""}`}
+                                        style={{
+                                            border: isActive ? "none" : "1px solid #e2e8f0",
+                                            background: isActive
+                                                ? "linear-gradient(135deg, #0A7C6E 0%, #075e53 100%)"
+                                                : "#ffffff",
+                                            color: isActive ? "#ffffff" : "#475569",
+                                            padding: "6px 14px",
+                                            borderRadius: "50px",
+                                            fontSize: "0.825rem",
+                                            fontWeight: isActive ? 600 : 500,
+                                            cursor: "pointer",
+                                            transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                                            boxShadow: isActive
+                                                ? "0 4px 12px rgba(10, 124, 110, 0.3)"
+                                                : "0 1px 2px rgba(0,0,0,0.03)",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                        }}
+                                    >
+                                        {pill.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    <div className="text-muted small fw-semibold pe-2">
+                        Total: <strong>{totalItems}</strong> records
+                    </div>
                 </div>
             </div>
 
@@ -1072,7 +1270,8 @@ const StaffooStaff = () => {
             )}
 
             {/* Table card */}
-            <div className="content-card table-responsive position-relative" style={{ overflowX: "auto", minHeight: "320px" }}>
+            <div className="content-card mb-4" style={{ overflow: "hidden" }}>
+                <div className="table-responsive position-relative" style={{ overflowX: "auto", minHeight: "320px" }}>
                 {loading && (
                     <div
                         className="d-flex align-items-center justify-content-center"
@@ -1145,20 +1344,31 @@ const StaffooStaff = () => {
                                 );
                             })
                         ) : (
-                            <tr><td colSpan={7} className="text-center py-5 text-muted">No staff records found.</td></tr>
+                            <tr>
+                                <td colSpan={7} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
+                                    <i className="fa-solid fa-users-slash d-block fs-3 mb-2 opacity-50"></i>
+                                    No staff records found{selectedState !== 'all' ? ` for ${AUSTRALIAN_STATE_PILLS.find(p => p.value === selectedState)?.label || selectedState}` : ""}{debouncedSearch ? ` matching "${debouncedSearch}"` : ""}.
+                                </td>
+                            </tr>
                         )}
                     </tbody>
                 </table>
             </div>
 
-            {/* Pagination */}
-            <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center mt-4 pt-3">
-                <span className="text-muted small mb-2 mb-sm-0">Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong> <span className="mx-2">•</span> Total <strong>{totalItems}</strong> records</span>
-                <div className="d-flex gap-2">
-                    <button className="page-btn" onClick={() => handlePageChange(page - 1)} disabled={page === 1}><i className="fa-solid fa-chevron-left"></i></button>
-                    <button className="page-btn" onClick={() => handlePageChange(page + 1)} disabled={page === totalPages || totalPages === 0}><i className="fa-solid fa-chevron-right"></i></button>
-                </div>
-            </div>
+            {/* Pagination inside card footer */}
+            <TablePagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                perPage={perPage}
+                onPageChange={(newPage) => setPage(newPage)}
+                onPerPageChange={(newPerPage) => {
+                    setPerPage(newPerPage);
+                    setPage(1);
+                }}
+                loading={loading}
+            />
+        </div>
 
             {/* Main modal (unchanged) */}
             {isModalOpen && (

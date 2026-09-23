@@ -21,7 +21,7 @@ export default function Induction() {
     const userId = userdata?.id || userdata?.data?.id;
 
     const { data: listResponse, loading: listLoading, refetch: refetchList } = useFetch("api/questionnaire-list", { isAuth: true });
-    const { data: staffResponse } = useFetch("api/admin/get-staffoo-staff?limit=1000", { isAuth: true });
+    const { data: staffResponse } = useFetch("api/admin/get-staffoo-staff", { isAuth: true });
     const { data: historyResponse, loading: historyLoading, refetch: refetchHistory } = useFetch("", { isAuth: true, immediate: false });
 
     const { submit: submitSave, loading: isSaving } = useSubmit({ isAuth: true });

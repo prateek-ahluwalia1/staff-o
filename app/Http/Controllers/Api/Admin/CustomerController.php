@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\Document;
 use App\Models\DocumentCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -48,12 +49,30 @@ class CustomerController extends Controller
             $query->where('city', $request->city);
         }
         
-        if ($request->has('state')) {
-            $state = $request->state;
-             $query->where(function ($q) use ($state) {
-                $q->where('state', $state)
-                ->orWhere('state', 'like', "%{$state}%");
-            });
+        if ($request->filled('state')) {
+            $stateMap = [
+                'vic' => ['vic', 'victoria'],
+                'nsw' => ['nsw', 'new south wales'],
+                'qld' => ['qld', 'queensland'],
+                'sa'  => ['sa',  'south australia'],
+                'wa'  => ['wa',  'western australia'],
+                'tas' => ['tas', 'tasmania'],
+                'act' => ['act', 'australian capital territory'],
+                'nt'  => ['nt',  'northern territory'],
+            ];
+
+            $input  = strtolower(trim($request->state));
+            $values = [$input]; // fallback
+
+            foreach ($stateMap as $aliases) {
+                // Only match if input is EXACTLY one of the aliases
+                if (in_array($input, $aliases, true)) {
+                    $values = $aliases;
+                    break;
+                }
+            }
+
+            $query->whereIn(DB::raw('LOWER(state)'), $values);
         }
         
         if ($request->has('country')) {

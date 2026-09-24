@@ -15404,3 +15404,14 @@ Large Mobile Screen
         padding: 5px !important;
     }
 }
+
+/* Responsive Card Grid: 3 cards per row on desktops when sidebar is opened */
+@media (min-width: 1200px) {
+    .sidebar-expanded .row-cols-xl-4 > *,
+    .dashboard-section.sidebar-expanded .row-cols-xl-4 > *,
+    .dashboard-main-content.sidebar-expanded .row-cols-xl-4 > *,
+    body:has(.jw-sidebar.expanded) .row-cols-xl-4 > * {
+        flex: 0 0 auto !important;
+        width: 33.33333333% !important;
+    }
+}

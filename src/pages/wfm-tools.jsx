@@ -9,6 +9,7 @@ import staffoostaffimg from "../assets/images/capital-security-staff.png";
 const WFMTools = () => {
   const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.auth);
+  const { isExpanded } = useSelector((state) => state.sidebar);
   const userType = userdata?.data?.user_type || userdata?.user_type;
   const isAdmin = userType === "admin";
 
@@ -129,7 +130,7 @@ const WFMTools = () => {
       </div>
 
       {isAdmin ? (
-        <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
+        <div className={`row row-cols-1 row-cols-md-2 row-cols-lg-3 ${isExpanded ? "row-cols-xl-3" : "row-cols-xl-4"} g-4`}>
           <div className="col">
             <Card
               title="Leave Management"

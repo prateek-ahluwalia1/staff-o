@@ -35,6 +35,7 @@ const Chat = () => {
   const navigate = useNavigate();
 
   const userdata = useSelector((state) => state.auth?.userdata);
+  const { isExpanded } = useSelector((state) => state.sidebar);
 
   const userType =
     userdata?.user_type?.toLowerCase() ||
@@ -158,8 +159,8 @@ const Chat = () => {
         </p>
       </div>
 
-      {/* Cards grid – 4 columns on XL */}
-      <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
+      {/* Cards grid – 3 columns when sidebar is open, 4 columns when closed */}
+      <div className={`row row-cols-1 row-cols-md-2 row-cols-lg-3 ${isExpanded ? "row-cols-xl-3" : "row-cols-xl-4"} g-4`}>
         {allowedCategories.map((cat) => (
           <div key={cat.key} className="col">
             <Card

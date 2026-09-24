@@ -212,7 +212,7 @@ const Sidebar = memo(function Sidebar() {
     <>
       <div style={styles.overlay} onClick={handleToggle} aria-hidden="true"></div>
 
-      <aside style={styles.sidebar} className="jw-sidebar">
+      <aside style={styles.sidebar} className={`jw-sidebar ${isExpanded ? "expanded" : "collapsed"}`}>
         <style>{`
           .jw-sidebar-toggle-btn {
             background: #f0fdf9; border: 1px solid #d1fae5; color: #0A7C6E;

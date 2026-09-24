@@ -10,6 +10,7 @@ import paysheetimg from "../assets/images/pay-sheet.png";
 const Reports = () => {
   const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.auth);
+  const { isExpanded } = useSelector((state) => state.sidebar);
   const userType = userdata?.data?.user_type || userdata?.user_type;
 
   if (userType !== "admin") {
@@ -125,8 +126,8 @@ const Reports = () => {
         </p>
       </div>
 
-      {/* Cards grid – 4 columns on XL */}
-      <div className="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-4">
+      {/* Cards grid – 3 columns when sidebar is open, 4 columns when closed */}
+      <div className={`row row-cols-1 row-cols-md-2 row-cols-lg-3 ${isExpanded ? "row-cols-xl-3" : "row-cols-xl-4"} g-4`}>
         <div className="col">
           <Card
             title="Time Sheet"

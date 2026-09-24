@@ -1,4 +1,18 @@
 import React, { useState } from "react";
+import { useSelector } from "react-redux";
+
+export const CardGrid = ({ children, className = "" }) => {
+  const { isExpanded } = useSelector((state) => state.sidebar || { isExpanded: false });
+  return (
+    <div
+      className={`row row-cols-1 row-cols-md-2 row-cols-lg-3 ${
+        isExpanded ? "row-cols-xl-3" : "row-cols-xl-4"
+      } g-4 ${className}`}
+    >
+      {children}
+    </div>
+  );
+};
 
 export const Card = ({
   title,
@@ -212,3 +226,6 @@ export const Card = ({
     </div>
   );
 };
+
+Card.Grid = CardGrid;
+export default Card;

@@ -33,14 +33,17 @@ const DashboardLayout = memo(function DashboardLayout() {
 
       {/* Restored your dashboard-section class here to bring back the background image */}
       <section
-        className="dashboard-section"
+        className={`dashboard-section ${isExpanded ? "sidebar-expanded" : "sidebar-collapsed"}`}
         style={{ display: "flex", flexDirection: "column", minHeight: "100vh", padding: 0 }}
       >
         <div style={{ display: "flex", flex: 1 }}>
           <Sidebar />
 
           {/* Main Content Area */}
-          <div style={mainContentStyle}>
+          <div
+            style={mainContentStyle}
+            className={`dashboard-main-content ${isExpanded ? "sidebar-expanded" : "sidebar-collapsed"}`}
+          >
             {/* Added 24px padding here to match your original CSS padding requirement */}
             <div style={{ padding: isDesktop ? "20px" : "5px", overflowX: "hidden" }}>
               <Outlet />
@@ -48,7 +51,6 @@ const DashboardLayout = memo(function DashboardLayout() {
           </div>
         </div>
       </section>
-      h
       <Footer />
     </>
   );

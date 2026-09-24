@@ -171,19 +171,17 @@ const RatesList = ({ forcedType } = {}) => {
   const [reviewNote, setReviewNote] = useState("");
   const [processingRequestId, setProcessingRequestId] = useState(null);
   const [requestTab, setRequestTab] = useState("pending"); // "pending" | "approved" | "rejected"
+  const [selectedPartner, setSelectedPartner] = useState(null); // group object
 
   // Prevent background scrolling when any modal is open
   useEffect(() => {
-    if (reviewRequest || showEditModal) {
+    if (reviewRequest || showEditModal || selectedPartner) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
     }
-
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [reviewRequest, showEditModal]);
+    return () => { document.body.style.overflow = "unset"; };
+  }, [reviewRequest, showEditModal, selectedPartner]);
 
   const { userdata } = useSelector((state) => state.auth || {});
   const userType = userdata?.data?.user_type || userdata?.user_type;
@@ -214,6 +212,28 @@ const RatesList = ({ forcedType } = {}) => {
     }
     return reqs;
   }, [requestsData, requestTab]);
+
+  const groupedRequests = useMemo(() => {
+    const groups = {};
+    rateRequests.forEach((req) => {
+      const partnerName = req.user?.name || req.contractor_name || "Resource Partner";
+      const partnerCompany = req.user?.contractor?.company_name || req.company_name || "";
+      const key = `${partnerName}__${partnerCompany}`;
+      if (!groups[key]) {
+        groups[key] = { partnerName, partnerCompany, requests: [], key };
+      }
+      groups[key].requests.push(req);
+    });
+    return Object.values(groups);
+  }, [rateRequests]);
+
+  // Helper: initials avatar
+  const getInitials = (name) =>
+    name
+      .split(" ")
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() || "")
+      .join("");
 
   const adminId = userdata?.data?.id || userdata?.id || null;
 
@@ -365,7 +385,7 @@ const RatesList = ({ forcedType } = {}) => {
 
     delete body.name;
     delete body.rate;
-    delete body.user; // Clean API-injected user object before sending
+    delete body.user;
 
     const res = await submit(updateEndpoint, body, { method: "POST" });
     if (res === undefined) return;
@@ -812,6 +832,7 @@ const RatesList = ({ forcedType } = {}) => {
         return (
           <div className="mt-4">
 
+            {/* Tab bar */}
             <div className="rate-tabs mb-4">
               {[
                 { key: "pending", label: "Pending", icon: "fa-clock" },
@@ -829,14 +850,13 @@ const RatesList = ({ forcedType } = {}) => {
               ))}
             </div>
 
-            <div className="rates-table-card">
-
-              {/* Table body */}
-              {requestsLoading ? (
-                <div className="text-center py-5">
-                  <i className="fa fa-spinner fa-spin text-muted fs-4"></i>
-                </div>
-              ) : rateRequests.length === 0 ? (
+            {/* Partner card grid */}
+            {requestsLoading ? (
+              <div className="text-center py-5">
+                <i className="fa fa-spinner fa-spin text-muted fs-4"></i>
+              </div>
+            ) : rateRequests.length === 0 ? (
+              <div className="rates-table-card">
                 <div className="text-center py-5">
                   <i
                     className={`fa ${requestTab === "pending" ? "fa-inbox"
@@ -860,109 +880,322 @@ const RatesList = ({ forcedType } = {}) => {
                         : "No requests have been rejected."}
                   </div>
                 </div>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-premium align-middle mb-0">
-                    <thead>
-                      <tr>
-                        <th>Resource Partner</th>
-                        <th>Title / State</th>
-                        <th>Submitted</th>
-                        {requestTab !== "pending" && <th>Status</th>}
-                        <th className="text-center">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rateRequests.map((req) => {
-                        const isPending = !req.status || req.status === "pending";
-                        const isApproved = req.status === "approved";
-                        const isProcessing = processingRequestId === req.id;
-                        return (
-                          <tr key={req.id}>
-                            <td>
-                              <div className="fw-bold text-dark">
-                                {req.user?.name || req.contractor_name || "Resource Partner"}
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+                  gap: "24px",
+                  alignItems: "start",
+                }}
+              >
+                {groupedRequests.map((group) => {
+                  const initials = getInitials(group.partnerName);
+                  const pendingCount = group.requests.filter(r => !r.status || r.status === "pending").length;
+                  const approvedCount = group.requests.filter(r => r.status === "approved").length;
+                  const rejectedCount = group.requests.filter(r => r.status === "rejected").length;
+                  const total = group.requests.length;
+
+                  /* colour palette per tab */
+                  const folderColor = requestTab === "pending"
+                    ? { tab: "#f59e0b", body: "#fffbeb", border: "#fde68a", text: "#92400e" }
+                    : requestTab === "approved"
+                      ? { tab: "#0A7C6E", body: "#f0fdf9", border: "#a7f3d0", text: "#065f46" }
+                      : { tab: "#ef4444", body: "#fff5f5", border: "#fecaca", text: "#991b1b" };
+
+                  return (
+                    <div
+                      key={group.key}
+                      onClick={() => setSelectedPartner(group)}
+                      style={{ cursor: "pointer", position: "relative" }}
+                      onMouseEnter={e => { e.currentTarget.querySelector(".folder-body").style.transform = "translateY(-3px)"; e.currentTarget.querySelector(".folder-body").style.boxShadow = `0 16px 32px -8px rgba(15,23,42,0.18)`; }}
+                      onMouseLeave={e => { e.currentTarget.querySelector(".folder-body").style.transform = "translateY(0)"; e.currentTarget.querySelector(".folder-body").style.boxShadow = `0 6px 18px -4px rgba(15,23,42,0.1)`; }}
+                    >
+                      {/* ── Folder Tab (ear) ── */}
+                      <div style={{
+                        position: "relative",
+                        display: "flex",
+                        alignItems: "flex-end",
+                        height: "22px",
+                        marginBottom: "-1px",
+                        zIndex: 1,
+                      }}>
+                        <div style={{
+                          width: "42%",
+                          height: "100%",
+                          background: folderColor.tab,
+                          borderRadius: "8px 8px 0 0",
+                          border: `1.5px solid ${folderColor.border}`,
+                          borderBottom: "none",
+                          display: "flex",
+                          alignItems: "center",
+                          paddingLeft: "10px",
+                          gap: "5px",
+                        }}>
+                          <i className="fa fa-folder-open" style={{ fontSize: "11px", color: "#fff", opacity: 0.9 }} />
+                          <span style={{ fontSize: "10px", fontWeight: 800, color: "#fff", letterSpacing: "0.3px", opacity: 0.9, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", maxWidth: "70px" }}>
+                            {group.partnerName.split(" ")[0]}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* ── Folder Body ── */}
+                      <div
+                        className="folder-body"
+                        style={{
+                          background: folderColor.body,
+                          border: `1.5px solid ${folderColor.border}`,
+                          borderRadius: "0 10px 10px 10px",
+                          padding: "18px 18px 16px",
+                          transition: "transform 0.22s ease, box-shadow 0.22s ease",
+                          boxShadow: "0 6px 18px -4px rgba(15,23,42,0.1)",
+                          position: "relative",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {/* Avatar row */}
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
+                          <div style={{
+                            width: 44, height: 44, borderRadius: "50%",
+                            background: folderColor.tab,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            color: "#fff", fontWeight: 800, fontSize: "15px", flexShrink: 0,
+                            boxShadow: `0 4px 10px -2px ${folderColor.tab}66`,
+                          }}>
+                            {initials}
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "13.5px", lineHeight: 1.3, wordBreak: "break-word" }}>
+                              {group.partnerName}
+                            </div>
+                            {group.partnerCompany && (
+                              <div style={{ fontSize: "11.5px", color: "#64748b", marginTop: "2px", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+                                {group.partnerCompany}
                               </div>
-                              <small className="text-muted">
-                                {req.user?.contractor?.company_name || req.company_name || ""}
-                              </small>
-                            </td>
-                            <td>
-                              <div className="fw-semibold text-dark">{req.title || req.rate?.title || "Rate Adjustment"}</div>
-                              <small className="text-muted">{STATE_NAME_MAP[req.state] || req.state || ""}</small>
-                            </td>
-                            <td className="text-muted small">
-                              {req.created_at
-                                ? new Date(req.created_at).toLocaleDateString("en-AU", {
-                                  day: "numeric", month: "short", year: "numeric",
-                                })
-                                : "—"}
-                            </td>
-                            {requestTab !== "pending" && (
-                              <td>
-                                {isApproved ? (
-                                  <span style={{ padding: "3px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "rgba(22,163,74,0.1)", color: "#16a34a", border: "1px solid rgba(22,163,74,0.2)" }}>
-                                    Approved
-                                  </span>
-                                ) : (
-                                  <span style={{ padding: "3px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "rgba(220,38,38,0.1)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.2)" }}>
-                                    Rejected
-                                  </span>
-                                )}
-                              </td>
                             )}
-                            <td className="text-center">
-                              {isPending ? (
-                                <div className="d-flex gap-2 justify-content-center">
-                                  <button
-                                    className="action-btn"
-                                    style={{ background: "rgba(10,124,110,0.1)", color: "#0A7C6E" }}
-                                    title="View & Approve"
-                                    disabled={isProcessing}
-                                    onClick={() => setReviewRequest({ request: req, mode: "view" })}
-                                  >
-                                    <i className="fa fa-eye" />
-                                  </button>
-                                  <button
-                                    className="action-btn"
-                                    style={{ background: "rgba(22,163,74,0.1)", color: "#16a34a" }}
-                                    title="Approve"
-                                    disabled={isProcessing}
-                                    onClick={() => handleApproveRequest(req)}
-                                  >
-                                    {isProcessing ? <i className="fa fa-spinner fa-spin" /> : <i className="fa fa-check" />}
-                                  </button>
-                                  <button
-                                    className="action-btn"
-                                    style={{ background: "rgba(220,38,38,0.1)", color: "#dc2626" }}
-                                    title="Reject"
-                                    disabled={isProcessing}
-                                    onClick={() => { setReviewRequest({ request: req, mode: "reject" }); setReviewNote(""); }}
-                                  >
-                                    <i className="fa fa-times" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  className="action-btn"
-                                  title="View Request"
-                                  onClick={() => setReviewRequest({ request: req, mode: "view" })}
-                                >
-                                  <i className="fa fa-eye" />
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+                          </div>
+                        </div>
+
+                        {/* Divider */}
+                        <div style={{ height: "1px", background: folderColor.border, marginBottom: "12px" }} />
+
+                        {/* Stats row */}
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                            {pendingCount > 0 && (
+                              <span style={{ fontSize: "11px", fontWeight: 700, color: "#92400e", background: "rgba(245,158,11,0.15)", padding: "3px 9px", borderRadius: "20px", border: "1px solid rgba(245,158,11,0.3)" }}>
+                                {pendingCount}
+                              </span>
+                            )}
+                            {approvedCount > 0 && (
+                              <span style={{ fontSize: "11px", fontWeight: 700, color: "#065f46", background: "rgba(10,124,110,0.12)", padding: "3px 9px", borderRadius: "20px", border: "1px solid rgba(10,124,110,0.25)" }}>
+                                {approvedCount}
+                              </span>
+                            )}
+                            {rejectedCount > 0 && (
+                              <span style={{ fontSize: "11px", fontWeight: 700, color: "#991b1b", background: "rgba(239,68,68,0.12)", padding: "3px 9px", borderRadius: "20px", border: "1px solid rgba(239,68,68,0.25)" }}>
+                                {rejectedCount}
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "5px", color: folderColor.text, fontSize: "12px", fontWeight: 700, flexShrink: 0 }}>
+                            <i className="fa fa-file-alt" style={{ fontSize: "11px" }} />
+                            {total}
+                          </div>
+                        </div>
+
+                        {/* Open hint */}
+                        <div style={{
+                          marginTop: "12px",
+                          fontSize: "11px", fontWeight: 600, color: folderColor.tab,
+                          display: "flex", alignItems: "center", gap: "5px",
+                          opacity: 0.75,
+                        }}>
+                          <i className="fa fa-arrow-right" style={{ fontSize: "10px" }} />
+                          Click to open
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })()}
+
+      {/* ── Partner Detail Modal ── */}
+      {selectedPartner && (
+        <div
+          className="modal-overlay-premium"
+          onClick={() => setSelectedPartner(null)}
+          style={{ zIndex: 9998 }}
+        >
+          <div
+            className="modal-content-premium modal-pop-in w-100"
+            style={{ maxWidth: "860px", maxHeight: "92vh" }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="modal-header-premium d-flex justify-content-between align-items-center px-4 py-3">
+              <div className="d-flex align-items-center gap-3">
+                <div style={{
+                  width: 40, height: 40, borderRadius: "10px",
+                  background: "rgba(255,255,255,0.15)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#fff", fontWeight: 800, fontSize: "14px", flexShrink: 0,
+                }}>
+                  {getInitials(selectedPartner.partnerName)}
+                </div>
+                <div>
+                  <h5 className="text-white fw-bold mb-0" style={{ fontSize: "16px" }}>
+                    {selectedPartner.partnerName}
+                  </h5>
+                  {selectedPartner.partnerCompany && (
+                    <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "12px" }}>
+                      {selectedPartner.partnerCompany}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <ModalCloseButton onClick={() => setSelectedPartner(null)} />
+            </div>
+
+            {/* Modal body — request list */}
+            <div className="flex-grow-1 overflow-auto" style={{ background: "#f8fafc" }}>
+              <div style={{ padding: "20px" }}>
+
+                {/* Sub-header labels */}
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 130px" + (requestTab !== "pending" ? " 100px" : "") + " 130px",
+                  gap: "12px",
+                  padding: "6px 16px",
+                  marginBottom: "6px",
+                  fontSize: "10px", fontWeight: 800, textTransform: "uppercase",
+                  letterSpacing: "0.6px", color: "#94a3b8",
+                }}>
+                  <span>Title / State</span>
+                  <span>Submitted</span>
+                  {requestTab !== "pending" && <span>Status</span>}
+                  <span style={{ textAlign: "center" }}>Actions</span>
+                </div>
+
+                {selectedPartner.requests.map((req) => {
+                  const isPending = !req.status || req.status === "pending";
+                  const isApproved = req.status === "approved";
+                  const isProcessing = processingRequestId === req.id;
+
+                  return (
+                    <div
+                      key={req.id}
+                      style={{
+                        background: "#fff",
+                        borderRadius: "12px",
+                        border: "1px solid #e2e8f0",
+                        padding: "14px 16px",
+                        marginBottom: "10px",
+                        display: "grid",
+                        gridTemplateColumns: "1fr 130px" + (requestTab !== "pending" ? " 100px" : "") + " 130px",
+                        gap: "12px",
+                        alignItems: "center",
+                        borderLeft: isPending ? "3px solid #d97706" : isApproved ? "3px solid #0A7C6E" : "3px solid #dc2626",
+                      }}
+                    >
+                      {/* Title + state */}
+                      <div>
+                        <div className="fw-semibold text-dark" style={{ fontSize: "13.5px" }}>
+                          {req.title || req.rate?.title || "Rate Adjustment"}
+                        </div>
+                        <small className="text-muted">{STATE_NAME_MAP[req.state] || req.state || ""}</small>
+                      </div>
+
+                      {/* Submitted */}
+                      <div className="text-muted" style={{ fontSize: "12.5px" }}>
+                        {req.created_at
+                          ? new Date(req.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })
+                          : "—"}
+                      </div>
+
+                      {/* Status badge (non-pending tabs) */}
+                      {requestTab !== "pending" && (
+                        <div>
+                          {isApproved ? (
+                            <span style={{ padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "rgba(22,163,74,0.1)", color: "#16a34a", border: "1px solid rgba(22,163,74,0.2)" }}>
+                              Approved
+                            </span>
+                          ) : (
+                            <span style={{ padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "rgba(220,38,38,0.1)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.2)" }}>
+                              Rejected
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                        {isPending ? (
+                          <>
+                            <button
+                              className="action-btn"
+                              style={{ background: "rgba(10,124,110,0.1)", color: "#0A7C6E" }}
+                              title="View Request"
+                              disabled={isProcessing}
+                              onClick={() => setReviewRequest({ request: req, mode: "view" })}
+                            >
+                              <i className="fa fa-eye" />
+                            </button>
+                            <button
+                              className="action-btn"
+                              style={{ background: "rgba(22,163,74,0.1)", color: "#16a34a" }}
+                              title="Approve"
+                              disabled={isProcessing}
+                              onClick={() => handleApproveRequest(req)}
+                            >
+                              {isProcessing ? <i className="fa fa-spinner fa-spin" /> : <i className="fa fa-check" />}
+                            </button>
+                            <button
+                              className="action-btn"
+                              style={{ background: "rgba(220,38,38,0.1)", color: "#dc2626" }}
+                              title="Reject"
+                              disabled={isProcessing}
+                              onClick={() => { setReviewRequest({ request: req, mode: "reject" }); setReviewNote(""); }}
+                            >
+                              <i className="fa fa-times" />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="action-btn"
+                            title="View Request"
+                            onClick={() => setReviewRequest({ request: req, mode: "view" })}
+                          >
+                            <i className="fa fa-eye" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Modal footer */}
+            <div className="bg-white border-top px-4 py-3 d-flex justify-content-between align-items-center">
+              <span className="text-muted small">
+                {selectedPartner.requests.length} request{selectedPartner.requests.length !== 1 ? "s" : ""} total
+              </span>
+              <button
+                className="btn btn-light px-5 rounded-pill fw-bold border"
+                onClick={() => setSelectedPartner(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Review / Reject Modal ── */}
       {reviewRequest && (

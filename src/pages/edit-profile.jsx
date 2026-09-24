@@ -578,7 +578,7 @@ export default function EditProfile() {
     if (!profileData?.data) return;
 
     const currentUserType = profileData.data.user_type || userType;
-    if (currentUserType === "contractor" && (profileData.charge_rate === true || profileData.charge_rate === "true" || profileData.charge_rate == 1)) {
+    if (currentUserType === "contractor" && (profileData.charge_rate === true || profileData.charge_rate === "true" || profileData.charge_rate === 1)) {
       const storageKey = `chargeRateModalShown_${profileData.data.id}`;
       if (!sessionStorage.getItem(storageKey)) {
         setShowChargeRateModal(true);
@@ -913,6 +913,7 @@ export default function EditProfile() {
       }
       return true;
     });
+    // eslint-disable-next-line
   }, [profileData?.data?.documents, profileData?.business?.documents, formData.state, formData.states_allowed, userType]);
 
   const docValidation = useMemo(() => {

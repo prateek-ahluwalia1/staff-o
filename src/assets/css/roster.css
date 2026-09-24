@@ -86,12 +86,184 @@
 }
 
 .vr-date-display {
-    font-size: 14.5px;
+    font-size: 14px;
     font-weight: 700;
-    color: var(--ink);
+    color: #0f172a !important;
     min-width: 160px;
     text-align: center;
     letter-spacing: -0.1px;
+    padding: 7px 14px;
+    border-radius: 10px;
+    transition: all 0.15s ease;
+    line-height: 1.4;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.vr-date-display:hover {
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+}
+.vr-date-display i {
+    color: #0A7C6E;
+    font-size: 14px;
+}
+.vr-date-display span {
+    color: #0f172a;
+    font-weight: 700;
+}
+
+/* --- Header Middle State Name --- */
+.vr-header-mid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 160px;
+    text-align: center;
+}
+
+.vr-state-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.3px;
+    padding: 6px 18px;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.vr-state-title i {
+    color: #0A7C6E;
+    font-size: 15px;
+}
+
+.vr-date-picker-wrap .react-datepicker {
+    border-radius: 14px;
+    box-shadow: 0 12px 32px -6px rgba(15,23,42,0.22);
+    border: 1px solid #e2e8f0;
+    font-family: inherit;
+    overflow: hidden;
+}
+.vr-date-picker-wrap .react-datepicker__header {
+    background: #0e2340 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 14px 14px 0 0 !important;
+    padding-top: 14px !important;
+    padding-bottom: 10px !important;
+}
+.vr-date-picker-wrap .react-datepicker__current-month {
+    color: #ffffff !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    margin-bottom: 10px !important;
+}
+.vr-date-picker-wrap .react-datepicker__day-names {
+    display: flex !important;
+    justify-content: space-around !important;
+    padding: 0 8px !important;
+    margin: 0 !important;
+    border-top: 1px solid rgba(255,255,255,0.12) !important;
+    padding-top: 8px !important;
+}
+.vr-date-picker-wrap .react-datepicker__day-name {
+    color: #cbd5e1 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    width: 32px !important;
+    line-height: 24px !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+}
+.vr-date-picker-wrap .react-datepicker__navigation {
+    top: 12px !important;
+}
+.vr-date-picker-wrap .react-datepicker__navigation-icon::before {
+    border-color: rgba(255,255,255,0.85) !important;
+    border-width: 2px 2px 0 0 !important;
+}
+.vr-date-picker-wrap .react-datepicker__month {
+    padding: 6px 8px !important;
+    margin: 0 !important;
+}
+/* --- Week Selection and Hover Highlights in DatePicker --- */
+.vr-date-picker-wrap .react-datepicker__week {
+    display: flex !important;
+    justify-content: space-around !important;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    border-radius: 8px;
+    margin: 2px 0;
+}
+
+.vr-date-picker-wrap .react-datepicker__week:hover {
+    background-color: rgba(10, 124, 110, 0.12);
+}
+
+.vr-date-picker-wrap .react-datepicker__day {
+    transition: all 0.15s ease;
+    cursor: pointer;
+    margin: 0 !important;
+    width: 32px !important;
+    height: 32px !important;
+    line-height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Hovered week days (low highlight) */
+.vr-date-picker-wrap .react-datepicker__day.is-roster-hovered-week:not(.is-roster-selected-week) {
+    background-color: rgba(10, 124, 110, 0.16) !important;
+    color: #0A7C6E !important;
+    font-weight: 600 !important;
+    border-radius: 0 !important;
+}
+
+.vr-date-picker-wrap .react-datepicker__day.is-roster-hovered-week.is-roster-hover-start:not(.is-roster-selected-week) {
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+}
+
+.vr-date-picker-wrap .react-datepicker__day.is-roster-hovered-week.is-roster-hover-end:not(.is-roster-selected-week) {
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+}
+
+/* Selected week days */
+.vr-date-picker-wrap .react-datepicker__day.is-roster-selected-week,
+.vr-date-picker-wrap .react-datepicker__day--selected {
+    background-color: #0A7C6E !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border-radius: 0 !important;
+}
+
+.vr-date-picker-wrap .react-datepicker__day.is-roster-week-start {
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+}
+
+.vr-date-picker-wrap .react-datepicker__day.is-roster-week-end {
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+}
+
+.vr-date-picker-wrap .react-datepicker__week-number {
+    color: #94a3b8;
+    font-size: 11px;
 }
 
 .vr-icon-btn {

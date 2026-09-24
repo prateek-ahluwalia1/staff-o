@@ -194,7 +194,8 @@ export default function MyJobApplications() {
       setCurrentPage(1);
       fetchCustomerSites(1);
     }
-  }, [userId]);
+
+  }, [userId, fetchCustomerSites]);
 
   useEffect(() => {
     if (submitData?.pagination) {

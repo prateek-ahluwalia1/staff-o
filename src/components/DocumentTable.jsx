@@ -95,7 +95,7 @@ const getExpiryStatus = (dateString) => {
 };
 
 /* ── One document row: name + status badges, number, expiry, file action, edit ── */
-function DocRowActions({ doc, onAddFile, showDocErrors }) {
+function DocRowActions({ doc, onAddFile, showDocErrors, readOnly = false }) {
   const hasFile = Boolean(doc.file);
   return (
     <div className="d-flex align-items-center gap-2 flex-wrap">
@@ -109,6 +109,10 @@ function DocRowActions({ doc, onAddFile, showDocErrors }) {
         >
           <i className="fa fa-eye"></i> View
         </a>
+      ) : readOnly ? (
+        <span className="badge bg-light text-muted border px-2 py-1" style={{ fontSize: "0.75rem", fontWeight: 500 }}>
+          Not Uploaded
+        </span>
       ) : (
         <button type="button" className={`pill-btn upload-btn ${showDocErrors ? 'shake-red' : ''}`} onClick={() => onAddFile(doc)} title="Add main document">
           <i className="fa fa-cloud-arrow-up"></i> Upload
@@ -208,9 +212,9 @@ function DocNameCell({ doc, userType, isStaffooStaff }) {
 }
 
 // Renders one desktop table + mobile card set for a given list of docs.
-function DocumentSectionBody({ docs, onAddFile, showDocErrors, userType, isStaffooStaff }) {
+function DocumentSectionBody({ docs, onAddFile, showDocErrors, userType, isStaffooStaff, readOnly = false }) {
   const handleOpenDocModal = (doc) => {
-    if (onAddFile) {
+    if (onAddFile && !readOnly) {
       onAddFile({ ...doc, user_type: doc.user_type || userType }, userType);
     }
   };
@@ -226,7 +230,7 @@ function DocumentSectionBody({ docs, onAddFile, showDocErrors, userType, isStaff
               <th>Document Number</th>
               <th>Expiration Date</th>
               <th>File</th>
-              <th style={{ textAlign: "center" }}>Edit</th>
+              {!readOnly && <th style={{ textAlign: "center" }}>Edit</th>}
             </tr>
           </thead>
           <tbody>
@@ -236,17 +240,19 @@ function DocumentSectionBody({ docs, onAddFile, showDocErrors, userType, isStaff
                   <td><DocNameCell doc={doc} userType={userType} isStaffooStaff={isStaffooStaff} /></td>
                   <td><span className="doc-number">{doc.document_no || "—"}</span></td>
                   <td style={{ color: "#334155", fontWeight: 500 }}>{formatAUSDate(doc.document_expiry)}</td>
-                  <td><DocRowActions doc={doc} onAddFile={handleOpenDocModal} showDocErrors={showDocErrors} /></td>
-                  <td style={{ textAlign: "center" }}>
-                    <button type="button" className="action-btn" onClick={() => handleOpenDocModal(doc)} title="Edit document">
-                      <i className="fa fa-pencil"></i>
-                    </button>
-                  </td>
+                  <td><DocRowActions doc={doc} onAddFile={handleOpenDocModal} showDocErrors={showDocErrors} readOnly={readOnly} /></td>
+                  {!readOnly && (
+                    <td style={{ textAlign: "center" }}>
+                      <button type="button" className="action-btn" onClick={() => handleOpenDocModal(doc)} title="Edit document">
+                        <i className="fa fa-pencil"></i>
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="text-center text-muted py-4" style={{ fontStyle: "italic" }}>
+                <td colSpan={readOnly ? 4 : 5} className="text-center text-muted py-4" style={{ fontStyle: "italic" }}>
                   No documents found.
                 </td>
               </tr>
@@ -265,9 +271,11 @@ function DocumentSectionBody({ docs, onAddFile, showDocErrors, userType, isStaff
                   <div className="doc-card-inner">
                     <div className="doc-card-header">
                       <DocNameCell doc={doc} userType={userType} isStaffooStaff={isStaffooStaff} />
-                      <button type="button" className="action-btn" onClick={() => handleOpenDocModal(doc)} title="Edit document">
-                        <i className="fa fa-pencil"></i>
-                      </button>
+                      {!readOnly && (
+                        <button type="button" className="action-btn" onClick={() => handleOpenDocModal(doc)} title="Edit document">
+                          <i className="fa fa-pencil"></i>
+                        </button>
+                      )}
                     </div>
 
                     <div className="doc-card-meta">
@@ -281,7 +289,7 @@ function DocumentSectionBody({ docs, onAddFile, showDocErrors, userType, isStaff
                       </div>
                     </div>
 
-                    <DocRowActions doc={doc} onAddFile={onAddFile} showDocErrors={showDocErrors} />
+                    <DocRowActions doc={doc} onAddFile={onAddFile} showDocErrors={showDocErrors} readOnly={readOnly} />
                   </div>
                 </div>
               </div>
@@ -426,7 +434,7 @@ const matchDoc = (docA, docB) => {
   return false;
 };
 
-export default function DocumentTable({ documents, onAddFile, userType, showDocErrors, isStaffooStaff = false }) {
+export default function DocumentTable({ documents, onAddFile, userType, showDocErrors, isStaffooStaff = false, readOnly = false }) {
   const processedDocuments = useMemo(() => {
     const incomingDocs = Array.isArray(documents) ? documents : [];
 
@@ -878,6 +886,7 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
                 showDocErrors={showDocErrors}
                 userType={userType}
                 isStaffooStaff={false}
+                readOnly={readOnly}
               />
             )}
           </div>
@@ -915,6 +924,7 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
                       showDocErrors={showDocErrors}
                       userType={userType}
                       isStaffooStaff={false}
+                      readOnly={readOnly}
                     />
                   )}
                 </div>
@@ -942,7 +952,7 @@ export default function DocumentTable({ documents, onAddFile, userType, showDocE
             : "All documents associated with your profile."}
         </p> */}
       </div>
-      <DocumentSectionBody docs={processedDocuments} onAddFile={onAddFile} showDocErrors={showDocErrors} userType={userType} isStaffooStaff={isStaffooStaff} />
+      <DocumentSectionBody docs={processedDocuments} onAddFile={onAddFile} showDocErrors={showDocErrors} userType={userType} isStaffooStaff={isStaffooStaff} readOnly={readOnly} />
     </div>
   );
 }

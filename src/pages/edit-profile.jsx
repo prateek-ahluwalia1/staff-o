@@ -2135,11 +2135,11 @@ export default function EditProfile() {
           hideFields={
             !isStaffooStaff
               ? [
-                  "is_control_room_license",
-                  "staff_document_type",
-                  "date_of_birth",
-                  "origin_country",
-                ]
+                "is_control_room_license",
+                "staff_document_type",
+                "date_of_birth",
+                "origin_country",
+              ]
               : []
           }
         />

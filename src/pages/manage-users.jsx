@@ -11,6 +11,7 @@ import { apiURL } from "../utils/exports";
 import Select from "react-select";
 import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 import ContractorRatesView from "./ContractorRatesView";
+import UserProfileView from "../components/UserProfileView";
 
 const AUSTRALIAN_STATE_PILLS = [
   { label: "All", value: "all" },
@@ -463,6 +464,7 @@ const ManageUsers = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [showDocErrors, setShowDocErrors] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewMode, setIsViewMode] = useState(false);
   const [activeModalTab, setActiveModalTab] = useState("personal");
   const [editingUser, setEditingUser] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -734,8 +736,8 @@ const ManageUsers = () => {
     return "badge-premium badge-secondary";
   };
 
-  const openModal = useCallback((user = null) => {
-
+  const openModal = useCallback((user = null, viewMode = false) => {
+    setIsViewMode(viewMode);
     setActiveModalTab("personal");
     setShowDocModal(false);
     setSelectedDoc(null);
@@ -783,6 +785,7 @@ const ManageUsers = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingUser(null);
+    setIsViewMode(false);
   };
 
   // Lock background scroll when any modal is open
@@ -2288,12 +2291,21 @@ const ManageUsers = () => {
                         <div className="d-flex gap-2 justify-content-center">
                           <button
                             className="btn btn-outline-premium btn-sm"
-                            onClick={() => openModal(user)}
+                            title="View Profile"
+                            onClick={() => openModal(user, true)}
+                          >
+                            <i className="fa-solid fa-eye"></i>
+                          </button>
+                          <button
+                            className="btn btn-outline-premium btn-sm"
+                            title="Edit User"
+                            onClick={() => openModal(user, false)}
                           >
                             <i className="fa-solid fa-pen-to-square"></i>
                           </button>
                           <button
                             className="btn btn-outline-premium btn-sm"
+                            title="Delete User"
                             onClick={() => openDeleteModal(user)}
                           >
                             <i className="fa-solid fa-trash text-danger"></i>
@@ -2344,13 +2356,19 @@ const ManageUsers = () => {
           }}>
             <div className="px-4 py-3 border-bottom bg-white d-flex justify-content-between align-items-start">
               <div className="flex-grow-1 pe-4">
-                <h4 className="fw-bold mb-1">
-                  {editingUser ? "Update Profile" : "Create New User"}
-                </h4>
+                <div className="d-flex align-items-center gap-2 flex-wrap mb-1">
+                  <h4 className="fw-bold mb-0">
+                    {isViewMode
+                      ? `${editingUser?.name || "User"} Profile`
+                      : editingUser
+                      ? "Update Profile"
+                      : "Create New User"}
+                  </h4>
+                </div>
                 <p className="text-muted small mb-0">
                   Role: <span className="text-dark fw-bold">{roleLabels[activeTab] || activeTab.replace("_", " ")}</span>
                 </p>
-                {activeTab === "staff" && (
+                {!isViewMode && activeTab === "staff" && (
                   <div className="mt-3 p-3 bg-white rounded-4 border shadow-sm w-100">
                     <label className="form-label fw-bold mb-2">Assign to Resource Partner *</label>
                     <Select
@@ -2404,139 +2422,172 @@ const ManageUsers = () => {
               <button className="btn-close shadow-none mt-1" onClick={closeModal}></button>
             </div>
 
-            <div className="flex-grow-1 overflow-auto px-4 py-4">
-              <div className="modal-tabs-container mb-4" style={{ background: "#f3f4f6", padding: "4px", borderRadius: "12px", display: "inline-flex", flexWrap: "wrap", gap: "4px" }}>
-                <button
-                  type="button"
-                  className={`btn ${activeModalTab === "personal" ? "btn-dark" : "btn-light"} ${showErrors && getMissingPersonalFields().length > 0 ? "shake-red" : ""} border-0`}
-                  onClick={() => handleTabClick("personal")}
-                  style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
-                >
-                  Personal Information
-                </button>
-                {(activeTab === "staff" || activeTab === "sub_contractor") && (
-                  <>
-                    <button
-                      type="button"
-                      className={`btn ${activeModalTab === "documents" ? "btn-dark" : "btn-light"} ${showDocErrors && !isDocumentsComplete ? "shake-red" : ""} border-0`}
-                      onClick={() => handleTabClick("documents")}
-                      style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
-                    >
-                      Documents
-                    </button>
-                  </>
-                )}
-                {activeTab === "sub_contractor" && editingUser && (
-                  <button
-                    type="button"
-                    className={`btn ${activeModalTab === "rates" ? "btn-dark" : "btn-light"} border-0`}
-                    onClick={() => handleTabClick("rates")}
-                    style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
-                  >
-                    Rates
-                  </button>
-                )}
-              </div>
-
-              {activeModalTab === "personal" ? (
-                <ProfileForm
-                  showErrors={showErrors}
-                  hideFields={[
-                    ...(activeTab !== "staff" || staffParentContractorId !== 1
-                      ? [
-                        "is_control_room_license",
-                        "staff_document_type",
-                        "date_of_birth",
-                        "origin_country",
-                      ]
-                      : []),
-                  ]}
-                  profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
-                  formData={{
-                    name: formData.name,
-                    email: formData.email,
-                    phone: formData.phone,
-                    address: formData.address,
-                    city: formData.city,
-                    state: formData.state,
-                    country: formData.country,
-                    coordinates: formData.coordinates,
-                    gender: formData.gender,
-                    staff_document_type: formData.staff_document_type,
-                    company_name: formData.company_name,
-                    date_of_birth: formData.date_of_birth,
-                    origin_country: formData.origin_country,
-                    abn: formData.abn || "",
-                    acn: formData.acn || "",
-                    security_license_no: formData.security_license_no || "",
-                    is_control_room_license: formData.is_control_room_license ?? 0,
-                    states_allowed: formData.states_allowed,
-                  }}
-                  onChange={handleProfileFormChange}
-                  onSubmit={handleSubmit}
-                  loading={submitLoading}
-                  isEdit={!!editingUser}
+            {isViewMode && editingUser ? (
+              <div className="flex-grow-1 overflow-auto px-4 py-4">
+                <UserProfileView
+                  user={editingUser}
                   userType={
                     activeTab === "staff" ? "staff" :
                       activeTab === "sub_contractor" ? "contractor" :
                         "customer"
                   }
-                  onChangePhone={handleOpenPhoneModal}
-                  isPhoneVerified={false}
+                  contractorsList={contractorsList}
+                  documents={activeTab === "customer" ? [] : documents}
                   isStaffooStaff={activeTab === "staff" && staffParentContractorId === 1}
-                  footer={<></>}
-
+                  renderRates={activeTab === "sub_contractor" ? (
+                    <ContractorRatesView
+                      contractorId={editingUser.id}
+                      selectedStates={
+                        formData.states_allowed && formData.states_allowed.length > 0
+                          ? formData.states_allowed
+                          : editingUser.states_allowed || editingUser.contractor?.states_allowed || []
+                      }
+                      readOnly={true}
+                    />
+                  ) : null}
                 />
-              ) : activeModalTab === "documents" ? (
-                <div>
-                  {/* <div className="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                      <h6 className="fw-bold mb-1">Documents</h6>
-                      <p className="text-muted small mb-0">Upload and manage user documents.</p>
-                    </div>
-                  </div> */}
-                  <DocumentTable
-                    documents={documents}
-                    userType={activeTab === "sub_contractor" ? "contractor" : activeTab}
-                    onAddFile={openDocumentModal}
-                    showDocErrors={showDocErrors}
-                    isStaffooStaff={activeTab === "staff" && staffParentContractorId === 1}
-                  />
+              </div>
+            ) : (
+              <div className="flex-grow-1 overflow-auto px-4 py-4">
+                <div className="modal-tabs-container mb-4" style={{ background: "#f3f4f6", padding: "4px", borderRadius: "12px", display: "inline-flex", flexWrap: "wrap", gap: "4px" }}>
+                  <button
+                    type="button"
+                    className={`btn ${activeModalTab === "personal" ? "btn-dark" : "btn-light"} ${showErrors && getMissingPersonalFields().length > 0 ? "shake-red" : ""} border-0`}
+                    onClick={() => handleTabClick("personal")}
+                    style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
+                  >
+                    Personal Information
+                  </button>
+                  {(activeTab === "staff" || activeTab === "sub_contractor") && (
+                    <>
+                      <button
+                        type="button"
+                        className={`btn ${activeModalTab === "documents" ? "btn-dark" : "btn-light"} ${showDocErrors && !isDocumentsComplete ? "shake-red" : ""} border-0`}
+                        onClick={() => handleTabClick("documents")}
+                        style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
+                      >
+                        Documents
+                      </button>
+                    </>
+                  )}
+                  {activeTab === "sub_contractor" && editingUser && (
+                    <button
+                      type="button"
+                      className={`btn ${activeModalTab === "rates" ? "btn-dark" : "btn-light"} border-0`}
+                      onClick={() => handleTabClick("rates")}
+                      style={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}
+                    >
+                      Rates
+                    </button>
+                  )}
                 </div>
-              ) : activeModalTab === "rates" && editingUser ? (
-                <div>
-                  <ContractorRatesView
-                    contractorId={editingUser.id}
-                    selectedStates={
-                      formData.states_allowed && formData.states_allowed.length > 0
-                        ? formData.states_allowed
-                        : editingUser.states_allowed || editingUser.contractor?.states_allowed || []
+
+                {activeModalTab === "personal" ? (
+                  <ProfileForm
+                    showErrors={showErrors}
+                    hideFields={[
+                      ...(activeTab !== "staff" || staffParentContractorId !== 1
+                        ? [
+                          "is_control_room_license",
+                          "staff_document_type",
+                          "date_of_birth",
+                          "origin_country",
+                        ]
+                        : []),
+                    ]}
+                    profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
+                    formData={{
+                      name: formData.name,
+                      email: formData.email,
+                      phone: formData.phone,
+                      address: formData.address,
+                      city: formData.city,
+                      state: formData.state,
+                      country: formData.country,
+                      coordinates: formData.coordinates,
+                      gender: formData.gender,
+                      staff_document_type: formData.staff_document_type,
+                      company_name: formData.company_name,
+                      date_of_birth: formData.date_of_birth,
+                      origin_country: formData.origin_country,
+                      abn: formData.abn || "",
+                      acn: formData.acn || "",
+                      security_license_no: formData.security_license_no || "",
+                      is_control_room_license: formData.is_control_room_license ?? 0,
+                      states_allowed: formData.states_allowed,
+                    }}
+                    onChange={handleProfileFormChange}
+                    onSubmit={handleSubmit}
+                    loading={submitLoading}
+                    isEdit={!!editingUser}
+                    userType={
+                      activeTab === "staff" ? "staff" :
+                        activeTab === "sub_contractor" ? "contractor" :
+                          "customer"
                     }
-                    readOnly={true}
+                    onChangePhone={handleOpenPhoneModal}
+                    isPhoneVerified={false}
+                    isStaffooStaff={activeTab === "staff" && staffParentContractorId === 1}
+                    footer={<></>}
                   />
-                </div>
-              ) : null}
-            </div>
+                ) : activeModalTab === "documents" ? (
+                  <div>
+                    <DocumentTable
+                      documents={documents}
+                      userType={activeTab === "sub_contractor" ? "contractor" : activeTab}
+                      onAddFile={openDocumentModal}
+                      showDocErrors={showDocErrors}
+                      isStaffooStaff={activeTab === "staff" && staffParentContractorId === 1}
+                    />
+                  </div>
+                ) : activeModalTab === "rates" && editingUser ? (
+                  <div>
+                    <ContractorRatesView
+                      contractorId={editingUser.id}
+                      selectedStates={
+                        formData.states_allowed && formData.states_allowed.length > 0
+                          ? formData.states_allowed
+                          : editingUser.states_allowed || editingUser.contractor?.states_allowed || []
+                      }
+                      readOnly={true}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             <div className="px-4 py-3 border-top bg-light d-flex justify-content-end gap-2">
-              <button
-                type="button"
-                className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
-                onClick={closeModal}
-                style={{ minHeight: "44px" }}
-              >
-                Close
-              </button>
-              {activeModalTab === "personal" && (
+              {isViewMode ? (
                 <button
-                  type="submit"
-                  form="profile-form"
+                  type="button"
                   className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
-                  disabled={submitLoading}
+                  onClick={closeModal}
                   style={{ minHeight: "44px" }}
                 >
-                  {submitLoading ? "Saving..." : (activeTab === "staff" || activeTab === "sub_contractor") ? "Save & Next" : (editingUser ? "Update Profile" : "Create User")}
+                  Close
                 </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-light rounded-pill px-5 fw-bold text-muted border"
+                    onClick={closeModal}
+                    style={{ minHeight: "44px" }}
+                  >
+                    Close
+                  </button>
+                  {activeModalTab === "personal" && (
+                    <button
+                      type="submit"
+                      form="profile-form"
+                      className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm"
+                      disabled={submitLoading}
+                      style={{ minHeight: "44px" }}
+                    >
+                      {submitLoading ? "Saving..." : (activeTab === "staff" || activeTab === "sub_contractor") ? "Save & Next" : (editingUser ? "Update Profile" : "Create User")}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>

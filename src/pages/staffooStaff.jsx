@@ -10,6 +10,7 @@ import TablePagination from "../components/TablePagination";
 import { toast } from "react-toastify";
 import { apiURL } from "../utils/exports";
 import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
+import UserProfileView from "../components/UserProfileView";
 
 const AUSTRALIAN_STATE_PILLS = [
     { label: "All", value: "all" },
@@ -421,6 +422,7 @@ const StaffooStaff = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isViewMode, setIsViewMode] = useState(false);
     const [activeModalTab, setActiveModalTab] = useState("personal");
     const [editingUser, setEditingUser] = useState(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -572,7 +574,8 @@ const StaffooStaff = () => {
     }, [apiResponse]);
     const getStatusBadgeClass = (isActive) => isActive ? "badge-premium badge-success" : "badge-premium badge-danger";
 
-    const openModal = (user = null) => {
+    const openModal = (user = null, viewMode = false) => {
+        setIsViewMode(viewMode);
         setActiveModalTab("personal");
         setShowDocModal(false);
         setSelectedDoc(null);
@@ -597,7 +600,7 @@ const StaffooStaff = () => {
         }
         setIsModalOpen(true);
     };
-    const closeModal = () => { setIsModalOpen(false); setEditingUser(null); };
+    const closeModal = () => { setIsModalOpen(false); setEditingUser(null); setIsViewMode(false); };
 
     const openDocumentModal = (doc) => {
         setSelectedDoc(doc);
@@ -1336,8 +1339,9 @@ const StaffooStaff = () => {
                                             <td><span className="small">{user.created_at ? new Date(user.created_at).toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}</span></td>
                                             <td style={{ textAlign: "center" }}>
                                                 <div className="d-flex gap-2 justify-content-center">
-                                                    <button className="btn btn-outline-premium btn-sm" onClick={() => openModal(user)}><i className="fa-solid fa-pen-to-square"></i></button>
-                                                    <button className="btn btn-outline-premium btn-sm" onClick={() => openDeleteModal(user)}><i className="fa-solid fa-trash text-danger"></i></button>
+                                                    <button className="btn btn-outline-premium btn-sm" title="View Profile" onClick={() => openModal(user, true)}><i className="fa-solid fa-eye"></i></button>
+                                                    <button className="btn btn-outline-premium btn-sm" title="Edit Staff" onClick={() => openModal(user, false)}><i className="fa-solid fa-pen-to-square"></i></button>
+                                                    <button className="btn btn-outline-premium btn-sm" title="Delete Staff" onClick={() => openDeleteModal(user)}><i className="fa-solid fa-trash text-danger"></i></button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1375,114 +1379,142 @@ const StaffooStaff = () => {
                 <div className="full-screen-modal" style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: 1060, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", display: "flex", justifyContent: "center", alignItems: "center" }}>
                     <div className="modal-inner-content" style={{ width: "95%", maxWidth: "1200px", height: "90vh", background: "#ffffff", borderRadius: "20px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
                         <div className="px-4 py-3 border-bottom bg-white d-flex justify-content-between align-items-center">
-                            <h4 className="fw-bold mb-0">{editingUser ? "Update Staff Profile" : "Add New Staff"}</h4>
+                            <div className="d-flex align-items-center gap-2 flex-wrap">
+                                <h4 className="fw-bold mb-0">
+                                    {isViewMode
+                                        ? `${editingUser?.name || "Staff"} Profile`
+                                        : editingUser
+                                        ? "Update Staff Profile"
+                                        : "Add New Staff"}
+                                </h4>
+                            </div>
                             <button className="btn-close shadow-none" onClick={closeModal}></button>
                         </div>
                         <div className="flex-grow-1 overflow-auto px-4 py-4" onScroll={() => { if (document.activeElement?.id === "address") document.activeElement.blur(); }}>
-                            <div className="modal-tabs-container mb-4" style={{ background: "#f3f4f6", padding: 4, borderRadius: 12, display: "inline-flex", flexWrap: "wrap", gap: 4 }}>
-                                <button type="button" className={`btn ${activeModalTab === "personal" ? "btn-dark" : "btn-light"} ${showErrors && getMissingPersonalFields().length > 0 ? "shake-red" : ""} border-0`} onClick={() => handleTabClick("personal")} style={{ borderRadius: 8, fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}>Personal Information</button>
-                                <button type="button" className={`btn ${activeModalTab === "documents" ? "btn-dark" : "btn-light"} ${showDocErrors && !isDocumentsComplete ? "shake-red" : ""} border-0`} onClick={() => handleTabClick("documents")} style={{ borderRadius: 8, fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}>Documents</button>
-                                <button type="button" className={`btn ${activeModalTab === "onboarding" ? "btn-dark" : "btn-light"} border-0`} onClick={() => handleTabClick("onboarding")} style={{ borderRadius: 8, fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}>Verification Forms</button>
-                            </div>
-
-                            {activeModalTab === "personal" ? (
-                                <ProfileForm
-                                    showErrors={showErrors}
-                                    forceShowAllStaffFields={true}
-                                    profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
-                                    formData={{ ...formData, abn: "", acn: "", company_name: "" }}
-                                    onChange={handleProfileFormChange}
-                                    onSubmit={handleSubmit}
-                                    loading={submitLoading}
-                                    isEdit={!!editingUser}
+                            {isViewMode && editingUser ? (
+                                <UserProfileView
+                                    user={editingUser}
                                     userType="staff"
-                                    onChangePhone={() => { }}
-                                    isPhoneVerified={false}
                                     isStaffooStaff={true}
-                                    footer={<></>}
+                                    documents={staffDocuments}
+                                    staffPointsData={staffPointsData}
+                                    renderVerificationForms={
+                                        <StaffOnboardingForms submit={submit} userId={editingUser?.id} contractorId={1} />
+                                    }
                                 />
-                            ) : activeModalTab === "documents" ? (
-                                <div>
-                                    {/* 100-Point Identification Check Progress Bar */}
-                                    <div
-                                        className="p-3 p-md-4 rounded-3 mb-4 shadow-sm"
-                                        style={{
-                                            background: (staffPointsData.totalPoints || 0) >= 100 ? "#f0fdf4" : "#f8fafc",
-                                            border: `1px solid ${(staffPointsData.totalPoints || 0) >= 100 ? "#86efac" : "#e2e8f0"}`,
-                                            borderLeft: `5px solid ${(staffPointsData.totalPoints || 0) >= 100 ? "#16a34a" : "#0A7C6E"}`,
-                                        }}
-                                    >
-                                        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-2">
-                                            <div>
-                                                <h6 className="fw-bold mb-1" style={{ color: "#0f172a" }}>
-                                                    <i className="fa-solid fa-id-card me-2" style={{ color: "#0A7C6E" }}></i>
-                                                    100-Point Identification Check
-                                                </h6>
-                                                <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
-                                                    Upload eligible identity documents to reach a minimum of <strong>100 points</strong> to proceed to verification forms.
-                                                </p>
-                                            </div>
-                                            <div className="text-end flex-shrink-0">
-                                                <span
-                                                    className="badge fs-6 px-3 py-2 rounded-pill fw-bold"
-                                                    style={{
-                                                        backgroundColor: (staffPointsData.totalPoints || 0) >= 100 ? "#16a34a" : "#0A7C6E",
-                                                        color: "#fff",
-                                                    }}
-                                                >
-                                                    {(staffPointsData.totalPoints || 0) >= 100
-                                                        ? "100 points completed"
-                                                        : `${staffPointsData.totalPoints || 0} / 100 Points`}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="progress mt-2" style={{ height: "10px", backgroundColor: "#e2e8f0", borderRadius: "10px" }}>
-                                            <div
-                                                className="progress-bar progress-bar-striped"
-                                                role="progressbar"
-                                                style={{
-                                                    width: `${Math.min(100, (staffPointsData.totalPoints || 0))}%`,
-                                                    backgroundColor: (staffPointsData.totalPoints || 0) >= 100 ? "#16a34a" : "#0A7C6E",
-                                                    transition: "width 0.4s ease",
-                                                }}
-                                                aria-valuenow={staffPointsData.totalPoints || 0}
-                                                aria-valuemin="0"
-                                                aria-valuemax="100"
-                                            ></div>
-                                        </div>
-                                        {(staffPointsData.totalPoints || 0) >= 100 ? (
-                                            <div className="d-flex align-items-center gap-2 mt-2 text-success small fw-semibold">
-                                                <i className="fa-solid fa-circle-check"></i>
-                                                <span>Requirement met! You have reached 100+ points and can proceed.</span>
-                                            </div>
-                                        ) : (
-                                            <div className="d-flex align-items-center gap-2 mt-2 text-muted small">
-                                                <i className="fa-solid fa-circle-info text-primary"></i>
-                                                <span>Need <strong>{Math.max(0, 100 - (staffPointsData.totalPoints || 0))} more points</strong> to unlock next step.</span>
-                                            </div>
-                                        )}
+                            ) : (
+                                <>
+                                    <div className="modal-tabs-container mb-4" style={{ background: "#f3f4f6", padding: 4, borderRadius: 12, display: "inline-flex", flexWrap: "wrap", gap: 4 }}>
+                                        <button type="button" className={`btn ${activeModalTab === "personal" ? "btn-dark" : "btn-light"} ${showErrors && getMissingPersonalFields().length > 0 ? "shake-red" : ""} border-0`} onClick={() => handleTabClick("personal")} style={{ borderRadius: 8, fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}>
+                                            Personal Information
+                                        </button>
+                                        <button type="button" className={`btn ${activeModalTab === "documents" ? "btn-dark" : "btn-light"} ${showDocErrors && !isDocumentsComplete ? "shake-red" : ""} border-0`} onClick={() => handleTabClick("documents")} style={{ borderRadius: 8, fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}>Documents</button>
+                                        <button type="button" className={`btn ${activeModalTab === "onboarding" ? "btn-dark" : "btn-light"} border-0`} onClick={() => handleTabClick("onboarding")} style={{ borderRadius: 8, fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 1rem" }}>Verification Forms</button>
                                     </div>
 
-                                    {/* <div className="d-flex justify-content-between align-items-center mb-4">
-                                        <div><h6 className="fw-bold mb-1">Documents</h6><p className="text-muted small mb-0">Upload and manage staff documents.</p></div>
-                                    </div> */}
-                                    <DocumentTable documents={staffDocuments} userType="staff" onAddFile={openDocumentModal} showDocErrors={showDocErrors} isStaffooStaff={true} />
-                                </div>
-                            ) : (
-                                <div><StaffOnboardingForms submit={submit} userId={editingUser?.id} contractorId={1} /></div>
+                                    {activeModalTab === "personal" ? (
+                                        <ProfileForm
+                                            showErrors={showErrors}
+                                            forceShowAllStaffFields={true}
+                                            profileImageUrl={getProfileImageUrlFromUserdata(editingUser)}
+                                            formData={{ ...formData, abn: "", acn: "", company_name: "" }}
+                                            onChange={handleProfileFormChange}
+                                            onSubmit={handleSubmit}
+                                            loading={submitLoading}
+                                            isEdit={!!editingUser}
+                                            userType="staff"
+                                            onChangePhone={() => { }}
+                                            isPhoneVerified={false}
+                                            isStaffooStaff={true}
+                                            footer={<></>}
+                                        />
+                                    ) : activeModalTab === "documents" ? (
+                                        <div>
+                                            {/* 100-Point Identification Check Progress Bar */}
+                                            <div
+                                                className="p-3 p-md-4 rounded-3 mb-4 shadow-sm"
+                                                style={{
+                                                    background: (staffPointsData.totalPoints || 0) >= 100 ? "#f0fdf4" : "#f8fafc",
+                                                    border: `1px solid ${(staffPointsData.totalPoints || 0) >= 100 ? "#86efac" : "#e2e8f0"}`,
+                                                    borderLeft: `5px solid ${(staffPointsData.totalPoints || 0) >= 100 ? "#16a34a" : "#0A7C6E"}`,
+                                                }}
+                                            >
+                                                <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-2">
+                                                    <div>
+                                                        <h6 className="fw-bold mb-1" style={{ color: "#0f172a" }}>
+                                                            <i className="fa-solid fa-id-card me-2" style={{ color: "#0A7C6E" }}></i>
+                                                            100-Point Identification Check
+                                                        </h6>
+                                                        <p className="text-muted small mb-0" style={{ textTransform: "none" }}>
+                                                            Upload eligible identity documents to reach a minimum of <strong>100 points</strong> to proceed to verification forms.
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-end flex-shrink-0">
+                                                        <span
+                                                            className="badge fs-6 px-3 py-2 rounded-pill fw-bold"
+                                                            style={{
+                                                                backgroundColor: (staffPointsData.totalPoints || 0) >= 100 ? "#16a34a" : "#0A7C6E",
+                                                                color: "#fff",
+                                                            }}
+                                                        >
+                                                            {(staffPointsData.totalPoints || 0) >= 100
+                                                                ? "100 points completed"
+                                                                : `${staffPointsData.totalPoints || 0} / 100 Points`}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="progress mt-2" style={{ height: "10px", backgroundColor: "#e2e8f0", borderRadius: "10px" }}>
+                                                    <div
+                                                        className="progress-bar progress-bar-striped"
+                                                        role="progressbar"
+                                                        style={{
+                                                            width: `${Math.min(100, (staffPointsData.totalPoints || 0))}%`,
+                                                            backgroundColor: (staffPointsData.totalPoints || 0) >= 100 ? "#16a34a" : "#0A7C6E",
+                                                            transition: "width 0.4s ease",
+                                                        }}
+                                                        aria-valuenow={staffPointsData.totalPoints || 0}
+                                                        aria-valuemin="0"
+                                                        aria-valuemax="100"
+                                                    ></div>
+                                                </div>
+                                                {(staffPointsData.totalPoints || 0) >= 100 ? (
+                                                    <div className="d-flex align-items-center gap-2 mt-2 text-success small fw-semibold">
+                                                        <i className="fa-solid fa-circle-check"></i>
+                                                        <span>Requirement met! You have reached 100+ points and can proceed.</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="d-flex align-items-center gap-2 mt-2 text-muted small">
+                                                        <i className="fa-solid fa-circle-info text-primary"></i>
+                                                        <span>Need <strong>{Math.max(0, 100 - (staffPointsData.totalPoints || 0))} more points</strong> to unlock next step.</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <DocumentTable documents={staffDocuments} userType="staff" onAddFile={openDocumentModal} showDocErrors={showDocErrors} isStaffooStaff={true} readOnly={isViewMode} />
+                                        </div>
+                                    ) : (
+                                        <div><StaffOnboardingForms submit={submit} userId={editingUser?.id} contractorId={1} /></div>
+                                    )}
+                                </>
                             )}
                         </div>
                         <div className="px-4 py-3 border-top bg-light d-flex justify-content-end gap-2">
-                            <button type="button" className="btn btn-light rounded-pill px-5 fw-bold text-muted border" onClick={closeModal} style={{ minHeight: 44 }}>Close</button>
-                            {activeModalTab === "personal" && (
-                                <button type="submit" form="profile-form" className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" disabled={submitLoading} style={{ minHeight: 44 }}>
-                                    {submitLoading ? "Saving..." : "Save & Next"}
-                                </button>
-                            )}
-                            {activeModalTab === "documents" && (
-                                <button type="button" className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" onClick={() => handleTabClick("onboarding")} style={{ minHeight: 44 }}>
-                                    Next: Verification Forms
-                                </button>
+                            {isViewMode ? (
+                                <button type="button" className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" onClick={closeModal} style={{ minHeight: 44 }}>Close</button>
+                            ) : (
+                                <>
+                                    <button type="button" className="btn btn-light rounded-pill px-5 fw-bold text-muted border" onClick={closeModal} style={{ minHeight: 44 }}>Close</button>
+                                    {activeModalTab === "personal" && (
+                                        <button type="submit" form="profile-form" className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" disabled={submitLoading} style={{ minHeight: 44 }}>
+                                            {submitLoading ? "Saving..." : "Save & Next"}
+                                        </button>
+                                    )}
+                                    {activeModalTab === "documents" && (
+                                        <button type="button" className="btn btn-dark rounded-pill px-5 fw-bold shadow-sm" onClick={() => handleTabClick("onboarding")} style={{ minHeight: 44 }}>
+                                            Next: Verification Forms
+                                        </button>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>

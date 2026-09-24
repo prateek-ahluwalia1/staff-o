@@ -1,12 +1,14 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
   startOfWeek,
-  addWeeks,
-  subWeeks,
   format,
   addDays,
+  subDays,
+  differenceInCalendarDays,
   isToday,
   parse,
   isValid,
@@ -182,7 +184,9 @@ export default function RosterPage() {
   const { submit: saveUserAssignment, loading: saveLoading } = useSubmit({ isAuth: true });
   const { submit: submitHolidayList } = useSubmit({ isAuth: true });
 
-  const [monday, setMonday] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [startDate, setStartDate] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [endDate, setEndDate] = useState(() => addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), 6));
+  const [hoveredDate, setHoveredDate] = useState(null);
   const [modal, setModal] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [weeksToView, setWeeksToView] = useState(1);
@@ -191,6 +195,21 @@ export default function RosterPage() {
   const [removeReason, setRemoveReason] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showLegend, setShowLegend] = useState(true);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const datePickerWrapRef = useRef(null);
+
+  /* Close calendar when clicking outside */
+  useEffect(() => {
+    if (!showDatePicker) return;
+    const handler = (e) => {
+      if (datePickerWrapRef.current && !datePickerWrapRef.current.contains(e.target)) {
+        setShowDatePicker(false);
+        setHoveredDate(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showDatePicker]);
 
   const [holidays, setHolidays] = useState([]);
 
@@ -202,18 +221,15 @@ export default function RosterPage() {
 
     if (effectiveStates.length === 0) return;
 
-    if (effectiveStates.length === 0) return;
-
-    const endDayOffset = weeksToView === 1 ? 6 : 13;
     const payload = {
       user_id: [userId],
       states: effectiveStates,
-      start: format(monday, "MM-dd-yyyy"),
-      end: format(addDays(monday, endDayOffset), "MM-dd-yyyy"),
+      start: format(startDate, "MM-dd-yyyy"),
+      end: format(endDate, "MM-dd-yyyy"),
       roster_id: "1",
     };
     submit("api/fetch-customer-sites", payload, { method: "POST", silentErrorToast: true });
-  }, [userId, monday, weeksToView, submit, selectedStates, userRole, contractorAllowedStates]);
+  }, [userId, startDate, endDate, submit, selectedStates, userRole, contractorAllowedStates]);
 
   const fetchHolidays = useCallback(async () => {
     const effectiveStates = selectedStates.length > 0
@@ -255,9 +271,9 @@ export default function RosterPage() {
   }, [holidays]);
 
   const weekDays = useMemo(() => {
-    const totalDays = weeksToView === 1 ? 7 : 14;
+    const totalDays = Math.max(1, differenceInCalendarDays(endDate, startDate) + 1);
     return Array.from({ length: totalDays }, (_, i) => {
-      const d = addDays(monday, i);
+      const d = addDays(startDate, i);
       const dKey = getDayKey(d);
       const holiday = holidaysByDayKey[dKey];
       return {
@@ -269,15 +285,41 @@ export default function RosterPage() {
         short: format(d, "EEE"),
         num: format(d, "dd"),
         isHoliday: !!holiday,
-        holidayName: holiday ? holiday.holiday_name : null
+        holidayName: holiday ? holiday.holiday_name : null,
       };
     });
-  }, [monday, weeksToView, holidaysByDayKey]);
+  }, [startDate, endDate, holidaysByDayKey]);
 
-  const weekTitle = useMemo(() => {
-    const endDayOffset = weeksToView === 1 ? 6 : 13;
-    return `${format(monday, "MMM d")} - ${format(addDays(monday, endDayOffset), "yyyy")}`;
-  }, [monday, weeksToView]);
+  const dateDisplayTitle = useMemo(() => {
+    if (!startDate || !endDate) return "";
+    if (isSameDay(startDate, endDate)) {
+      return format(startDate, "MMM d, yyyy");
+    }
+    const sameYear = startDate.getFullYear() === endDate.getFullYear();
+    const sameMonth = sameYear && startDate.getMonth() === endDate.getMonth();
+    if (sameMonth) {
+      return `${format(startDate, "MMM d")} - ${format(endDate, "d, yyyy")}`;
+    }
+    if (sameYear) {
+      return `${format(startDate, "MMM d")} - ${format(endDate, "MMM d, yyyy")}`;
+    }
+    return `${format(startDate, "MMM d, yyyy")} - ${format(endDate, "MMM d, yyyy")}`;
+  }, [startDate, endDate]);
+
+  /* Full state label for the active state (from URL ?state= or contractorAllowedStates) */
+  const activeStateLabel = useMemo(() => {
+    const statesToUse = selectedStates.length > 0
+      ? selectedStates
+      : (userRole === "contractor" ? contractorAllowedStates : []);
+
+    if (statesToUse.length === 0) return null;
+
+    const labels = statesToUse.map((st) => {
+      const found = states_array.find((s) => s.value.toLowerCase() === st.toLowerCase());
+      return found ? found.label : st.toUpperCase();
+    });
+    return labels.join(", ");
+  }, [selectedStates, userRole, contractorAllowedStates]);
 
   const sites = useMemo(() => {
     if (!submitData?.data) return [];
@@ -317,7 +359,7 @@ export default function RosterPage() {
   }, [sites, searchQuery]);
 
   const columnTotals = useMemo(() => {
-    const totals = Array(weeksToView === 1 ? 7 : 14).fill(0);
+    const totals = Array(weekDays.length).fill(0);
     let grandTotal = 0;
     filteredSites.forEach((site) => {
       site.jobRoster.forEach((shift) => {
@@ -330,7 +372,7 @@ export default function RosterPage() {
       });
     });
     return { totals, grandTotal };
-  }, [filteredSites, weekDays, weeksToView]);
+  }, [filteredSites, weekDays]);
 
   const guards = useMemo(() => staffData?.guards || [], [staffData?.guards]);
 
@@ -341,9 +383,69 @@ export default function RosterPage() {
     }));
   }, [guards]);
 
-  const prevWeek = () => setMonday((prev) => subWeeks(prev, weeksToView));
-  const nextWeek = () => setMonday((prev) => addWeeks(prev, weeksToView));
-  const goToThisWeek = () => setMonday(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const prevWeek = () => {
+    const span = weeksToView === 2 ? 14 : 7;
+    setStartDate((prev) => subDays(prev, span));
+    setEndDate((prev) => subDays(prev, span));
+  };
+  const nextWeek = () => {
+    const span = weeksToView === 2 ? 14 : 7;
+    setStartDate((prev) => addDays(prev, span));
+    setEndDate((prev) => addDays(prev, span));
+  };
+  const goToThisWeek = () => {
+    const thisMonday = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const span = weeksToView === 2 ? 14 : 7;
+    setStartDate(thisMonday);
+    setEndDate(addDays(thisMonday, span - 1));
+  };
+  const handleSelect1W = () => {
+    setWeeksToView(1);
+    setEndDate(addDays(startDate, 6));
+  };
+  const handleSelect2W = () => {
+    setWeeksToView(2);
+    setEndDate(addDays(startDate, 13));
+  };
+
+  const getDayClassName = useCallback((date) => {
+    if (!date) return "";
+    const classes = [];
+    const dTime = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    const sTime = startDate ? new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()).getTime() : null;
+    const eTime = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()).getTime() : null;
+
+    if (sTime !== null && eTime !== null && dTime >= sTime && dTime <= eTime) {
+      classes.push("is-roster-selected-week");
+      if (dTime === sTime) classes.push("is-roster-week-start");
+      if (dTime === eTime) classes.push("is-roster-week-end");
+    }
+
+    if (hoveredDate) {
+      const hStart = startOfWeek(hoveredDate, { weekStartsOn: 1 });
+      const hEnd = addDays(hStart, weeksToView === 2 ? 13 : 6);
+      const hsTime = new Date(hStart.getFullYear(), hStart.getMonth(), hStart.getDate()).getTime();
+      const heTime = new Date(hEnd.getFullYear(), hEnd.getMonth(), hEnd.getDate()).getTime();
+
+      if (dTime >= hsTime && dTime <= heTime) {
+        classes.push("is-roster-hovered-week");
+        if (dTime === hsTime) classes.push("is-roster-hover-start");
+        if (dTime === heTime) classes.push("is-roster-hover-end");
+      }
+    }
+    return classes.join(" ");
+  }, [startDate, endDate, hoveredDate, weeksToView]);
+
+  const handleDateSelect = (date) => {
+    if (!date) return;
+    const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+    const numDays = weeksToView === 2 ? 14 : 7;
+    const weekEnd = addDays(weekStart, numDays - 1);
+    setStartDate(weekStart);
+    setEndDate(weekEnd);
+    setHoveredDate(null);
+    setShowDatePicker(false);
+  };
   const handleRefresh = () => fetchCustomerSites();
 
   const openModalAction = (site, shift, dateStr, modalType, dateKey = null) => {
@@ -507,21 +609,75 @@ export default function RosterPage() {
     <div className="vibrant-roster-app">
       <header className="vr-header">
         <div className="vr-nav">
-          <button onClick={prevWeek} className="vr-icon-btn"><i className="fa fa-chevron-left"></i></button>
-          <div className="vr-date-display">{weekTitle}</div>
-          <button onClick={nextWeek} className="vr-icon-btn"><i className="fa fa-chevron-right"></i></button>
+          <button onClick={prevWeek} className="vr-icon-btn" title="Previous">
+            <i className="fa fa-chevron-left"></i>
+          </button>
+
+          {/* Clickable week range — opens date picker */}
+          <div className="vr-date-picker-wrap" ref={datePickerWrapRef} style={{ position: "relative" }}>
+            <button
+              className="vr-date-display"
+              onClick={() => {
+                setHoveredDate(null);
+                setShowDatePicker((p) => !p);
+              }}
+              title="Click to select week"
+              type="button"
+            >
+              <i className="fa-regular fa-calendar"></i>
+              <span>{dateDisplayTitle}</span>
+            </button>
+
+            {showDatePicker && (
+              <div
+                style={{ position: "absolute", top: "110%", left: "50%", transform: "translateX(-50%)", zIndex: 9999 }}
+                onMouseLeave={() => setHoveredDate(null)}
+              >
+                <DatePicker
+                  selected={startDate}
+                  onChange={handleDateSelect}
+                  inline
+                  calendarStartDay={1}
+                  dayClassName={getDayClassName}
+                  renderDayContents={(day, date) => (
+                    <div
+                      style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      onMouseEnter={() => setHoveredDate(date)}
+                    >
+                      {day}
+                    </div>
+                  )}
+                />
+              </div>
+            )}
+          </div>
+
+          <button onClick={nextWeek} className="vr-icon-btn" title="Next">
+            <i className="fa fa-chevron-right"></i>
+          </button>
           <button onClick={goToThisWeek} className="vr-btn-today">Today</button>
         </div>
+
+        {/* State name in header mid */}
+        <div className="vr-header-mid">
+          {activeStateLabel && (
+            <div className="vr-state-title">
+              <i className="fa-solid fa-location-dot"></i>
+              <span>{activeStateLabel}</span>
+            </div>
+          )}
+        </div>
+
         <div className="vr-actions">
           <div className="vr-search">
             <i className="fa fa-search"></i>
             <input type="text" placeholder="Search sites..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
           <div className="vr-toggles">
-            <button className={weeksToView === 1 ? 'active' : ''} onClick={() => setWeeksToView(1)}>1W</button>
-            <button className={weeksToView === 2 ? 'active' : ''} onClick={() => setWeeksToView(2)}>2W</button>
+            <button className={weeksToView === 1 ? 'active' : ''} onClick={handleSelect1W}>1W</button>
+            <button className={weeksToView === 2 ? 'active' : ''} onClick={handleSelect2W}>2W</button>
           </div>
-          <button onClick={handleRefresh} className="vr-icon-btn"><i className="fa fa-refresh"></i></button>
+          <button onClick={handleRefresh} className="vr-icon-btn" title="Refresh"><i className="fa fa-refresh"></i></button>
           <button onClick={() => setShowLegend(!showLegend)} className={`vr-btn-legend ${showLegend ? 'active' : ''}`}>
             <i className="fa fa-paint-brush"></i> Legend
           </button>

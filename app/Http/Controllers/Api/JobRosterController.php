@@ -6841,14 +6841,14 @@ public function listContracts(Request $request)
 
         // ---- 3. Per-state today's jobs ----
         $todayRows = (clone $base)
-            ->whereDate('jr.shift_date', $today)
+            ->whereDate('jr.start', $today)
             ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
             ->groupByRaw($stateExpr)
             ->pluck('total', 'state');
 
         // ---- 4. Per-state today's uncovered ----
         $todayUncoveredRows = (clone $base)
-            ->whereDate('jr.shift_date', $today)
+            ->whereDate('jr.start', $today)
             ->whereNull('jr.accepted_by')
             ->whereNull('jr.assigned_to')
             ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")

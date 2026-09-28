@@ -1,7 +1,9 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { Card } from "../components/Card";
+import useFetch from "../hooks/useFetch";
+import { setConversations } from "../store/slices/chatSlice";
 import chat1img from "../assets/images/chat1.png";
 import chat2img from "../assets/images/chat2.png";
 import chat3img from "../assets/images/chat3.png";
@@ -10,22 +12,22 @@ import inductionimg from "../assets/images/induction.png";
 const ALL_CATEGORIES = [
   {
     key: "staff",
-    label: "Staff",
-    desc: "Chat with your team members in real-time",
+    label: "Staff Support & Chat",
+    desc: "Chat with internal staff and resource partner team members",
     accent: "linear-gradient(135deg, #0ea5e9, #38bdf8)",
     image: chat1img,
   },
   {
     key: "customers",
-    label: "Clients",
-    desc: "Handle client conversations",
+    label: "Client Support & Chat",
+    desc: "Handle client conversations and provide live support",
     accent: "linear-gradient(135deg, #16a34a, #22c55e)",
     image: chat2img,
   },
   {
     key: "contractors",
-    label: "Resource Partners",
-    desc: "Connect with Resource Partners",
+    label: "Resource Partner Support & Chat",
+    desc: "Connect with Resource Partners and manage team communications",
     accent: "linear-gradient(135deg, #8b5cf6, #a78bfa)",
     image: chat3img,
   },
@@ -33,14 +35,150 @@ const ALL_CATEGORIES = [
 
 const Chat = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const userdata = useSelector((state) => state.auth?.userdata);
   const { isExpanded } = useSelector((state) => state.sidebar);
+  const reduxConversations = useSelector((state) => state.chat.conversations);
 
   const userType =
     userdata?.user_type?.toLowerCase() ||
     userdata?.data?.user_type?.toLowerCase() ||
     "";
+
+  // Fetch conversations to calculate unread counts
+  const { data: convData } = useFetch("api/messages/conversations", {
+    isAuth: true,
+  });
+
+  // Fetch users list for categorizing conversations accurately
+  const { data: staffData } = useFetch(
+    userType === "admin" ? "api/admin/get-staff?per_page=1000&limit=1000" : null,
+    { isAuth: true },
+  );
+  const { data: staffooStaffData } = useFetch(
+    userType === "admin" ? "api/get-contractor-staff/1?per_page=1000&limit=1000" : null,
+    { isAuth: true },
+  );
+  const { data: customerData } = useFetch(
+    userType === "admin" ? "api/admin/get-customers?per_page=1000&limit=1000" : null,
+    { isAuth: true },
+  );
+  const { data: contractorData } = useFetch(
+    userType === "admin" ? "api/admin/get-contractors?per_page=1000&limit=1000" : null,
+    { isAuth: true },
+  );
+
+  useEffect(() => {
+    if (convData) {
+      const list = convData?.data || convData || [];
+      if (Array.isArray(list) && list.length > 0) {
+        dispatch(setConversations(list));
+      }
+    }
+  }, [convData, dispatch]);
+
+  const extractList = useCallback((res) => {
+    if (!res) return [];
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res.guards)) return res.guards;
+    if (res.data && Array.isArray(res.data.guards)) return res.data.guards;
+    if (Array.isArray(res.data)) return res.data;
+    if (res.data && Array.isArray(res.data.data)) return res.data.data;
+    return [];
+  }, []);
+
+  const staffIds = useMemo(() => {
+    const set = new Set();
+    extractList(staffData).forEach((u) => {
+      const id = u?.id || u?.data?.id || u?.user_id;
+      if (id) set.add(String(id));
+    });
+    extractList(staffooStaffData).forEach((u) => {
+      const id = u?.id || u?.data?.id || u?.user_id;
+      if (id) set.add(String(id));
+    });
+    return set;
+  }, [staffData, staffooStaffData, extractList]);
+
+  const customerIds = useMemo(() => {
+    const set = new Set();
+    extractList(customerData).forEach((u) => {
+      const id = u?.id || u?.data?.id || u?.user_id;
+      if (id) set.add(String(id));
+    });
+    return set;
+  }, [customerData, extractList]);
+
+  const contractorIds = useMemo(() => {
+    const set = new Set();
+    extractList(contractorData).forEach((u) => {
+      const id = u?.id || u?.data?.id || u?.user_id;
+      if (id) set.add(String(id));
+    });
+    return set;
+  }, [contractorData, extractList]);
+
+  const getCategoryForUser = useCallback(
+    (user) => {
+      if (!user) return null;
+      const idStr = String(user.id || user.user_id || "");
+      const uType = String(user.user_type || user.role || "").toLowerCase();
+
+      // Check ID sets first
+      if (staffIds.has(idStr)) return "staff";
+      if (customerIds.has(idStr)) return "customers";
+      if (contractorIds.has(idStr)) return "contractors";
+
+      // Check role/type strings
+      if (uType === "staff" || uType === "guard") return "staff";
+      if (uType === "customer" || uType === "client") return "customers";
+      if (
+        uType === "contractor" ||
+        uType === "sub_contractor" ||
+        uType === "partner"
+      ) {
+        return "contractors";
+      }
+
+      // Check nested objects
+      if (user.staff || user.guard) return "staff";
+      if (user.customer || user.client) return "customers";
+      if (user.contractor || user.sub_contractor) return "contractors";
+
+      return null;
+    },
+    [staffIds, customerIds, contractorIds],
+  );
+
+  // Calculate unread chats count for each category
+  const unreadChats = useMemo(() => {
+    const counts = {
+      staff: 0,
+      customers: 0,
+      contractors: 0,
+    };
+
+    const rawList =
+      reduxConversations && reduxConversations.length > 0
+        ? reduxConversations
+        : convData?.data || convData || [];
+
+    const convList = Array.isArray(rawList) ? rawList : [];
+
+    convList.forEach((conv) => {
+      const unread = Number(conv?.unread_count || 0);
+      if (unread > 0) {
+        const user = conv?.user;
+        const cat = getCategoryForUser(user);
+        if (cat && counts[cat] !== undefined) {
+          counts[cat] += 1;
+        }
+      }
+    });
+
+    return counts;
+  }, [reduxConversations, convData, getCategoryForUser]);
 
   useEffect(() => {
     if (userType && userType !== "admin") {
@@ -151,11 +289,11 @@ const Chat = () => {
       {/* Hero header */}
       <div className="chat-hero">
         <span className="chat-hero-eyebrow">
-          <span className="dot"></span> Connect
+          <span className="dot"></span> Support & Chat
         </span>
-        <h1>Communications</h1>
+        <h1>Support & Chat Hub</h1>
         <p style={{ textTransform: "none" }}>
-          Select a category to start or continue a conversation
+          Connect with team members, clients, and resource partners or provide real-time assistance
         </p>
       </div>
 
@@ -169,6 +307,7 @@ const Chat = () => {
               accent={cat.accent}
               image={cat.image}
               type="chat"
+              unreadCount={unreadChats[cat.key] || 0}
               onClick={() => navigate(`/chat/${cat.key}`)}
             />
           </div>

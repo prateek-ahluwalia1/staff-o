@@ -23,6 +23,7 @@ export const Card = ({
   icon,
   artworkNote,
   showTopBadge = true,
+  unreadCount = 0,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const cardIcon = icon || "fa-solid fa-layer-group";
@@ -97,6 +98,40 @@ export const Card = ({
           </div>
         )}
 
+        {/* Floating Unread Count Badge */}
+        {Number(unreadCount) > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              top: "12px",
+              right: "12px",
+              background: "#dc2626",
+              color: "#ffffff",
+              padding: "4px 10px",
+              borderRadius: "20px",
+              fontSize: "10.5px",
+              fontWeight: 800,
+              letterSpacing: "0.4px",
+              boxShadow: "0 4px 12px rgba(220, 38, 38, 0.4)",
+              zIndex: 5,
+              display: "flex",
+              alignItems: "center",
+              gap: "5px",
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                backgroundColor: "#ffffff",
+                display: "inline-block",
+              }}
+            />
+            {unreadCount} {Number(unreadCount) === 1 ? "New Chat" : "New Chats"}
+          </div>
+        )}
+
         {/* The Illustration */}
         {image && (
           <img
@@ -151,18 +186,44 @@ export const Card = ({
           flex: 1,
         }}
       >
-        <h3
+        <div
           style={{
-            fontSize: "20px",
-            fontWeight: 800,
-            color: INK,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "8px",
             margin: "0 0 8px 0",
-            lineHeight: 1.2,
-            letterSpacing: "-0.5px",
           }}
         >
-          {title}
-        </h3>
+          <h3
+            style={{
+              fontSize: "20px",
+              fontWeight: 800,
+              color: INK,
+              margin: 0,
+              lineHeight: 1.2,
+              letterSpacing: "-0.5px",
+            }}
+          >
+            {title}
+          </h3>
+          {Number(unreadCount) > 0 && (
+            <span
+              className="badge rounded-pill"
+              style={{
+                backgroundColor: "#fef2f2",
+                color: "#dc2626",
+                border: "1px solid #fecaca",
+                fontSize: "11px",
+                fontWeight: 800,
+                padding: "3px 8px",
+                flexShrink: 0,
+              }}
+            >
+              {unreadCount} new
+            </span>
+          )}
+        </div>
 
         <p
           style={{

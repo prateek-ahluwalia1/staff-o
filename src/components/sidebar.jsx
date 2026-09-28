@@ -119,7 +119,7 @@ const Sidebar = memo(function Sidebar() {
     { to: "/add-job", icon: "fa-solid fa-file-circle-plus", label: "Post a Job" },
     { to: "/my-job-applications", icon: "fa-solid fa-clipboard-list", label: "My Jobs" },
     { to: "/payment-history", icon: "fa-solid fa-file-invoice-dollar", label: "Payment History" },
-    { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
+    { to: "/chat", icon: "fa-solid fa-headset", label: "Support & Chat" },
     { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Edit Profile" },
   ];
 
@@ -129,7 +129,7 @@ const Sidebar = memo(function Sidebar() {
     { to: "/cover-jobs", icon: "fa-solid fa-briefcase", label: "Cover Jobs" },
     { to: "/manage-staff", icon: "fa-solid fa-users-gear", label: "Staff Management" },
     { to: '/timesheet', icon: 'fa-solid fa-clock', label: 'Timesheet' },
-    { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
+    { to: "/chat", icon: "fa-solid fa-headset", label: "Support & Chat" },
     { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Edit Profile" },
   ];
 
@@ -138,7 +138,7 @@ const Sidebar = memo(function Sidebar() {
     ...(isStaffCoverJobsVisible ? [{ to: "/cover-jobs", icon: "fa-solid fa-briefcase", label: "Cover Jobs" }] : []),
     { to: "/my-job-applications", icon: "fa-solid fa-clipboard-user", label: "My Job Applications" },
     { to: '/timesheet', icon: 'fa-solid fa-clock', label: 'Timesheet' },
-    { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
+    { to: "/chat", icon: "fa-solid fa-headset", label: "Support & Chat" },
     { to: "/edit-profile", icon: "fa-solid fa-user-pen", label: "Edit Profile" },
   ];
 
@@ -149,7 +149,7 @@ const Sidebar = memo(function Sidebar() {
     { to: "/manage-users", icon: "fa-solid fa-users-gear", label: "Manage Users" },
     { to: "/wfm-tools", icon: "fa-solid fa-toolbox", label: "WFM Tools" },
     { to: "/reports", icon: "fa-solid fa-chart-pie", label: "Reports Management" },
-    { to: "/chat", icon: "fa-solid fa-comments", label: "Communications" },
+    { to: "/chat", icon: "fa-solid fa-headset", label: "Support & Chat" },
     { to: "/pay-charge-rate", icon: "fa-solid fa-building-columns", label: "Accounts" },
     { to: "/partner-contracts", icon: "fa-solid fa-file-signature", label: "Partner Contracts" },
     { to: "/my-job-applications", icon: "fa-solid fa-list-check", label: "All Jobs" },
@@ -161,11 +161,21 @@ const Sidebar = memo(function Sidebar() {
 
   useEffect(() => {
     if (isProfileActive) return;
-    const alwaysAllowed = ["/edit-profile"];
+    const isAlwaysAllowed = (path) =>
+      path === "/edit-profile" ||
+      path === "/my-rates" ||
+      path === "/chat" ||
+      path.startsWith("/chat/");
+
+    if (isAlwaysAllowed(location.pathname)) return;
+
     const protectedRoutes = navItems
-      .filter((item) => !alwaysAllowed.includes(item.to))
+      .filter((item) => !isAlwaysAllowed(item.to))
       .map((item) => item.to);
-    if (protectedRoutes.includes(location.pathname)) {
+    if (
+      protectedRoutes.includes(location.pathname) ||
+      protectedRoutes.some((route) => location.pathname.startsWith(route + "/"))
+    ) {
       navigate("/edit-profile", { replace: true });
     }
   }, [location.pathname, isProfileActive, navItems, navigate]);
@@ -303,7 +313,14 @@ const Sidebar = memo(function Sidebar() {
         {/* Dashboard Navigation Links */}
         <ul style={styles.navUl}>
           {navItems.map((item) => {
-            const disabled = !isProfileActive && item.label !== "Edit Profile" && item.label !== "My Rates";
+            const isAlwaysAllowed =
+              item.label === "Edit Profile" ||
+              item.label === "Settings" ||
+              item.label === "My Rates" ||
+              item.label === "Support & Chat" ||
+              item.to === "/chat" ||
+              item.to.startsWith("/chat/");
+            const disabled = !isProfileActive && !isAlwaysAllowed;
             const isActive = location.pathname === item.to;
             return (
               <li key={item.label}>

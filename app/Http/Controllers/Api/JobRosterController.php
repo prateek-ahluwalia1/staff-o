@@ -6921,33 +6921,12 @@ public function listContracts(Request $request)
             $totals['week_uncovered']  += $weekUncovered;
         }
 
-        // ---- "All states" summary ----
-        $all = [
-            'state' => 'ALL',
-            'total' => [
-                'jobs'      => $totals['total_jobs'],
-                'uncovered' => $totals['total_uncovered'],
-                'covered'   => $totals['total_jobs'] - $totals['total_uncovered'],
-            ],
-            'today' => [
-                'jobs'      => $totals['today_jobs'],
-                'uncovered' => $totals['today_uncovered'],
-                'covered'   => $totals['today_jobs'] - $totals['today_uncovered'],
-            ],
-            'week' => [
-                'jobs'      => $totals['week_jobs'],
-                'uncovered' => $totals['week_uncovered'],
-                'covered'   => $totals['week_jobs'] - $totals['week_uncovered'],
-            ],
-        ];
-
         return response()->json([
             'success' => true,
             'data'    => [
                 'today'      => $today->toDateString(),
                 'week_start' => $weekStart->toDateString(),
                 'week_end'   => $weekEnd->toDateString(),
-                'all'        => $all,
                 'states'     => $perState,
             ],
         ]);

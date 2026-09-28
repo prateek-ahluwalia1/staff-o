@@ -1322,6 +1322,155 @@
     transform: translateX(4px);
 }
 
+/* ── State Badges & Region Counts ── */
+.staffoo-header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.staffoo-header-badge-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 20px;
+    padding: 5px 12px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(6px);
+}
+
+.staffoo-header-badge-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.35);
+    transform: translateY(-1px);
+}
+
+.staffoo-header-badge-btn .header-badge-code {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    opacity: 0.85;
+}
+
+.staffoo-header-badge-btn .header-badge-count {
+    background: rgba(255, 255, 255, 0.18);
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.staffoo-header-badge-btn.has-new {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(52, 211, 153, 0.5);
+    color: #6ee7b7;
+}
+
+.staffoo-header-badge-btn.has-new .header-badge-count {
+    background: #059669;
+    color: #ffffff;
+}
+
+.staffoo-header-badge-btn.has-new:hover {
+    background: rgba(16, 185, 129, 0.32);
+    border-color: #34d399;
+}
+
+/* State card badges */
+.state-card-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.state-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    letter-spacing: 0.2px;
+    line-height: 1.2;
+    transition: all 0.18s ease;
+}
+
+.state-badge-pill.badge-today-active {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+    box-shadow: 0 1px 3px rgba(180, 83, 9, 0.08);
+}
+.state-badge-pill.badge-today-active strong {
+    color: #92400e;
+}
+
+.state-badge-pill.badge-week-active {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+    box-shadow: 0 1px 3px rgba(6, 95, 70, 0.08);
+}
+.state-badge-pill.badge-week-active strong {
+    color: #047857;
+}
+
+.state-badge-pill.badge-pill-muted {
+    background: #f8fafc;
+    color: #94a3b8;
+    border: 1px solid #e2e8f0;
+    font-weight: 500;
+}
+.state-badge-pill.badge-pill-muted strong {
+    color: #64748b;
+}
+
+.state-badge-pill.loading-jobs {
+    background: #f8fafc;
+    color: #94a3b8;
+    border: 1px solid #e2e8f0;
+    font-weight: 500;
+}
+
+/* Featured (Victoria) card badge styling */
+.staffoo-state-card.is-featured .state-badge-pill.badge-today-active {
+    background: rgba(254, 243, 199, 0.25);
+    color: #fef3c7;
+    border: 1px solid rgba(253, 230, 138, 0.45);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.staffoo-state-card.is-featured .state-badge-pill.badge-today-active strong {
+    color: #ffffff;
+}
+
+.staffoo-state-card.is-featured .state-badge-pill.badge-week-active {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+.staffoo-state-card.is-featured .state-badge-pill.badge-week-active strong {
+    color: #ffffff;
+}
+
+.staffoo-state-card.is-featured .state-badge-pill.badge-pill-muted {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.staffoo-state-card.is-featured .state-badge-pill.badge-pill-muted strong {
+    color: rgba(255, 255, 255, 0.85);
+}
+
 /* ── Embedded Accordion (Add Shift Modal) ── */
 .embedded-accordion-section {
     border: 1px solid var(--line);
@@ -1370,12 +1519,12 @@
     animation: accordionFade 0.2s ease;
 }
 
-/* --- Featured (Victoria) card --- */
+/* --- Featured (Victoria & NSW) cards --- */
 .staffoo-state-card.is-featured {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(155deg, #0d9488 0%, #0A7C6E 45%, #0b5c52 100%);
-    border: 1px solid rgba(94, 234, 212, 0.35);
+    background: linear-gradient(155deg, #0d9488 0%, #0A7C6E 45%, #075e53 100%);
+    border: 1px solid rgba(94, 234, 212, 0.38);
     box-shadow:
         0 12px 28px rgba(10, 124, 110, 0.35),
         0 0 0 1px rgba(94, 234, 212, 0.08) inset;
@@ -1405,21 +1554,27 @@
 }
 
 .staffoo-state-card.is-featured .state-name {
-    color: #fff;
+    color: #ffffff;
     font-weight: 700;
 }
 
 .staffoo-state-card.is-featured .state-code {
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 0.78);
 }
 
 .staffoo-state-card.is-featured .state-card-right {
-    display: none;
+    display: flex;
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    transition: all 0.22s ease;
 }
 
-.staffoo-state-card.is-featured:hover .state-card-right i {
-    opacity: 1;
-    transform: translateX(0);
+.staffoo-state-card.is-featured:hover .state-card-right {
+    background: rgba(255, 255, 255, 0.32);
+    border-color: rgba(255, 255, 255, 0.55);
+    transform: translateX(4px);
+    color: #ffffff;
 }
 
 /* subtle animated sheen sweeping across on hover */

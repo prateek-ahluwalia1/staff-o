@@ -6857,14 +6857,14 @@ public function listContracts(Request $request)
 
         // ---- 5. Per-state this week's jobs (Mon–Sun) ----
         $weekRows = (clone $base)
-            ->whereBetween('jr.shift_date', [$weekStart, $weekEnd])
+            ->whereBetween('jr.start', [$weekStart, $weekEnd])
             ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
             ->groupByRaw($stateExpr)
             ->pluck('total', 'state');
 
         // ---- 6. Per-state this week's uncovered ----
         $weekUncoveredRows = (clone $base)
-            ->whereBetween('jr.shift_date', [$weekStart, $weekEnd])
+            ->whereBetween('jr.start', [$weekStart, $weekEnd])
             ->whereNull('jr.accepted_by')
             ->whereNull('jr.assigned_to')
             ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")

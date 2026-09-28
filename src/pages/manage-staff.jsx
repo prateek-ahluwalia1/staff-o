@@ -593,6 +593,20 @@ const ManageStaff = () => {
     setActiveModalTab(tab);
   };
 
+  const isUserActive = (user) => {
+    if (!user) return false;
+    const val = user.is_active;
+    if (val !== undefined && val !== null) {
+      return val === 1 || val === "1" || val === true || val === "true";
+    }
+    const st = user.status;
+    if (st !== undefined && st !== null) {
+      const s = String(st).toLowerCase().trim();
+      return s === "1" || s === "active" || s === "approved";
+    }
+    return false;
+  };
+
   const getStatusBadgeClass = (isActive) => {
     return isActive ? "badge-premium badge-success" : "badge-premium badge-danger";
   };
@@ -1739,8 +1753,8 @@ const ManageStaff = () => {
                         )}
                       </td>
                       <td>
-                        <span className={getStatusBadgeClass(user?.is_active)}>
-                          {user?.is_active ? "Active" : "Inactive"}
+                        <span className={getStatusBadgeClass(isUserActive(user))}>
+                          {isUserActive(user) ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td>

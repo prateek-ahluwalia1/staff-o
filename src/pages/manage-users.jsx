@@ -696,8 +696,11 @@ const ManageUsers = () => {
 
   const getUserStatus = useCallback((user) => {
     if (!user) return "inactive";
-    if (user.status) {
-      return String(user.status).toLowerCase();
+    if (user.status !== undefined && user.status !== null) {
+      const st = String(user.status).toLowerCase().trim();
+      if (st === "1" || st === "active" || st === "approved" || st === "verified") return "active";
+      if (st === "0" || st === "inactive" || st === "suspended" || st === "blocked" || st === "rejected") return "inactive";
+      return st;
     }
     if (typeof user.is_active === "boolean") {
       return user.is_active ? "active" : "inactive";
@@ -711,8 +714,11 @@ const ManageUsers = () => {
       return "inactive";
     }
     const nested = getNestedData(user);
-    if (nested?.status) {
-      return String(nested.status).toLowerCase();
+    if (nested?.status !== undefined && nested?.status !== null) {
+      const st = String(nested.status).toLowerCase().trim();
+      if (st === "1" || st === "active" || st === "approved" || st === "verified") return "active";
+      if (st === "0" || st === "inactive" || st === "suspended" || st === "blocked" || st === "rejected") return "inactive";
+      return st;
     }
     if (typeof nested?.is_active === "boolean") {
       return nested.is_active ? "active" : "inactive";
@@ -727,13 +733,13 @@ const ManageUsers = () => {
 
   const getStatusBadgeClass = (status) => {
     const s = String(status).toLowerCase();
-    if (["active", "verified", "approved"].includes(s))
+    if (["active", "verified", "approved", "1"].includes(s))
       return "badge-premium badge-success";
-    if (["inactive", "suspended", "blocked"].includes(s))
+    if (["inactive", "suspended", "blocked", "rejected", "0"].includes(s))
       return "badge-premium badge-danger";
     if (["pending", "on hold"].includes(s))
       return "badge-premium badge-warning";
-    return "badge-premium badge-secondary";
+    return "badge-premium badge-danger";
   };
 
   const openModal = useCallback((user = null, viewMode = false) => {

@@ -6818,20 +6818,24 @@ public function listContracts(Request $request)
         $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
         $weekEnd   = Carbon::now()->endOfWeek(Carbon::SUNDAY);
 
-        // State source: sites.state (normalized to lowercase)
+        // Fixed list of AU states (order matters for output)
+        $auStates = ['vic', 'nsw', 'wa', 'sa', 'tas', 'qld', 'act', 'nt'];
+
+        // State source: sites.state (normalized)
         $stateExpr = "LOWER(TRIM(s.state))";
 
         // Base query
         $base = DB::table('job_rosters as jr')
-            ->leftJoin('sites as s', 's.id', '=', 'jr.site_id');
+            ->leftJoin('sites as s', 's.id', '=', 'jr.site_id')
+            ->whereIn(DB::raw($stateExpr), $auStates);   // only care about AU states
 
-        // ---- 1. Per-state totals (all jobs) ----
+        // ---- 1. Per-state totals ----
         $totalRows = (clone $base)
             ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
             ->groupByRaw($stateExpr)
             ->pluck('total', 'state');
 
-        // ---- 2. Per-state uncovered (all jobs) ----
+        // ---- 2. Per-state uncovered ----
         $uncoveredRows = (clone $base)
             ->whereNull('jr.accepted_by')
             ->whereNull('jr.assigned_to')
@@ -6855,7 +6859,7 @@ public function listContracts(Request $request)
             ->groupByRaw($stateExpr)
             ->pluck('total', 'state');
 
-        // ---- 5. Per-state this week's jobs (Mon–Sun) ----
+        // ---- 5. Per-state this week's jobs ----
         $weekRows = (clone $base)
             ->whereBetween('jr.start', [$weekStart, $weekEnd])
             ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
@@ -6871,19 +6875,7 @@ public function listContracts(Request $request)
             ->groupByRaw($stateExpr)
             ->pluck('total', 'state');
 
-        // ---- Merge all state keys ----
-        $states = collect()
-            ->merge($totalRows->keys())
-            ->merge($uncoveredRows->keys())
-            ->merge($todayRows->keys())
-            ->merge($todayUncoveredRows->keys())
-            ->merge($weekRows->keys())
-            ->merge($weekUncoveredRows->keys())
-            ->unique()
-            ->sort()
-            ->values();
-
-        // ---- Build per-state response ----
+        // ---- Build per-state response (fixed order, always 8 rows) ----
         $perState = [];
         $totals = [
             'total_jobs'      => 0,
@@ -6894,7 +6886,7 @@ public function listContracts(Request $request)
             'week_uncovered'  => 0,
         ];
 
-        foreach ($states as $st) {
+        foreach ($auStates as $st) {
             $totalJobs      = (int) ($totalRows->get($st) ?? 0);
             $totalUncovered = (int) ($uncoveredRows->get($st) ?? 0);
             $todayJobs      = (int) ($todayRows->get($st) ?? 0);
@@ -6903,7 +6895,7 @@ public function listContracts(Request $request)
             $weekUncovered  = (int) ($weekUncoveredRows->get($st) ?? 0);
 
             $perState[] = [
-                'state' => $st ?: 'unknown',
+                'state' => strtoupper($st),   // returns "VIC", "NSW", etc.
                 'total' => [
                     'jobs'      => $totalJobs,
                     'uncovered' => $totalUncovered,
@@ -6931,7 +6923,7 @@ public function listContracts(Request $request)
 
         // ---- "All states" summary ----
         $all = [
-            'state' => 'all',
+            'state' => 'ALL',
             'total' => [
                 'jobs'      => $totals['total_jobs'],
                 'uncovered' => $totals['total_uncovered'],

@@ -6812,160 +6812,152 @@ public function listContracts(Request $request)
     ], 200);
 }
     //end contract flow
-public function stats(Request $request)
-{
-    $today     = Carbon::today();
-    $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
-    $weekEnd   = Carbon::now()->endOfWeek(Carbon::SUNDAY);
+    public function stats(Request $request)
+    {
+        $today     = Carbon::today();
+        $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
+        $weekEnd   = Carbon::now()->endOfWeek(Carbon::SUNDAY);
 
-    // Preferred state: roster.state, fallback: sites.state
-    // Normalized to lowercase, trimmed, so 'VIC' and 'vic ' both map to 'vic'
-    $stateExpr = "LOWER(TRIM(COALESCE(NULLIF(jr.state, ''), s.state)))";
+        // State source: sites.state (normalized to lowercase)
+        $stateExpr = "LOWER(TRIM(s.state))";
 
-    // Base query (join sites so we can use fallback state)
-    $base = DB::table('job_rosters as jr')
-        ->leftJoin('sites as s', 's.id', '=', 'jr.site_id');
+        // Base query
+        $base = DB::table('job_rosters as jr')
+            ->leftJoin('sites as s', 's.id', '=', 'jr.site_id');
 
-    // ---- 1. Per-state totals (all jobs) ----
-    $totalRows = (clone $base)
-        ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
-        ->groupByRaw($stateExpr)
-        ->pluck('total', 'state');
+        // ---- 1. Per-state totals (all jobs) ----
+        $totalRows = (clone $base)
+            ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
+            ->groupByRaw($stateExpr)
+            ->pluck('total', 'state');
 
-    // ---- 2. Per-state uncovered (all jobs) ----
-    $uncoveredRows = (clone $base)
-        ->whereNull('jr.accepted_by')
-        ->whereNull('jr.assigned_to')
-        ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
-        ->groupByRaw($stateExpr)
-        ->pluck('total', 'state');
+        // ---- 2. Per-state uncovered (all jobs) ----
+        $uncoveredRows = (clone $base)
+            ->whereNull('jr.accepted_by')
+            ->whereNull('jr.assigned_to')
+            ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
+            ->groupByRaw($stateExpr)
+            ->pluck('total', 'state');
 
-    // ---- 3. Per-state today's jobs ----
-    $todayRows = (clone $base)
-        ->whereDate('jr.shift_date', $today)
-        ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
-        ->groupByRaw($stateExpr)
-        ->pluck('total', 'state');
+        // ---- 3. Per-state today's jobs ----
+        $todayRows = (clone $base)
+            ->whereDate('jr.shift_date', $today)
+            ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
+            ->groupByRaw($stateExpr)
+            ->pluck('total', 'state');
 
-    // ---- 4. Per-state today's uncovered ----
-    $todayUncoveredRows = (clone $base)
-        ->whereDate('jr.shift_date', $today)
-        ->whereNull('jr.accepted_by')
-        ->whereNull('jr.assigned_to')
-        ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
-        ->groupByRaw($stateExpr)
-        ->pluck('total', 'state');
+        // ---- 4. Per-state today's uncovered ----
+        $todayUncoveredRows = (clone $base)
+            ->whereDate('jr.shift_date', $today)
+            ->whereNull('jr.accepted_by')
+            ->whereNull('jr.assigned_to')
+            ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
+            ->groupByRaw($stateExpr)
+            ->pluck('total', 'state');
 
-    // ---- 5. Per-state this week's jobs (Mon–Sun) ----
-    $weekRows = (clone $base)
-        ->whereBetween('jr.shift_date', [$weekStart, $weekEnd])
-        ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
-        ->groupByRaw($stateExpr)
-        ->pluck('total', 'state');
+        // ---- 5. Per-state this week's jobs (Mon–Sun) ----
+        $weekRows = (clone $base)
+            ->whereBetween('jr.shift_date', [$weekStart, $weekEnd])
+            ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
+            ->groupByRaw($stateExpr)
+            ->pluck('total', 'state');
 
-    // ---- 6. Per-state this week's uncovered ----
-    $weekUncoveredRows = (clone $base)
-        ->whereBetween('jr.shift_date', [$weekStart, $weekEnd])
-        ->whereNull('jr.accepted_by')
-        ->whereNull('jr.assigned_to')
-        ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
-        ->groupByRaw($stateExpr)
-        ->pluck('total', 'state');
+        // ---- 6. Per-state this week's uncovered ----
+        $weekUncoveredRows = (clone $base)
+            ->whereBetween('jr.shift_date', [$weekStart, $weekEnd])
+            ->whereNull('jr.accepted_by')
+            ->whereNull('jr.assigned_to')
+            ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
+            ->groupByRaw($stateExpr)
+            ->pluck('total', 'state');
 
-    // ---- Merge all state keys (union of every result) ----
-    $states = collect()
-        ->merge($totalRows->keys())
-        ->merge($uncoveredRows->keys())
-        ->merge($todayRows->keys())
-        ->merge($todayUncoveredRows->keys())
-        ->merge($weekRows->keys())
-        ->merge($weekUncoveredRows->keys())
-        ->filter()                        // drop empty/null state
-        ->unique()
-        ->sort()
-        ->values();
+        // ---- Merge all state keys ----
+        $states = collect()
+            ->merge($totalRows->keys())
+            ->merge($uncoveredRows->keys())
+            ->merge($todayRows->keys())
+            ->merge($todayUncoveredRows->keys())
+            ->merge($weekRows->keys())
+            ->merge($weekUncoveredRows->keys())
+            ->unique()
+            ->sort()
+            ->values();
 
-    // ---- Build per-state response ----
-    $perState = [];
-    $totals = [
-        'total_jobs'         => 0,
-        'total_uncovered'    => 0,
-        'today_jobs'         => 0,
-        'today_uncovered'    => 0,
-        'week_jobs'          => 0,
-        'week_uncovered'     => 0,
-    ];
+        // ---- Build per-state response ----
+        $perState = [];
+        $totals = [
+            'total_jobs'      => 0,
+            'total_uncovered' => 0,
+            'today_jobs'      => 0,
+            'today_uncovered' => 0,
+            'week_jobs'       => 0,
+            'week_uncovered'  => 0,
+        ];
 
-    foreach ($states as $st) {
-        $totalJobs         = (int) ($totalRows->get($st) ?? 0);
-        $totalUncovered    = (int) ($uncoveredRows->get($st) ?? 0);
-        $todayJobs         = (int) ($todayRows->get($st) ?? 0);
-        $todayUncovered    = (int) ($todayUncoveredRows->get($st) ?? 0);
-        $weekJobs          = (int) ($weekRows->get($st) ?? 0);
-        $weekUncovered     = (int) ($weekUncoveredRows->get($st) ?? 0);
+        foreach ($states as $st) {
+            $totalJobs      = (int) ($totalRows->get($st) ?? 0);
+            $totalUncovered = (int) ($uncoveredRows->get($st) ?? 0);
+            $todayJobs      = (int) ($todayRows->get($st) ?? 0);
+            $todayUncovered = (int) ($todayUncoveredRows->get($st) ?? 0);
+            $weekJobs       = (int) ($weekRows->get($st) ?? 0);
+            $weekUncovered  = (int) ($weekUncoveredRows->get($st) ?? 0);
 
-        $perState[] = [
-            'state' => $st,
+            $perState[] = [
+                'state' => $st ?: 'unknown',
+                'total' => [
+                    'jobs'      => $totalJobs,
+                    'uncovered' => $totalUncovered,
+                    'covered'   => $totalJobs - $totalUncovered,
+                ],
+                'today' => [
+                    'jobs'      => $todayJobs,
+                    'uncovered' => $todayUncovered,
+                    'covered'   => $todayJobs - $todayUncovered,
+                ],
+                'week' => [
+                    'jobs'      => $weekJobs,
+                    'uncovered' => $weekUncovered,
+                    'covered'   => $weekJobs - $weekUncovered,
+                ],
+            ];
+
+            $totals['total_jobs']      += $totalJobs;
+            $totals['total_uncovered'] += $totalUncovered;
+            $totals['today_jobs']      += $todayJobs;
+            $totals['today_uncovered'] += $todayUncovered;
+            $totals['week_jobs']       += $weekJobs;
+            $totals['week_uncovered']  += $weekUncovered;
+        }
+
+        // ---- "All states" summary ----
+        $all = [
+            'state' => 'all',
             'total' => [
-                'jobs'      => $totalJobs,
-                'uncovered' => $totalUncovered,
-                'covered'   => $totalJobs - $totalUncovered,
+                'jobs'      => $totals['total_jobs'],
+                'uncovered' => $totals['total_uncovered'],
+                'covered'   => $totals['total_jobs'] - $totals['total_uncovered'],
             ],
             'today' => [
-                'jobs'      => $todayJobs,
-                'uncovered' => $todayUncovered,
-                'covered'   => $todayJobs - $todayUncovered,
+                'jobs'      => $totals['today_jobs'],
+                'uncovered' => $totals['today_uncovered'],
+                'covered'   => $totals['today_jobs'] - $totals['today_uncovered'],
             ],
             'week' => [
-                'jobs'      => $weekJobs,
-                'uncovered' => $weekUncovered,
-                'covered'   => $weekJobs - $weekUncovered,
+                'jobs'      => $totals['week_jobs'],
+                'uncovered' => $totals['week_uncovered'],
+                'covered'   => $totals['week_jobs'] - $totals['week_uncovered'],
             ],
         ];
 
-        // Accumulate for the "all" row
-        $totals['total_jobs']      += $totalJobs;
-        $totals['total_uncovered'] += $totalUncovered;
-        $totals['today_jobs']      += $todayJobs;
-        $totals['today_uncovered'] += $todayUncovered;
-        $totals['week_jobs']       += $weekJobs;
-        $totals['week_uncovered']  += $weekUncovered;
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'today'      => $today->toDateString(),
+                'week_start' => $weekStart->toDateString(),
+                'week_end'   => $weekEnd->toDateString(),
+                'all'        => $all,
+                'states'     => $perState,
+            ],
+        ]);
     }
-
-    // ---- "All states" summary ----
-    $all = [
-        'state' => 'all',
-        'total' => [
-            'jobs'      => $totals['total_jobs'],
-            'uncovered' => $totals['total_uncovered'],
-            'covered'   => $totals['total_jobs'] - $totals['total_uncovered'],
-        ],
-        'today' => [
-            'jobs'      => $totals['today_jobs'],
-            'uncovered' => $totals['today_uncovered'],
-            'covered'   => $totals['today_jobs'] - $totals['today_uncovered'],
-        ],
-        'week' => [
-            'jobs'      => $totals['week_jobs'],
-            'uncovered' => $totals['week_uncovered'],
-            'covered'   => $totals['week_jobs'] - $totals['week_uncovered'],
-        ],
-    ];
-
-    // ---- Response ----
-    return response()->json([
-        'success' => true,
-        'data'    => [
-            'today'      => $today->toDateString(),
-            'week_start' => $weekStart->toDateString(),
-            'week_end'   => $weekEnd->toDateString(),
-
-            // Combined across every state
-            'all'        => $all,
-
-            // Per-state list (sorted alphabetically)
-            'states'     => $perState,
-        ],
-    ]);
-}
 }

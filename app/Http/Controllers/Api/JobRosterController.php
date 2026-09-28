@@ -6812,4 +6812,131 @@ public function listContracts(Request $request)
     ], 200);
 }
     //end contract flow
+ public function stats(Request $request)
+    {
+        // Accept state from query, JSON payload, or form-data
+        $state = $request->input('state')
+              ?? $request->query('state')
+              ?? null;
+
+        $state = $state ? strtolower(trim($state)) : null;
+
+        $today     = Carbon::today();
+        $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
+        $weekEnd   = Carbon::now()->endOfWeek(Carbon::SUNDAY);
+
+        // ---- Base query: filter by state (roster.state, fallback to sites.state) ----
+        $applyStateFilter = function ($query) use ($state) {
+            if ($state) {
+                $query->where(function ($q) use ($state) {
+                    $q->whereRaw('LOWER(jr.state) = ?', [$state])
+                      ->orWhere(function ($q2) use ($state) {
+                          $q2->whereNull('jr.state')
+                             ->whereRaw('LOWER(s.state) = ?', [$state]);
+                      });
+                });
+            }
+            return $query;
+        };
+
+        // ---- 1. Total jobs ----
+        $totalJobs = $applyStateFilter(
+            DB::table('job_rosters as jr')
+                ->leftJoin('sites as s', 's.id', '=', 'jr.site_id')
+        )->count('jr.id');
+
+        // ---- 2. Total uncovered jobs ----
+        $totalUncovered = $applyStateFilter(
+            DB::table('job_rosters as jr')
+                ->leftJoin('sites as s', 's.id', '=', 'jr.site_id')
+                ->whereNull('jr.accepted_by')
+                ->whereNull('jr.assigned_to')
+        )->count('jr.id');
+
+        // ---- 3. Today's jobs ----
+        $todayJobs = $applyStateFilter(
+            DB::table('job_rosters as jr')
+                ->leftJoin('sites as s', 's.id', '=', 'jr.site_id')
+                ->whereDate('jr.shift_date', $today)
+        )->count('jr.id');
+
+        // ---- 4. Today's uncovered jobs ----
+        $todayUncovered = $applyStateFilter(
+            DB::table('job_rosters as jr')
+                ->leftJoin('sites as s', 's.id', '=', 'jr.site_id')
+                ->whereDate('jr.shift_date', $today)
+                ->whereNull('jr.accepted_by')
+                ->whereNull('jr.assigned_to')
+        )->count('jr.id');
+
+        // ---- 5. This week's jobs (Mon–Sun) ----
+        $weekJobs = $applyStateFilter(
+            DB::table('job_rosters as jr')
+                ->leftJoin('sites as s', 's.id', '=', 'jr.site_id')
+                ->whereBetween('jr.shift_date', [$weekStart, $weekEnd])
+        )->count('jr.id');
+
+        // ---- 6. This week's uncovered jobs ----
+        $weekUncovered = $applyStateFilter(
+            DB::table('job_rosters as jr')
+                ->leftJoin('sites as s', 's.id', '=', 'jr.site_id')
+                ->whereBetween('jr.shift_date', [$weekStart, $weekEnd])
+                ->whereNull('jr.accepted_by')
+                ->whereNull('jr.assigned_to')
+        )->count('jr.id');
+
+        // ---- 7. Daily breakdown for the current week (Mon–Sun) ----
+        $dailyRows = $applyStateFilter(
+            DB::table('job_rosters as jr')
+                ->leftJoin('sites as s', 's.id', '=', 'jr.site_id')
+                ->whereBetween('jr.shift_date', [$weekStart, $weekEnd])
+                ->selectRaw('DATE(jr.shift_date) as day, COUNT(jr.id) as total')
+                ->selectRaw('SUM(CASE WHEN jr.accepted_by IS NULL AND jr.assigned_to IS NULL THEN 1 ELSE 0 END) as uncovered')
+                ->groupByRaw('DATE(jr.shift_date)')
+                ->orderBy('day')
+        )->get()->keyBy('day');
+
+        $weekDaily = [];
+        for ($d = $weekStart->copy(); $d->lte($weekEnd); $d->addDay()) {
+            $key = $d->toDateString();
+            $row = $dailyRows->get($key);
+
+            $weekDaily[] = [
+                'date'      => $key,
+                'day_name'  => $d->format('D'),
+                'total'     => (int) ($row->total ?? 0),
+                'uncovered' => (int) ($row->uncovered ?? 0),
+                'covered'   => (int) (($row->total ?? 0) - ($row->uncovered ?? 0)),
+            ];
+        }
+
+        // ---- Response ----
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'state'      => $state ?? 'all',
+                'today'      => $today->toDateString(),
+                'week_start' => $weekStart->toDateString(),
+                'week_end'   => $weekEnd->toDateString(),
+
+                'total' => [
+                    'jobs'      => $totalJobs,
+                    'uncovered' => $totalUncovered,
+                    'covered'   => $totalJobs - $totalUncovered,
+                ],
+
+                'today' => [
+                    'jobs'      => $todayJobs,
+                    'uncovered' => $todayUncovered,
+                    'covered'   => $todayJobs - $todayUncovered,
+                ],
+
+                'week' => [
+                    'jobs'      => $weekJobs,
+                    'uncovered' => $weekUncovered,
+                    'covered'   => $weekJobs - $weekUncovered,
+                ],
+            ],
+        ]);
+    }
 }

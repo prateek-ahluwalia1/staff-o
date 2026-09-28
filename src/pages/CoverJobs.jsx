@@ -50,8 +50,39 @@ const CoverJobs = () => {
     const [loadingIds, setLoadingIds] = useState([]);
     const [removedJobIds, setRemovedJobIds] = useState([]);
     const [selectedStaffId, setSelectedStaffId] = useState("");
+    const [serviceFeeAccepted, setServiceFeeAccepted] = useState(false);
+    const [countdown, setCountdown] = useState(30);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
+
+    useEffect(() => {
+        if (!selectedJob) {
+            setCountdown(30);
+            return;
+        }
+
+        setCountdown(30);
+        const timer = setInterval(() => {
+            setCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [selectedJob]);
+
+    useEffect(() => {
+        if (countdown === 0 && selectedJob) {
+            const isAccepting = loadingIds.includes(selectedJob.id);
+            if (!isAccepting && !showSuccessPopup) {
+                closeModal();
+            }
+        }
+    }, [countdown, selectedJob, loadingIds, showSuccessPopup]);
 
     const { data, loading, error } = useFetch(
         `api/jobs/available/${staffContractorId}?page=${currentPage}`,
@@ -128,9 +159,10 @@ const CoverJobs = () => {
     };
 
     const openModal = (job) => {
-        // Clear staff selection when opening a new job.
+        // Clear staff selection and fee acknowledgment when opening a new job.
         // If contractor_invoice is 0, we won't show the dropdown at all.
         setSelectedStaffId("");
+        setServiceFeeAccepted(false);
         let documents = [];
         try {
             if (job.document_list) {
@@ -140,7 +172,11 @@ const CoverJobs = () => {
         } catch (e) { }
         setSelectedJob({ ...job, documents });
     };
-    const closeModal = () => { setSelectedStaffId(""); setSelectedJob(null); };
+    const closeModal = () => {
+        setSelectedStaffId("");
+        setServiceFeeAccepted(false);
+        setSelectedJob(null);
+    };
 
     const getAcceptEndpoint = () => {
         if (userRole === 'staff') return `api/asap-jobs/accept/${userId}`;
@@ -148,6 +184,10 @@ const CoverJobs = () => {
     };
 
     const handleAcceptJob = async (jobId) => {
+        if (userRole === 'contractor' && !serviceFeeAccepted) {
+            toast.warning('Please acknowledge that a 10–15% service fee will be charged before accepting.');
+            return;
+        }
         setLoadingIds(prev => [...prev, jobId]);
         try {
             // Only include guard_id if contractor_invoice !== 0 and a staff is selected
@@ -359,6 +399,12 @@ const CoverJobs = () => {
                     transition: transform 0.15s, box-shadow 0.15s;
                 }
                 .accept-btn:hover { transform: translateX(1px); box-shadow: 0 6px 14px -2px rgba(10,124,110,0.45); }
+                .accept-btn:disabled {
+                    opacity: 0.55;
+                    cursor: not-allowed;
+                    transform: none;
+                    box-shadow: none;
+                }
 
                 .page-btn {
                     width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: #fff;
@@ -552,9 +598,39 @@ const CoverJobs = () => {
                             <h3 style={{ margin: 0, fontSize: '19px', fontWeight: '700', color: '#fff', position: 'relative', zIndex: 1 }}>
                                 <i className="fa-solid fa-clipboard-check me-2 opacity-75"></i> Job Details
                             </h3>
-                            <button onClick={closeModal} className="modal-close-btn">
-                                <i className="fa-solid fa-xmark"></i>
-                            </button>
+                            <div className="d-flex align-items-center gap-3" style={{ position: 'relative', zIndex: 1 }}>
+                                <div
+                                    className="d-flex align-items-center gap-2 px-3 py-1 rounded-pill"
+                                    style={{
+                                        backgroundColor: countdown <= 10 ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.15)',
+                                        border: `1.5px solid ${countdown <= 10 ? '#ef4444' : 'rgba(255, 255, 255, 0.3)'}`,
+                                        color: countdown <= 10 ? '#fca5a5' : '#fff',
+                                        fontSize: '13px',
+                                        fontWeight: 700,
+                                        letterSpacing: '0.4px',
+                                        transition: 'all 0.25s ease',
+                                    }}
+                                    title="Time remaining to accept"
+                                >
+                                    <i className={`fa-solid ${countdown <= 10 ? 'fa-hourglass-end' : 'fa-clock'}`}></i>
+                                    <span>{countdown}s</span>
+                                </div>
+                                <button onClick={closeModal} className="modal-close-btn">
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 30-second Countdown Progress Bar */}
+                        <div style={{ height: '3px', width: '100%', backgroundColor: 'rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                            <div
+                                style={{
+                                    height: '100%',
+                                    width: `${(countdown / 30) * 100}%`,
+                                    backgroundColor: countdown <= 10 ? '#ef4444' : '#0A7C6E',
+                                    transition: 'width 1s linear, background-color 0.3s ease',
+                                }}
+                            />
                         </div>
 
                         <div className="modal-body" style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
@@ -652,11 +728,56 @@ const CoverJobs = () => {
                                     <div className="text-muted mt-2" style={{ fontSize: '12px' }}>Leave this blank to accept the job immediately. You can assign it to the roster later.</div>
                                 </div>
                             )}
+
+                            {/* Service fee notice & required acceptance for contractors */}
+                            {userRole === 'contractor' && (
+                                <div
+                                    className="w-100 p-3 rounded-3 d-flex align-items-start gap-2"
+                                    style={{
+                                        backgroundColor: '#fffbeb',
+                                        border: '1.5px solid #f59e0b',
+                                        borderRadius: '12px',
+                                        boxShadow: '0 2px 6px rgba(217, 119, 6, 0.08)',
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        className="form-check-input mt-1 flex-shrink-0"
+                                        id="coverJobServiceFeeCheckbox"
+                                        checked={serviceFeeAccepted}
+                                        onChange={(e) => setServiceFeeAccepted(e.target.checked)}
+                                        style={{
+                                            cursor: 'pointer',
+                                            width: '18px',
+                                            height: '18px',
+                                            accentColor: '#d97706',
+                                        }}
+                                    />
+                                    <label
+                                        htmlFor="coverJobServiceFeeCheckbox"
+                                        className="form-check-label user-select-none mb-0"
+                                        style={{
+                                            color: '#b45309',
+                                            fontSize: '13.5px',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            lineHeight: '1.45',
+                                        }}
+                                    >
+                                        <i className="fa-solid fa-triangle-exclamation me-1.5" style={{ color: '#d97706' }}></i>
+                                        Please note: There will be a 10–15% service fee charged on the total amount.
+                                    </label>
+                                </div>
+                            )}
+
                             <div className="d-flex gap-2 ms-auto">
                                 <button
                                     className="btn accept-btn text-white rounded-pill px-4 fw-semibold shadow-sm"
                                     onClick={() => handleAcceptJob(selectedJob.id)}
-                                    disabled={loadingIds.includes(selectedJob.id)}
+                                    disabled={
+                                        loadingIds.includes(selectedJob.id) ||
+                                        (userRole === 'contractor' && !serviceFeeAccepted)
+                                    }
                                 >
                                     {loadingIds.includes(selectedJob.id) ? (
                                         <span className="spinner-border spinner-border-sm me-2" role="status"></span>

@@ -12,13 +12,20 @@ const chatSlice = createSlice({
   },
   reducers: {
     setConversations: (state, action) => {
-      state.conversations = action.payload;
+      const list = Array.isArray(action.payload) ? action.payload : [];
+      state.conversations = list;
+      state.unreadTotal = list.reduce(
+        (sum, conv) => sum + (Number(conv?.unread_count) || 0),
+        0
+      );
+    },
+    setUnreadTotal: (state, action) => {
+      state.unreadTotal = Number(action.payload) || 0;
     },
     setActiveCategory: (state, action) => {
       state.activeCategory = action.payload;
       state.activeConversation = null;
       state.messages = [];
-      state.conversations = [];
     },
     setActiveChat: (state, action) => {
       state.activeConversation = action.payload;
@@ -68,6 +75,7 @@ const chatSlice = createSlice({
           state.activeConversation.user?.id !== incoming.sender_id
         ) {
           conv.unread_count = (conv.unread_count || 0) + 1;
+          state.unreadTotal = (state.unreadTotal || 0) + 1;
         }
 
         // Move this conversation to the very top of the list
@@ -87,6 +95,7 @@ const chatSlice = createSlice({
           },
           unread_count: 1,
         });
+        state.unreadTotal = (state.unreadTotal || 0) + 1;
       }
     },
     // Kept your original addMessage just in case it's used elsewhere
@@ -114,6 +123,8 @@ const chatSlice = createSlice({
       const userId = action.payload;
       const conv = state.conversations.find((c) => c.user?.id === userId);
       if (conv) {
+        const count = Number(conv.unread_count) || 0;
+        state.unreadTotal = Math.max(0, (state.unreadTotal || 0) - count);
         conv.unread_count = 0;
       }
     },
@@ -130,6 +141,7 @@ const chatSlice = createSlice({
 
 export const {
   setConversations,
+  setUnreadTotal,
   setActiveChat,
   setMessages,
   addMessage,

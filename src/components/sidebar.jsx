@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { logOut } from "../store/slices/authSlice";
@@ -8,7 +8,9 @@ import {
   setSidebarExpanded,
 } from "../store/slices/sidebarSlice";
 import { markNotificationRead, markAllRead } from "../store/slices/notificationSlice";
+import { setConversations } from "../store/slices/chatSlice";
 import useSubmit from "../hooks/useSubmit";
+import useFetch from "../hooks/useFetch";
 import staffologo from "../assets/images/staffo.png";
 import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 
@@ -19,6 +21,19 @@ const Sidebar = memo(function Sidebar() {
   // Notification State
   const items = useSelector((state) => state.notifications?.items) || [];
   const unreadCount = useSelector((state) => state.notifications?.unreadCount) || 0;
+
+  // Chat Unread Count
+  const reduxConversations = useSelector((state) => state.chat?.conversations);
+  const reduxUnreadTotal = useSelector((state) => state.chat?.unreadTotal) || 0;
+
+  const chatUnreadCount = useMemo(() => {
+    const list = reduxConversations || [];
+    const fromConvs = list.reduce(
+      (sum, conv) => sum + (Number(conv?.unread_count) || 0),
+      0
+    );
+    return Math.max(fromConvs, reduxUnreadTotal);
+  }, [reduxConversations, reduxUnreadTotal]);
 
   const location = useLocation();
   const dispatch = useDispatch();
@@ -35,6 +50,35 @@ const Sidebar = memo(function Sidebar() {
   const type = (userType || "").toString().toLowerCase();
   const isProfileActive = !!(userdata?.data?.is_active || userdata?.is_active);
   const isStaffCoverJobsVisible = type === "staff" && (userdata?.data?.user_id === 1 || userdata?.user_id === 1);
+
+  // Fetch initial chat conversations for unread count
+  const { data: convData, refetch: refetchConversations } = useFetch(
+    token && userId ? "api/messages/conversations" : null,
+    {
+      isAuth: true,
+      immediate: Boolean(token && userId),
+    }
+  );
+
+  useEffect(() => {
+    if (convData) {
+      const list = convData?.data || convData || [];
+      if (Array.isArray(list)) {
+        dispatch(setConversations(list));
+      }
+    }
+  }, [convData, dispatch]);
+
+  // Refetch when tab regains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (token && userId && refetchConversations) {
+        refetchConversations();
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [token, userId, refetchConversations]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -322,11 +366,45 @@ const Sidebar = memo(function Sidebar() {
               item.to.startsWith("/chat/");
             const disabled = !isProfileActive && !isAlwaysAllowed;
             const isActive = location.pathname === item.to;
+            const isChat = item.to === "/chat" || item.to.startsWith("/chat");
+            const showChatBadge = isChat && chatUnreadCount > 0;
+
+            const iconElement = (
+              <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                <i className={item.icon} style={{ fontSize: "20px", minWidth: "24px", textAlign: "center" }}></i>
+                {showChatBadge && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "-6px",
+                      right: "-8px",
+                      backgroundColor: "#dc3545",
+                      color: "#ffffff",
+                      borderRadius: "999px",
+                      minWidth: "16px",
+                      height: "16px",
+                      padding: "0 4px",
+                      fontSize: "9.5px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: "bold",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
+                      lineHeight: 1,
+                      zIndex: 2,
+                    }}
+                  >
+                    {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
+                  </span>
+                )}
+              </span>
+            );
+
             return (
               <li key={item.label}>
                 {disabled ? (
                   <div style={styles.getLinkStyle(false, true)} title="Complete your profile to access this">
-                    <i className={item.icon} style={{ fontSize: "20px", minWidth: "24px", textAlign: "center" }}></i>
+                    {iconElement}
                     {(isExpanded || isMobile) && <span>{item.label} <i className="fa-solid fa-lock" style={{ fontSize: "10px", marginLeft: "6px" }}></i></span>}
                   </div>
                 ) : (
@@ -336,7 +414,7 @@ const Sidebar = memo(function Sidebar() {
                     className={isActive ? "jw-nav-link active-bar" : "jw-nav-link"}
                     style={({ isActive }) => styles.getLinkStyle(isActive, false)}
                   >
-                    <i className={item.icon} style={{ fontSize: "20px", minWidth: "24px", textAlign: "center" }}></i>
+                    {iconElement}
                     {(isExpanded || isMobile) && <span>{item.label}</span>}
                   </NavLink>
                 )}

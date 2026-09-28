@@ -38,10 +38,43 @@ export default function NotificationAcceptModal({
     celebrate = true,   // 🎉 new prop – set to false to disable confetti
     success = false,    // 🎉 NEW PROP
     successMessage = '', // 🎉 NEW PROP
+    isContractor = false,
 }) {
+    const [serviceFeeAccepted, setServiceFeeAccepted] = React.useState(false);
+    const [countdown, setCountdown] = React.useState(30);
+
+    React.useEffect(() => {
+        if (!open) {
+            setServiceFeeAccepted(false);
+            setCountdown(30);
+            return;
+        }
+
+        setCountdown(30);
+        const timer = setInterval(() => {
+            setCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [open]);
+
+    React.useEffect(() => {
+        if (countdown === 0 && open && !accepting && !success) {
+            onClose();
+        }
+    }, [countdown, open, accepting, success, onClose]);
+
     if (!open || !job) return null;
 
     const handleAcceptClick = () => {
+        if (isContractor && !serviceFeeAccepted) return;
+
         // Call the parent's accept handler
         onAccept(job.id, selectedStaffId);
 
@@ -335,13 +368,47 @@ export default function NotificationAcceptModal({
                                 <i className="fa-solid fa-clipboard-check me-2 opacity-75"></i>
                                 Job Details
                             </h3>
-                            <button
-                                className="modal-close-btn-premium"
-                                onClick={onClose}
-                                aria-label="Close"
-                            >
-                                <i className="fa-solid fa-xmark"></i>
-                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative', zIndex: 1 }}>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '4px 12px',
+                                        borderRadius: '30px',
+                                        backgroundColor: countdown <= 10 ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.15)',
+                                        border: `1.5px solid ${countdown <= 10 ? '#ef4444' : 'rgba(255, 255, 255, 0.3)'}`,
+                                        color: countdown <= 10 ? '#fca5a5' : '#fff',
+                                        fontSize: '13px',
+                                        fontWeight: 700,
+                                        letterSpacing: '0.4px',
+                                        transition: 'all 0.25s ease',
+                                    }}
+                                    title="Time remaining to accept"
+                                >
+                                    <i className={`fa-solid ${countdown <= 10 ? 'fa-hourglass-end' : 'fa-clock'}`}></i>
+                                    <span>{countdown}s</span>
+                                </div>
+                                <button
+                                    className="modal-close-btn-premium"
+                                    onClick={onClose}
+                                    aria-label="Close"
+                                >
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 30-second Countdown Progress Bar */}
+                        <div style={{ height: '3px', width: '100%', backgroundColor: 'rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                            <div
+                                style={{
+                                    height: '100%',
+                                    width: `${(countdown / 30) * 100}%`,
+                                    backgroundColor: countdown <= 10 ? '#ef4444' : '#0A7C6E',
+                                    transition: 'width 1s linear, background-color 0.3s ease',
+                                }}
+                            />
                         </div>
 
                         {/* Body */}
@@ -468,6 +535,51 @@ export default function NotificationAcceptModal({
                                     </div>
                                 </div>
                             )}
+
+                            {isContractor && (
+                                <div
+                                    style={{
+                                        backgroundColor: '#fffbeb',
+                                        border: '1.5px solid #f59e0b',
+                                        borderRadius: '12px',
+                                        padding: '12px 14px',
+                                        marginBottom: '12px',
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: '8px',
+                                        boxShadow: '0 2px 6px rgba(217, 119, 6, 0.08)',
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        className="form-check-input mt-1 flex-shrink-0"
+                                        id="notificationModalServiceFeeCheckbox"
+                                        checked={serviceFeeAccepted}
+                                        onChange={(e) => setServiceFeeAccepted(e.target.checked)}
+                                        style={{
+                                            cursor: 'pointer',
+                                            width: '18px',
+                                            height: '18px',
+                                            accentColor: '#d97706',
+                                        }}
+                                    />
+                                    <label
+                                        htmlFor="notificationModalServiceFeeCheckbox"
+                                        className="user-select-none mb-0"
+                                        style={{
+                                            color: '#b45309',
+                                            fontSize: '13.5px',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            lineHeight: '1.45',
+                                        }}
+                                    >
+                                        <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: '6px', color: '#d97706' }}></i>
+                                        Please note: There will be a 10–15% service fee charged on the total amount.
+                                    </label>
+                                </div>
+                            )}
+
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
                                 <button
                                     type="button"
@@ -480,7 +592,7 @@ export default function NotificationAcceptModal({
                                     type="button"
                                     className="btn-success-premium"
                                     onClick={handleAcceptClick}
-                                    disabled={accepting}
+                                    disabled={accepting || (isContractor && !serviceFeeAccepted)}
                                 >
                                     {accepting ? 'Processing…' : selectedStaffId ? 'Assign Job' : 'Accept Job'}
                                 </button>

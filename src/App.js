@@ -587,6 +587,7 @@ function AppContent() {
                 selectedStaffId={selectedStaffId}
                 onStaffChange={setSelectedStaffId}
                 staffLoading={staffLoading}
+                isContractor={userRole === "contractor"}
             />
             <Routes>
                 {/* PUBLIC ROUTES */}

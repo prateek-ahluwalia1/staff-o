@@ -6678,6 +6678,7 @@ private function generateAndSendSignedContract($contractor, $rateRequest, $charg
         $contractService = new ContractService();
         $signedPdfBytes = $contractService->generatePdf($pdfData);
 
+        // Save a copy to disk for records
         $directory = storage_path('app/public/contracts');
         if (!file_exists($directory)) {
             mkdir($directory, 0755, true);
@@ -6695,7 +6696,7 @@ private function generateAndSendSignedContract($contractor, $rateRequest, $charg
             'contract_number'        => $contractNumber,
             'rate_snapshot'          => json_encode($stateBlocks),
             'signature_name'         => $rateRequest->signature_name,
-            'signature_image'        => $rateRequest->signature_image,
+            'signature_image_path'   => $rateRequest->signature_image,
             'pdf_path'               => 'contracts/' . $signedFilename,
             'signed_pdf_path'        => 'contracts/' . $signedFilename,
             'status'                 => 'signed',
@@ -6711,6 +6712,7 @@ private function generateAndSendSignedContract($contractor, $rateRequest, $charg
             $contractId = DB::table('contracts')->insertGetId($contractPayload);
         }
 
+        // Email signed copy to contractor — pass BYTES, since ContractSignedMail uses attachData()
         if (!empty($contractor->email)) {
             try {
                 Mail::to($contractor->email)->send(new ContractSignedMail(
@@ -6718,7 +6720,7 @@ private function generateAndSendSignedContract($contractor, $rateRequest, $charg
                     $contractor->contractor->company_name ?? $contractor->name ?? 'Contractor',
                     $rateRequest->state,
                     $contractNumber,
-                    $signedPdfPath
+                    $signedPdfBytes
                 ));
             } catch (\Exception $e) {
                 Log::error('Failed to send signed contract to contractor', [
@@ -6728,6 +6730,7 @@ private function generateAndSendSignedContract($contractor, $rateRequest, $charg
             }
         }
 
+        // Email signed copy to admin
         $adminAddress = config('mail.staffoo_admin_address', 'admin@staffoo.com.au');
         try {
             Mail::to($adminAddress)->send(new ContractSignedMail(
@@ -6735,7 +6738,7 @@ private function generateAndSendSignedContract($contractor, $rateRequest, $charg
                 $contractor->contractor->company_name ?? $contractor->name ?? 'Contractor',
                 $rateRequest->state,
                 $contractNumber,
-                $signedPdfPath
+                $signedPdfBytes
             ));
         } catch (\Exception $e) {
             Log::error('Failed to send signed contract to admin', ['error' => $e->getMessage()]);

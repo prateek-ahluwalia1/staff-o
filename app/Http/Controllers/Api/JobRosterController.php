@@ -5393,13 +5393,14 @@ private function chargeRateEmailFieldLabels(): array
 //     $request->validate([
 //         'user_id'         => 'required|integer',
 //         'rates'           => 'required|array|min:1',
+//         'rates.*.id'      => 'nullable|integer|exists:charge_rate_requests,id',
 //         'rates.*.state'   => 'required|string',
 //         'rates.*.title'   => 'nullable|string',
 //     ]);
- 
+
 //     try {
 //         $contractor = DB::table('users')->where('id', $request->user_id)->first();
- 
+
 //         if (!$contractor) {
 //             return response()->json([
 //                 'success' => false,
@@ -5407,80 +5408,118 @@ private function chargeRateEmailFieldLabels(): array
 //                 'data' => null,
 //             ], 200);
 //         }
- 
+
 //         $rateFieldLabels = $this->chargeRateFieldLabels();
- 
+
 //         $requestIds = [];
-//         $emailStateBlocks = []; // for the combined email: one block per state
- 
+//         $emailStateBlocks = [];
+//         $isUpdate = false;
+
 //         foreach ($request->rates as $rateEntry) {
+//             $state = $rateEntry['state'];
+            
+//             // Check if there's an existing pending record for this user and state
+//             $existingRecord = DB::table('charge_rate_requests')
+//                 ->where('user_id', $request->user_id)
+//                 ->where('state', $state)
+//                 ->where('status', 'pending')
+//                 ->first();
+
 //             $insertData = [
 //                 'user_id'        => $request->user_id,
 //                 'title'          => $rateEntry['title'] ?? null,
-//                 'state'          => $rateEntry['state'],
+//                 'state'          => $state,
 //                 'effective_from' => $rateEntry['effective_from'] ?? null,
 //                 'review_note'    => $request->notes ?? null,
 //                 'status'         => 'pending',
-//                 'is_submitted'   => $request->is_submitted, 
-//                 'created_at'     => now(),
+//                 'is_submitted'   => $request->is_submitted,
 //                 'updated_at'     => now(),
 //             ];
- 
-//             $rateRows = []; // for this state's block in the email
+
+//             $rateRows = [];
 //             foreach ($rateFieldLabels as $column => $label) {
 //                 $value = array_key_exists($column, $rateEntry) ? (float) $rateEntry[$column] : 0;
 //                 $insertData[$column] = $value;
 //                 $rateRows[] = ['label' => $label, 'value' => $value];
 //             }
- 
-//             $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
-//             $requestIds[] = $requestId;
- 
+
+//             // If an ID is provided in the request, use that
+//             if (!empty($rateEntry['id'])) {
+//                 // Update existing record by ID
+//                 DB::table('charge_rate_requests')
+//                     ->where('id', $rateEntry['id'])
+//                     ->where('user_id', $request->user_id)
+//                     ->update($insertData);
+                
+//                 $requestIds[] = $rateEntry['id'];
+//                 $isUpdate = true;
+//             } 
+//             // If there's an existing pending record for this state, update it
+//             elseif ($existingRecord) {
+//                 // Update the existing pending record
+//                 DB::table('charge_rate_requests')
+//                     ->where('id', $existingRecord->id)
+//                     ->update($insertData);
+                
+//                 $requestIds[] = $existingRecord->id;
+//                 $isUpdate = true;
+//             } 
+//             // Otherwise create a new record
+//             else {
+//                 $insertData['created_at'] = now();
+//                 $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
+//                 $requestIds[] = $requestId;
+//             }
+
 //             $emailStateBlocks[] = [
-//                 'state'    => $rateEntry['state'],
+//                 'state'    => $state,
 //                 'title'    => $rateEntry['title'] ?? null,
 //                 'rateRows' => $rateRows,
 //             ];
 //         }
- 
-//         // Email admin — fixed recipient, one email covering every state in this submission
-//         $adminEmails = ['admin@staffoo.com.au','shahbazkhan062@gmail.com'];
- 
-//         if($request->is_submitted == 1)
-//         {
-//             try 
-//             {
-//                 $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
-//                     foreach ($admins as $a) {
-//                         $notification_data = [
-//                             'message' => 'Charge rate request submitted.',
-//                             'title' => 'Charge Rate Request',
-//                             'notification_token' => $a->notification_token,
-//                             'page' => 'my-job-applications',
-//                         ];
-//                         send_push_notification($notification_data);
-//                     }
 
-//                     Mail::to($adminEmails)->send(new ChargeRateRequestMail(
-//                         $contractor->name ?? 'Contractor',
-//                         $contractor->email ?? '',
-//                         $emailStateBlocks,
-//                         $request->notes
-//                     ));
+//         // Email admin
+//         $adminEmails = ['admin@staffoo.com.au'];
+
+//         if ($request->is_submitted == 1) {
+//             try {
+//                 $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
+//                 foreach ($admins as $a) {
+//                     $notification_data = [
+//                         'message' => 'Charge rate request ' . ($isUpdate ? 'updated' : 'submitted') . '.',
+//                         'title' => 'Charge Rate Request',
+//                         'notification_token' => $a->notification_token,
+//                         'page' => 'my-job-applications',
+//                     ];
+//                     send_push_notification($notification_data);
+//                 }
+
+//                 Mail::to($adminEmails)->send(new ChargeRateRequestMail(
+//                     $contractor->name ?? 'Contractor',
+//                     $contractor->email ?? '',
+//                     $emailStateBlocks,
+//                     $request->notes,
+//                 ));
+
+
 //             } catch (\Exception $e) {
 //                 Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
 //             }
 //         }
- 
+
+//         $message = $isUpdate 
+//             ? 'Charge rate request updated successfully.' 
+//             : 'Charge rate request submitted for admin review.';
+
 //         return response()->json([
 //             'success' => true,
-//             'message' => 'Charge rate request submitted for admin review.',
+//             'message' => $message,
 //             'data' => [
 //                 'charge_rate_request_ids' => $requestIds,
 //                 'status' => 'pending',
 //             ],
 //         ], 200);
- 
+
 //     } catch (\Exception $e) {
 //         return response()->json([
 //             'success' => false,
@@ -5498,6 +5537,8 @@ public function request_charge_rate(Request $request)
         'rates.*.id'      => 'nullable|integer|exists:charge_rate_requests,id',
         'rates.*.state'   => 'required|string',
         'rates.*.title'   => 'nullable|string',
+        'signature_name'  => 'required_if:is_submitted,1|string|max:255',
+        'signature_image' => 'required_if:is_submitted,1|string', // base64 data URI
     ]);
 
     try {
@@ -5511,6 +5552,37 @@ public function request_charge_rate(Request $request)
             ], 200);
         }
 
+        // ---- Decode + save the signature ONCE for this submission ----
+        $signatureImagePath = null;
+        $signedAt = null;
+
+        if ($request->filled('signature_image')) {
+            $signatureData = $request->signature_image;
+            if (preg_match('/^data:image\/(png|jpeg);base64,/', $signatureData)) {
+                $signatureData = preg_replace('/^data:image\/(png|jpeg);base64,/', '', $signatureData);
+            }
+            $decodedImage = base64_decode($signatureData, true);
+
+            if ($decodedImage === false || strlen($decodedImage) < 50) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid signature image.',
+                    'data' => null,
+                ], 422);
+            }
+
+            $signatureDirectory = storage_path('app/public/contracts/signatures');
+            if (!file_exists($signatureDirectory)) {
+                mkdir($signatureDirectory, 0755, true);
+            }
+
+            $signatureFilename = 'req-' . $request->user_id . '-' . Str::random(10) . '.png';
+            file_put_contents($signatureDirectory . DIRECTORY_SEPARATOR . $signatureFilename, $decodedImage);
+
+            $signatureImagePath = 'contracts/signatures/' . $signatureFilename;
+            $signedAt = now();
+        }
+
         $rateFieldLabels = $this->chargeRateFieldLabels();
 
         $requestIds = [];
@@ -5519,8 +5591,7 @@ public function request_charge_rate(Request $request)
 
         foreach ($request->rates as $rateEntry) {
             $state = $rateEntry['state'];
-            
-            // Check if there's an existing pending record for this user and state
+
             $existingRecord = DB::table('charge_rate_requests')
                 ->where('user_id', $request->user_id)
                 ->where('state', $state)
@@ -5528,14 +5599,17 @@ public function request_charge_rate(Request $request)
                 ->first();
 
             $insertData = [
-                'user_id'        => $request->user_id,
-                'title'          => $rateEntry['title'] ?? null,
-                'state'          => $state,
-                'effective_from' => $rateEntry['effective_from'] ?? null,
-                'review_note'    => $request->notes ?? null,
-                'status'         => 'pending',
-                'is_submitted'   => $request->is_submitted,
-                'updated_at'     => now(),
+                'user_id'         => $request->user_id,
+                'title'           => $rateEntry['title'] ?? null,
+                'state'           => $state,
+                'effective_from'  => $rateEntry['effective_from'] ?? null,
+                'review_note'     => $request->notes ?? null,
+                'status'          => 'pending',
+                'is_submitted'    => $request->is_submitted,
+                'signature_name'  => $request->signature_name ?? null,
+                'signature_image' => $signatureImagePath,
+                'signed_at'       => $signedAt,
+                'updated_at'      => now(),
             ];
 
             $rateRows = [];
@@ -5545,29 +5619,22 @@ public function request_charge_rate(Request $request)
                 $rateRows[] = ['label' => $label, 'value' => $value];
             }
 
-            // If an ID is provided in the request, use that
             if (!empty($rateEntry['id'])) {
-                // Update existing record by ID
                 DB::table('charge_rate_requests')
                     ->where('id', $rateEntry['id'])
                     ->where('user_id', $request->user_id)
                     ->update($insertData);
-                
+
                 $requestIds[] = $rateEntry['id'];
                 $isUpdate = true;
-            } 
-            // If there's an existing pending record for this state, update it
-            elseif ($existingRecord) {
-                // Update the existing pending record
+            } elseif ($existingRecord) {
                 DB::table('charge_rate_requests')
                     ->where('id', $existingRecord->id)
                     ->update($insertData);
-                
+
                 $requestIds[] = $existingRecord->id;
                 $isUpdate = true;
-            } 
-            // Otherwise create a new record
-            else {
+            } else {
                 $insertData['created_at'] = now();
                 $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
                 $requestIds[] = $requestId;
@@ -5580,20 +5647,18 @@ public function request_charge_rate(Request $request)
             ];
         }
 
-        // Email admin
         $adminEmails = ['admin@staffoo.com.au'];
 
         if ($request->is_submitted == 1) {
             try {
                 $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
                 foreach ($admins as $a) {
-                    $notification_data = [
+                    send_push_notification([
                         'message' => 'Charge rate request ' . ($isUpdate ? 'updated' : 'submitted') . '.',
                         'title' => 'Charge Rate Request',
                         'notification_token' => $a->notification_token,
                         'page' => 'my-job-applications',
-                    ];
-                    send_push_notification($notification_data);
+                    ]);
                 }
 
                 Mail::to($adminEmails)->send(new ChargeRateRequestMail(
@@ -5607,8 +5672,8 @@ public function request_charge_rate(Request $request)
             }
         }
 
-        $message = $isUpdate 
-            ? 'Charge rate request updated successfully.' 
+        $message = $isUpdate
+            ? 'Charge rate request updated successfully.'
             : 'Charge rate request submitted for admin review.';
 
         return response()->json([
@@ -5661,16 +5726,11 @@ public function list_charge_rate_requests(Request $request)
     ], 200);
 }
 
-/**
- * STEP 3a — Admin accepts a request.
- * Applies the rates to contractor_charge_rates (update if a row already
- * exists for this user_id + state, otherwise create a new one).
- */
 // public function accept_charge_rate_request(Request $request, $id)
 // {
 //     try {
 //         $rateRequest = DB::table('charge_rate_requests')->where('id', $id)->first();
-
+ 
 //         if (!$rateRequest) {
 //             return response()->json([
 //                 'success' => false,
@@ -5678,7 +5738,7 @@ public function list_charge_rate_requests(Request $request)
 //                 'data' => null,
 //             ], 200);
 //         }
-
+ 
 //         if ($rateRequest->status !== 'pending') {
 //             return response()->json([
 //                 'success' => false,
@@ -5686,29 +5746,29 @@ public function list_charge_rate_requests(Request $request)
 //                 'data' => null,
 //             ], 200);
 //         }
-
+ 
 //         $rateFieldLabels = $this->chargeRateFieldLabels();
-
+ 
 //         // Find existing rate card for this contractor + state, else create new
 //         $charge_rate = ContractorChargeRate::where('user_id', $rateRequest->user_id)
 //             ->where('state', $rateRequest->state)
 //             ->first();
-
+ 
 //         if (!$charge_rate) {
 //             $charge_rate = new ContractorChargeRate();
 //         }
-
+ 
 //         $charge_rate->title   = $rateRequest->title;
 //         $charge_rate->user_id = $rateRequest->user_id;
 //         $charge_rate->state   = $rateRequest->state;
-
+ 
 //         foreach ($rateFieldLabels as $column => $label) {
 //             $charge_rate->{$column} = $rateRequest->{$column} ?? 0;
 //         }
-
+ 
 //         $charge_rate->effective_from = $rateRequest->effective_from;
 //         $charge_rate->save();
-
+ 
 //         // Mark the request approved
 //         DB::table('charge_rate_requests')->where('id', $id)->update([
 //             'status'                    => 'approved',
@@ -5716,8 +5776,8 @@ public function list_charge_rate_requests(Request $request)
 //             'reviewed_at'               => now(),
 //             'contractor_charge_rate_id' => $charge_rate->id,
 //         ]);
-
-//           // ============ NEW: notify the CONTRACTOR their request was approved ============
+ 
+//         // ============ NEW: notify the CONTRACTOR their request was approved ============
 //         $contractor = DB::table('users')->where('id', $rateRequest->user_id)->first();
  
 //         if ($contractor) {
@@ -5755,10 +5815,21 @@ public function list_charge_rate_requests(Request $request)
 //                 }
 //             }
 //         }
-
-//         $this->generateAndSendContract($contractor, $rateRequest, $charge_rate);
-//         // ============ END NEW ============
-
+ 
+//         $remainingPending = DB::table('charge_rate_requests')
+//             ->where('user_id', $rateRequest->user_id)
+//             ->where('status', 'pending')
+//             ->exists();
+ 
+//         if (!$remainingPending) {
+//             $allApprovedRates = ContractorChargeRate::where('user_id', $rateRequest->user_id)->get();
+ 
+//             if ($allApprovedRates->isNotEmpty()) {
+//                 $this->generateAndSendContract($contractor, $rateRequest, $allApprovedRates);
+//             }
+//         }
+//         // ============ END CHANGED ============
+ 
 //         $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
 //         foreach ($admins as $a) {
 //             $notification_data = [
@@ -5769,7 +5840,7 @@ public function list_charge_rate_requests(Request $request)
 //             ];
 //             send_push_notification($notification_data);
 //         }
-
+ 
 //         return response()->json([
 //             'success' => true,
 //             'message' => 'Charge rate request approved and applied.',
@@ -5778,7 +5849,7 @@ public function list_charge_rate_requests(Request $request)
 //                 'contractor_charge_rate_id' => $charge_rate->id,
 //             ],
 //         ], 200);
-
+ 
 //     } catch (\Exception $e) {
 //         return response()->json([
 //             'success' => false,
@@ -5792,7 +5863,7 @@ public function accept_charge_rate_request(Request $request, $id)
 {
     try {
         $rateRequest = DB::table('charge_rate_requests')->where('id', $id)->first();
- 
+
         if (!$rateRequest) {
             return response()->json([
                 'success' => false,
@@ -5800,7 +5871,7 @@ public function accept_charge_rate_request(Request $request, $id)
                 'data' => null,
             ], 200);
         }
- 
+
         if ($rateRequest->status !== 'pending') {
             return response()->json([
                 'success' => false,
@@ -5808,42 +5879,38 @@ public function accept_charge_rate_request(Request $request, $id)
                 'data' => null,
             ], 200);
         }
- 
+
         $rateFieldLabels = $this->chargeRateFieldLabels();
- 
-        // Find existing rate card for this contractor + state, else create new
+
         $charge_rate = ContractorChargeRate::where('user_id', $rateRequest->user_id)
             ->where('state', $rateRequest->state)
             ->first();
- 
+
         if (!$charge_rate) {
             $charge_rate = new ContractorChargeRate();
         }
- 
+
         $charge_rate->title   = $rateRequest->title;
         $charge_rate->user_id = $rateRequest->user_id;
         $charge_rate->state   = $rateRequest->state;
- 
+
         foreach ($rateFieldLabels as $column => $label) {
             $charge_rate->{$column} = $rateRequest->{$column} ?? 0;
         }
- 
+
         $charge_rate->effective_from = $rateRequest->effective_from;
         $charge_rate->save();
- 
-        // Mark the request approved
+
         DB::table('charge_rate_requests')->where('id', $id)->update([
             'status'                    => 'approved',
             'reviewed_by'               => auth()->id() ?? $request->input('admin_id'),
             'reviewed_at'               => now(),
             'contractor_charge_rate_id' => $charge_rate->id,
         ]);
- 
-        // ============ NEW: notify the CONTRACTOR their request was approved ============
+
         $contractor = DB::table('users')->where('id', $rateRequest->user_id)->first();
- 
+
         if ($contractor) {
-            // Email
             if (!empty($contractor->email)) {
                 try {
                     Mail::to($contractor->email)->send(new ChargeRateApprovedMail(
@@ -5859,8 +5926,7 @@ public function accept_charge_rate_request(Request $request, $id)
                     ]);
                 }
             }
- 
-            // Push notification
+
             if (!empty($contractor->notification_token)) {
                 try {
                     send_push_notification([
@@ -5877,46 +5943,32 @@ public function accept_charge_rate_request(Request $request, $id)
                 }
             }
         }
- 
-        // ============ CHANGED: only send ONE contract email, and only once
-        // every state the contractor submitted has been reviewed ============
-        //
-        // Previously generateAndSendContract() fired on every single
-        // approval, so a contractor who applied for e.g. NSW + VIC + QLD
-        // at once got three separate contract emails as the admin worked
-        // through them one by one. Now: after approving this request,
-        // check whether any OTHER request from the same contractor is
-        // still sitting at 'pending'. If so, this is not the last one in
-        // the batch — skip sending, the next approval (or the one after
-        // that) will check again. Once none are left pending, build the
-        // contract from every approved rate card this contractor
-        // currently holds (not just the one just approved) so all states
-        // land on a single PDF/email.
+
         $remainingPending = DB::table('charge_rate_requests')
             ->where('user_id', $rateRequest->user_id)
             ->where('status', 'pending')
             ->exists();
- 
+
         if (!$remainingPending) {
             $allApprovedRates = ContractorChargeRate::where('user_id', $rateRequest->user_id)->get();
- 
+
             if ($allApprovedRates->isNotEmpty()) {
-                $this->generateAndSendContract($contractor, $rateRequest, $allApprovedRates);
+                // CHANGED: build + send an already-SIGNED contract directly, using the
+                // signature captured at request time — no signing link needed.
+                $this->generateAndSendSignedContract($contractor, $rateRequest, $allApprovedRates);
             }
         }
-        // ============ END CHANGED ============
- 
+
         $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
         foreach ($admins as $a) {
-            $notification_data = [
+            send_push_notification([
                 'message' => 'Charge rate request submitted.',
                 'title' => 'Charge Rate Request',
                 'notification_token' => $a->notification_token,
                 'page' => 'my-job-applications',
-            ];
-            send_push_notification($notification_data);
+            ]);
         }
- 
+
         return response()->json([
             'success' => true,
             'message' => 'Charge rate request approved and applied.',
@@ -5925,7 +5977,7 @@ public function accept_charge_rate_request(Request $request, $id)
                 'contractor_charge_rate_id' => $charge_rate->id,
             ],
         ], 200);
- 
+
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
@@ -6495,16 +6547,91 @@ private function canRemoveAcceptedBy($user, $job): bool
  * Add this call in accept_charge_rate_request():
  *   $this->generateAndSendContract($contractor, $rateRequest, $charge_rate);
  */
-private function generateAndSendContract($contractor, $rateRequest, $charge_rate): void
+// private function generateAndSendContract($contractor, $rateRequest, $charge_rate): void
+// {
+//     try {
+//         $rateFieldLabels = $this->chargeRateEmailFieldLabels(); // reuse the "def_" only label set from earlier
+ 
+//         // ── Every approved rate card this contractor has, across all
+//         // states — the contract lists all of them, not just $rateRequest's
+//         // state. ─────────────────────────────────────────────────────────
+//         $allApprovedRates = ContractorChargeRate::where('user_id', $contractor->id)->get();
+ 
+//         $stateBlocks = [];
+//         foreach ($allApprovedRates as $rateCard) {
+//             $rows = [];
+//             foreach ($rateFieldLabels as $column => $label) {
+//                 $rows[] = ['label' => $label, 'value' => (float) ($rateCard->{$column} ?? 0)];
+//             }
+//             $stateBlocks[] = [
+//                 'state' => $rateCard->state,
+//                 'rates' => $rows,
+//             ];
+//         }
+ 
+//         // ── One contract per contractor. Reuse it (and its contract
+//         // number) if it already exists instead of minting a new one. ─────
+//         $existingContract = DB::table('contracts')->where('contractor_id', $contractor->id)->first();
+ 
+//         $contractNumber = $existingContract->contract_number
+//             ?? ('CTR-' . strtoupper($rateRequest->id) . '-' . Str::random(6));
+//         $signingToken = Str::random(48);
+ 
+//         $pdfData = [
+//             'contract_number' => $contractNumber,
+//             'date'            => now()->format('d M Y'),
+//             'contractor_name' => $contractor->contractor->company_name ?? $contractor->name,
+//             'contractor_abn'  => $contractor->contractor->abn ?? 'N/A',
+//             'title'           => $rateRequest->title,
+//             'effective_from'  => $rateRequest->effective_from,
+//             'states'          => $stateBlocks,
+//         ];
+ 
+//         $contractService = new ContractService();
+//         $pdfBytes = $contractService->generatePdf($pdfData);
+ 
+//         $directory = storage_path('app/public/contracts');
+//         if (!file_exists($directory)) {
+//             mkdir($directory, 0755, true);
+//         }
+//         $filename = "{$contractNumber}.pdf";
+//         file_put_contents($directory . DIRECTORY_SEPARATOR . $filename, $pdfBytes);
+ 
+//         $contractPayload = [
+//             'charge_rate_request_id' => $rateRequest->id,
+//             'contractor_id'          => $contractor->id,
+//             'state'                  => $rateRequest->state,
+//             'title'                  => $rateRequest->title,
+//             'contract_number'        => $contractNumber,
+//             'rate_snapshot'          => json_encode($stateBlocks),
+//             'pdf_path'               => 'contracts/' . $filename,
+//             'signing_token'          => $signingToken,
+//             'status'                 => 'pending_signature',
+//             'updated_at'             => now(),
+//         ];
+ 
+//         if ($existingContract) {
+//             DB::table('contracts')->where('id', $existingContract->id)->update($contractPayload);
+//             $contractId = $existingContract->id;
+//         } else {
+//             $contractPayload['created_at'] = now();
+//             $contractId = DB::table('contracts')->insertGetId($contractPayload);
+//         }
+ 
+//     } catch (\Exception $e) {
+//         Log::error('Failed to generate/send contract', [
+//             'contractor_id' => $contractor->id ?? null,
+//             'error' => $e->getMessage(),
+//         ]);
+//     }
+// }
+private function generateAndSendSignedContract($contractor, $rateRequest, $charge_rate): void
 {
     try {
-        $rateFieldLabels = $this->chargeRateEmailFieldLabels(); // reuse the "def_" only label set from earlier
- 
-        // ── Every approved rate card this contractor has, across all
-        // states — the contract lists all of them, not just $rateRequest's
-        // state. ─────────────────────────────────────────────────────────
+        $rateFieldLabels = $this->chargeRateEmailFieldLabels();
+
         $allApprovedRates = ContractorChargeRate::where('user_id', $contractor->id)->get();
- 
+
         $stateBlocks = [];
         foreach ($allApprovedRates as $rateCard) {
             $rows = [];
@@ -6516,35 +6643,50 @@ private function generateAndSendContract($contractor, $rateRequest, $charge_rate
                 'rates' => $rows,
             ];
         }
- 
-        // ── One contract per contractor. Reuse it (and its contract
-        // number) if it already exists instead of minting a new one. ─────
+
         $existingContract = DB::table('contracts')->where('contractor_id', $contractor->id)->first();
- 
+
         $contractNumber = $existingContract->contract_number
             ?? ('CTR-' . strtoupper($rateRequest->id) . '-' . Str::random(6));
-        $signingToken = Str::random(48);
- 
+
+        if (empty($rateRequest->signature_image)) {
+            Log::error('Cannot send signed contract — no signature on file', [
+                'charge_rate_request_id' => $rateRequest->id,
+                'contractor_id' => $contractor->id,
+            ]);
+            return;
+        }
+
+        $signatureFullPath = storage_path('app/public/' . $rateRequest->signature_image);
+        $signatureBytes = file_exists($signatureFullPath) ? file_get_contents($signatureFullPath) : null;
+
         $pdfData = [
-            'contract_number' => $contractNumber,
-            'date'            => now()->format('d M Y'),
-            'contractor_name' => $contractor->contractor->company_name ?? $contractor->name,
-            'contractor_abn'  => $contractor->contractor->abn ?? 'N/A',
-            'title'           => $rateRequest->title,
-            'effective_from'  => $rateRequest->effective_from,
-            'states'          => $stateBlocks,
+            'contract_number'        => $contractNumber,
+            'date'                   => now()->format('d M Y'),
+            'contractor_name'        => $contractor->contractor->company_name ?? $contractor->name,
+            'contractor_abn'         => $contractor->contractor->abn ?? 'N/A',
+            'title'                  => $rateRequest->title,
+            'effective_from'         => $rateRequest->effective_from,
+            'states'                 => $stateBlocks,
+            'signature_name'         => $rateRequest->signature_name,
+            'signature_image_base64' => $signatureBytes ? base64_encode($signatureBytes) : null,
+            'signed_at'              => $rateRequest->signed_at
+                ? \Carbon\Carbon::parse($rateRequest->signed_at)->format('d M Y, g:i A')
+                : now()->format('d M Y, g:i A'),
         ];
- 
+
         $contractService = new ContractService();
-        $pdfBytes = $contractService->generatePdf($pdfData);
- 
+        $signedPdfBytes = $contractService->generatePdf($pdfData);
+
         $directory = storage_path('app/public/contracts');
         if (!file_exists($directory)) {
             mkdir($directory, 0755, true);
         }
-        $filename = "{$contractNumber}.pdf";
-        file_put_contents($directory . DIRECTORY_SEPARATOR . $filename, $pdfBytes);
- 
+
+        $signedFilename = $contractNumber . '-signed.pdf';
+        $signedPdfPath = $directory . DIRECTORY_SEPARATOR . $signedFilename;
+        file_put_contents($signedPdfPath, $signedPdfBytes);
+
         $contractPayload = [
             'charge_rate_request_id' => $rateRequest->id,
             'contractor_id'          => $contractor->id,
@@ -6552,12 +6694,15 @@ private function generateAndSendContract($contractor, $rateRequest, $charge_rate
             'title'                  => $rateRequest->title,
             'contract_number'        => $contractNumber,
             'rate_snapshot'          => json_encode($stateBlocks),
-            'pdf_path'               => 'contracts/' . $filename,
-            'signing_token'          => $signingToken,
-            'status'                 => 'pending_signature',
+            'signature_name'         => $rateRequest->signature_name,
+            'signature_image'        => $rateRequest->signature_image,
+            'pdf_path'               => 'contracts/' . $signedFilename,
+            'signed_pdf_path'        => 'contracts/' . $signedFilename,
+            'status'                 => 'signed',
+            'signed_at'              => $rateRequest->signed_at ?? now(),
             'updated_at'             => now(),
         ];
- 
+
         if ($existingContract) {
             DB::table('contracts')->where('id', $existingContract->id)->update($contractPayload);
             $contractId = $existingContract->id;
@@ -6565,23 +6710,39 @@ private function generateAndSendContract($contractor, $rateRequest, $charge_rate
             $contractPayload['created_at'] = now();
             $contractId = DB::table('contracts')->insertGetId($contractPayload);
         }
- 
-        // Email contractor the signing link — always re-sent, since a
-        // rate-set change means the previously signed terms no longer
-        // match the document and the contractor needs to re-accept.
+
         if (!empty($contractor->email)) {
-            $signingLink = config('app.frontend_url') . '/contracts/sign?token=' . $signingToken;
- 
-            Mail::to($contractor->email)->send(new ContractSignatureRequestMail(
-                $contractor->name ?? 'Contractor',
+            try {
+                Mail::to($contractor->email)->send(new ContractSignedMail(
+                    $contractor->name ?? 'Contractor',
+                    $contractor->contractor->company_name ?? $contractor->name ?? 'Contractor',
+                    $rateRequest->state,
+                    $contractNumber,
+                    $signedPdfPath
+                ));
+            } catch (\Exception $e) {
+                Log::error('Failed to send signed contract to contractor', [
+                    'contract_id' => $contractId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        $adminAddress = config('mail.staffoo_admin_address', 'admin@staffoo.com.au');
+        try {
+            Mail::to($adminAddress)->send(new ContractSignedMail(
+                'Admin',
+                $contractor->contractor->company_name ?? $contractor->name ?? 'Contractor',
                 $rateRequest->state,
                 $contractNumber,
-                $signingLink
+                $signedPdfPath
             ));
+        } catch (\Exception $e) {
+            Log::error('Failed to send signed contract to admin', ['error' => $e->getMessage()]);
         }
- 
+
     } catch (\Exception $e) {
-        Log::error('Failed to generate/send contract', [
+        Log::error('Failed to generate/send signed contract', [
             'contractor_id' => $contractor->id ?? null,
             'error' => $e->getMessage(),
         ]);
@@ -6811,124 +6972,124 @@ public function listContracts(Request $request)
         'data' => $contracts,
     ], 200);
 }
-    //end contract flow
-    public function stats(Request $request)
-    {
-        $today     = Carbon::today();
-        $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
-        $weekEnd   = Carbon::now()->endOfWeek(Carbon::SUNDAY);
+//end contract flow
+public function stats(Request $request)
+{
+    $today     = Carbon::today();
+    $weekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
+    $weekEnd   = Carbon::now()->endOfWeek(Carbon::SUNDAY);
 
-        // Fixed list of AU states (order matters for output)
-        $auStates = ['vic', 'nsw', 'wa', 'sa', 'tas', 'qld', 'act', 'nt'];
+    // Fixed list of AU states (order matters for output)
+    $auStates = ['vic', 'nsw', 'wa', 'sa', 'tas', 'qld', 'act', 'nt'];
 
-        // State source: sites.state (normalized)
-        $stateExpr = "LOWER(TRIM(s.state))";
+    // State source: sites.state (normalized)
+    $stateExpr = "LOWER(TRIM(s.state))";
 
-        // Base query
-        $base = DB::table('job_rosters as jr')
-            ->leftJoin('sites as s', 's.id', '=', 'jr.site_id')
-            ->whereIn(DB::raw($stateExpr), $auStates);   // only care about AU states
+    // Base query
+    $base = DB::table('job_rosters as jr')
+        ->leftJoin('sites as s', 's.id', '=', 'jr.site_id')
+        ->whereIn(DB::raw($stateExpr), $auStates);   // only care about AU states
 
-        // ---- 1. Per-state totals ----
-        $totalRows = (clone $base)
-            ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
-            ->groupByRaw($stateExpr)
-            ->pluck('total', 'state');
+    // ---- 1. Per-state totals ----
+    $totalRows = (clone $base)
+        ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
+        ->groupByRaw($stateExpr)
+        ->pluck('total', 'state');
 
-        // ---- 2. Per-state uncovered ----
-        $uncoveredRows = (clone $base)
-            ->whereNull('jr.accepted_by')
-            ->whereNull('jr.assigned_to')
-            ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
-            ->groupByRaw($stateExpr)
-            ->pluck('total', 'state');
+    // ---- 2. Per-state uncovered ----
+    $uncoveredRows = (clone $base)
+        ->whereNull('jr.accepted_by')
+        ->whereNull('jr.assigned_to')
+        ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
+        ->groupByRaw($stateExpr)
+        ->pluck('total', 'state');
 
-        // ---- 3. Per-state today's jobs ----
-        $todayRows = (clone $base)
-            ->whereDate('jr.start', $today)
-            ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
-            ->groupByRaw($stateExpr)
-            ->pluck('total', 'state');
+    // ---- 3. Per-state today's jobs ----
+    $todayRows = (clone $base)
+        ->whereDate('jr.start', $today)
+        ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
+        ->groupByRaw($stateExpr)
+        ->pluck('total', 'state');
 
-        // ---- 4. Per-state today's uncovered ----
-        $todayUncoveredRows = (clone $base)
-            ->whereDate('jr.start', $today)
-            ->whereNull('jr.accepted_by')
-            ->whereNull('jr.assigned_to')
-            ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
-            ->groupByRaw($stateExpr)
-            ->pluck('total', 'state');
+    // ---- 4. Per-state today's uncovered ----
+    $todayUncoveredRows = (clone $base)
+        ->whereDate('jr.start', $today)
+        ->whereNull('jr.accepted_by')
+        ->whereNull('jr.assigned_to')
+        ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
+        ->groupByRaw($stateExpr)
+        ->pluck('total', 'state');
 
-        // ---- 5. Per-state this week's jobs ----
-        $weekRows = (clone $base)
-            ->whereBetween('jr.start', [$weekStart, $weekEnd])
-            ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
-            ->groupByRaw($stateExpr)
-            ->pluck('total', 'state');
+    // ---- 5. Per-state this week's jobs ----
+    $weekRows = (clone $base)
+        ->whereBetween('jr.start', [$weekStart, $weekEnd])
+        ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
+        ->groupByRaw($stateExpr)
+        ->pluck('total', 'state');
 
-        // ---- 6. Per-state this week's uncovered ----
-        $weekUncoveredRows = (clone $base)
-            ->whereBetween('jr.start', [$weekStart, $weekEnd])
-            ->whereNull('jr.accepted_by')
-            ->whereNull('jr.assigned_to')
-            ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
-            ->groupByRaw($stateExpr)
-            ->pluck('total', 'state');
+    // ---- 6. Per-state this week's uncovered ----
+    $weekUncoveredRows = (clone $base)
+        ->whereBetween('jr.start', [$weekStart, $weekEnd])
+        ->whereNull('jr.accepted_by')
+        ->whereNull('jr.assigned_to')
+        ->selectRaw("{$stateExpr} as state, COUNT(jr.id) as total")
+        ->groupByRaw($stateExpr)
+        ->pluck('total', 'state');
 
-        // ---- Build per-state response (fixed order, always 8 rows) ----
-        $perState = [];
-        $totals = [
-            'total_jobs'      => 0,
-            'total_uncovered' => 0,
-            'today_jobs'      => 0,
-            'today_uncovered' => 0,
-            'week_jobs'       => 0,
-            'week_uncovered'  => 0,
+    // ---- Build per-state response (fixed order, always 8 rows) ----
+    $perState = [];
+    $totals = [
+        'total_jobs'      => 0,
+        'total_uncovered' => 0,
+        'today_jobs'      => 0,
+        'today_uncovered' => 0,
+        'week_jobs'       => 0,
+        'week_uncovered'  => 0,
+    ];
+
+    foreach ($auStates as $st) {
+        $totalJobs      = (int) ($totalRows->get($st) ?? 0);
+        $totalUncovered = (int) ($uncoveredRows->get($st) ?? 0);
+        $todayJobs      = (int) ($todayRows->get($st) ?? 0);
+        $todayUncovered = (int) ($todayUncoveredRows->get($st) ?? 0);
+        $weekJobs       = (int) ($weekRows->get($st) ?? 0);
+        $weekUncovered  = (int) ($weekUncoveredRows->get($st) ?? 0);
+
+        $perState[] = [
+            'state' => strtoupper($st),   // returns "VIC", "NSW", etc.
+            'total' => [
+                'jobs'      => $totalJobs,
+                'uncovered' => $totalUncovered,
+                'covered'   => $totalJobs - $totalUncovered,
+            ],
+            'today' => [
+                'jobs'      => $todayJobs,
+                'uncovered' => $todayUncovered,
+                'covered'   => $todayJobs - $todayUncovered,
+            ],
+            'week' => [
+                'jobs'      => $weekJobs,
+                'uncovered' => $weekUncovered,
+                'covered'   => $weekJobs - $weekUncovered,
+            ],
         ];
 
-        foreach ($auStates as $st) {
-            $totalJobs      = (int) ($totalRows->get($st) ?? 0);
-            $totalUncovered = (int) ($uncoveredRows->get($st) ?? 0);
-            $todayJobs      = (int) ($todayRows->get($st) ?? 0);
-            $todayUncovered = (int) ($todayUncoveredRows->get($st) ?? 0);
-            $weekJobs       = (int) ($weekRows->get($st) ?? 0);
-            $weekUncovered  = (int) ($weekUncoveredRows->get($st) ?? 0);
-
-            $perState[] = [
-                'state' => strtoupper($st),   // returns "VIC", "NSW", etc.
-                'total' => [
-                    'jobs'      => $totalJobs,
-                    'uncovered' => $totalUncovered,
-                    'covered'   => $totalJobs - $totalUncovered,
-                ],
-                'today' => [
-                    'jobs'      => $todayJobs,
-                    'uncovered' => $todayUncovered,
-                    'covered'   => $todayJobs - $todayUncovered,
-                ],
-                'week' => [
-                    'jobs'      => $weekJobs,
-                    'uncovered' => $weekUncovered,
-                    'covered'   => $weekJobs - $weekUncovered,
-                ],
-            ];
-
-            $totals['total_jobs']      += $totalJobs;
-            $totals['total_uncovered'] += $totalUncovered;
-            $totals['today_jobs']      += $todayJobs;
-            $totals['today_uncovered'] += $todayUncovered;
-            $totals['week_jobs']       += $weekJobs;
-            $totals['week_uncovered']  += $weekUncovered;
-        }
-
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'today'      => $today->toDateString(),
-                'week_start' => $weekStart->toDateString(),
-                'week_end'   => $weekEnd->toDateString(),
-                'states'     => $perState,
-            ],
-        ]);
+        $totals['total_jobs']      += $totalJobs;
+        $totals['total_uncovered'] += $totalUncovered;
+        $totals['today_jobs']      += $todayJobs;
+        $totals['today_uncovered'] += $todayUncovered;
+        $totals['week_jobs']       += $weekJobs;
+        $totals['week_uncovered']  += $weekUncovered;
     }
+
+    return response()->json([
+        'success' => true,
+        'data'    => [
+            'today'      => $today->toDateString(),
+            'week_start' => $weekStart->toDateString(),
+            'week_end'   => $weekEnd->toDateString(),
+            'states'     => $perState,
+        ],
+    ]);
+}
 }

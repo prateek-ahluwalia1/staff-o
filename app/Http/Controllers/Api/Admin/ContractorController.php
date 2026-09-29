@@ -105,31 +105,36 @@ class ContractorController extends Controller
         $query->where('city', $request->city);
     }
     
-     if ($request->filled('state')) {
-            $stateMap = [
-                'vic' => ['vic', 'victoria'],
-                'nsw' => ['nsw', 'new south wales'],
-                'qld' => ['qld', 'queensland'],
-                'sa'  => ['sa',  'south australia'],
-                'wa'  => ['wa',  'western australia'],
-                'tas' => ['tas', 'tasmania'],
-                'act' => ['act', 'australian capital territory'],
-                'nt'  => ['nt',  'northern territory'],
-            ];
+    if ($request->filled('state')) {
+    $stateMap = [
+        'vic' => ['vic', 'victoria'],
+        'nsw' => ['nsw', 'new south wales'],
+        'qld' => ['qld', 'queensland'],
+        'sa'  => ['sa',  'south australia'],
+        'wa'  => ['wa',  'western australia'],
+        'tas' => ['tas', 'tasmania'],
+        'act' => ['act', 'australian capital territory'],
+        'nt'  => ['nt',  'northern territory'],
+    ];
 
-            $input  = strtolower(trim($request->state));
-            $values = [$input]; // fallback
+    $input  = strtolower(trim($request->state));
+    $values = [$input]; // fallback: use as-is if not a known AU state
 
-            foreach ($stateMap as $aliases) {
-                // Only match if input is EXACTLY one of the aliases
-                if (in_array($input, $aliases, true)) {
-                    $values = $aliases;
-                    break;
-                }
-            }
-
-            $query->whereIn(DB::raw('LOWER(states_allowed)'), $values);
+    foreach ($stateMap as $aliases) {
+        if (in_array($input, $aliases, true)) {
+            $values = $aliases;
+            break;
         }
+    }
+
+    // ✅ Match ANY of the alias values inside the JSON array
+    $query->where(function ($q) use ($values) {
+        foreach ($values as $v) {
+            // JSON_CONTAINS(states_allowed, '"qld"')  →  true if array contains "qld"
+            $q->orWhereRaw('JSON_CONTAINS(LOWER(states_allowed), ?)', [json_encode($v)]);
+        }
+    });
+}
     
     if ($request->has('country')) {
         $query->where('country', $request->country);

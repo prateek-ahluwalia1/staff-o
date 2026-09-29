@@ -71,7 +71,7 @@
             @endif
 
             <center>
-                <a href="{{ config('app.url') }}/profile" class="btn">Complete My Profile →</a>
+                <a href="https://staffoo.com.au" class="btn">Complete My Profile →</a>
             </center>
 
             <p style="font-size: 13px; color: #6c757d; margin-top: 30px;">
@@ -79,7 +79,7 @@
             </p>
         </div>
         <div class="footer">
-            <p>© {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
+            <p>© {{ date('Y') }} STAFFOO. All rights reserved.</p>
             <p>This is an automated reminder. Please do not reply to this email.</p>
         </div>
     </div>

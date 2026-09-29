@@ -11,7 +11,7 @@
         .header h1 { margin: 0; font-size: 24px; }
         .content { padding: 30px; }
         .progress-container { background: #e9ecef; border-radius: 10px; height: 24px; overflow: hidden; margin: 20px 0; }
-        .progress-bar { background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; color: #fff; text-align: center; line-height: 24px; font-size: 13px; font-weight: bold; transition: width 0.3s; }
+        .progress-bar { background: linear-gradient(90deg, #0A7C6E, #0B1E33); height: 100%; color: #fff; text-align: center; line-height: 24px; font-size: 13px; font-weight: bold; transition: width 0.3s; }
         .missing-list { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; }
         .missing-list h3 { margin-top: 0; color: #856404; font-size: 16px; }
         .missing-list ul { margin: 10px 0; padding-left: 20px; }

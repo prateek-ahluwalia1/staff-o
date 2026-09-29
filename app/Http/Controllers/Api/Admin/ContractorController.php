@@ -105,7 +105,8 @@ class ContractorController extends Controller
         $query->where('city', $request->city);
     }
     
-    if ($request->filled('state')) {
+      
+   if ($request->filled('state')) {
     $stateMap = [
         'vic' => ['vic', 'victoria'],
         'nsw' => ['nsw', 'new south wales'],
@@ -127,12 +128,21 @@ class ContractorController extends Controller
         }
     }
 
-    // ✅ Match ANY of the alias values inside the JSON array
     $query->where(function ($q) use ($values) {
-        foreach ($values as $v) {
-            // JSON_CONTAINS(states_allowed, '"qld"')  →  true if array contains "qld"
-            $q->orWhereRaw('JSON_CONTAINS(LOWER(states_allowed), ?)', [json_encode($v)]);
-        }
+
+        // --- Site state matches one of the aliases ---
+        $q->whereIn(DB::raw('LOWER(TRIM(state))'), $values)
+
+          // --- OR states_allowed JSON array contains the state ---
+          ->orWhere(function ($q2) use ($values) {
+              foreach ($values as $v) {
+                  $q2->orWhereRaw(
+                      'JSON_CONTAINS(LOWER(states_allowed), ?)',
+                      [json_encode(strtolower($v))]
+                  );
+              }
+          });
+
     });
 }
     

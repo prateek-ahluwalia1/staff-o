@@ -128,7 +128,7 @@ class ContractorController extends Controller
                 }
             }
 
-            $query->whereIn(DB::raw('LOWER(state)'), $values);
+            $query->whereIn(DB::raw('LOWER(states_allowed)'), $values);
         }
     
     if ($request->has('country')) {

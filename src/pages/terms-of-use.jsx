@@ -421,7 +421,7 @@ export default function TermsOfUse() {
         <main>
           {/* Page Head */}
           <div className="wrap page-head">
-            <span className="eyebrow-pill">Legal</span>
+            <span className="eyebrow-pill">Terms and conditions</span>
             <h1>
               Terms of <span style={{ color: "#0a7c6e" }}>Use</span>
             </h1>

@@ -20,31 +20,31 @@ import "../../components/industries/event-crowd-comp/styles.css";
 export default function ConstructionSites() {
     // 1. Stats Band Data
     const constructionStats = [
-        { value: "120+", label: "licensed construction site guards" },
-        { value: "4.8★", label: "average guard rating" },
-        { value: "4 hours", label: "median time to first applicant" },
+        { value: "120+", label: "licensed construction site security staff" },
+        { value: "4.8★", label: "average staff rating" },
+        { value: "1 hr", label: "median time to first applicant" },
         { value: "380", label: "site shifts filled this month" },
     ];
 
     // 2. What's Covered Data
     const constructionWhatsCovered = [
         {
-            title: "Overnight & weekend patrols",
+            title: "Overnight and weekend patrols",
             desc: "Cover for the hours nobody's on site, when theft and break ins are most likely.",
             iconPath: "M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
         },
         {
-            title: "Perimeter & fencing checks",
+            title: "Perimeter and fencing checks",
             desc: "Regular walk throughs to confirm hoarding, fencing and site access points are secure.",
             iconPath: "M12 8v4l3 3 M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0",
         },
         {
-            title: "Tool & plant theft deterrence",
+            title: "Tool and plant theft deterrence",
             desc: "A visible presence and patrol schedule that makes your site a harder target.",
             iconPath: "M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7z",
         },
         {
-            title: "Incident & compliance reporting",
+            title: "Incident and compliance reporting",
             desc: "Digital incident logs aligned to your WHS obligations, ready in your dashboard.",
             iconPath: "M4 6h16M4 12h16M4 18h10",
         },
@@ -53,9 +53,9 @@ export default function ConstructionSites() {
     // 3. How It Works Steps Data
     const constructionSteps = [
         { num: "01", title: "Post the job", desc: "Site address, shift pattern and license type needed. Free, and takes two minutes." },
-        { num: "02", title: "Compare applicants", desc: "Licensed guards apply with their rate, experience and reviews attached." },
+        { num: "02", title: "Compare applicants", desc: "Licensed security staff apply with their rate, experience and reviews attached." },
         { num: "03", title: "Confirm and brief", desc: "Message directly, share the site induction and access details, lock in the shift." },
-        { num: "04", title: "Sign off & pay", desc: "Digital check in on the day, payment releases once you confirm the job's done." },
+        { num: "04", title: "Sign off and pay", desc: "Digital check in on the day, payment releases once you confirm the job's done." },
     ];
 
     // 4. Inside Dashboard Cards Data
@@ -97,7 +97,7 @@ export default function ConstructionSites() {
         },
         {
             title: "Check in, sign off and payment",
-            desc: "Guards check in on site, incidents are logged digitally, and payment releases only after you sign the shift off.",
+            desc: "security staff check in on site, incidents are logged digitally, and payment releases only after you sign the shift off.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-box">
@@ -119,7 +119,7 @@ export default function ConstructionSites() {
     const constructionCaseStudy = {
         category: "Case study, Construction",
         title: "Mobile patrol across four active build sites",
-        quote: '"Tool theft stopped almost overnight once a guard was doing scheduled rounds after hours."',
+        quote: '"Tool theft stopped almost overnight once security staff was doing scheduled rounds after hours."',
         btnText: "Read the full case study",
         btnUrl: "#",
     };
@@ -127,16 +127,16 @@ export default function ConstructionSites() {
     // 7. FAQ Items Data
     const constructionFaqs = [
         {
-            q: "Do I need a licensed guard for an unattended site?",
-            a: "Yes. Patrolling or guarding a construction site after hours is licensable security work in every state, the same as any static guarding role. Every guard on Staffoo has their license verified before they can apply.",
+            q: "Do I need licensed security staff for an unattended site?",
+            a: "Yes. Patrolling or securing a construction site after hours is licensable security work in every state, the same as any static security role. Every security staff member on Staffoo has their license verified before they can apply.",
         },
         {
-            q: "Does the guard need a White Card as well as a security license?",
-            a: "It depends on your site's access policy rather than the security license itself, the security license covers the guarding work, a White Card is a separate construction induction some sites require before anyone, guard included, is allowed past the gate. Mention it in your job post if your site requires one.",
+            q: "Does the security staff need a White Card as well as a security license?",
+            a: "It depends on your site's access policy rather than the security license itself, the security license covers the security work, a White Card is a separate construction induction some sites require before anyone, security staff included, is allowed past the gate. Mention it in your job post if your site requires one.",
         },
         {
-            q: "Is a mobile patrol cheaper than a guard on each site?",
-            a: "Usually, yes, for smaller or lower risk sites. A mobile patrol splits one guard's shift across several addresses on a scheduled route, so you're paying for coverage rather than a full shift at each location. For a single high value site, a static overnight guard is often the better fit.",
+            q: "Is a mobile patrol cheaper than security staff on each site?",
+            a: "Usually, yes, for smaller or lower risk sites. A mobile patrol splits one security staff member's shift across several addresses on a scheduled route, so you're paying for coverage rather than a full shift at each location. For a single high value site, a static overnight security staff member is often the better fit.",
         },
         {
             q: "Can I book cover for just the weekend?",
@@ -144,11 +144,11 @@ export default function ConstructionSites() {
         },
         {
             q: "What happens if there's an incident overnight?",
-            a: "Your guard logs it digitally as it happens, including photos where relevant, and the report sits in your dashboard the next morning along with their check in and check out times.",
+            a: "Your security staff logs it digitally as it happens, including photos where relevant, and the report sits in your dashboard the next morning along with their check in and check out times.",
         },
         {
             q: "Can I set up a recurring contract across multiple sites?",
-            a: "Yes. Post each site as its own job or set up a recurring roster, and once you've found guards who know your sites you can rebook them directly instead of starting from scratch on the next build.",
+            a: "Yes. Post each site as its own job or set up a recurring roster, and once you've found security staff who know your sites you can rebook them directly instead of starting from scratch on the next build.",
         },
     ];
 
@@ -158,7 +158,7 @@ export default function ConstructionSites() {
     // 9. CTA Band Data
     const constructionCtaData = {
         title: "Ready to secure your site?",
-        subtitle: "Post your job free. Pay only once a guard is confirmed and the shift is signed off.",
+        subtitle: "Post your job free. Pay only once a security staff is confirmed and the shift is signed off.",
         primaryBtnText: "Post a construction security job",
         primaryBtnUrl: "#",
         secondaryBtnText: "Talk to our team",
@@ -168,10 +168,10 @@ export default function ConstructionSites() {
     return (
         <>
             <Helmet>
-                <title>Construction Site Security Guards for Hire</title>
+                <title>Construction Site Security Staff for Hire</title>
                 <meta
                     name="description"
-                    content="Post a construction site security job on Staffoo and get applications from licensed guards near you. Compare rates and reviews in your dashboard, book in hours."
+                    content="Post a construction site security job on Staffoo and get applications from licensed security staff near you. Compare rates and reviews in your dashboard, book in hours."
                 />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
@@ -206,7 +206,7 @@ export default function ConstructionSites() {
                 <WhatsCovered
                     kicker="What's covered"
                     title="Everything your site needs, one job post"
-                    description="Every guard on Staffoo holds a valid license for the work, checked before they're allowed to apply."
+                    description="Every security staff member on Staffoo holds a valid license for the work, checked before they're allowed to apply."
                     items={constructionWhatsCovered}
                 />
 

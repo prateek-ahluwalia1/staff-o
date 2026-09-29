@@ -9,9 +9,9 @@ export default function HeroSection() {
         <div className="stf-hero-grid">
           <div>
             <span className="stf-eyebrow">Construction site security</span>
-            <h1>Licensed security guards for construction sites, without the agency markup</h1>
+            <h1>Licensed security staff for construction sites, without <span style={{ color: "var(--green)" }}>the agency markup</span></h1>
             <p className="lead">
-              Staffoo is a marketplace, not an agency. Post your job once and independent, licensed security officers near you apply with their rate, license and reviews attached. You compare and confirm from your dashboard.
+Protect your site from theft and unauthorised access with licensed security staff. Verified credentials support your WHS obligations, and GPS clock-in gives you clear proof of attendance on every shift.
             </p>
 
             {/* Role Switcher Tabs */}
@@ -28,7 +28,7 @@ export default function HeroSection() {
                 className={`stf-role-tab ${heroRole === "guard" ? "active" : ""}`}
                 onClick={() => setHeroRole("guard")}
               >
-                I'm a guard looking for work
+                I'm security staff looking for work
               </button>
             </div>
 
@@ -62,7 +62,7 @@ export default function HeroSection() {
                         <circle cx="12" cy="8" r="4"></circle>
                         <path d="M4 21v-1a8 8 0 0116 0v1"></path>
                       </svg>
-                      <input type="text" placeholder="Guards needed" />
+                      <input type="text" placeholder="Staff needed" />
                     </div>
                     <div className="stf-field">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B6660" strokeWidth="2">
@@ -79,18 +79,18 @@ export default function HeroSection() {
                     </div>
                   </div>
                   <a href="#" className="stf-btn stf-btn-solid stf-btn-cta stf-btn-block">
-                    Get security guard applications
+                    Get security staff applications
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                       <path d="M5 12h13M12 6l6 6-6 6"></path>
                     </svg>
                   </a>
                   <p className="stf-intent-alt">Takes about 2 minutes · <a href="#">Or talk to our team</a></p>
                   <div className="stf-live">
-                    <span className="stf-live-dot"></span> 22 site security guards active near Sydney today
+                    <span className="stf-live-dot"></span> 22 site security staff active near Sydney today
                   </div>
                 </div>
                 <p className="stf-intent-note">
-                  You review every application and choose who to hire — Staffoo doesn't employ or supply guards. <a href="#">Hiring for a business or agency?</a>
+                  You review every application and choose who to hire Staffoo doesn't employ or supply security staff. <a href="#">Hiring for a business or agency?</a>
                 </p>
 
                 <div className="stf-trust-row">
@@ -117,16 +117,16 @@ export default function HeroSection() {
                 <div className="stf-proof">
                   <div className="stf-avatars"><i></i><i></i><i></i><i></i></div>
                   <p className="stf-proof-text">
-                    <b>1,300+ builders and developers</b> have hired through Staffoo · 4.8 star average guard rating
+                    <b>1,300+ builders and developers</b> have hired through Staffoo · 4.8 star average staff rating
                   </p>
                 </div>
 
                 <div className="stf-popular">
                   Popular:
-                  <a href="#">Overnight &amp; weekend patrols</a>
-                  <a href="#">Mobile patrol</a>
-                  <a href="#">Tool &amp; plant security</a>
-                  <a href="#">Perimeter &amp; fencing checks</a>
+                  <a >Overnight and weekend patrols</a>
+                  <a >Mobile patrol</a>
+                  <a >Tool and plant security</a>
+                  <a >Perimeter and fencing checks</a>
                 </div>
               </div>
             )}
@@ -198,7 +198,7 @@ export default function HeroSection() {
                 <div className="stf-proof">
                   <div className="stf-avatars"><i></i><i></i><i></i><i></i></div>
                   <p className="stf-proof-text">
-                    <b>1,800+ licensed guards</b> find site work through Staffoo. New jobs posted daily.
+                    <b>1,800+ licensed security staff</b> find site work through Staffoo. New jobs posted daily.
                   </p>
                 </div>
 
@@ -230,7 +230,9 @@ export default function HeroSection() {
                     <div className="stf-pv-name"><span className="stf-masked">G. Taylor</span></div>
                     <div className="stf-pv-meta">Security Officer · 6 years · 4.8 star rating (47 reviews)</div>
                   </div>
-                  <div className="stf-pv-rate">$39<span>/hr</span></div>
+                  <div style={{ textAlign: "right" }}>
+                    <span className="stf-pv-accept">Active</span>
+                  </div>
                 </div>
                 <div className="stf-pv-row">
                   <div className="stf-pv-avatar" style={{ background: "linear-gradient(160deg,#14181C,#075E53)" }}></div>
@@ -238,7 +240,9 @@ export default function HeroSection() {
                     <div className="stf-pv-name"><span className="stf-masked">P. Kovacs</span></div>
                     <div className="stf-pv-meta">Mobile Patrol Officer · 8 years · 4.9 star rating (91 reviews)</div>
                   </div>
-                  <div className="stf-pv-rate">$43<span>/hr</span></div>
+                  <div style={{ textAlign: "right" }}>
+                    <span className="stf-pv-accept">Active</span>
+                  </div>
                 </div>
                 <div className="stf-pv-row">
                   <div className="stf-pv-avatar" style={{ background: "linear-gradient(160deg,#075E53,#0A7C6E)" }}></div>
@@ -246,7 +250,9 @@ export default function HeroSection() {
                     <div className="stf-pv-name"><span className="stf-masked">B. Walsh</span></div>
                     <div className="stf-pv-meta">Security Officer · 3 years · 4.6 star rating (22 reviews)</div>
                   </div>
-                  <div className="stf-pv-rate">$36<span>/hr</span></div>
+                  <div style={{ textAlign: "right" }}>
+                    <span className="stf-pv-accept">Active</span>
+                  </div>
                 </div>
               </div>
               <div className="stf-pv-fade"></div>
@@ -255,11 +261,11 @@ export default function HeroSection() {
                   <rect x="4" y="10" width="16" height="11" rx="2"></rect>
                   <path d="M8 10V7a4 4 0 018 0v3"></path>
                 </svg>
-                Guard profiles unlock once you post a job
+                Security staff profiles unlock once you post a job
               </div>
             </div>
             <p className="stf-preview-caption">
-              Illustration of the client dashboard. Guard names, contact details and profiles are only visible to signed in clients.
+              Illustration of the client dashboard. Security staff names, contact details and profiles are only visible to signed in clients.
             </p>
           </div>
         </div>

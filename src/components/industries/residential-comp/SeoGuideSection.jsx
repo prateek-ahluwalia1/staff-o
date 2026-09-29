@@ -15,7 +15,7 @@ export default function SeoGuideSection() {
               This guide covers what homeowners, landlords and body corporates most often get wrong when hiring residential security, and what to check before you confirm anyone.
             </p>
 
-            <h3 id="licence">Do you legally need a licensed security guard?</h3>
+            <h3 id="licence">Do you legally need licensed security staff?</h3>
             <p>
               Yes, in every state. Gatehouse duty, mobile patrol and alarm response on residential property all count as licensable security work, whether it's a single house or a full estate.
             </p>
@@ -35,7 +35,7 @@ export default function SeoGuideSection() {
                 </tr>
                 <tr>
                   <td>Victoria</td>
-                  <td>Private Security Individual Operator License, security guard activity</td>
+                  <td>Private Security Individual Operator License, security staff activity</td>
                   <td>Victoria Police Licensing and Regulation Division</td>
                 </tr>
                 <tr>
@@ -50,13 +50,13 @@ export default function SeoGuideSection() {
                 </tr>
                 <tr>
                   <td>South Australia</td>
-                  <td>Security Agents License, general guarding function</td>
+                  <td>Security Agents License, general security function</td>
                   <td>Consumer and Business Services</td>
                 </tr>
               </tbody>
             </table>
             <div className="stf-callout">
-              <b>Worth knowing:</b> a guard working on private residential property still needs resident consent to enter individual homes or private lots, their authority covers common property and access points, not the inside of someone's house. Set clear boundaries with your body corporate or committee before the first shift.
+              <b>Worth knowing:</b> security staff working on private residential property still needs resident consent to enter individual homes or private lots, their authority covers common property and access points, not the inside of someone's house. Set clear boundaries with your body corporate or committee before the first shift.
             </div>
 
             <h3 id="how-many">How much cover does your property need?</h3>
@@ -72,15 +72,15 @@ export default function SeoGuideSection() {
             </ul>
             <p>If your insurer has already set a minimum patrol frequency as a condition of cover, treat that as the floor, not the target.</p>
 
-            <h3 id="cost">What residential &amp; estate security costs</h3>
+            <h3 id="cost">What residential and estate security costs</h3>
             <p>
-              Rates for licensed residential guards in Australia generally sit between $35 and $50 an hour, depending on the work. The biggest factors are day versus overnight, a single property versus estate wide coverage, and gatehouse duty versus mobile patrol. Overnight and weekend shifts sit at the top of that range.
+              Rates for licensed residential security staff in Australia generally sit between $35 and $50 an hour, depending on the work. The biggest factors are day versus overnight, a single property versus estate wide coverage, and gatehouse duty versus mobile patrol. Overnight and weekend shifts sit at the top of that range.
             </p>
             <p>
-              The other variable is who you book through. Agencies typically add a margin on top of the guard's rate for coordination and rostering. On Staffoo, guards set their own rate and you see it on their application, so the number you compare is the number you pay. You can see current averages in the pricing section above.
+              The other variable is who you book through. Agencies typically add a margin on top of the security staff's rate for coordination and rostering. On Staffoo, security staff set their own rate and you see it on their application, so the number you compare is the number you pay. You can see current averages in the pricing section above.
             </p>
 
-            <h3 id="vs">Gatehouse guard or mobile patrol, which do you need?</h3>
+            <h3 id="vs">Gatehouse security staff or mobile patrol, which do you need?</h3>
             <p>
               Both are licensed the same way, the difference is how coverage reaches your property.
             </p>
@@ -88,7 +88,7 @@ export default function SeoGuideSection() {
               <thead>
                 <tr>
                   <th></th>
-                  <th>Gatehouse Guard</th>
+                  <th>Gatehouse Security Staff</th>
                   <th>Mobile Patrol</th>
                 </tr>
               </thead>
@@ -111,21 +111,21 @@ export default function SeoGuideSection() {
               </tbody>
             </table>
 
-            <h3 id="checklist">What to check before you confirm a guard</h3>
+            <h3 id="checklist">What to check before you confirm security staff</h3>
             <ul>
               <li><strong>License class and expiry:</strong> that it matches the work and is current in your state.</li>
               <li><strong>Relevant experience:</strong> residential and estate work is a different job to retail or event work.</li>
               <li><strong>Reviews from similar properties:</strong> volume matters less than whether the properties looked like yours.</li>
               <li><strong>Availability across the full roster:</strong> weekends and overnight are when most properties are exposed.</li>
-              <li><strong>Who's responsible for insurance:</strong> and what happens if a guard can't make a shift.</li>
+              <li><strong>Who's responsible for insurance:</strong> and what happens if security staff can't make a shift.</li>
             </ul>
             <p>
-              On Staffoo, license verification happens before a guard can apply, and the license class, experience and review history sit on every application you receive.
+              On Staffoo, license verification happens before security staff can apply, and the license class, experience and review history sit on every application you receive.
             </p>
 
             <h3 id="direct">Hiring direct instead of through an agency</h3>
             <p>
-              Traditional agencies take your brief, roster guards internally and send you an invoice. You rarely know who's coming until the day, and you can't request the same person twice. Hiring direct through a platform flips that: you see who applied, you pick, and you can rebook the guards residents already know and trust. For an estate or body corporate, that continuity usually matters more than the hourly rate.
+              Traditional agencies take your brief, roster security staff internally and send you an invoice. You rarely know who's coming until the day, and you can't request the same person twice. Hiring direct through a platform flips that: you see who applied, you pick, and you can rebook the security staff residents already know and trust. For an estate or body corporate, that continuity usually matters more than the hourly rate.
             </p>
             <p>
               If you're hiring for a different setting, the same process applies to corporate and office security, construction site security and event security.
@@ -134,7 +134,7 @@ export default function SeoGuideSection() {
             <div className="stf-recap">
               <div className="stf-kicker">Before you post</div>
               <p>
-                Confirm the license class your state requires, size your cover from access points and occupancy pattern rather than a guess, and treat agency quotes as a ceiling. Staffoo shows you each guard's real rate before you confirm anyone.
+                Confirm the license class your state requires, size your cover from access points and occupancy pattern rather than a guess, and treat agency quotes as a ceiling. Staffoo shows you each security staff's real rate before you confirm anyone.
               </p>
             </div>
           </article>
@@ -143,7 +143,7 @@ export default function SeoGuideSection() {
           <aside className="stf-seo-aside">
             <div className="stf-toc">
               <h4>On this page</h4>
-              <a href="#license">Do you need a licensed guard?</a>
+              <a href="#license">Do you need licensed security staff?</a>
               <a href="#how-many">How much cover you need</a>
               <a href="#cost">What it costs</a>
               <a href="#vs">Gatehouse vs mobile patrol</a>
@@ -153,7 +153,7 @@ export default function SeoGuideSection() {
 
             <div className="stf-side-cta">
               <h4>Know what you need?</h4>
-              <p>Post the job free and start receiving applications from licensed residential security guards near you.</p>
+              <p>Post the job free and start receiving applications from licensed residential security staff near you.</p>
               <a href="#" className="stf-btn stf-btn-solid stf-btn-block">Post a residential security job</a>
             </div>
 

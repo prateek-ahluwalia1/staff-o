@@ -2,7 +2,7 @@ import React from "react";
 
 export default function CtaBand({
   title = "Ready to secure your event?",
-  subtitle = "Post your job free — pay only once a guard is confirmed and the shift is signed off.",
+  subtitle = "Post your job free pay only once a security staff is confirmed and the shift is signed off.",
   primaryBtnText = "Post an event security job",
   primaryBtnUrl = "#",
   secondaryBtnText = "Talk to our team",

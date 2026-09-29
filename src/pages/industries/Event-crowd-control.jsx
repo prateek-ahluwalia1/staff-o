@@ -21,20 +21,20 @@ export default function EventCrowdControl() {
     // 1. Stats Counter Data
     const eventStats = [
         { value: "180+", label: "licensed crowd controllers" },
-        { value: "4.9★", label: "average guard rating" },
-        { value: "3 hrs", label: "median time to first applicant" },
+        { value: "4.9★", label: "average staff rating" },
+        { value: "1 hr", label: "median time to first applicant" },
         { value: "640", label: "event shifts filled this month" },
     ];
 
     // 2. What's Covered Data
     const eventWhatsCovered = [
         {
-            title: "Entry & bag checks",
+            title: "Entry and bag checks",
             desc: "ID verification, capacity control, restricted-item checks at the door.",
             iconPath: "M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
         },
         {
-            title: "Crowd & capacity management",
+            title: "Crowd and capacity management",
             desc: "Monitoring density, exits and flow throughout the event.",
             iconPath: "M12 8v4l3 3 M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0",
         },
@@ -52,17 +52,17 @@ export default function EventCrowdControl() {
 
     // 3. How It Works Steps Data
     const eventSteps = [
-        { num: "01", title: "Post the job", desc: "Date, location, guards needed and license type. Free, and takes two minutes." },
-        { num: "02", title: "Compare applicants", desc: "Licensed guards apply with their rate, experience and reviews attached." },
+        { num: "01", title: "Post the job", desc: "Date, location, security staff needed and license type. Free, and takes two minutes." },
+        { num: "02", title: "Compare applicants", desc: "Licensed security staff apply with their rate, experience and reviews attached." },
         { num: "03", title: "Confirm and brief", desc: "Message directly, share the run sheet, lock in the shift." },
-        { num: "04", title: "Sign off & pay", desc: "Digital check-in on the day, payment releases once you confirm the job's done." },
+        { num: "04", title: "Sign off and pay", desc: "Digital check-in on the day, payment releases once you confirm the job's done." },
     ];
 
     // 4. Inside Dashboard Cards Data
     const eventDashboardCards = [
         {
             title: "Post a job in minutes",
-            desc: "Set the date, site address, license required and how many guards. Duplicate it next time instead of starting over.",
+            desc: "Set the date, site address, license required and how many security staff. Duplicate it next time instead of starting over.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-line short"></div>
@@ -97,7 +97,7 @@ export default function EventCrowdControl() {
         },
         {
             title: "Check-in, reporting and payment",
-            desc: "Guards check in on site, incidents are logged digitally, and payment releases only after you sign the shift off.",
+            desc: "security staff check in on site, incidents are logged digitally, and payment releases only after you sign the shift off.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-box">
@@ -117,9 +117,9 @@ export default function EventCrowdControl() {
 
     // 6. Case Study Data
     const eventCaseStudy = {
-        category: "Case study — Events",
+        category: "Case study-Events",
         title: "Crowd control for a 3-day festival",
-        quote: '"34 crowd controllers booked and confirmed in under a day — something our old agency never managed."',
+        quote: '"34 crowd controllers booked and confirmed in under a day something our old agency never managed."',
         btnText: "Read the full case study",
         btnUrl: "#",
     };
@@ -128,27 +128,27 @@ export default function EventCrowdControl() {
     const eventFaqs = [
         {
             q: "Do I need a licensed crowd controller for my event?",
-            a: "In most Australian states, any role involving screening, monitoring or removing patrons at a licensed venue or public event legally requires a Crowd Controller license. Every guard on Staffoo has theirs verified before they can apply to a job.",
+            a: "In most Australian states, any role involving screening, monitoring or removing patrons at a licensed venue or public event legally requires a Crowd Controller license. Every security staff on Staffoo has theirs verified before they can apply to a job.",
         },
         {
-            q: "Why can't I browse guards before signing up?",
-            a: "Guard profiles include license details, contact information and work history, so they're only visible to verified clients inside the platform. Posting a job is free and takes about two minutes — applications start arriving straight away.",
+            q: "Why can't I browse security staff before signing up?",
+            a: "security staff profiles include license details, contact information and work history, so they're only visible to verified clients inside the platform. Posting a job is free and takes about two minutes applications start arriving straight away.",
         },
         {
             q: "How quickly can I book event security?",
-            a: "Most event jobs are filled within a few hours of posting. For last-minute bookings, mark the job as urgent and available guards in the area are notified immediately.",
+            a: "Most event jobs are filled within a few hours of posting. For last-minute bookings, mark the job as urgent and available security staff in the area are notified immediately.",
         },
         {
-            q: "What's the difference between a crowd controller and a general security guard?",
-            a: "A Crowd Controller license specifically covers screening, monitoring and removing people from licensed venues and events. A general Security Officer license covers static site and patrol work. Each application shows you exactly which license that guard holds.",
+            q: "What's the difference between a crowd controller and a general security security staff?",
+            a: "A Crowd Controller license specifically covers screening, monitoring and removing people from licensed venues and events. A general Security Officer license covers static site and patrol work. Each application shows you exactly which license that security staff holds.",
         },
         {
-            q: "Can I book guards for a single one-day event?",
-            a: "Yes — Staffoo is built for one-off bookings as well as recurring events. There's no minimum contract or ongoing commitment.",
+            q: "Can I book security staff for a single one-day event?",
+            a: "Yes Staffoo is built for one-off bookings as well as recurring events. There's no minimum contract or ongoing commitment.",
         },
         {
             q: "Is Staffoo an event security company?",
-            a: "No. Staffoo is a platform that connects you directly with independent, licensed crowd controllers — we don't employ or supply guards ourselves.",
+            a: "No. Staffoo is a platform that connects you directly with independent, licensed crowd controllers we don't employ or supply security staff ourselves.",
         },
     ];
 
@@ -158,7 +158,7 @@ export default function EventCrowdControl() {
     // 9. CTA Band Data
     const eventCtaData = {
         title: "Ready to secure your event?",
-        subtitle: "Post your job free — pay only once a guard is confirmed and the shift is signed off.",
+        subtitle: "Post your job free pay only once a security staff is confirmed and the shift is signed off.",
         primaryBtnText: "Post an event security job",
         primaryBtnUrl: "#",
         secondaryBtnText: "Talk to our team",
@@ -193,7 +193,7 @@ export default function EventCrowdControl() {
                             <span className="sep">/</span>
                             <a className="text-black" href="/industries/event-crowd-control">Industries</a>
                             <span className="sep">/</span>
-                            <span className="current">Event &amp; Crowd Control</span>
+                            <span className="current">Event and Crowd Control</span>
                         </div>
                     </div>
                 </div>
@@ -206,7 +206,7 @@ export default function EventCrowdControl() {
                 <WhatsCovered
                     kicker="What's covered"
                     title="Everything your event needs, one job post"
-                    description="Every crowd controller on Staffoo holds a valid license for the work — checked before they're allowed to apply."
+                    description="Every crowd controller on Staffoo holds a valid license for the work checked before they're allowed to apply."
                     items={eventWhatsCovered}
                 />
 
@@ -219,7 +219,7 @@ export default function EventCrowdControl() {
                 <InsideDashboard
                     kicker="Inside your dashboard"
                     title="What you get once you're in"
-                    description="Posting, hiring, briefing and paying all happen in one place — no email threads, no separate invoice chase."
+                    description="Posting, hiring, briefing and paying all happen in one place no email threads, no separate invoice chase."
                     cards={eventDashboardCards}
                 />
 

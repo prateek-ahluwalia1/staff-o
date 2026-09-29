@@ -20,31 +20,31 @@ import "../../components/industries/event-crowd-comp/styles.css";
 export default function ResidentialEstates() {
     // 1. Stats Band Data
     const residentialStats = [
-        { value: "95+", label: "licensed residential security guards" },
-        { value: "4.9★", label: "average guard rating" },
-        { value: "5 hours", label: "median time to first applicant" },
+        { value: "95+", label: "licensed residential security staff" },
+        { value: "4.9★", label: "average staff rating" },
+        { value: "1 hr", label: "median time to first applicant" },
         { value: "260", label: "residential shifts filled this month" },
     ];
 
     // 2. What's Covered Data
     const residentialWhatsCovered = [
         {
-            title: "Estate entry & access control",
+            title: "Estate entry and access control",
             desc: "A gatehouse presence that checks residents, visitors and tradespeople in and out.",
             iconPath: "M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
         },
         {
-            title: "Mobile patrol & alarm response",
+            title: "Mobile patrol and alarm response",
             desc: "Scheduled rounds across the estate and a first response when an alarm trips.",
             iconPath: "M12 8v4l3 3 M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0",
         },
         {
-            title: "Vacant property & holiday home checks",
+            title: "Vacant property and holiday home checks",
             desc: "Regular walk throughs so an empty property never looks empty for long.",
             iconPath: "M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7z",
         },
         {
-            title: "Strata & body corporate reporting",
+            title: "Strata and body corporate reporting",
             desc: "Digital incident logs and shift reports ready to share at your next committee meeting.",
             iconPath: "M4 6h16M4 12h16M4 18h10",
         },
@@ -53,9 +53,9 @@ export default function ResidentialEstates() {
     // 3. How It Works Steps Data
     const residentialSteps = [
         { num: "01", title: "Post the job", desc: "Property address, shift pattern and license type needed. Free, and takes two minutes." },
-        { num: "02", title: "Compare applicants", desc: "Licensed guards apply with their rate, experience and reviews attached." },
+        { num: "02", title: "Compare applicants", desc: "Licensed security staff apply with their rate, experience and reviews attached." },
         { num: "03", title: "Confirm and brief", desc: "Message directly, share access details and any resident procedures, lock in the shift." },
-        { num: "04", title: "Sign off & pay", desc: "Digital check in on the day, payment releases once you confirm the job's done." },
+        { num: "04", title: "Sign off and pay", desc: "Digital check in on the day, payment releases once you confirm the job's done." },
     ];
 
     // 4. Inside Dashboard Cards Data
@@ -97,7 +97,7 @@ export default function ResidentialEstates() {
         },
         {
             title: "Check in, sign off and payment",
-            desc: "Guards check in on site, incidents are logged digitally, and payment releases only after you sign the shift off.",
+            desc: "security staff check in on site, incidents are logged digitally, and payment releases only after you sign the shift off.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-box">
@@ -117,9 +117,9 @@ export default function ResidentialEstates() {
 
     // 6. Case Study Data
     const residentialCaseStudy = {
-        category: "Case study, Residential & Estates",
+        category: "Case study, Residential and Estates",
         title: "Gatehouse and patrol cover for a 200 lot estate",
-        quote: '"Break in attempts dropped once residents could see a guard doing regular rounds, not just a camera."',
+        quote: '"Break in attempts dropped once residents could see security staff doing regular rounds, not just a camera."',
         btnText: "Read the full case study",
         btnUrl: "#",
     };
@@ -127,28 +127,28 @@ export default function ResidentialEstates() {
     // 7. FAQ Items Data
     const residentialFaqs = [
         {
-            q: "Do I need a licensed guard for a residential estate?",
-            a: "Yes. Gatehouse duty, patrol and alarm response on residential property are licensable security work in every state, whether it's a single home or a full estate. Every guard on Staffoo has their license verified before they can apply.",
+            q: "Do I need licensed security staff for a residential estate?",
+            a: "Yes. Gatehouse duty, patrol and alarm response on residential property are licensable security work in every state, whether it's a single home or a full estate. Every security staff member on Staffoo has their license verified before they can apply.",
         },
         {
-            q: "Can a guard enter individual homes or private lots?",
-            a: "Not without consent. A guard's authority generally covers common property and access points, entering someone's private home or lot is a separate matter that needs the resident's agreement. Set this out clearly with your committee before the first shift.",
+            q: "Can security staff enter individual homes or private lots?",
+            a: "Not without consent. Security staff's authority generally covers common property and access points, entering someone's private home or lot is a separate matter that needs the resident's agreement. Set this out clearly with your committee before the first shift.",
         },
         {
-            q: "Who approves hiring a guard for a strata or body corporate estate?",
+            q: "Who approves hiring security staff for a strata or body corporate estate?",
             a: "That's a decision for your committee or strata manager, Staffoo doesn't get involved in that approval process. Once your estate has decided to proceed, posting the job and reviewing applications takes about two minutes.",
         },
         {
-            q: "Is a gatehouse guard or a mobile patrol better for our estate?",
-            a: "It depends on your layout. A single controlled entrance usually suits a gatehouse guard, while a larger estate, acreage or several separate properties usually suits a mobile patrol on a scheduled route. Many estates use both at different times.",
+            q: "Is gatehouse security staff or a mobile patrol better for our estate?",
+            a: "It depends on your layout. A single controlled entrance usually suits gatehouse security staff, while a larger estate, acreage or several separate properties usually suits a mobile patrol on a scheduled route. Many estates use both at different times.",
         },
         {
-            q: "Can I book a guard just to check on a vacant or holiday property?",
+            q: "Can I book security staff just to check on a vacant or holiday property?",
             a: "Yes, periodic checks on an empty property are one of the most common bookings on Staffoo, post it as a recurring job with the frequency you need.",
         },
         {
-            q: "Can residents see who the guard is before they start?",
-            a: "The person who posts the job reviews and confirms the guard, their profile including license, experience and reviews is visible in the dashboard before you commit. Guard details aren't published publicly for privacy reasons.",
+            q: "Can residents see who the security staff will be before they start?",
+            a: "The person who posts the job reviews and confirms the security staff, their profile including license, experience and reviews is visible in the dashboard before you commit. Security staff details aren't published publicly for privacy reasons.",
         },
     ];
 
@@ -158,7 +158,7 @@ export default function ResidentialEstates() {
     // 9. CTA Band Data
     const residentialCtaData = {
         title: "Ready to secure your property?",
-        subtitle: "Post your job free. Pay only once a guard is confirmed and the shift is signed off.",
+        subtitle: "Post your job free. Pay only once a security staff is confirmed and the shift is signed off.",
         primaryBtnText: "Post a residential security job",
         primaryBtnUrl: "#",
         secondaryBtnText: "Talk to our team",
@@ -168,10 +168,10 @@ export default function ResidentialEstates() {
     return (
         <>
             <Helmet>
-                <title>Residential &amp; Estate Security Guards for Hire | Staffoo</title>
+                <title>Residential &amp; Estate Security Staff for Hire | Staffoo</title>
                 <meta
                     name="description"
-                    content="Post a residential or estate security job on Staffoo and get applications from licensed guards near you. Compare rates and reviews in your dashboard, book in hours."
+                    content="Post a residential or estate security job on Staffoo and get applications from licensed security staff near you. Compare rates and reviews in your dashboard, book in hours."
                 />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
@@ -193,7 +193,7 @@ export default function ResidentialEstates() {
                             <span className="sep">/</span>
                             <a className="text-black" href="/industries/residential-estates">Industries</a>
                             <span className="sep">/</span>
-                            <span className="current">Residential &amp; Estate Security</span>
+                            <span className="current">Residential and Estate Security</span>
                         </div>
                     </div>
                 </div>
@@ -206,7 +206,7 @@ export default function ResidentialEstates() {
                 <WhatsCovered
                     kicker="What's covered"
                     title="Everything your property needs, one job post"
-                    description="Every guard on Staffoo holds a valid license for the work, checked before they're allowed to apply."
+                    description="Every security staff member on Staffoo holds a valid license for the work, checked before they're allowed to apply."
                     items={residentialWhatsCovered}
                 />
 
@@ -229,7 +229,7 @@ export default function ResidentialEstates() {
 
                 <FaqSection
                     kicker="FAQ"
-                    title="Residential & estate security, answered"
+                    title="Residential and estate security, answered"
                     faqs={residentialFaqs}
                 />
 

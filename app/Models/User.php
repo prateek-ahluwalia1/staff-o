@@ -34,7 +34,8 @@ class User extends Authenticatable
             'phone_verified',
             'current_coordinates',
             'is_email_approved',
-            'states_allowed'
+            'states_allowed',
+            'last_reminder_sent_at'
         ];
     
         protected $hidden = [

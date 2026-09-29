@@ -35,7 +35,7 @@ class ContractSignedMail extends Mailable
                 'state'          => $this->state,
                 'contractNumber' => $this->contractNumber,
             ])
-            ->attachData($this->signedPdfBytes, "contract-{$this->contractNumber}-signed.pdf", [
+            ->attachData($this->signedPdfBytes, "{$this->contractNumber}-signed.pdf", [
                 'mime' => 'application/pdf',
             ]);
     }

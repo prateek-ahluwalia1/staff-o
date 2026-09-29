@@ -28,6 +28,15 @@ class Kernel extends ConsoleKernel
             ->mondays()
             ->at('08:00');
         $schedule->command('jobs:send-payment-reminders')->everyFifteenMinutes();
+        // $schedule->command('profiles:send-reminders --gap=2 --min-age=2')
+        //      ->dailyAt('09:00')
+        //      ->withoutOverlapping()
+        //      ->onOneServer();
+        $schedule->command('profiles:send-reminders --gap=2 --min-age=2')
+             ->everyMinute()
+             ->withoutOverlapping(5)   // 5-minute lock
+             ->onOneServer()
+             ->runInBackground(); 
          // $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);
 
 

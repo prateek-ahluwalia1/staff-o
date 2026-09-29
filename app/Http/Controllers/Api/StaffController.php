@@ -15,6 +15,7 @@ use App\Models\Staff;
 use App\Models\Superannuation;
 use App\Models\TfnDeclaration;
 use App\Models\User;
+use App\Services\ACTLicenceService;
 use App\Services\NTLicenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,7 +29,7 @@ use Carbon\Carbon;
 
 class StaffController extends Controller
 {
-    public function __construct(private NTLicenceService $licenceService) {}
+    public function __construct(private NTLicenceService $NTlicenceService, private ACTLicenceService $ACTlicenceService) {}
 
     public function searchLicence(Request $request)
     {
@@ -37,7 +38,7 @@ class StaffController extends Controller
         ]);
 
         try {
-            $results = $this->licenceService->searchByLicenceNumber(
+            $results = $this->NTlicenceService->searchByLicenceNumber(
                 $request->input('licence_number')
             );
 
@@ -288,9 +289,9 @@ class StaffController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
-            'email' => 'required|email|unique:users,email', // Check in users table
+            'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string',
-            'password' => 'required|min:6|confirmed', // Added confirmed for password confirmation
+            'password' => 'required|min:6|confirmed',
             'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'gender' => 'nullable|in:male,female,other',
             'address' => 'nullable',

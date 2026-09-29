@@ -7,7 +7,7 @@
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f4f4f4; }
         .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 30px; text-align: center; }
+        .header { background: linear-gradient(135deg, #0B1E33 0%, #0A7C6E 100%); color: #fff; padding: 30px; text-align: center; }
         .header h1 { margin: 0; font-size: 24px; }
         .content { padding: 30px; }
         .progress-container { background: #e9ecef; border-radius: 10px; height: 24px; overflow: hidden; margin: 20px 0; }
@@ -16,9 +16,9 @@
         .missing-list h3 { margin-top: 0; color: #856404; font-size: 16px; }
         .missing-list ul { margin: 10px 0; padding-left: 20px; }
         .missing-list li { margin: 5px 0; color: #856404; }
-        .btn { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff !important; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+        .btn { display: inline-block; background: linear-gradient(135deg, #0B1E33 0%, #0A7C6E 100%); color: #fff !important; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
         .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; }
-        .highlight { color: #667eea; font-weight: bold; }
+        .highlight { color: #0A7C6E; font-weight: bold; }
     </style>
 </head>
 <body>

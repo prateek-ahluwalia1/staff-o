@@ -5174,20 +5174,7 @@ public function contractor_accept_job(Request $request, $id)
  
 //     return ['success' => true, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
 // }
-<?php
-/**
- * ONLY CHANGES from your version (marked NEW below):
- *  1. Inside the bucket loop, the ORIGINAL rate (before the 10% markup) is
- *     captured separately and used to build a parallel "payout" total/line
- *     set — this is what the contractor is actually owed, unaffected by
- *     the markup you're charging the client.
- *  2. Step 8 now also saves this payout breakdown into a new
- *     `invoice_payout` column on job_rosters, alongside the existing
- *     `invoice_meta` (which stays exactly as it was — client-facing figures).
- *
- * Everything else — Stripe, PDF generation, email, discount/GST logic —
- * is untouched.
- */
+
 private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster)
 {
     // 1. Get contractor's rate card for this site's state

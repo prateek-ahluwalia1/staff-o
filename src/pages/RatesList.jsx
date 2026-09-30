@@ -242,7 +242,13 @@ const RatesList = ({ forcedType } = {}) => {
     try {
       const res = await submit(
         `api/accept-charge-rate-request/${request.id}`,
-        { admin_id: adminId },
+        {
+          admin_id: adminId,
+          signature_name: request.signature_name || request.signature?.name || "",
+          signature_image: request.signature_image || request.signature?.image || request.signature || "",
+          is_signed: 1,
+          already_signed: 1,
+        },
         { method: "POST" }
       );
       if (res?.success || res?.code === 200) {
@@ -1305,6 +1311,69 @@ const RatesList = ({ forcedType } = {}) => {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Resource Partner Acknowledgement & Digital Signature */}
+              <div className="bg-white rounded-3 p-4 mt-4 shadow-sm border">
+                <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pb-2 border-bottom">
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="fa-solid fa-file-signature fs-5" style={{ color: "#0A7C6E" }}></i>
+                    <h6 className="fw-bold text-dark mb-0">Resource Partner Acknowledgement &amp; Digital Signature</h6>
+                  </div>
+                  <span className="badge rounded-pill px-3 py-2 bg-success bg-opacity-10 text-success border border-success border-opacity-25" style={{ fontSize: "11.5px", fontWeight: 700 }}>
+                    <i className="fa-solid fa-circle-check me-1"></i> Pre-Acknowledged &amp; Signed
+                  </span>
+                </div>
+
+                <div className="row g-3 align-items-center">
+                  <div className="col-12 col-md-7">
+                    <div className="mb-2">
+                      <span className="text-muted small fw-bold text-uppercase d-block" style={{ fontSize: "10.5px", letterSpacing: "0.5px" }}>Signatory Legal Name</span>
+                      <span className="fw-bold text-dark" style={{ fontSize: "14px" }}>
+                        {reviewRequest.request.signature_name || reviewRequest.request.contractor_name || reviewRequest.request.user?.name || "Authorized Representative"}
+                      </span>
+                    </div>
+
+                    <div className="mb-2">
+                      <span className="text-muted small fw-bold text-uppercase d-block" style={{ fontSize: "10.5px", letterSpacing: "0.5px" }}>Agreement &amp; Terms Status</span>
+                      <span className="small text-secondary">
+                        <i className="fa-solid fa-check-double text-success me-1"></i>
+                        Acknowledged proposed rates and agreed to Resource Partner Terms &amp; Conditions upon request submission.
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-muted small fw-bold text-uppercase d-block" style={{ fontSize: "10.5px", letterSpacing: "0.5px" }}>Timestamp</span>
+                      <span className="small text-muted">
+                        {reviewRequest.request.signed_at || reviewRequest.request.acknowledged_at || reviewRequest.request.created_at
+                          ? new Date(reviewRequest.request.signed_at || reviewRequest.request.acknowledged_at || reviewRequest.request.created_at).toLocaleString("en-AU", {
+                              day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+                            })
+                          : "Recorded upon request submission"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="col-12 col-md-5">
+                    <span className="text-muted small fw-bold text-uppercase d-block mb-1" style={{ fontSize: "10.5px", letterSpacing: "0.5px" }}>Digital Signature</span>
+                    <div
+                      className="p-3 bg-light rounded-3 border text-center d-flex align-items-center justify-content-center"
+                      style={{ minHeight: "95px", maxHeight: "120px", overflow: "hidden" }}
+                    >
+                      {reviewRequest.request.signature_image || reviewRequest.request.signature ? (
+                        <img
+                          src={reviewRequest.request.signature_image || reviewRequest.request.signature}
+                          alt="Contractor Signature"
+                          style={{ maxHeight: "80px", maxWidth: "100%", objectFit: "contain" }}
+                        />
+                      ) : (
+                        <span style={{ fontFamily: "'Dancing Script', cursive, serif", fontSize: "28px", color: "#1e293b", fontWeight: 700 }}>
+                          {reviewRequest.request.signature_name || reviewRequest.request.contractor_name || reviewRequest.request.user?.name || "Acknowledged"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Reject note input */}

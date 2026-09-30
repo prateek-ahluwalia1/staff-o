@@ -1,10 +1,11 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
+import SignaturePad from "../components/contracts/SignaturePad";
 
 const STATE_NAME_MAP = {
   NSW: "New South Wales", VIC: "Victoria", QLD: "Queensland",
@@ -149,6 +150,27 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
   const [editingRequestId, setEditingRequestId] = useState(null);
   const [formErrors, setFormErrors] = useState({});
 
+  // ── Digital Acknowledgement & Signature States ──
+  const [modalStep, setModalStep] = useState("rates"); // "rates" | "sign"
+  const [signatureName, setSignatureName] = useState("");
+  const [signatureImage, setSignatureImage] = useState("");
+  const [hasSignature, setHasSignature] = useState(false);
+  const [sigMode, setSigMode] = useState("draw"); // "draw" | "auto"
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [sigErrors, setSigErrors] = useState({});
+  const sigPadRef = useRef(null);
+
+  const resetSignatureState = useCallback(() => {
+    setModalStep("rates");
+    const defaultName = userdata?.data?.name || userdata?.name || "";
+    setSignatureName(defaultName);
+    setSignatureImage("");
+    setHasSignature(false);
+    setSigMode("draw");
+    setAgreeTerms(false);
+    setSigErrors({});
+  }, [userdata]);
+
   const hasFormChanged = useMemo(
     () => checkIfFormChanged(requestForm, initialFormState, modalStates),
     [requestForm, initialFormState, modalStates]
@@ -270,6 +292,7 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
     setFormErrors({});
     setIsSavingAndExiting(false);
     setIsSavingAndSubmitting(false);
+    resetSignatureState();
     setShowRequestModal(true);
   };
 
@@ -325,6 +348,7 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
     setFormErrors({});
     setIsSavingAndExiting(false);
     setIsSavingAndSubmitting(false);
+    resetSignatureState();
     setShowRequestModal(true);
   };
 
@@ -408,39 +432,86 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
     }
   };
 
-  // ── Submit ───────────────────────────────────────────────────────────────
-  const handleRequestSubmit = async (e, isSubmitted = 1) => {
-    if (e && typeof e.preventDefault === "function") {
-      e.preventDefault();
-    }
+  // ── Proceed from Rates Editing to Signature & Agreement ───────────────
+  const handleProceedToSign = (e) => {
+    if (e) e.preventDefault();
 
-    if (isSavingAndExiting || isSavingAndSubmitting) {
+    let allValid = true;
+    let firstInvalidState = null;
+    modalStates.forEach((s) => {
+      if (!validateStateTab(s)) {
+        allValid = false;
+        if (!firstInvalidState) firstInvalidState = s;
+      }
+    });
+
+    if (!allValid) {
+      toast.error("Please fill in all missing rate values before proceeding to sign.");
+      if (firstInvalidState) setActiveStateTab(firstInvalidState);
       return;
     }
 
-    if (!modalStates || modalStates.length === 0) {
-      toast.error("You must have selected states in your profile before requesting rates.");
-      return;
+    if (!signatureName.trim()) {
+      const defaultName = userdata?.data?.name || userdata?.name || "";
+      if (defaultName) setSignatureName(defaultName);
     }
 
-    if (!hasFormChanged) {
-      toast.info("Please make changes to the rates or notes before submitting.");
+    setSigErrors({});
+    setModalStep("sign");
+  };
+
+  const handleRequestSubmit = async (e, isSubmitted = 0) => {
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+    if (isSavingAndExiting || isSavingAndSubmitting) return;
+
+    if (modalStates.length === 0) {
+      toast.error("No valid state selected for rates submission.");
       return;
     }
 
     // If triggered by Enter on input while not on last tab, treat as "Next" action
     const isLastTab = modalStates.indexOf(activeStateTab) === modalStates.length - 1;
-    if (e && e.type === "keydown" && e.key === "Enter" && !isLastTab) {
+    if (e && e.type === "keydown" && e.key === "Enter" && !isLastTab && modalStep === "rates") {
       handleNextState();
       return;
     }
 
     const isSaveAndExit = isSubmitted === 0;
 
-    if (isSaveAndExit) {
-      setIsSavingAndExiting(true);
-    } else {
+    // Validate Signature and Agreement if submitting for Admin Review
+    if (!isSaveAndExit) {
+      const errors = {};
+      const currentSigName = (signatureName || "").trim();
+      if (!currentSigName) {
+        errors.signatureName = "Please enter your full legal name.";
+      }
+
+      const currentSigData = sigPadRef.current?.toDataURL() || signatureImage;
+      const isSigEmpty = sigPadRef.current?.isEmpty ? sigPadRef.current.isEmpty() : !hasSignature;
+
+      if (isSigEmpty || !currentSigData) {
+        errors.signature = "Please provide your digital signature by drawing or auto-generating.";
+      }
+
+      if (!agreeTerms) {
+        errors.agreeTerms = "Please agree to the Resource Partner Terms & Conditions.";
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setSigErrors(errors);
+        if (errors.agreeTerms) {
+          toast.error(errors.agreeTerms);
+        } else if (errors.signatureName) {
+          toast.error(errors.signatureName);
+        } else {
+          toast.error("Please provide your digital signature to proceed.");
+        }
+        return;
+      }
+
       setIsSavingAndSubmitting(true);
+    } else {
+      setIsSavingAndExiting(true);
     }
 
     try {
@@ -456,10 +527,14 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
       if (!allValid) {
         toast.error("Please fill in all missing rate values before submitting.");
         setActiveStateTab(firstInvalidState);
+        setModalStep("rates");
         return;
       }
 
       const ratesPayload = [];
+      const currentSigData = !isSaveAndExit ? (sigPadRef.current?.toDataURL() || signatureImage) : "";
+      const currentSigName = !isSaveAndExit ? (signatureName || "").trim() : "";
+      const nowIso = new Date().toISOString();
 
       for (const stateVal of modalStates) {
         const stateForm = requestForm[stateVal] || {};
@@ -476,6 +551,17 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
         if (requestForm.reason) {
           stateObj.notes = requestForm.reason;
           stateObj.reason = requestForm.reason;
+        }
+
+        // Attach digital acknowledgement and signature to each rate item
+        if (!isSaveAndExit) {
+          stateObj.signature_name = currentSigName;
+          stateObj.signature_image = currentSigData;
+          stateObj.signature = currentSigData;
+          stateObj.is_acknowledged = 1;
+          stateObj.acknowledged_at = nowIso;
+          stateObj.signed_at = nowIso;
+          stateObj.agree_terms = 1;
         }
 
         // Set request id ONLY when editing an existing draft request (from History)
@@ -547,6 +633,17 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
         reason: requestForm.reason || "",
       };
 
+      // Attach digital acknowledgement and signature to root payload
+      if (!isSaveAndExit) {
+        finalPayload.signature_name = currentSigName;
+        finalPayload.signature_image = currentSigData;
+        finalPayload.signature = currentSigData;
+        finalPayload.is_acknowledged = 1;
+        finalPayload.acknowledged_at = nowIso;
+        finalPayload.signed_at = nowIso;
+        finalPayload.agree_terms = 1;
+      }
+
       if (editingRequestId) {
         finalPayload.id = editingRequestId;
         finalPayload.charge_rate_request_id = editingRequestId;
@@ -568,10 +665,11 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
         toast.success(
           res.message ||
             (isSubmitted === 1
-              ? "Rate update requests submitted for Admin review!"
+              ? "Rate request acknowledged, signed & submitted for Admin review!"
               : "Rate update saved successfully!")
         );
         setShowRequestModal(false);
+        resetSignatureState();
         setEditingRequestId(null);
         setRequestForm(makeBlankForm(selectedStates));
         setInitialFormState(null);
@@ -622,6 +720,7 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
     setViewRequestRates(null);
     setIsSavingAndExiting(false);
     setIsSavingAndSubmitting(false);
+    resetSignatureState();
     setShowRequestModal(true);
   };
 
@@ -861,7 +960,147 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
         .rr-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .rr-btn-submit { padding: 11px 28px; border-radius: 30px; border: none; background: linear-gradient(135deg, #0A7C6E 0%, #0b9b8a 100%); font-size: 13.5px; font-weight: 700; color: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-width: 170px; gap: 8px; box-shadow: 0 4px 16px rgba(10,124,110,0.35); transition: all 0.2s; }
         .rr-btn-submit:hover:not(:disabled) { box-shadow: 0 6px 22px rgba(10,124,110,0.48); transform: translateY(-1px); }
-        .rr-btn-submit:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+        .rr-btn-submit:disabled { opacity: 0.5; cursor: not-allowed !important; transform: none !important; box-shadow: none !important; }
+
+        /* ── Rate Agreement & Signature Step ── */
+        .rr-step-badge {
+          display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+          background: rgba(10,180,150,0.15); border: 1px solid rgba(10,180,150,0.3);
+          border-radius: 999px; font-size: 11px; font-weight: 700; color: #4ee8cc;
+          text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+        }
+        .rr-agreement-box {
+          background: #f0fdf9; border: 1.5px solid #a7f3d0; border-radius: 14px;
+          padding: 18px 20px; margin-bottom: 20px;
+        }
+        .rr-agreement-box h6 {
+          font-size: 13.5px; font-weight: 800; color: #065f46; margin-bottom: 6px;
+          display: flex; align-items: center; gap: 8px;
+        }
+        .rr-agreement-box p {
+          font-size: 12.5px; color: #047857; margin: 0; line-height: 1.55;
+        }
+        .rr-summary-box {
+          background: #fff; border: 1.5px solid #e4eaf3; border-radius: 14px;
+          padding: 20px 22px; margin-bottom: 20px;
+        }
+        .rr-summary-title {
+          margin-bottom: 16px;
+          display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+        }
+        .rr-summary-header-icon {
+          width: 34px; height: 34px; border-radius: 10px;
+          background: #e6f6f4; color: #0A7C6E;
+          display: inline-flex; align-items: center; justify-content: center;
+          font-size: 15px; flex-shrink: 0;
+        }
+        .rr-summary-state-card {
+          background: #ffffff;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+        }
+        .rr-summary-state-header {
+          padding: 11px 16px;
+          background: #f8fafc;
+          border-bottom: 1.5px solid #edf2f7;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .rr-summary-state-badge {
+          background: #e6f6f4;
+          color: #0A7C6E;
+          border: 1px solid rgba(10, 124, 110, 0.25);
+          font-weight: 700;
+          font-size: 11px;
+          padding: 3px 10px;
+        }
+        .rr-summary-table {
+          width: 100%;
+          margin: 0;
+        }
+        .rr-summary-table thead th {
+          background: #fdfdfe;
+          color: #64748b;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
+          padding: 8px 16px;
+          border-bottom: 1.5px solid #edf2f7;
+        }
+        .rr-summary-table tbody tr {
+          border-bottom: 1px solid #f1f5f9;
+        }
+        .rr-summary-table tbody tr:last-child {
+          border-bottom: none;
+        }
+        .rr-summary-table tbody td {
+          padding: 9px 16px;
+        }
+        .rr-rate-tag {
+          display: inline-block;
+          font-weight: 700;
+          font-size: 12.5px;
+          padding: 3px 11px;
+          border-radius: 6px;
+          min-width: 72px;
+          text-align: center;
+        }
+        .rr-rate-tag.metro {
+          background: #e6f6f4;
+          color: #086358;
+          border: 1px solid #bceae2;
+        }
+        .rr-rate-tag.regional {
+          background: #eff6ff;
+          color: #1e40af;
+          border: 1px solid #bfdbfe;
+        }
+        .rr-sig-box {
+          background: #fff; border: 1.5px solid #e4eaf3; border-radius: 14px;
+          padding: 20px 22px; margin-bottom: 20px;
+        }
+        .rr-sig-title {
+          font-size: 13.5px; font-weight: 800; color: #0a1e3a; margin-bottom: 14px;
+          display: flex; align-items: center; gap: 8px;
+        }
+        .rr-sig-tabs {
+          display: inline-flex; background: #e8edf4; border-radius: 10px; padding: 3px; gap: 3px; margin-bottom: 14px;
+        }
+        .rr-sig-tab {
+          border: none; background: transparent; padding: 7px 16px; border-radius: 8px;
+          font-size: 12px; font-weight: 700; color: #6b7a99; cursor: pointer;
+          display: flex; align-items: center; gap: 6px; transition: all 0.15s;
+        }
+        .rr-sig-tab.active {
+          background: #fff; color: #0a1e3a; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .rr-sig-tab.active i { color: #0A7C6E; }
+        .rr-name-input {
+          width: 100%; border: 1.5px solid #dce5f0; border-radius: 10px; padding: 10px 14px;
+          font-size: 13.5px; font-weight: 600; color: #0a1e3a; background: #f8fafd;
+          outline: none; transition: all 0.18s; font-family: inherit; margin-bottom: 16px;
+        }
+        .rr-name-input:focus {
+          border-color: #0A7C6E; background: #fff; box-shadow: 0 0 0 3px rgba(10,124,110,0.12);
+        }
+        .rr-name-input.has-error {
+          border-color: #ef4444; background: #fffaf9; box-shadow: 0 0 0 3px rgba(239,68,68,0.12);
+        }
+        .rr-terms-label {
+          display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #334155;
+          cursor: pointer; user-select: none; margin-top: 14px; line-height: 1.5;
+        }
+        .rr-terms-label input[type="checkbox"] {
+          margin-top: 3px; width: 17px; height: 17px; accent-color: #0A7C6E; cursor: pointer; flex-shrink: 0;
+        }
+        .rr-sig-error {
+          font-size: 12px; font-weight: 600; color: #dc2626; margin-top: 6px;
+          display: flex; align-items: center; gap: 5px;
+        }
 
         @media (max-width: 767.98px) {
           .rates-hero { padding: 26px 20px 34px; border-radius: 18px; }
@@ -1186,13 +1425,36 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
           >
             {/* Header */}
             <div className="modal-header-premium">
-              <h5>{modalMode === "add" ? "Add Rate" : "Request Rate Update"}</h5>
-              <p>
-                {modalMode === "add"
-                  ? "Enter charge rates for states where no rate currently exists."
-                  : "Submit your proposed charge rates for admin review & approval."}
-              </p>
-              <button type="button" className="modal-close-btn" onClick={() => setShowRequestModal(false)} aria-label="Close modal">
+              {modalStep === "sign" ? (
+                <>
+                  <div className="rr-step-badge">
+                    <i className="fa-solid fa-file-signature"></i> Step 2 of 2: Rate Agreement &amp; Signature
+                  </div>
+                  <h5>Acknowledge &amp; Sign Rate Request</h5>
+                  <p>Review your proposed rates, provide your digital signature, and submit for admin approval.</p>
+                </>
+              ) : (
+                <>
+                  <div className="rr-step-badge">
+                    <i className="fa-solid fa-list-check"></i> Step 1 of 2: Rate Specification
+                  </div>
+                  <h5>{modalMode === "add" ? "Add Rate" : "Request Rate Update"}</h5>
+                  <p>
+                    {modalMode === "add"
+                      ? "Enter charge rates for states where no rate currently exists."
+                      : "Submit your proposed charge rates for admin review & approval."}
+                  </p>
+                </>
+              )}
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => {
+                  setShowRequestModal(false);
+                  resetSignatureState();
+                }}
+                aria-label="Close modal"
+              >
                 <i className="fa fa-times"></i>
               </button>
             </div>
@@ -1202,195 +1464,444 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
               style={{ display: "flex", flexDirection: "column", overflow: "hidden", flex: 1 }}
             >
               <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px 20px" }}>
+                {modalStep === "rates" ? (
+                  <>
+                    {/* ── State Tabs Info ── */}
+                    <div className="rr-form-section" style={{ padding: "14px 20px", marginBottom: "16px" }}>
+                      <div className="rr-section-title d-flex justify-content-between align-items-center mb-2">
+                        <div style={{ fontSize: "12.5px" }}>
+                          <i className="fa fa-map-marked-alt"></i> Select State to Enter Rates
+                        </div>
+                        {modalMode === "add" && modalStates.length > 1 && activeStateTab && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-teal"
+                            style={{ fontSize: "12px", borderRadius: "20px" }}
+                            onClick={handleApplyAll}
+                            title="Apply rates to all other states"
+                          >
+                            <i className="fa fa-copy me-1"></i> Apply All
+                          </button>
+                        )}
+                      </div>
 
-                {/* ── State Tabs Info ── */}
-                <div className="rr-form-section" style={{ padding: "14px 20px", marginBottom: "16px" }}>
-                  <div className="rr-section-title d-flex justify-content-between align-items-center mb-2">
-                    <div style={{ fontSize: "12.5px" }}>
-                      <i className="fa fa-map-marked-alt"></i> Select State to Enter Rates
+                      {modalStates.length > 0 ? (
+                        <div className="rr-tab-bar w-100 mb-1">
+                          {modalStates.map(s => (
+                            <button
+                              key={s}
+                              type="button"
+                              className={`rr-tab-btn flex-grow-1 justify-content-center ${activeStateTab === s ? "active" : ""}`}
+                              onClick={() => setActiveStateTab(s)}
+                            >
+                              <i className="fa fa-map-marker-alt"></i> {getStateLabel(s)}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-muted text-center py-3">No states selected in profile. Please select states in Personal Information to proceed.</div>
+                      )}
+                      {modalStates.length > 0 && (
+                        <p className="text-muted mt-2 mb-0 text-center" style={{ fontSize: "12.5px" }}>
+                          You are currently editing rates for <strong>{STATE_NAME_MAP[activeStateTab] || activeStateTab}</strong>
+                        </p>
+                      )}
                     </div>
-                    {modalMode === "add" && modalStates.length > 1 && activeStateTab && (
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-teal"
-                        style={{ fontSize: "12px", borderRadius: "20px" }}
-                        onClick={handleApplyAll}
-                        title="Apply rates to all other states"
-                      >
-                        <i className="fa fa-copy me-1"></i> Apply All
-                      </button>
-                    )}
-                  </div>
 
-                  {modalStates.length > 0 ? (
-                    <div className="rr-tab-bar w-100 mb-1">
-                      {modalStates.map(s => (
-                        <button
-                          key={s}
-                          type="button"
-                          className={`rr-tab-btn flex-grow-1 justify-content-center ${activeStateTab === s ? "active" : ""}`}
-                          onClick={() => setActiveStateTab(s)}
-                        >
-                          <i className="fa fa-map-marker-alt"></i> {getStateLabel(s)}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-muted text-center py-3">No states selected in profile. Please select states in Personal Information to proceed.</div>
-                  )}
-                  {modalStates.length > 0 && (
-                    <p className="text-muted mt-2 mb-0 text-center" style={{ fontSize: "12.5px" }}>
-                      You are currently editing rates for <strong>{STATE_NAME_MAP[activeStateTab] || activeStateTab}</strong>
-                    </p>
-                  )}
-                </div>
-
-                {/* ── Slot Cards Grid (5 rows) ── */}
-                {activeStateTab && (
-                  <div className="row g-3 mb-4 fade-in">
-                    {SLOT_ROWS.map((row) => {
-                      const metroKey = `def_${row.metro}`;
-                      const regKey = `def_${row.reg}`;
-                      const currentForm = requestForm[activeStateTab] || {};
-                      return (
-                        <div className="col-12 col-sm-6 col-xl-4" key={row.label}>
-                          <div className="rr-slot-card h-100">
-                            <div className="rr-slot-header">
-                              <span className="rr-slot-name">{row.label}</span>
-                              <span className="rr-slot-time">{row.sub}</span>
+                    {/* ── Slot Cards Grid (5 rows) ── */}
+                    {activeStateTab && (
+                      <div className="row g-3 mb-4 fade-in">
+                        {SLOT_ROWS.map((row) => {
+                          const metroKey = `def_${row.metro}`;
+                          const regKey = `def_${row.reg}`;
+                          const currentForm = requestForm[activeStateTab] || {};
+                          return (
+                            <div className="col-12 col-sm-6 col-xl-4" key={row.label}>
+                              <div className="rr-slot-card h-100">
+                                <div className="rr-slot-header">
+                                  <span className="rr-slot-name">{row.label}</span>
+                                  <span className="rr-slot-time">{row.sub}</span>
+                                </div>
+                                <div className="row g-2">
+                                  {/* Metro */}
+                                  <div className="col-6">
+                                    <div className="rr-input-group">
+                                      <div className="rr-input-label metro">
+                                        <i className="fa fa-city" style={{ fontSize: "9px", marginRight: "3px" }}></i> Metro
+                                      </div>
+                                      <div className={`rr-input-wrap metro ${formErrors[activeStateTab]?.[metroKey] ? 'has-error' : ''}`}>
+                                        <span className="rr-currency-sign">$</span>
+                                        <input
+                                          type="number" step="0.01" min="0"
+                                          className="rr-field"
+                                          id={metroKey}
+                                          placeholder="0.00"
+                                          value={currentForm[metroKey] ?? ""}
+                                          onChange={handleRequestFormChange}
+                                          onWheel={(e) => e.target.blur()}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              e.preventDefault();
+                                              return;
+                                            }
+                                            if (['e', 'E', '+', '-', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {/* Regional */}
+                                  <div className="col-6">
+                                    <div className="rr-input-group">
+                                      <div className="rr-input-label regional">
+                                        <i className="fa fa-tree" style={{ fontSize: "9px", marginRight: "3px" }}></i> Regional
+                                      </div>
+                                      <div className={`rr-input-wrap regional ${formErrors[activeStateTab]?.[regKey] ? 'has-error' : ''}`}>
+                                        <span className="rr-currency-sign">$</span>
+                                        <input
+                                          type="number" step="0.01" min="0"
+                                          className="rr-field"
+                                          id={regKey}
+                                          placeholder="0.00"
+                                          value={currentForm[regKey] ?? ""}
+                                          onChange={handleRequestFormChange}
+                                          onWheel={(e) => e.target.blur()}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              e.preventDefault();
+                                              return;
+                                            }
+                                            if (['e', 'E', '+', '-', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="row g-2">
-                              {/* Metro */}
-                              <div className="col-6">
-                                <div className="rr-input-group">
-                                  <div className="rr-input-label metro">
-                                    <i className="fa fa-city" style={{ fontSize: "9px", marginRight: "3px" }}></i> Metro
-                                  </div>
-                                  <div className={`rr-input-wrap metro ${formErrors[activeStateTab]?.[metroKey] ? 'has-error' : ''}`}>
-                                    <span className="rr-currency-sign">$</span>
-                                    <input
-                                      type="number" step="0.01" min="0"
-                                      className="rr-field"
-                                      id={metroKey}
-                                      placeholder="0.00"
-                                      value={currentForm[metroKey] ?? ""}
-                                      onChange={handleRequestFormChange}
-                                      onWheel={(e) => e.target.blur()}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          e.preventDefault();
-                                          return;
-                                        }
-                                        if (['e', 'E', '+', '-', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                              {/* Regional */}
-                              <div className="col-6">
-                                <div className="rr-input-group">
-                                  <div className="rr-input-label regional">
-                                    <i className="fa fa-tree" style={{ fontSize: "9px", marginRight: "3px" }}></i> Regional
-                                  </div>
-                                  <div className={`rr-input-wrap regional ${formErrors[activeStateTab]?.[regKey] ? 'has-error' : ''}`}>
-                                    <span className="rr-currency-sign">$</span>
-                                    <input
-                                      type="number" step="0.01" min="0"
-                                      className="rr-field"
-                                      id={regKey}
-                                      placeholder="0.00"
-                                      value={currentForm[regKey] ?? ""}
-                                      onChange={handleRequestFormChange}
-                                      onWheel={(e) => e.target.blur()}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          e.preventDefault();
-                                          return;
-                                        }
-                                        if (['e', 'E', '+', '-', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* ── Notes ── */}
+                    <div className="rr-reason-section">
+                      <div className="rr-reason-label">
+                        <i className="fa fa-comment-alt"></i>
+                        Notes for Admin
+                        <span className="optional">(Optional)</span>
+                      </div>
+                      <textarea
+                        id="reason"
+                        className="rr-reason-textarea"
+                        placeholder="Tell the admin why you're requesting these rate changes. Providing context helps get a faster review…"
+                        value={requestForm.reason || ""}
+                        onChange={handleRequestFormChange}
+                        rows={3}
+                      ></textarea>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* ── Rate Acknowledgement Legal Box ── */}
+                    <div className="rr-agreement-box">
+                      <h6>
+                        <i className="fa-solid fa-shield-halved text-success"></i>
+                        Contractor Rate Acknowledgement &amp; Declaration
+                      </h6>
+                      <p>
+                        I, the undersigned authorized representative, hereby submit and acknowledge the proposed charge rates detailed below. I understand and agree that upon review and approval by Staffoo Admin, these acknowledged rates will take effect on my account. No post-approval signature email will be needed.
+                      </p>
+                    </div>
+
+                    {/* ── Summary of Rates to be Signed ── */}
+                    <div className="rr-summary-box">
+                      <div className="rr-summary-title">
+                        <div className="d-flex align-items-center gap-2">
+                          <span className="rr-summary-header-icon">
+                            <i className="fa-solid fa-clipboard-check"></i>
+                          </span>
+                          <div>
+                            <div style={{ fontSize: "14px", fontWeight: "800", color: "#0a1e3a" }}>
+                              Summary of Proposed Rates
+                            </div>
+                            <div style={{ fontSize: "11.5px", color: "#64748b", fontWeight: "normal" }}>
+                              Review your requested hourly rates before acknowledging and signing
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary rounded-pill d-inline-flex align-items-center gap-1"
+                          style={{ fontSize: "11.5px", padding: "4px 14px", fontWeight: 600 }}
+                          onClick={() => setModalStep("rates")}
+                        >
+                          <i className="fa-solid fa-pencil"></i> Edit Rates
+                        </button>
+                      </div>
 
-                {/* ── Notes ── */}
-                <div className="rr-reason-section">
-                  <div className="rr-reason-label">
-                    <i className="fa fa-comment-alt"></i>
-                    Notes for Admin
-                    <span className="optional">(Optional)</span>
-                  </div>
-                  <textarea
-                    id="reason"
-                    className="rr-reason-textarea"
-                    placeholder="Tell the admin why you're requesting these rate changes. Providing context helps get a faster review…"
-                    value={requestForm.reason || ""}
-                    onChange={handleRequestFormChange}
-                    rows={3}
-                  ></textarea>
-                </div>
+                      <div className="row g-3">
+                        {modalStates.map((st) => {
+                          const stateRates = requestForm[st] || {};
+                          return (
+                            <div className={modalStates.length === 1 ? "col-12" : "col-12 col-xl-6"} key={st}>
+                              <div className="rr-summary-state-card">
+                                <div className="rr-summary-state-header">
+                                  <div className="d-flex align-items-center gap-2">
+                                    <i className="fa-solid fa-location-dot text-teal"></i>
+                                    <span className="fw-bold text-dark" style={{ fontSize: "13px" }}>{getStateLabel(st)}</span>
+                                  </div>
+                                  <span className="badge rounded-pill rr-summary-state-badge">
+                                    <i className="fa-solid fa-clock-rotate-left me-1"></i> Proposed
+                                  </span>
+                                </div>
+
+                                <div className="table-responsive">
+                                  <table className="table table-borderless rr-summary-table mb-0">
+                                    <thead>
+                                      <tr>
+                                        <th style={{ width: "42%" }}>Time Slot</th>
+                                        <th style={{ width: "29%" }} className="text-center">Metro</th>
+                                        <th style={{ width: "29%" }} className="text-center">Regional</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {SLOT_ROWS.map((row) => {
+                                        const m = stateRates[`def_${row.metro}`] ?? stateRates[row.metro];
+                                        const r = stateRates[`def_${row.reg}`] ?? stateRates[row.reg];
+                                        if (m === undefined && r === undefined) return null;
+                                        return (
+                                          <tr key={row.metro}>
+                                            <td className="align-middle">
+                                              <div className="fw-bold text-dark" style={{ fontSize: "12.5px" }}>{row.label}</div>
+                                              {row.sub && <div className="text-muted" style={{ fontSize: "11px", fontWeight: "normal" }}>{row.sub}</div>}
+                                            </td>
+                                            <td className="align-middle text-center">
+                                              <span className="rr-rate-tag metro">
+                                                {m !== undefined && m !== null && m !== "" ? fmt(m) : "—"}
+                                              </span>
+                                            </td>
+                                            <td className="align-middle text-center">
+                                              <span className="rr-rate-tag regional">
+                                                {r !== undefined && r !== null && r !== "" ? fmt(r) : "—"}
+                                              </span>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {requestForm.reason && (
+                        <div className="mt-3 p-2 px-3 bg-white rounded-2 border" style={{ fontSize: "12px" }}>
+                          <span className="text-muted fw-bold">Notes for Admin: </span>
+                          <span className="text-dark">{requestForm.reason}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Signature Section ── */}
+                    <div className="rr-sig-box">
+                      <div className="rr-sig-title">
+                        <i className="fa-solid fa-signature text-teal"></i>
+                        Authorized Digital Signature <span className="text-danger">*</span>
+                      </div>
+
+                      <label className="form-label fw-bold text-dark small mb-1" htmlFor="rr_signature_name">
+                        Full Legal Name (Signatory) <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="rr_signature_name"
+                        className={`rr-name-input ${sigErrors.signatureName ? "has-error" : ""}`}
+                        placeholder="Enter your full legal name"
+                        value={signatureName}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSignatureName(val);
+                          if (sigErrors.signatureName) setSigErrors((p) => ({ ...p, signatureName: null }));
+                        }}
+                      />
+                      {sigErrors.signatureName && (
+                        <div className="rr-sig-error mb-3">
+                          <i className="fa-solid fa-circle-exclamation"></i> {sigErrors.signatureName}
+                        </div>
+                      )}
+
+                      {/* Mode switcher: Draw Signature | Auto-Generate */}
+                      <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                        <label className="form-label fw-bold text-dark small mb-0">
+                          Sign Here <span className="text-danger">*</span>
+                        </label>
+                        <div className="rr-sig-tabs" role="tablist">
+                          <button
+                            type="button"
+                            className={`rr-sig-tab ${sigMode === "draw" ? "active" : ""}`}
+                            onClick={() => setSigMode("draw")}
+                          >
+                            <i className="fa-solid fa-pen-nib"></i>
+                            <span>Draw Signature</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`rr-sig-tab ${sigMode === "auto" ? "active" : ""}`}
+                            onClick={() => setSigMode("auto")}
+                          >
+                            <i className="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Auto-Generate</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <SignaturePad
+                        ref={sigPadRef}
+                        mode={sigMode}
+                        name={signatureName}
+                        height={180}
+                        onChange={({ isEmpty, dataUrl }) => {
+                          setHasSignature(!isEmpty);
+                          setSignatureImage(dataUrl || "");
+                          if (!isEmpty && sigErrors.signature) {
+                            setSigErrors((p) => ({ ...p, signature: null }));
+                          }
+                        }}
+                        placeholderText={
+                          sigMode === "auto"
+                            ? "Enter your legal name above to generate signature"
+                            : "Draw your signature here with finger, mouse or stylus"
+                        }
+                      />
+                      {sigErrors.signature && (
+                        <div className="rr-sig-error mt-2">
+                          <i className="fa-solid fa-circle-exclamation"></i> {sigErrors.signature}
+                        </div>
+                      )}
+
+                      {/* Terms & Conditions Checkbox */}
+                      <label className="rr-terms-label">
+                        <input
+                          type="checkbox"
+                          checked={agreeTerms}
+                          onChange={(e) => {
+                            setAgreeTerms(e.target.checked);
+                            if (sigErrors.agreeTerms) setSigErrors((p) => ({ ...p, agreeTerms: null }));
+                          }}
+                        />
+                        <span>
+                          I have read, understood, and agree to the{" "}
+                          <a
+                            href="/resource-partner-terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "#0A7C6E", fontWeight: 700, textDecoration: "underline" }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Resource Partner Terms &amp; Conditions
+                          </a>
+                          <span className="text-danger ms-1">*</span>
+                        </span>
+                      </label>
+                      {sigErrors.agreeTerms && (
+                        <div className="rr-sig-error">
+                          <i className="fa-solid fa-circle-exclamation"></i> {sigErrors.agreeTerms}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Footer */}
               <div className="rr-footer">
                 <div className="rr-footer-hint">
-                  <i className="fa fa-shield-alt"></i>
-                  Your request will be reviewed by the Staffoo admin team.
+                  <i className="fa fa-shield-alt text-teal"></i>
+                  {modalStep === "sign"
+                    ? (!agreeTerms
+                        ? "Please accept the Terms & Conditions above to enable submission."
+                        : "Digital signature is legally timestamped upon submission.")
+                    : "Your request will be reviewed by the Staffoo admin team."}
                 </div>
                 <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                  <button
-                    type="button"
-                    className="rr-btn-secondary"
-                    onClick={(e) => handleRequestSubmit(e, 0)}
-                    disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0 || !hasFormChanged}
-                    title={!hasFormChanged ? "Please make changes before saving" : ""}
-                  >
-                    {isSavingAndExiting ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" style={{ width: "14px", height: "14px", borderWidth: "2px" }}></span>
-                        Saving…
-                      </>
-                    ) : (
-                      <>
-                        <i className="fa-solid fa-floppy-disk"></i>
-                        Save and Exit
-                      </>
-                    )}
-                  </button>
-
-                  {modalStates.indexOf(activeStateTab) < modalStates.length - 1 ? (
-                    <button type="button" className="rr-btn-submit" onClick={handleNextState} disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0}>
-                      Next <i className="fa-solid fa-arrow-right ms-2"></i>
-                    </button>
+                  {modalStep === "sign" ? (
+                    <>
+                      <button
+                        type="button"
+                        className="rr-btn-cancel"
+                        onClick={() => setModalStep("rates")}
+                        disabled={isSavingAndSubmitting}
+                      >
+                        <i className="fa-solid fa-arrow-left me-2"></i>
+                        Back to Edit Rates
+                      </button>
+                      <button
+                        type="button"
+                        className="rr-btn-submit"
+                        onClick={(e) => handleRequestSubmit(e, 1)}
+                        disabled={isSavingAndSubmitting || !agreeTerms}
+                        title={!agreeTerms ? "Please accept the Resource Partner Terms & Conditions to enable submission" : ""}
+                        style={{
+                          opacity: (!agreeTerms || isSavingAndSubmitting) ? 0.5 : 1,
+                          cursor: (!agreeTerms || isSavingAndSubmitting) ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {isSavingAndSubmitting ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" style={{ width: "14px", height: "14px", borderWidth: "2px" }}></span>
+                            Submitting Signed Request…
+                          </>
+                        ) : (
+                          <>
+                            <i className="fa-solid fa-signature"></i>
+                            Acknowledge, Sign &amp; Submit
+                          </>
+                        )}
+                      </button>
+                    </>
                   ) : (
-                    <button
-                      type="button"
-                      className="rr-btn-submit"
-                      onClick={(e) => handleRequestSubmit(e, 1)}
-                      disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0 || !hasFormChanged}
-                      title={!hasFormChanged ? "Please make changes before submitting" : ""}
-                    >
-                      {isSavingAndSubmitting ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" style={{ width: "14px", height: "14px", borderWidth: "2px" }}></span>
-                          Submitting…
-                        </>
+                    <>
+                      <button
+                        type="button"
+                        className="rr-btn-secondary"
+                        onClick={(e) => handleRequestSubmit(e, 0)}
+                        disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0 || !hasFormChanged}
+                        title={!hasFormChanged ? "Please make changes before saving" : ""}
+                      >
+                        {isSavingAndExiting ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" style={{ width: "14px", height: "14px", borderWidth: "2px" }}></span>
+                            Saving…
+                          </>
+                        ) : (
+                          <>
+                            <i className="fa-solid fa-floppy-disk"></i>
+                            Save and Exit
+                          </>
+                        )}
+                      </button>
+
+                      {modalStates.indexOf(activeStateTab) < modalStates.length - 1 ? (
+                        <button type="button" className="rr-btn-submit" onClick={handleNextState} disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0}>
+                          Next <i className="fa-solid fa-arrow-right ms-2"></i>
+                        </button>
                       ) : (
-                        <>
-                          <i className="fa-solid fa-paper-plane"></i>
-                          Save and Submit
-                        </>
+                        <button
+                          type="button"
+                          className="rr-btn-submit"
+                          onClick={handleProceedToSign}
+                          disabled={isSavingAndExiting || isSavingAndSubmitting || modalStates.length === 0 || !hasFormChanged}
+                          title={!hasFormChanged ? "Please make changes before proceeding" : ""}
+                        >
+                          Review &amp; Sign <i className="fa-solid fa-file-signature ms-2"></i>
+                        </button>
                       )}
-                    </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -1473,11 +1984,43 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
               </div>
 
               {viewRequestRates.notes && (
-                <div className="mb-2">
+                <div className="mb-3">
                   <label className="fw-bold small text-muted text-uppercase mb-2" style={{ letterSpacing: "0.5px" }}>My Request Reason</label>
                   <div className="p-3 bg-light rounded-3 text-secondary small border">
                     {viewRequestRates.notes}
                   </div>
+                </div>
+              )}
+
+              {/* Digital Acknowledgement & Signature info */}
+              {(viewRequestRates.signature_name || viewRequestRates.signature_image || viewRequestRates.signature || viewRequestRates.is_acknowledged) && (
+                <div className="bg-light rounded-3 p-3 border mt-3">
+                  <div className="d-flex align-items-center justify-content-between mb-2">
+                    <span className="fw-bold small text-dark d-flex align-items-center gap-2">
+                      <i className="fa-solid fa-file-signature text-teal"></i>
+                      My Digital Acknowledgement
+                    </span>
+                    <span className="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25" style={{ fontSize: "11px" }}>
+                      <i className="fa fa-check-circle me-1"></i> Acknowledged &amp; Signed
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 text-muted small">
+                    <div>
+                      <span>Signed by: </span>
+                      <strong className="text-dark">{viewRequestRates.signature_name || "Authorized Representative"}</strong>
+                    </div>
+                    {(viewRequestRates.signed_at || viewRequestRates.created_at) && (
+                      <div>
+                        <span>Date: </span>
+                        <span>{new Date(viewRequestRates.signed_at || viewRequestRates.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}</span>
+                      </div>
+                    )}
+                  </div>
+                  {(viewRequestRates.signature_image || viewRequestRates.signature) && (
+                    <div className="mt-2 p-2 bg-white rounded-2 border text-center" style={{ maxHeight: "80px", overflow: "hidden" }}>
+                      <img src={viewRequestRates.signature_image || viewRequestRates.signature} alt="Signature" style={{ maxHeight: "60px", maxWidth: "100%", objectFit: "contain" }} />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

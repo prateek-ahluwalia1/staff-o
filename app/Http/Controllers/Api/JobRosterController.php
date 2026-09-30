@@ -5652,147 +5652,6 @@ private function chargeRateEmailFieldLabels(): array
     ];
 }
 
-// public function request_charge_rate(Request $request)
-// {
-//     $request->validate([
-//         'user_id'         => 'required|integer',
-//         'rates'           => 'required|array|min:1',
-//         'rates.*.id'      => 'nullable|integer|exists:charge_rate_requests,id',
-//         'rates.*.state'   => 'required|string',
-//         'rates.*.title'   => 'nullable|string',
-//     ]);
-
-//     try {
-//         $contractor = DB::table('users')->where('id', $request->user_id)->first();
-
-//         if (!$contractor) {
-//             return response()->json([
-//                 'success' => false,
-//                 'message' => 'Contractor not found.',
-//                 'data' => null,
-//             ], 200);
-//         }
-
-//         $rateFieldLabels = $this->chargeRateFieldLabels();
-
-//         $requestIds = [];
-//         $emailStateBlocks = [];
-//         $isUpdate = false;
-
-//         foreach ($request->rates as $rateEntry) {
-//             $state = $rateEntry['state'];
-            
-//             // Check if there's an existing pending record for this user and state
-//             $existingRecord = DB::table('charge_rate_requests')
-//                 ->where('user_id', $request->user_id)
-//                 ->where('state', $state)
-//                 ->where('status', 'pending')
-//                 ->first();
-
-//             $insertData = [
-//                 'user_id'        => $request->user_id,
-//                 'title'          => $rateEntry['title'] ?? null,
-//                 'state'          => $state,
-//                 'effective_from' => $rateEntry['effective_from'] ?? null,
-//                 'review_note'    => $request->notes ?? null,
-//                 'status'         => 'pending',
-//                 'is_submitted'   => $request->is_submitted,
-//                 'updated_at'     => now(),
-//             ];
-
-//             $rateRows = [];
-//             foreach ($rateFieldLabels as $column => $label) {
-//                 $value = array_key_exists($column, $rateEntry) ? (float) $rateEntry[$column] : 0;
-//                 $insertData[$column] = $value;
-//                 $rateRows[] = ['label' => $label, 'value' => $value];
-//             }
-
-//             // If an ID is provided in the request, use that
-//             if (!empty($rateEntry['id'])) {
-//                 // Update existing record by ID
-//                 DB::table('charge_rate_requests')
-//                     ->where('id', $rateEntry['id'])
-//                     ->where('user_id', $request->user_id)
-//                     ->update($insertData);
-                
-//                 $requestIds[] = $rateEntry['id'];
-//                 $isUpdate = true;
-//             } 
-//             // If there's an existing pending record for this state, update it
-//             elseif ($existingRecord) {
-//                 // Update the existing pending record
-//                 DB::table('charge_rate_requests')
-//                     ->where('id', $existingRecord->id)
-//                     ->update($insertData);
-                
-//                 $requestIds[] = $existingRecord->id;
-//                 $isUpdate = true;
-//             } 
-//             // Otherwise create a new record
-//             else {
-//                 $insertData['created_at'] = now();
-//                 $requestId = DB::table('charge_rate_requests')->insertGetId($insertData);
-//                 $requestIds[] = $requestId;
-//             }
-
-//             $emailStateBlocks[] = [
-//                 'state'    => $state,
-//                 'title'    => $rateEntry['title'] ?? null,
-//                 'rateRows' => $rateRows,
-//             ];
-//         }
-
-//         // Email admin
-//         $adminEmails = ['admin@staffoo.com.au'];
-
-//         if ($request->is_submitted == 1) {
-//             try {
-//                 $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
-//                 foreach ($admins as $a) {
-//                     $notification_data = [
-//                         'message' => 'Charge rate request ' . ($isUpdate ? 'updated' : 'submitted') . '.',
-//                         'title' => 'Charge Rate Request',
-//                         'notification_token' => $a->notification_token,
-//                         'page' => 'my-job-applications',
-//                     ];
-//                     send_push_notification($notification_data);
-//                 }
-
-//                 Mail::to($adminEmails)->send(new ChargeRateRequestMail(
-//                     $contractor->name ?? 'Contractor',
-//                     $contractor->email ?? '',
-//                     $emailStateBlocks,
-//                     $request->notes,
-//                 ));
-
-
-//             } catch (\Exception $e) {
-//                 Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
-//             }
-//         }
-
-//         $message = $isUpdate 
-//             ? 'Charge rate request updated successfully.' 
-//             : 'Charge rate request submitted for admin review.';
-
-//         return response()->json([
-//             'success' => true,
-//             'message' => $message,
-//             'data' => [
-//                 'charge_rate_request_ids' => $requestIds,
-//                 'status' => 'pending',
-//             ],
-//         ], 200);
-
-//     } catch (\Exception $e) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'An error occurred while submitting the charge rate request.',
-//             'error' => $e->getMessage(),
-//             'trace' => $e->getTraceAsString(),
-//         ], 500);
-//     }
-// }
 public function request_charge_rate(Request $request)
 {
     $request->validate([
@@ -5911,29 +5770,91 @@ public function request_charge_rate(Request $request)
             ];
         }
 
-        $adminEmails = ['admin@staffoo.com.au'];
-
+        // ── AUTO-APPROVE PATH (final submission only) ─────────────────────────────
         if ($request->is_submitted == 1) {
-            try {
-                $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
-                foreach ($admins as $a) {
-                    send_push_notification([
-                        'message' => 'Charge rate request ' . ($isUpdate ? 'updated' : 'submitted') . '.',
-                        'title' => 'Charge Rate Request',
-                        'notification_token' => $a->notification_token,
-                        'page' => 'my-job-applications',
-                    ]);
+
+            // ── ALWAYS auto-approve every saved record ────────────────────────
+            foreach ($requestIds as $reqId) {
+                $this->performAutoApprove($reqId, $contractor);
+            }
+
+            // ── RP bracket check — only used to decide if we warn the contractor.
+            // If the level cannot be parsed from the title we skip the check entirely
+            // (rates are already approved above; no email is sent for unknown levels).
+            $exceededBlocks = [];
+
+            foreach ($request->rates as $rateEntry) {
+                $level = $this->extractLevelFromTitle($rateEntry['title'] ?? '');
+
+                if (!$level) {
+                    // Cannot determine level → skip RP check for this entry
+                    continue;
                 }
 
-                Mail::to($adminEmails)->send(new ChargeRateRequestMail(
-                    $contractor->name ?? 'Contractor',
-                    $contractor->email ?? '',
-                    $emailStateBlocks,
-                    $request->notes,
-                ));
-            } catch (\Exception $e) {
-                Log::error('Failed to send charge rate request email', ['error' => $e->getMessage()]);
+                $exceeded = $this->getRpExceedances($rateEntry, $level);
+                if (!empty($exceeded)) {
+                    $exceededBlocks[] = [
+                        'state'    => $rateEntry['state'],
+                        'title'    => $rateEntry['title'] ?? null,
+                        'level'    => $level,
+                        'exceeded' => $exceeded,
+                    ];
+                }
             }
+
+            // Notify admins via push (rates already approved — no manual action needed)
+            try {
+                $admins = DB::table('users')
+                    ->where('notification_token', '!=', '')
+                    ->where('user_type', 'admin')
+                    ->select('notification_token')
+                    ->get();
+
+                $pushMsg = empty($exceededBlocks)
+                    ? 'Charge rate request auto-approved.'
+                    : 'Charge rate request auto-approved — rates exceed RP brackets, contractor notified.';
+
+                foreach ($admins as $a) {
+                    send_push_notification([
+                        'message'            => $pushMsg,
+                        'title'              => 'Charge Rate Auto-Approved',
+                        'notification_token' => $a->notification_token,
+                        'page'               => 'my-job-applications',
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Auto-approve: admin push notification failed', ['error' => $e->getMessage()]);
+            }
+
+            // If any rates exceeded the RP ceilings, warn the contractor by email
+            if (!empty($exceededBlocks) && !empty($contractor->email)) {
+                try {
+                    Mail::to($contractor->email)->send(
+                        new ChargeRateRpWarningMail(
+                            $contractor->name ?? 'Contractor',
+                            $exceededBlocks
+                        )
+                    );
+                } catch (\Exception $e) {
+                    Log::error('Auto-approve: RP warning email failed', [
+                        'user_id' => $contractor->id ?? null,
+                        'error'   => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            $message = $isUpdate
+                ? 'Charge rate updated and auto-approved.'
+                : 'Charge rate submitted and auto-approved.';
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data'    => [
+                    'charge_rate_request_ids' => $requestIds,
+                    'status'                  => 'approved',
+                ],
+            ], 200);
         }
 
         $message = $isUpdate
@@ -5943,9 +5864,9 @@ public function request_charge_rate(Request $request)
         return response()->json([
             'success' => true,
             'message' => $message,
-            'data' => [
+            'data'    => [
                 'charge_rate_request_ids' => $requestIds,
-                'status' => 'pending',
+                'status'                  => 'pending',
             ],
         ], 200);
 
@@ -5953,11 +5874,12 @@ public function request_charge_rate(Request $request)
         return response()->json([
             'success' => false,
             'message' => 'An error occurred while submitting the charge rate request.',
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
+            'error'   => $e->getMessage(),
+            'trace'   => $e->getTraceAsString(),
         ], 500);
     }
 }
+
 /**
  * STEP 2 — Admin views pending (or all) requests.
  * GET /charge-rate-requests?status=pending
@@ -5990,139 +5912,6 @@ public function list_charge_rate_requests(Request $request)
     ], 200);
 }
 
-// public function accept_charge_rate_request(Request $request, $id)
-// {
-//     try {
-//         $rateRequest = DB::table('charge_rate_requests')->where('id', $id)->first();
- 
-//         if (!$rateRequest) {
-//             return response()->json([
-//                 'success' => false,
-//                 'message' => 'Charge rate request not found.',
-//                 'data' => null,
-//             ], 200);
-//         }
- 
-//         if ($rateRequest->status !== 'pending') {
-//             return response()->json([
-//                 'success' => false,
-//                 'message' => 'This request has already been reviewed.',
-//                 'data' => null,
-//             ], 200);
-//         }
- 
-//         $rateFieldLabels = $this->chargeRateFieldLabels();
- 
-//         // Find existing rate card for this contractor + state, else create new
-//         $charge_rate = ContractorChargeRate::where('user_id', $rateRequest->user_id)
-//             ->where('state', $rateRequest->state)
-//             ->first();
- 
-//         if (!$charge_rate) {
-//             $charge_rate = new ContractorChargeRate();
-//         }
- 
-//         $charge_rate->title   = $rateRequest->title;
-//         $charge_rate->user_id = $rateRequest->user_id;
-//         $charge_rate->state   = $rateRequest->state;
- 
-//         foreach ($rateFieldLabels as $column => $label) {
-//             $charge_rate->{$column} = $rateRequest->{$column} ?? 0;
-//         }
- 
-//         $charge_rate->effective_from = $rateRequest->effective_from;
-//         $charge_rate->save();
- 
-//         // Mark the request approved
-//         DB::table('charge_rate_requests')->where('id', $id)->update([
-//             'status'                    => 'approved',
-//             'reviewed_by'               => auth()->id() ?? $request->input('admin_id'),
-//             'reviewed_at'               => now(),
-//             'contractor_charge_rate_id' => $charge_rate->id,
-//         ]);
- 
-//         // ============ NEW: notify the CONTRACTOR their request was approved ============
-//         $contractor = DB::table('users')->where('id', $rateRequest->user_id)->first();
- 
-//         if ($contractor) {
-//             // Email
-//             if (!empty($contractor->email)) {
-//                 try {
-//                     Mail::to($contractor->email)->send(new ChargeRateApprovedMail(
-//                         $contractor->name ?? 'Contractor',
-//                         $rateRequest->title,
-//                         $rateRequest->state,
-//                         $rateRequest->effective_from
-//                     ));
-//                 } catch (\Exception $e) {
-//                     Log::error('Failed to send charge rate approval email', [
-//                         'charge_rate_request_id' => $id,
-//                         'error' => $e->getMessage(),
-//                     ]);
-//                 }
-//             }
- 
-//             // Push notification
-//             if (!empty($contractor->notification_token)) {
-//                 try {
-//                     send_push_notification([
-//                         'message' => "Your charge rate request for " . strtoupper($rateRequest->state) . " has been approved.",
-//                         'title' => 'Charge Rate Approved',
-//                         'notification_token' => $contractor->notification_token,
-//                         'page' => 'charge-rates',
-//                     ]);
-//                 } catch (\Exception $e) {
-//                     Log::error('Failed to send charge rate approval push notification', [
-//                         'charge_rate_request_id' => $id,
-//                         'error' => $e->getMessage(),
-//                     ]);
-//                 }
-//             }
-//         }
- 
-//         $remainingPending = DB::table('charge_rate_requests')
-//             ->where('user_id', $rateRequest->user_id)
-//             ->where('status', 'pending')
-//             ->exists();
- 
-//         if (!$remainingPending) {
-//             $allApprovedRates = ContractorChargeRate::where('user_id', $rateRequest->user_id)->get();
- 
-//             if ($allApprovedRates->isNotEmpty()) {
-//                 $this->generateAndSendContract($contractor, $rateRequest, $allApprovedRates);
-//             }
-//         }
-//         // ============ END CHANGED ============
- 
-//         $admins = DB::table('users')->where('notification_token', '!=', '')->where('user_type', 'admin')->select('notification_token')->get();
-//         foreach ($admins as $a) {
-//             $notification_data = [
-//                 'message' => 'Charge rate request submitted.',
-//                 'title' => 'Charge Rate Request',
-//                 'notification_token' => $a->notification_token,
-//                 'page' => 'my-job-applications',
-//             ];
-//             send_push_notification($notification_data);
-//         }
- 
-//         return response()->json([
-//             'success' => true,
-//             'message' => 'Charge rate request approved and applied.',
-//             'data' => [
-//                 'charge_rate_request_id'    => $id,
-//                 'contractor_charge_rate_id' => $charge_rate->id,
-//             ],
-//         ], 200);
- 
-//     } catch (\Exception $e) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'An error occurred while approving the charge rate request.',
-//             'error' => $e->getMessage(),
-//             'trace' => $e->getTraceAsString(),
-//         ], 500);
-//     }
-// }
 public function accept_charge_rate_request(Request $request, $id)
 {
     try {
@@ -6252,6 +6041,183 @@ public function accept_charge_rate_request(Request $request, $id)
     }
 }
 
+private function extractLevelFromTitle(?string $title): ?int
+{
+    if (empty($title)) {
+        return null;
+    }
+    if (preg_match('/level\s*[-_]?\s*([1-5])/i', $title, $m)) {
+        return (int) $m[1];
+    }
+    return null;
+}
+
+/**
+ * RP bracket ceiling rates — sourced from the uploaded RP tables.
+ *   Metro    = Vic & NSW Metro    (Cost + Margin)
+ *   Regional = Vic & NSW Regional (Cost + Margin)
+ *
+ * Keys: [area][level][slot]
+ * Slots: day | night | saturday | sunday | public_hol
+ */
+private function getRpBrackets(): array
+{
+    return [
+        'metro' => [
+            1 => ['day' => 42.04, 'night' => 51.17, 'saturday' => 63.06, 'sunday' => 84.08, 'public_hol' => 105.10],
+            2 => ['day' => 43.25, 'night' => 52.65, 'saturday' => 64.88, 'sunday' => 86.51, 'public_hol' => 108.14],
+            3 => ['day' => 43.98, 'night' => 53.52, 'saturday' => 65.98, 'sunday' => 87.96, 'public_hol' => 109.95],
+            4 => ['day' => 44.72, 'night' => 54.42, 'saturday' => 67.09, 'sunday' => 89.44, 'public_hol' => 111.80],
+            5 => ['day' => 46.15, 'night' => 56.17, 'saturday' => 69.23, 'sunday' => 92.31, 'public_hol' => 115.38],
+        ],
+        'regional' => [
+            1 => ['day' => 44.77, 'night' => 54.48, 'saturday' => 67.15, 'sunday' => 89.53, 'public_hol' => 111.91],
+            2 => ['day' => 46.06, 'night' => 56.06, 'saturday' => 69.09, 'sunday' => 92.12, 'public_hol' => 115.14],
+            3 => ['day' => 46.83, 'night' => 56.99, 'saturday' => 70.25, 'sunday' => 93.66, 'public_hol' => 117.08],
+            4 => ['day' => 47.62, 'night' => 57.95, 'saturday' => 71.43, 'sunday' => 95.23, 'public_hol' => 119.05],
+            5 => ['day' => 49.14, 'night' => 59.81, 'saturday' => 73.72, 'sunday' => 98.29, 'public_hol' => 122.86],
+        ],
+    ];
+}
+
+/**
+ * Compare the "Default" Metro + Regional rates in a rate-entry array against
+ * the RP ceiling brackets for the given level.
+ *
+ * Only the five core Default slots (Day, Night, Saturday, Sunday, Public Hol)
+ * are checked — EBA and OT fields are outside the RP tables.
+ *
+ * Returns an array of exceedance items (empty = all within bracket).
+ *   Each item: ['field' => ..., 'label' => ..., 'requested' => ..., 'rp_max' => ...]
+ */
+private function getRpExceedances(array $rateEntry, int $level): array
+{
+    $brackets = $this->getRpBrackets();
+
+    // [request field => [area, bracket slot, human-readable label]]
+    $checks = [
+        'def_metro_mon_to_fri_day_rate'   => ['metro',    'day',        'Metro Mon–Fri Day'],
+        'def_metro_mon_to_fri_night_rate' => ['metro',    'night',      'Metro Mon–Fri Night'],
+        'def_metro_sat_day_rate'          => ['metro',    'saturday',   'Metro Saturday'],
+        'def_metro_sun_day_rate'          => ['metro',    'sunday',     'Metro Sunday'],
+        'def_metro_pub_holi_day_rate'     => ['metro',    'public_hol', 'Metro Public Holiday'],
+        'def_reg_mon_to_fri_day_rate'     => ['regional', 'day',        'Regional Mon–Fri Day'],
+        'def_reg_mon_to_fri_night_rate'   => ['regional', 'night',      'Regional Mon–Fri Night'],
+        'def_reg_sat_day_rate'            => ['regional', 'saturday',   'Regional Saturday'],
+        'def_reg_sun_day_rate'            => ['regional', 'sunday',     'Regional Sunday'],
+        'def_reg_pub_holi_day_rate'       => ['regional', 'public_hol', 'Regional Public Holiday'],
+    ];
+
+    $exceeded = [];
+    foreach ($checks as $field => [$area, $slot, $humanLabel]) {
+        $requested = isset($rateEntry[$field]) ? (float) $rateEntry[$field] : 0;
+        $rpMax     = $brackets[$area][$level][$slot] ?? null;
+
+        if ($rpMax !== null && $requested > $rpMax) {
+            $exceeded[] = [
+                'field'     => $field,
+                'label'     => $humanLabel,
+                'requested' => $requested,
+                'rp_max'    => $rpMax,
+            ];
+        }
+    }
+
+    return $exceeded;
+}
+
+/**
+ * Auto-approve a single charge_rate_requests row.
+ *
+ * Mirrors accept_charge_rate_request() without the HTTP layer:
+ *   1. Creates / updates the ContractorChargeRate record.
+ *   2. Marks the request as approved (reviewed_by = 0 = system).
+ *   3. Fires the approval email + push notification to the contractor.
+ *   4. Generates the signed contract when all pending requests for this user are done.
+ */
+private function performAutoApprove(int $requestId, object $contractor): void
+{
+    $rateRequest = DB::table('charge_rate_requests')->where('id', $requestId)->first();
+
+    if (!$rateRequest || $rateRequest->status !== 'pending') {
+        return;
+    }
+
+    $rateFieldLabels = $this->chargeRateFieldLabels();
+
+    $charge_rate = \App\Models\ContractorChargeRate::where('user_id', $rateRequest->user_id)
+        ->where('state', $rateRequest->state)
+        ->first();
+
+    if (!$charge_rate) {
+        $charge_rate = new \App\Models\ContractorChargeRate();
+    }
+
+    $charge_rate->title   = $rateRequest->title;
+    $charge_rate->user_id = $rateRequest->user_id;
+    $charge_rate->state   = $rateRequest->state;
+
+    foreach ($rateFieldLabels as $column => $label) {
+        $charge_rate->{$column} = $rateRequest->{$column} ?? 0;
+    }
+
+    $charge_rate->effective_from = $rateRequest->effective_from;
+    $charge_rate->save();
+
+    DB::table('charge_rate_requests')->where('id', $requestId)->update([
+        'status'                    => 'approved',
+        'reviewed_by'               => 0,   // 0 = auto-approved by system
+        'reviewed_at'               => now(),
+        'contractor_charge_rate_id' => $charge_rate->id,
+    ]);
+
+    // Email contractor: their request was approved
+    if (!empty($contractor->email)) {
+        try {
+            Mail::to($contractor->email)->send(new ChargeRateApprovedMail(
+                $contractor->name ?? 'Contractor',
+                $rateRequest->title,
+                $rateRequest->state,
+                $rateRequest->effective_from
+            ));
+        } catch (\Exception $e) {
+            Log::error('Auto-approve: contractor approval email failed', [
+                'charge_rate_request_id' => $requestId,
+                'error'                  => $e->getMessage(),
+            ]);
+        }
+    }
+
+    // Push notification to contractor
+    if (!empty($contractor->notification_token)) {
+        try {
+            send_push_notification([
+                'message'            => 'Your charge rate request for ' . strtoupper($rateRequest->state) . ' has been approved.',
+                'title'              => 'Charge Rate Approved',
+                'notification_token' => $contractor->notification_token,
+                'page'               => 'charge-rates',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Auto-approve: contractor push notification failed', [
+                'charge_rate_request_id' => $requestId,
+                'error'                  => $e->getMessage(),
+            ]);
+        }
+    }
+
+    // Generate signed contract once ALL pending requests for this user are done
+    $remainingPending = DB::table('charge_rate_requests')
+        ->where('user_id', $rateRequest->user_id)
+        ->where('status', 'pending')
+        ->exists();
+
+    if (!$remainingPending) {
+        $allApprovedRates = \App\Models\ContractorChargeRate::where('user_id', $rateRequest->user_id)->get();
+        if ($allApprovedRates->isNotEmpty()) {
+            $this->generateAndSendSignedContract($contractor, $rateRequest, $allApprovedRates);
+        }
+    }
+}
 /**
  * STEP 3b — Admin rejects a request.
  * Marks it rejected and emails the contractor.

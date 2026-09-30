@@ -238,7 +238,7 @@ const RatesList = ({ forcedType } = {}) => {
   const [reviewRequest, setReviewRequest] = useState(null); // { request, mode: "view"|"reject" }
   const [reviewNote, setReviewNote] = useState("");
   const [processingRequestId, setProcessingRequestId] = useState(null);
-  const [requestTab, setRequestTab] = useState("pending"); // "pending" | "approved" | "rejected"
+  const [requestTab, setRequestTab] = useState("approved"); // "approved" | "rejected"
   const [selectedPartner, setSelectedPartner] = useState(null); // group object
 
   // Prevent background scrolling when any modal is open
@@ -1027,7 +1027,6 @@ const RatesList = ({ forcedType } = {}) => {
             {/* Tab bar */}
             <div className="rate-tabs mb-4">
               {[
-                { key: "pending", label: "Pending", icon: "fa-clock" },
                 { key: "approved", label: "Approved", icon: "fa-check" },
                 { key: "rejected", label: "Rejected", icon: "fa-times" },
               ].map(tab => (
@@ -1051,25 +1050,18 @@ const RatesList = ({ forcedType } = {}) => {
               <div className="rates-table-card">
                 <div className="text-center py-5">
                   <i
-                    className={`fa ${requestTab === "pending" ? "fa-inbox"
-                      : requestTab === "approved" ? "fa-check-circle"
-                        : "fa-times-circle"
-                      } fa-2x mb-3 d-block`}
+                    className={`fa ${requestTab === "approved" ? "fa-check-circle" : "fa-times-circle"} fa-2x mb-3 d-block`}
                     style={{
-                      color: requestTab === "pending" ? "#d97706"
-                        : requestTab === "approved" ? "#0A7C6E"
-                          : "#dc2626",
+                      color: requestTab === "approved" ? "#0A7C6E" : "#dc2626",
                     }}
                   ></i>
                   <div className="fw-bold text-dark mb-1">
                     No {requestTab.charAt(0).toUpperCase() + requestTab.slice(1)} Requests
                   </div>
                   <div className="text-muted small">
-                    {requestTab === "pending"
-                      ? "All requests have been reviewed."
-                      : requestTab === "approved"
-                        ? "No requests have been approved yet."
-                        : "No requests have been rejected."}
+                    {requestTab === "approved"
+                      ? "No requests have been approved yet."
+                      : "No requests have been rejected."}
                   </div>
                 </div>
               </div>
@@ -1084,17 +1076,14 @@ const RatesList = ({ forcedType } = {}) => {
               >
                 {groupedRequests.map((group) => {
                   const initials = getInitials(group.partnerName);
-                  const pendingCount = group.requests.filter(r => !r.status || r.status === "pending").length;
                   const approvedCount = group.requests.filter(r => r.status === "approved").length;
                   const rejectedCount = group.requests.filter(r => r.status === "rejected").length;
                   const total = group.requests.length;
 
                   /* colour palette per tab */
-                  const folderColor = requestTab === "pending"
-                    ? { tab: "#f59e0b", body: "#fffbeb", border: "#fde68a", text: "#92400e" }
-                    : requestTab === "approved"
-                      ? { tab: "#0A7C6E", body: "#f0fdf9", border: "#a7f3d0", text: "#065f46" }
-                      : { tab: "#ef4444", body: "#fff5f5", border: "#fecaca", text: "#991b1b" };
+                  const folderColor = requestTab === "approved"
+                    ? { tab: "#0A7C6E", body: "#f0fdf9", border: "#a7f3d0", text: "#065f46" }
+                    : { tab: "#ef4444", body: "#fff5f5", border: "#fecaca", text: "#991b1b" };
 
                   return (
                     <div
@@ -1175,11 +1164,6 @@ const RatesList = ({ forcedType } = {}) => {
                         {/* Stats row */}
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                            {pendingCount > 0 && (
-                              <span style={{ fontSize: "11px", fontWeight: 700, color: "#92400e", background: "rgba(245,158,11,0.15)", padding: "3px 9px", borderRadius: "20px", border: "1px solid rgba(245,158,11,0.3)" }}>
-                                {pendingCount}
-                              </span>
-                            )}
                             {approvedCount > 0 && (
                               <span style={{ fontSize: "11px", fontWeight: 700, color: "#065f46", background: "rgba(10,124,110,0.12)", padding: "3px 9px", borderRadius: "20px", border: "1px solid rgba(10,124,110,0.25)" }}>
                                 {approvedCount}
@@ -1261,7 +1245,7 @@ const RatesList = ({ forcedType } = {}) => {
                 {/* Sub-header labels */}
                 <div style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 130px" + (requestTab !== "pending" ? " 100px" : "") + " 130px",
+                  gridTemplateColumns: "1fr 130px 100px 130px",
                   gap: "12px",
                   padding: "6px 16px",
                   marginBottom: "6px",
@@ -1270,14 +1254,12 @@ const RatesList = ({ forcedType } = {}) => {
                 }}>
                   <span>Title / State</span>
                   <span>Submitted</span>
-                  {requestTab !== "pending" && <span>Status</span>}
+                  <span>Status</span>
                   <span style={{ textAlign: "center" }}>Actions</span>
                 </div>
 
                 {selectedPartner.requests.map((req) => {
-                  const isPending = !req.status || req.status === "pending";
                   const isApproved = req.status === "approved";
-                  const isProcessing = processingRequestId === req.id;
 
                   return (
                     <div
@@ -1289,10 +1271,10 @@ const RatesList = ({ forcedType } = {}) => {
                         padding: "14px 16px",
                         marginBottom: "10px",
                         display: "grid",
-                        gridTemplateColumns: "1fr 130px" + (requestTab !== "pending" ? " 100px" : "") + " 130px",
+                        gridTemplateColumns: "1fr 130px 100px 130px",
                         gap: "12px",
                         alignItems: "center",
-                        borderLeft: isPending ? "3px solid #d97706" : isApproved ? "3px solid #0A7C6E" : "3px solid #dc2626",
+                        borderLeft: isApproved ? "3px solid #0A7C6E" : "3px solid #dc2626",
                       }}
                     >
                       {/* Title + state */}
@@ -1310,62 +1292,28 @@ const RatesList = ({ forcedType } = {}) => {
                           : "—"}
                       </div>
 
-                      {/* Status badge (non-pending tabs) */}
-                      {requestTab !== "pending" && (
-                        <div>
-                          {isApproved ? (
-                            <span style={{ padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "rgba(22,163,74,0.1)", color: "#16a34a", border: "1px solid rgba(22,163,74,0.2)" }}>
-                              Approved
-                            </span>
-                          ) : (
-                            <span style={{ padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "rgba(220,38,38,0.1)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.2)" }}>
-                              Rejected
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {/* Status badge */}
+                      <div>
+                        {isApproved ? (
+                          <span style={{ padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "rgba(22,163,74,0.1)", color: "#16a34a", border: "1px solid rgba(22,163,74,0.2)" }}>
+                            Approved
+                          </span>
+                        ) : (
+                          <span style={{ padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: 700, background: "rgba(220,38,38,0.1)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.2)" }}>
+                            Rejected
+                          </span>
+                        )}
+                      </div>
 
                       {/* Actions */}
                       <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
-                        {isPending ? (
-                          <>
-                            <button
-                              className="action-btn"
-                              style={{ background: "rgba(10,124,110,0.1)", color: "#0A7C6E" }}
-                              title="View Request"
-                              disabled={isProcessing}
-                              onClick={() => setReviewRequest({ request: req, mode: "view" })}
-                            >
-                              <i className="fa fa-eye" />
-                            </button>
-                            <button
-                              className="action-btn"
-                              style={{ background: "rgba(22,163,74,0.1)", color: "#16a34a" }}
-                              title="Approve"
-                              disabled={isProcessing}
-                              onClick={() => handleApproveRequest(req)}
-                            >
-                              {isProcessing ? <i className="fa fa-spinner fa-spin" /> : <i className="fa fa-check" />}
-                            </button>
-                            <button
-                              className="action-btn"
-                              style={{ background: "rgba(220,38,38,0.1)", color: "#dc2626" }}
-                              title="Reject"
-                              disabled={isProcessing}
-                              onClick={() => { setReviewRequest({ request: req, mode: "reject" }); setReviewNote(""); }}
-                            >
-                              <i className="fa fa-times" />
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            className="action-btn"
-                            title="View Request"
-                            onClick={() => setReviewRequest({ request: req, mode: "view" })}
-                          >
-                            <i className="fa fa-eye" />
-                          </button>
-                        )}
+                        <button
+                          className="action-btn"
+                          title="View Request Details"
+                          onClick={() => setReviewRequest({ request: req, mode: "view" })}
+                        >
+                          <i className="fa fa-eye" />
+                        </button>
                       </div>
                     </div>
                   );

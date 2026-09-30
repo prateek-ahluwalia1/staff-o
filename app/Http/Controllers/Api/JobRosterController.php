@@ -6119,10 +6119,8 @@ public function releaseContractorPayout($rosterId)
         // 2. Calculate the platform fee, applied to the net taxable amount
         //    from the original client invoice (chargeable basis)
         $chargeableBasis = (float) $invoiceMeta['net_taxable'];
-        // $feeRatePercent  = 10.0;
-        // $gstPercent      = 10.0;
-        $feeRatePercent  = 0;
-        $gstPercent      = 0;
+        $feeRatePercent  = 10.0;
+        $gstPercent      = 10.0;
 
         $feeAmount        = round($chargeableBasis * ($feeRatePercent / 100), 2);
         $gstAmount        = round($feeAmount * ($gstPercent / 100), 2);

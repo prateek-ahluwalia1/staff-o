@@ -144,8 +144,8 @@ class PlatformFeeInvoiceService
         $html .= "<th style='width:34%;'>Description</th>";
         $html .= "<th style='width:18%;text-align:center;'>Job Ref #</th>";
         $html .= "<th style='width:18%;text-align:right;'>Chargeable Basis</th>";
-        $html .= "<th style='width:12%;text-align:right;'>Fee Rate</th>";
-        $html .= "<th style='width:18%;text-align:right;'>Fee (AUD)</th>";
+        $html .= "<th style='width:12%;text-align:right;'>GST</th>";
+        $html .= "<th style='width:18%;text-align:right;'>GST (AUD)</th>";
         $html .= "</tr></thead><tbody>";
         $html .= "<tr>";
         $html .= "<td><div class='item-desc'>Staffoo Marketplace &amp; WFM Platform Service Fee</div>";
@@ -159,9 +159,9 @@ class PlatformFeeInvoiceService
 
         // Totals
         $html .= "<div class='totals-wrap'><table class='tt'>";
-        $html .= "<tr><td class='lbl'>Platform Fee (ex. GST)</td><td class='amt'>{$feeAmount}</td></tr>";
-        $html .= "<tr><td class='lbl'>GST ({$gstPercent}%)</td><td class='amt'>{$gstAmount}</td></tr>";
-        $html .= "<tr class='grand'><td class='lbl'>Total Fee Deducted (incl. GST)</td><td class='amt'>{$totalFeeDeducted}</td></tr>";
+        $html .= "<tr><td class='lbl'>GST</td><td class='amt'>{$feeAmount}</td></tr>";
+        // $html .= "<tr><td class='lbl'>GST ({$gstPercent}%)</td><td class='amt'>{$gstAmount}</td></tr>";
+        // $html .= "<tr class='grand'><td class='lbl'>Total Fee Deducted (incl. GST)</td><td class='amt'>{$totalFeeDeducted}</td></tr>";
         $html .= "<tr class='payout-row'><td class='lbl'>Net Payout Remitted to Partner</td><td class='amt'>{$netPayout}</td></tr>";
         $html .= "</table></div>";
 

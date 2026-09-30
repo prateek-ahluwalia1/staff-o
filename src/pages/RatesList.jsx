@@ -6,7 +6,7 @@ import useSubmit from "../hooks/useSubmit";
 import { useSelector } from "react-redux";
 import Loader from "../components/Loader";
 import { toast } from "react-toastify";
-import { TIME_KEYS } from "../utils/exports";
+import { TIME_KEYS, resolveSignatureUrl } from "../utils/exports";
 
 const RATE_CATEGORIES = ["def", "eba"];
 
@@ -1548,7 +1548,7 @@ const RatesList = ({ forcedType } = {}) => {
                     >
                       {reviewRequest.request.signature_image || reviewRequest.request.signature ? (
                         <img
-                          src={reviewRequest.request.signature_image || reviewRequest.request.signature}
+                          src={resolveSignatureUrl(reviewRequest.request.signature_image || reviewRequest.request.signature)}
                           alt="Contractor Signature"
                           style={{ maxHeight: "80px", maxWidth: "100%", objectFit: "contain" }}
                         />

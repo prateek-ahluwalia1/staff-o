@@ -4,6 +4,26 @@ export const STRIPE_PUBLISHABLE_KEY =
 //  "pk_live_51TBYBwDb535HMVUZ1mcJVHqhJqwz4jMfvFsDnBNuY3vtSOTIm3rUO1HGRZwgzLe5Efg7gpHUDIMJRMnl0aT5mqnU00b7sA5kOl";
   "pk_test_51TBYBwDb535HMVUZHtQiPJGDYYZex0gIGvFWtuKR9FRage5WxqqzkLDvKBUpq4MfPkWhgDDM7z3WZrURpwWFBkbo005rxvV6q9";
 
+export const resolveSignatureUrl = (sig) => {
+  if (!sig) return "";
+  if (typeof sig !== "string") {
+    if (typeof sig === "object" && sig.image) return resolveSignatureUrl(sig.image);
+    return "";
+  }
+  const trimmed = sig.trim();
+  if (!trimmed) return "";
+  if (
+    trimmed.startsWith("data:") ||
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("blob:")
+  ) {
+    return trimmed;
+  }
+  const clean = trimmed.replace(/^\/+/, "");
+  return clean.startsWith("storage/") ? `${apiURL}${clean}` : `${apiURL}storage/${clean}`;
+};
+
 export const TIME_KEYS = [
   "metro_mon_to_fri_day_rate",
   "reg_mon_to_fri_day_rate",

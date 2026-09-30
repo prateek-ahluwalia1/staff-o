@@ -6,7 +6,7 @@ import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import SignaturePad from "../components/contracts/SignaturePad";
-
+import { resolveSignatureUrl } from "../utils/exports";
 const STATE_NAME_MAP = {
   NSW: "New South Wales", VIC: "Victoria", QLD: "Queensland",
   WA: "Western Australia", SA: "South Australia", TAS: "Tasmania",
@@ -2018,7 +2018,11 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
                   </div>
                   {(viewRequestRates.signature_image || viewRequestRates.signature) && (
                     <div className="mt-2 p-2 bg-white rounded-2 border text-center" style={{ maxHeight: "80px", overflow: "hidden" }}>
-                      <img src={viewRequestRates.signature_image || viewRequestRates.signature} alt="Signature" style={{ maxHeight: "60px", maxWidth: "100%", objectFit: "contain" }} />
+                      <img
+                        src={resolveSignatureUrl(viewRequestRates.signature_image || viewRequestRates.signature)}
+                        alt="Signature"
+                        style={{ maxHeight: "60px", maxWidth: "100%", objectFit: "contain" }}
+                      />
                     </div>
                   )}
                 </div>

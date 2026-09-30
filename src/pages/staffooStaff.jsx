@@ -1222,23 +1222,6 @@ const StaffooStaff = () => {
                 {/* State Filter Pills */}
                 <div className="state-pills-bar d-flex align-items-center justify-content-between gap-3 flex-wrap mt-3 pt-3 border-top">
                     <div className="d-flex align-items-center gap-3 flex-wrap">
-                        <div className="d-flex align-items-center gap-2 ms-2 me-1" style={{ paddingLeft: "4px" }}>
-                            <span
-                                className="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
-                                style={{
-                                    width: "28px",
-                                    height: "28px",
-                                    background: "rgba(10, 124, 110, 0.1)",
-                                    color: "#0A7C6E",
-                                    fontSize: "0.85rem",
-                                }}
-                            >
-                                <i className="fa-solid fa-location-dot"></i>
-                            </span>
-                            <span className="fw-semibold text-slate-700 text-nowrap" style={{ fontSize: "0.875rem", color: "#334155" }}>
-                                Filter by State:
-                            </span>
-                        </div>
                         <div className="d-flex align-items-center gap-2 flex-wrap">
                             {AUSTRALIAN_STATE_PILLS.map((pill) => {
                                 const isActive = selectedState === pill.value;

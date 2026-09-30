@@ -451,6 +451,7 @@ const ManageUsers = () => {
     const arr = contractorsResponse.data?.data ?? contractorsResponse.data;
     return Array.isArray(arr) ? arr : [];
   }, [contractorsResponse]);
+
   const { submit, loading: submitLoading } = useSubmit({ isAuth: true });
   const { submit: uploadFile, loading: uploadLoading } = useSubmit({ isAuth: true });
   const { submit: submitSecurityLicense } = useSubmit({
@@ -462,6 +463,139 @@ const ManageUsers = () => {
   const [users, setUsers] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [allContractorsCount, setAllContractorsCount] = useState(0);
+
+  useEffect(() => {
+    const serverCounts =
+      apiResponse?.state_counts ||
+      apiResponse?.data?.state_counts ||
+      contractorsResponse?.state_counts ||
+      contractorsResponse?.data?.state_counts;
+
+    let sum = 0;
+    if (serverCounts && typeof serverCounts === "object") {
+      sum = Object.entries(serverCounts).reduce((acc, [k, v]) => {
+        return k !== "all" && k !== "total" ? acc + (Number(v) || 0) : acc;
+      }, 0);
+    }
+
+    const grandTotalCandidates = [
+      sum,
+      serverCounts?.all,
+      serverCounts?.total,
+      contractorsResponse?.data?.total,
+      contractorsResponse?.total,
+    ];
+
+    if (activeTab === "sub_contractor" && selectedState === "all") {
+      grandTotalCandidates.push(apiResponse?.data?.total ?? apiResponse?.total);
+    }
+
+    const maxTotal = grandTotalCandidates.reduce((max, val) => {
+      const num = Number(val);
+      return !isNaN(num) && num > max ? num : max;
+    }, 0);
+
+    if (maxTotal > 0) {
+      setAllContractorsCount((prev) => Math.max(prev, maxTotal));
+    }
+  }, [activeTab, contractorsResponse, apiResponse, selectedState]);
+
+  const contractorStateCounts = useMemo(() => {
+    const serverCounts =
+      apiResponse?.state_counts ||
+      apiResponse?.data?.state_counts ||
+      contractorsResponse?.state_counts ||
+      contractorsResponse?.data?.state_counts;
+
+    if (serverCounts && typeof serverCounts === "object") {
+      const counts = { ...serverCounts };
+      let sumOfStates = 0;
+      AUSTRALIAN_STATE_PILLS.forEach((pill) => {
+        if (pill.value !== "all") {
+          const val =
+            serverCounts[pill.value] ??
+            serverCounts[pill.value.toLowerCase()] ??
+            serverCounts[pill.label];
+          const num = Number(val) || 0;
+          counts[pill.value] = num;
+          sumOfStates += num;
+        }
+      });
+
+      const explicitTotal =
+        serverCounts.all !== undefined && serverCounts.all !== null
+          ? Number(serverCounts.all)
+          : serverCounts.total !== undefined && serverCounts.total !== null
+            ? Number(serverCounts.total)
+            : undefined;
+
+      // Grand total of all contractors remains fixed and will not change when switching tabs
+      counts.all =
+        explicitTotal !== undefined
+          ? explicitTotal
+          : Math.max(
+              sumOfStates,
+              allContractorsCount || 0,
+              Number(contractorsResponse?.data?.total ?? contractorsResponse?.total) || 0
+            );
+
+      return counts;
+    }
+
+    const list = contractorsList.length > 0
+      ? contractorsList
+      : (activeTab === "sub_contractor" && Array.isArray(users) ? users : []);
+
+    const counts = { all: Math.max(list.length, allContractorsCount || 0) };
+    AUSTRALIAN_STATE_PILLS.forEach((pill) => {
+      if (pill.value !== "all") {
+        counts[pill.value] = 0;
+      }
+    });
+
+    list.forEach((c) => {
+      const stateSet = new Set();
+      const rawAllowed = c.states_allowed ?? c.contractor?.states_allowed;
+      if (rawAllowed) {
+        let parsed = [];
+        if (Array.isArray(rawAllowed)) {
+          parsed = rawAllowed;
+        } else if (typeof rawAllowed === "string") {
+          try {
+            parsed = JSON.parse(rawAllowed);
+          } catch {
+            parsed = rawAllowed.split(",").map((s) => s.trim());
+          }
+        }
+        if (Array.isArray(parsed)) {
+          parsed.forEach((st) => {
+            const clean = String(st).toLowerCase().trim();
+            const code = STATE_MAP[clean] || clean;
+            if (code && counts[code] !== undefined) stateSet.add(code);
+          });
+        }
+      }
+      const rawState = c.state || c.contractor?.state;
+      if (rawState) {
+        const clean = String(rawState).toLowerCase().trim();
+        const code = STATE_MAP[clean] || STATE_MAP[clean.replace(/\b\w/g, (ch) => ch.toUpperCase())] || clean;
+        if (code && counts[code] !== undefined) stateSet.add(code);
+      }
+      stateSet.forEach((code) => {
+        counts[code] = (counts[code] || 0) + 1;
+      });
+    });
+
+    if (!counts.all) {
+      counts.all = Math.max(
+        allContractorsCount || 0,
+        Object.entries(counts).reduce((acc, [k, v]) => (k !== "all" ? acc + v : acc), 0)
+      );
+    }
+
+    return counts;
+  }, [apiResponse, contractorsResponse, allContractorsCount, contractorsList, activeTab, users]);
   const [showDocErrors, setShowDocErrors] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
@@ -2118,26 +2252,10 @@ const ManageUsers = () => {
         {/* State Filter Pills */}
         <div className="state-pills-bar d-flex align-items-center justify-content-between gap-3 flex-wrap mt-3 pt-3 border-top">
           <div className="d-flex align-items-center gap-3 flex-wrap">
-            <div className="d-flex align-items-center gap-2 ms-2 me-1" style={{ paddingLeft: "4px" }}>
-              <span
-                className="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
-                style={{
-                  width: "28px",
-                  height: "28px",
-                  background: "rgba(10, 124, 110, 0.1)",
-                  color: "#0A7C6E",
-                  fontSize: "0.85rem",
-                }}
-              >
-                <i className="fa-solid fa-location-dot"></i>
-              </span>
-              <span className="fw-semibold text-slate-700 text-nowrap" style={{ fontSize: "0.875rem", color: "#334155" }}>
-                Filter by State:
-              </span>
-            </div>
             <div className="d-flex align-items-center gap-2 flex-wrap">
               {AUSTRALIAN_STATE_PILLS.map((pill) => {
                 const isActive = selectedState === pill.value;
+                const count = activeTab === "sub_contractor" ? contractorStateCounts[pill.value] : undefined;
                 return (
                   <button
                     key={pill.value}
@@ -2150,7 +2268,7 @@ const ManageUsers = () => {
                         ? "linear-gradient(135deg, #0A7C6E 0%, #075e53 100%)"
                         : "#ffffff",
                       color: isActive ? "#ffffff" : "#475569",
-                      padding: "6px 14px",
+                      padding: count !== undefined ? "5px 10px 5px 14px" : "6px 14px",
                       borderRadius: "50px",
                       fontSize: "0.825rem",
                       fontWeight: isActive ? 600 : 500,
@@ -2161,16 +2279,48 @@ const ManageUsers = () => {
                         : "0 1px 2px rgba(0,0,0,0.03)",
                       display: "inline-flex",
                       alignItems: "center",
+                      gap: "7px",
                     }}
                   >
-                    {pill.label}
+                    <span>{pill.label}</span>
+                    {count !== undefined && (
+                      <span
+                        className="badge rounded-pill state-pill-badge"
+                        style={{
+                          fontSize: "0.72rem",
+                          fontWeight: 700,
+                          padding: "2px 7px",
+                          minWidth: "20px",
+                          height: "19px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: isActive
+                            ? "rgba(255, 255, 255, 0.28)"
+                            : (count || 0) > 0
+                              ? "rgba(10, 124, 110, 0.12)"
+                              : "#f1f5f9",
+                          color: isActive
+                            ? "#ffffff"
+                            : (count || 0) > 0
+                              ? "#0A7C6E"
+                              : "#94a3b8",
+                          border: isActive
+                            ? "1px solid rgba(255, 255, 255, 0.45)"
+                            : (count || 0) > 0
+                              ? "1px solid rgba(10, 124, 110, 0.25)"
+                              : "1px solid #e2e8f0",
+                          lineHeight: 1,
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        {count || 0}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
-          </div>
-          <div className="text-muted small fw-semibold pe-2">
-            Total: <strong>{totalItems}</strong> records
           </div>
         </div>
       </div>

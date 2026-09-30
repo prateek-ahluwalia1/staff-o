@@ -50,7 +50,6 @@ const CoverJobs = () => {
     const [loadingIds, setLoadingIds] = useState([]);
     const [removedJobIds, setRemovedJobIds] = useState([]);
     const [selectedStaffId, setSelectedStaffId] = useState("");
-    const [serviceFeeAccepted, setServiceFeeAccepted] = useState(false);
     const [countdown, setCountdown] = useState(30);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
@@ -159,10 +158,9 @@ const CoverJobs = () => {
     };
 
     const openModal = (job) => {
-        // Clear staff selection and fee acknowledgment when opening a new job.
+        // Clear staff selection when opening a new job.
         // If contractor_invoice is 0, we won't show the dropdown at all.
         setSelectedStaffId("");
-        setServiceFeeAccepted(false);
         let documents = [];
         try {
             if (job.document_list) {
@@ -174,7 +172,6 @@ const CoverJobs = () => {
     };
     const closeModal = () => {
         setSelectedStaffId("");
-        setServiceFeeAccepted(false);
         setSelectedJob(null);
     };
 
@@ -184,10 +181,6 @@ const CoverJobs = () => {
     };
 
     const handleAcceptJob = async (jobId) => {
-        if (userRole === 'contractor' && !serviceFeeAccepted) {
-            toast.warning('Please acknowledge that a 10–15% service fee will be charged before accepting.');
-            return;
-        }
         setLoadingIds(prev => [...prev, jobId]);
         try {
             // Only include guard_id if contractor_invoice !== 0 and a staff is selected
@@ -729,55 +722,11 @@ const CoverJobs = () => {
                                 </div>
                             )}
 
-                            {/* Service fee notice & required acceptance for contractors */}
-                            {userRole === 'contractor' && (
-                                <div
-                                    className="w-100 p-3 rounded-3 d-flex align-items-start gap-2"
-                                    style={{
-                                        backgroundColor: '#fffbeb',
-                                        border: '1.5px solid #f59e0b',
-                                        borderRadius: '12px',
-                                        boxShadow: '0 2px 6px rgba(217, 119, 6, 0.08)',
-                                    }}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        className="form-check-input mt-1 flex-shrink-0"
-                                        id="coverJobServiceFeeCheckbox"
-                                        checked={serviceFeeAccepted}
-                                        onChange={(e) => setServiceFeeAccepted(e.target.checked)}
-                                        style={{
-                                            cursor: 'pointer',
-                                            width: '18px',
-                                            height: '18px',
-                                            accentColor: '#d97706',
-                                        }}
-                                    />
-                                    <label
-                                        htmlFor="coverJobServiceFeeCheckbox"
-                                        className="form-check-label user-select-none mb-0"
-                                        style={{
-                                            color: '#b45309',
-                                            fontSize: '13.5px',
-                                            fontWeight: 600,
-                                            cursor: 'pointer',
-                                            lineHeight: '1.45',
-                                        }}
-                                    >
-                                        <i className="fa-solid fa-triangle-exclamation me-1.5" style={{ color: '#d97706' }}></i>
-                                        Please note: There will be a 10–15% service fee charged on the total amount.
-                                    </label>
-                                </div>
-                            )}
-
                             <div className="d-flex gap-2 ms-auto">
                                 <button
                                     className="btn accept-btn text-white rounded-pill px-4 fw-semibold shadow-sm"
                                     onClick={() => handleAcceptJob(selectedJob.id)}
-                                    disabled={
-                                        loadingIds.includes(selectedJob.id) ||
-                                        (userRole === 'contractor' && !serviceFeeAccepted)
-                                    }
+                                    disabled={loadingIds.includes(selectedJob.id)}
                                 >
                                     {loadingIds.includes(selectedJob.id) ? (
                                         <span className="spinner-border spinner-border-sm me-2" role="status"></span>

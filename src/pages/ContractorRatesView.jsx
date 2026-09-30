@@ -196,13 +196,25 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
     if (!requestsData) return [];
     const arr = requestsData?.data ?? requestsData;
     const reqs = Array.isArray(arr) ? arr : [];
-    if (!targetContractorId) return reqs;
-    return reqs.filter(r => 
+    const filtered = !targetContractorId ? reqs : reqs.filter(r => 
       String(r.user_id) === String(targetContractorId) || 
       String(r.contractor_id) === String(targetContractorId) ||
       String(r.user?.id) === String(targetContractorId) ||
       (!r.user_id && !r.contractor_id)
     );
+    return [...filtered].sort((a, b) => {
+      const timeA = Math.max(
+        new Date(a.reviewed_at || 0).getTime(),
+        new Date(a.updated_at || 0).getTime(),
+        new Date(a.created_at || 0).getTime()
+      );
+      const timeB = Math.max(
+        new Date(b.reviewed_at || 0).getTime(),
+        new Date(b.updated_at || 0).getTime(),
+        new Date(b.created_at || 0).getTime()
+      );
+      return timeB - timeA;
+    });
   }, [requestsData, targetContractorId]);
 
   const rows = useMemo(() => {
@@ -1311,7 +1323,7 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
                 <thead>
                   <tr>
                     <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>State</th>
-                    <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Submitted</th>
+                    <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Date</th>
                     <th className="text-muted small text-uppercase" style={{ letterSpacing: "0.5px" }}>Admin Note</th>
                     <th className="text-muted small text-uppercase text-center" style={{ letterSpacing: "0.5px", width: "115px" }}>Action</th>
                     <th className="text-muted small text-uppercase text-center" style={{ letterSpacing: "0.5px", width: "115px" }}>Status</th>
@@ -1323,6 +1335,7 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
                     const isApproved = statusLower === "approved";
                     const isRejected = statusLower === "rejected";
                     const isDraft = req.is_submitted === 0 || req.is_submitted === "0";
+                    const primaryDate = req.reviewed_at || req.updated_at || req.created_at;
 
                     return (
                       <tr key={req.id} style={{ borderBottom: "1px solid var(--line-soft)" }}>
@@ -1330,7 +1343,14 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
                           <div className="fw-bold text-dark">{getStateLabel(req.state)}</div>
                         </td>
                         <td className="text-muted small py-3">
-                          {req.created_at ? new Date(req.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                          <div className="fw-semibold text-dark">
+                            {primaryDate ? new Date(primaryDate).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                          </div>
+                          {req.created_at && primaryDate && new Date(req.created_at).toDateString() !== new Date(primaryDate).toDateString() && (
+                            <div style={{ fontSize: "11px", color: "#94a3b8" }}>
+                              Sub: {new Date(req.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
+                            </div>
+                          )}
                         </td>
                         <td className="text-muted small py-3" style={{ maxWidth: "250px" }}>
                           {req.review_note ? (

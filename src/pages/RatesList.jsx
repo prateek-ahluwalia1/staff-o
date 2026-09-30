@@ -275,10 +275,23 @@ const RatesList = ({ forcedType } = {}) => {
     if (!requestsData) return [];
     const arr = requestsData?.data ?? requestsData;
     const reqs = Array.isArray(arr) ? arr : [];
-    if (requestTab === "pending") {
-      return reqs.filter((r) => r.is_submitted !== 0 && r.is_submitted !== "0");
-    }
-    return reqs;
+    const filtered = requestTab === "pending"
+      ? reqs.filter((r) => r.is_submitted !== 0 && r.is_submitted !== "0")
+      : reqs;
+
+    return [...filtered].sort((a, b) => {
+      const timeA = Math.max(
+        new Date(a.reviewed_at || 0).getTime(),
+        new Date(a.updated_at || 0).getTime(),
+        new Date(a.created_at || 0).getTime()
+      );
+      const timeB = Math.max(
+        new Date(b.reviewed_at || 0).getTime(),
+        new Date(b.updated_at || 0).getTime(),
+        new Date(b.created_at || 0).getTime()
+      );
+      return timeB - timeA;
+    });
   }, [requestsData, requestTab]);
 
   const groupedRequests = useMemo(() => {
@@ -286,12 +299,37 @@ const RatesList = ({ forcedType } = {}) => {
     rateRequests.forEach((req) => {
       const partnerName = req.user?.name || req.contractor_name || "Resource Partner";
       const partnerCompany = req.user?.contractor?.company_name || req.company_name || "";
-      const key = `${partnerName}__${partnerCompany}`;
+      const partnerId = req.user_id || req.contractor_id || req.user?.id;
+      const key = partnerId
+        ? `id_${partnerId}`
+        : `${partnerName.trim().toLowerCase()}__${partnerCompany.trim().toLowerCase()}`;
+
       if (!groups[key]) {
         groups[key] = { partnerName, partnerCompany, requests: [], key };
+      } else {
+        if (!groups[key].partnerCompany && partnerCompany) {
+          groups[key].partnerCompany = partnerCompany;
+        }
       }
       groups[key].requests.push(req);
     });
+
+    Object.values(groups).forEach((g) => {
+      g.requests.sort((a, b) => {
+        const timeA = Math.max(
+          new Date(a.reviewed_at || 0).getTime(),
+          new Date(a.updated_at || 0).getTime(),
+          new Date(a.created_at || 0).getTime()
+        );
+        const timeB = Math.max(
+          new Date(b.reviewed_at || 0).getTime(),
+          new Date(b.updated_at || 0).getTime(),
+          new Date(b.created_at || 0).getTime()
+        );
+        return timeB - timeA;
+      });
+    });
+
     return Object.values(groups);
   }, [rateRequests]);
 
@@ -1253,13 +1291,17 @@ const RatesList = ({ forcedType } = {}) => {
                   letterSpacing: "0.6px", color: "#94a3b8",
                 }}>
                   <span>Title / State</span>
-                  <span>Submitted</span>
+                  <span>{requestTab === "approved" ? "Approved Date" : requestTab === "rejected" ? "Rejected Date" : "Date"}</span>
                   <span>Status</span>
                   <span style={{ textAlign: "center" }}>Actions</span>
                 </div>
 
                 {selectedPartner.requests.map((req) => {
                   const isApproved = req.status === "approved";
+                  const primaryDate =
+                    requestTab === "approved"
+                      ? (req.reviewed_at || req.updated_at || req.created_at)
+                      : (req.updated_at || req.reviewed_at || req.created_at);
 
                   return (
                     <div
@@ -1285,11 +1327,18 @@ const RatesList = ({ forcedType } = {}) => {
                         <small className="text-muted">{STATE_NAME_MAP[req.state] || req.state || ""}</small>
                       </div>
 
-                      {/* Submitted */}
+                      {/* Date */}
                       <div className="text-muted" style={{ fontSize: "12.5px" }}>
-                        {req.created_at
-                          ? new Date(req.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })
-                          : "—"}
+                        <div className="fw-semibold text-dark">
+                          {primaryDate
+                            ? new Date(primaryDate).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })
+                            : "—"}
+                        </div>
+                        {req.created_at && primaryDate && new Date(req.created_at).toDateString() !== new Date(primaryDate).toDateString() && (
+                          <div style={{ fontSize: "11px", color: "#94a3b8" }}>
+                            Sub: {new Date(req.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
+                          </div>
+                        )}
                       </div>
 
                       {/* Status badge */}

@@ -6357,9 +6357,9 @@ public function releaseContractorPayout($rosterId)
     //     return response()->json(['success' => false, 'message' => 'Resource partner has no connected Stripe account.'], 200);
     // }
 
-    $invoiceMeta = json_decode($roster->invoice_meta ?? '{}', true);
+    $invoiceMeta = json_decode($roster->payout_invoice ?? '{}', true);
 
-    if (empty($invoiceMeta['net_taxable'])) {
+    if (empty($invoiceMeta['gross_subtotal'])) {
         return response()->json(['success' => false, 'message' => 'Original invoice breakdown not found on roster.'], 200);
     }
 
@@ -6380,7 +6380,7 @@ public function releaseContractorPayout($rosterId)
 
         // 2. Calculate the platform fee, applied to the net taxable amount
         //    from the original client invoice (chargeable basis)
-        $chargeableBasis = (float) $invoiceMeta['net_taxable'];
+        $chargeableBasis = (float) $invoiceMeta['gross_subtotal'];
         $feeRatePercent  = 10.0;
         $gstPercent      = 10.0;
 

@@ -65,8 +65,46 @@ export default function Induction() {
     const historyRows = getHistoryRows(historyResponse);
 
     const [historyPage, setHistoryPage] = useState(1);
-    const [historyTotalPages, setHistoryTotalPages] = useState(1);
     const historyPerPage = 10;
+
+    const serverTotalPages = useMemo(() => {
+        const lastPage = historyResponse?.pagination?.last_page ||
+            historyResponse?.data?.pagination?.last_page ||
+            historyResponse?.meta?.last_page ||
+            historyResponse?.data?.meta?.last_page ||
+            historyResponse?.data?.last_page ||
+            historyResponse?.last_page;
+        if (lastPage) return Number(lastPage) || 1;
+        const total = historyResponse?.pagination?.total ||
+            historyResponse?.data?.pagination?.total ||
+            historyResponse?.meta?.total ||
+            historyResponse?.data?.meta?.total ||
+            historyResponse?.data?.total ||
+            historyResponse?.total;
+        if (total && typeof total === "number") {
+            return Math.ceil(total / historyPerPage) || 1;
+        }
+        return 0;
+    }, [historyResponse, historyPerPage]);
+
+    const isServerPaginated = useMemo(() => {
+        return serverTotalPages > 0 && historyRows.length <= historyPerPage;
+    }, [serverTotalPages, historyRows.length, historyPerPage]);
+
+    const historyTotalPages = useMemo(() => {
+        if (isServerPaginated) {
+            return serverTotalPages || 1;
+        }
+        return Math.ceil((historyRows?.length || 0) / historyPerPage) || 1;
+    }, [isServerPaginated, serverTotalPages, historyRows, historyPerPage]);
+
+    const displayedHistoryRows = useMemo(() => {
+        if (isServerPaginated) {
+            return historyRows;
+        }
+        const start = (historyPage - 1) * historyPerPage;
+        return historyRows.slice(start, start + historyPerPage);
+    }, [isServerPaginated, historyRows, historyPage, historyPerPage]);
 
     const [activeModal, setActiveModal] = useState(null);
     const [selectedInduction, setSelectedInduction] = useState(null);
@@ -108,12 +146,18 @@ export default function Induction() {
     };
 
     useEffect(() => {
-        if (historyResponse) {
-            const meta = historyResponse?.data?.meta || historyResponse?.meta || {};
-            const lastPage = meta?.last_page || historyResponse?.data?.last_page || 1;
-            setHistoryTotalPages(Number(lastPage));
+        if (historyPage > historyTotalPages && historyTotalPages > 0) {
+            setHistoryPage(historyTotalPages);
         }
-    }, [historyResponse]);
+    }, [historyPage, historyTotalPages]);
+
+    const handleHistoryPageChange = (newPage) => {
+        if (newPage < 1 || newPage > historyTotalPages) return;
+        setHistoryPage(newPage);
+        if (isServerPaginated && selectedInduction?.id) {
+            fetchHistory(selectedInduction.id, newPage);
+        }
+    };
 
     const fetchHistory = (inductionId, page = 1) => {
         refetchHistory(`api/induction-history/${inductionId}?page=${page}&per_page=${historyPerPage}`);
@@ -324,7 +368,7 @@ export default function Induction() {
                                         <tr><th>STAFF NAME</th><th>DATE</th><th>STATUS</th><th>ACTION</th></tr>
                                     </thead>
                                     <tbody>
-                                        {historyRows.map((record, index) => {
+                                        {displayedHistoryRows.map((record, index) => {
                                             const name = record?.name || record?.staff_name || record?.user_name || record?.guard_name || "Unknown";
                                             const date = record?.date || record?.created_at || record?.updated_at || record?.completed_at || "-";
                                             const isRead = Number(record?.read_status) === 1;
@@ -360,8 +404,22 @@ export default function Induction() {
                             <div className="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
                                 <span className="text-muted small">Page {historyPage} of {historyTotalPages}</span>
                                 <div className="d-flex gap-2">
-                                    <button className="btn btn-sm btn-outline-secondary" disabled={historyPage <= 1 || historyLoading} onClick={() => { const newPage = historyPage - 1; setHistoryPage(newPage); fetchHistory(selectedInduction.id, newPage); }}>Previous</button>
-                                    <button className="btn btn-sm btn-outline-secondary" disabled={historyPage >= historyTotalPages || historyLoading} onClick={() => { const newPage = historyPage + 1; setHistoryPage(newPage); fetchHistory(selectedInduction.id, newPage); }}>Next</button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-sm btn-outline-secondary"
+                                        disabled={historyPage <= 1 || historyLoading}
+                                        onClick={() => handleHistoryPageChange(historyPage - 1)}
+                                    >
+                                        Previous
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-sm btn-outline-secondary"
+                                        disabled={historyPage >= historyTotalPages || historyLoading}
+                                        onClick={() => handleHistoryPageChange(historyPage + 1)}
+                                    >
+                                        Next
+                                    </button>
                                 </div>
                             </div>
                         </>

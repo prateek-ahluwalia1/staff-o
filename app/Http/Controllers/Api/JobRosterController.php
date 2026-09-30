@@ -6389,7 +6389,7 @@ public function releaseContractorPayout($rosterId)
         // $gstAmount        = round($feeAmount * ($gstPercent / 100), 2);
         $gstAmount        = 0;
         $totalFeeDeducted = round($feeAmount + $gstAmount, 2);
-        $netPayout        = round($chargeableBasis - $totalFeeDeducted, 2);
+        $netPayout        = round($chargeableBasis + $totalFeeDeducted, 2);
 
         if ($netPayout <= 0) {
             Log::error('Calculated net payout is zero or negative', [

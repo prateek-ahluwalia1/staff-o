@@ -63,7 +63,7 @@ class PlatformFeeInvoiceService
         $netPayout     = '$' . $netPayoutPlain;
 
         $settlementSummary = "Gross transaction proceeds (\${$grossCaptured} incl. GST) captured via Stripe. "
-            . "Staffoo platform service fee (\${$totalFeePlain} incl. GST) deducted at source. "
+            . "Staffoo platform service fee (0) deducted at source. "
             . "Net balance of \${$netPayoutPlain} remitted to your bank account via Stripe Connect.";
 
         $css = '

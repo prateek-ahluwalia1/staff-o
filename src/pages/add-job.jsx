@@ -34,9 +34,6 @@ const calculateJobLevel = (title) => {
   return 1;
 };
 
-// Scoped styles for the wizard shell (hero header + floating client card).
-// Uses the same navy/teal design tokens as the rest of the app; !important
-// guards against any conflicting global utility classes.
 const AddJobHeroStyles = () => (
   <style>{`
     :root {

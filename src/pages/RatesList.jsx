@@ -30,6 +30,73 @@ const CONTRACTOR_STATES = [
   { value: "nt", label: "Northern Territory (NT)" },
 ];
 
+const CHARGE_STATES = [
+  { value: "NSW", label: "New South Wales (NSW)" },
+  { value: "VIC", label: "Victoria (VIC)" },
+  { value: "QLD", label: "Queensland (QLD)" },
+  { value: "WA", label: "Western Australia (WA)" },
+  { value: "SA", label: "South Australia (SA)" },
+  { value: "TAS", label: "Tasmania (TAS)" },
+  { value: "ACT", label: "Australian Capital Territory (ACT)" },
+  { value: "NT", label: "Northern Territory (NT)" },
+];
+
+const JOB_LEVEL_OPTIONS = [
+  { value: "1", label: "Level 1" },
+  { value: "2", label: "Level 2" },
+  { value: "3", label: "Level 3" },
+  { value: "4", label: "Level 4" },
+  { value: "5", label: "Level 5" },
+];
+
+const JOB_LEVEL_DEFINITIONS = {
+  1: {
+    level: "1",
+    label: "Level 1",
+    title: "Level 1 Charge Rate",
+    roles: [
+      "Crowd Controller",
+      "Static Security Officer",
+      "Patrol Staff",
+    ],
+  },
+  2: {
+    level: "2",
+    label: "Level 2",
+    title: "Level 2 Charge Rate",
+    roles: [
+      "Security Officer - Monitoring/Control Room",
+    ],
+  },
+  3: {
+    level: "3",
+    label: "Level 3",
+    title: "Level 3 Charge Rate",
+    roles: [
+      "Control Room Operator",
+      "Event/Venue Supervisor",
+    ],
+  },
+  4: {
+    level: "4",
+    label: "Level 4",
+    title: "Level 4 Charge Rate",
+    roles: [
+      "Senior Security Supervisor / Shift Supervisor",
+    ],
+  },
+  5: {
+    level: "5",
+    label: "Level 5",
+    title: "Level 5 Charge Rate",
+    roles: [
+      "Security Operations Manager",
+      "Regional Contract Manager",
+      "Compliance Auditor",
+    ],
+  },
+};
+
 const STATE_NAME_MAP = {
   NSW: "New South Wales",
   VIC: "Victoria",
@@ -165,6 +232,7 @@ const RatesList = ({ forcedType } = {}) => {
 
   // State for modals
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isViewMode, setIsViewMode] = useState(false);
 
   // Rate request review state
   const [reviewRequest, setReviewRequest] = useState(null); // { request, mode: "view"|"reject" }
@@ -321,9 +389,10 @@ const RatesList = ({ forcedType } = {}) => {
     }));
   }, []);
 
-  // Open edit modal
+  // Open edit modal (or view modal)
   const handleEditOpen = useCallback(
-    (rateObj) => {
+    (rateObj, viewOnly = false) => {
+      setIsViewMode(viewOnly);
       const cleanRate = { ...rateObj };
 
       const existingUserId = cleanRate.user_id;
@@ -347,25 +416,89 @@ const RatesList = ({ forcedType } = {}) => {
         }
       }
 
+      if (isCharge || isPayRate) {
+        const lvlNum = String(cleanRate.level || "").replace(/\D/g, "") || "1";
+        cleanRate.level = lvlNum;
+        const rateSuffix = isCharge ? "Charge Rate" : "Pay Rate";
+        if (!cleanRate.title || !cleanRate.title.toLowerCase().includes(rateSuffix.toLowerCase())) {
+          cleanRate.title = `Level ${lvlNum} ${rateSuffix}`;
+        }
+      }
+
       setForm({ ...makeInitialForm(), ...cleanRate });
       setShowEditModal(true);
     },
-    [makeInitialForm, isContractor],
+    [makeInitialForm, isContractor, isCharge, isPayRate],
+  );
+
+  const handleViewOpen = useCallback(
+    (rateObj) => {
+      handleEditOpen(rateObj, true);
+    },
+    [handleEditOpen],
   );
 
   const closeEditModal = () => {
     setShowEditModal(false);
+    setIsViewMode(false);
     setForm(makeInitialForm());
   };
+
+  const handleLevelSelectChange = useCallback(
+    (selectedOption) => {
+      const val = selectedOption ? selectedOption.value : "";
+      const rateSuffix = isCharge ? "Charge Rate" : isPayRate ? "Pay Rate" : "Rate";
+      setForm((s) => ({
+        ...s,
+        level: val,
+        title: (isCharge || isPayRate) && val ? `Level ${val} ${rateSuffix}` : s.title,
+      }));
+    },
+    [isCharge, isPayRate],
+  );
+
+  const selectedChargeStates = useMemo(() => {
+    if (!form.state) return [];
+    const rawList = Array.isArray(form.state)
+      ? form.state
+      : String(form.state)
+          .split(",")
+          .map((s) => s.trim().toUpperCase());
+    return CHARGE_STATES.filter((opt) => rawList.includes(opt.value));
+  }, [form.state]);
+
+  const handleChargeStatesChange = useCallback((selectedOptions) => {
+    const values = selectedOptions ? selectedOptions.map((o) => o.value) : [];
+    setForm((prev) => ({
+      ...prev,
+      state: values.join(", "),
+    }));
+  }, []);
+
+  const currentLevelNum = useMemo(() => {
+    const parsed = String(form.level || "").replace(/\D/g, "");
+    return parsed && JOB_LEVEL_DEFINITIONS[parsed] ? parsed : "1";
+  }, [form.level]);
+
+  const selectedLevelDef = useMemo(() => {
+    return JOB_LEVEL_DEFINITIONS[currentLevelNum] || JOB_LEVEL_DEFINITIONS[1];
+  }, [currentLevelNum]);
 
   // Submit edit (update)
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    if (isViewMode) return;
     const body = { ...form };
     body.customer_id = userdata?.data?.id || userdata?.id || null;
 
     if (body.ot_base_rate !== "") {
       body.ot_base_rate = Number(body.ot_base_rate);
+    }
+
+    if (isCharge || isPayRate) {
+      TIME_KEYS.forEach((t) => {
+        body[`eba_${t}`] = body[`def_${t}`];
+      });
     }
 
     RATE_CATEGORIES.forEach((c) => {
@@ -411,7 +544,11 @@ const RatesList = ({ forcedType } = {}) => {
       ? data
       : [];
 
-  const stateOptions = isContractor ? CONTRACTOR_STATES : ALL_STATES;
+  const stateOptions = isContractor
+    ? CONTRACTOR_STATES
+    : (isCharge || isPayRate)
+      ? CHARGE_STATES
+      : ALL_STATES;
 
   // FIXED: Compare as strings to prevent strict-equality mismatch 
   // (e.g., API string "535" vs contractorOptions integer 535)
@@ -799,7 +936,7 @@ const RatesList = ({ forcedType } = {}) => {
               <thead>
                 <tr>
                   <th>{firstColumn}</th>
-                  <th>Level</th>
+                  <th>{isCharge ? "Level & Included Job Types" : "Level"}</th>
                   <th>State</th>
                   <th className="text-center">Actions</th>
                 </tr>
@@ -810,23 +947,72 @@ const RatesList = ({ forcedType } = {}) => {
                     <td colSpan={4} className="text-center py-5 text-muted">No rates available</td>
                   </tr>
                 )}
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td>
-                      <div className="fw-bold text-dark">{r.title || r.name}</div>
-                      <small className="text-muted">{isCharge ? "Client charge" : "Staff pay"}</small>
-                    </td>
-                    <td className="text-muted">{r.level}</td>
-                    <td>
-                      <span className="badge-premium">{STATE_NAME_MAP[r.state] || r.state}</span>
-                    </td>
-                    <td className="text-center">
-                      <button className="action-btn" onClick={() => handleEditOpen(r)} title="Edit Rate">
-                        <i className="fa fa-edit" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {rows.map((r) => {
+                  const lvlNum = String(r.level || "").replace(/\D/g, "");
+                  const lvlDef = JOB_LEVEL_DEFINITIONS[lvlNum];
+                  const formattedTitle = (isCharge || isPayRate)
+                    ? (r.title && r.title.toLowerCase().includes(isCharge ? "charge rate" : "pay rate")
+                        ? r.title
+                        : lvlNum
+                          ? `Level ${lvlNum} ${isCharge ? "Charge Rate" : "Pay Rate"}`
+                          : r.title || r.name || (isCharge ? "Charge Rate" : "Pay Rate"))
+                    : (r.title || r.name);
+
+                  return (
+                    <tr key={r.id}>
+                      <td>
+                        <div className="fw-bold text-dark">{formattedTitle}</div>
+                        <small className="text-muted">{isCharge ? "Client charge" : "Staff pay"}</small>
+                      </td>
+                      <td>
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                          <span className="badge-premium">
+                            Level {lvlNum || r.level}
+                          </span>
+                        </div>
+                        {isCharge && lvlDef && (
+                          <div className="text-muted small" style={{ fontSize: "0.78rem", maxWidth: "360px", lineHeight: "1.35" }}>
+                            {lvlDef.roles.join(" • ")}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <div className="d-flex flex-wrap gap-1">
+                          {String(r.state || "")
+                            .split(",")
+                            .map((s) => s.trim())
+                            .filter(Boolean)
+                            .map((st, idx) => (
+                              <span key={idx} className="badge-premium">
+                                {STATE_NAME_MAP[st] || STATE_NAME_MAP[st.toUpperCase()] || st}
+                              </span>
+                            ))}
+                          {!r.state && <span className="text-muted">—</span>}
+                        </div>
+                      </td>
+                      <td className="text-center">
+                        <div className="d-flex align-items-center justify-content-center gap-2">
+                          <button
+                            type="button"
+                            className="action-btn"
+                            onClick={() => handleViewOpen(r)}
+                            title="View Rate Details"
+                          >
+                            <i className="fa fa-eye" />
+                          </button>
+                          <button
+                            type="button"
+                            className="action-btn"
+                            onClick={() => handleEditOpen(r, false)}
+                            title="Edit Rate"
+                          >
+                            <i className="fa fa-edit" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -1455,8 +1641,12 @@ const RatesList = ({ forcedType } = {}) => {
             <div className="modal-header-premium d-flex justify-content-between align-items-center px-4 py-3">
               <div>
                 <h5 className="text-white fw-bold mb-0">
-                  <i className="fa fa-pen-to-square me-2 opacity-75"></i>
-                  Edit Rate Details
+                  <i
+                    className={`fa ${isViewMode ? "fa-eye" : "fa-pen-to-square"} me-2 opacity-75`}
+                  ></i>
+                  {isViewMode
+                    ? (isCharge ? "View Charge Rate Details" : isPayRate ? "View Pay Rate Details" : "View Rate Details")
+                    : (isCharge ? "Edit Charge Rate Details" : isPayRate ? "Edit Pay Rate Details" : "Edit Rate Details")}
                 </h5>
               </div>
               <ModalCloseButton onClick={closeEditModal} />
@@ -1483,7 +1673,8 @@ const RatesList = ({ forcedType } = {}) => {
                         value={form.title}
                         onChange={handleFormChange}
                         className="form-control clean-input"
-                        placeholder="Enter role title"
+                        placeholder={isCharge ? "e.g. Level 1 Charge Rate" : isPayRate ? "e.g. Level 1 Pay Rate" : "Enter role title"}
+                        disabled={isViewMode}
                         required
                       />
                     </div>
@@ -1504,6 +1695,7 @@ const RatesList = ({ forcedType } = {}) => {
                             onChange={handleFormChange}
                             className="form-control clean-input"
                             placeholder="Enter base rate"
+                            disabled={isViewMode}
                             required
                           />
                         </div>
@@ -1521,6 +1713,7 @@ const RatesList = ({ forcedType } = {}) => {
                           value={form.position}
                           onChange={handleFormChange}
                           className="form-select clean-input"
+                          disabled={isViewMode}
                         >
                           <option value="full_time">Full Time</option>
                           <option value="casual">Casual</option>
@@ -1539,11 +1732,35 @@ const RatesList = ({ forcedType } = {}) => {
                           options={contractorOptions}
                           value={selectedContractorValue}
                           onChange={handleContractorChange}
+                          isDisabled={isViewMode}
                           styles={selectStyles}
                           className="basic-single-select"
                           classNamePrefix="select"
                           placeholder="Select Resource Partner..."
                           noOptionsMessage={() => "No Resource Partners found"}
+                        />
+                      </div>
+                    ) : (isCharge || isPayRate) ? (
+                      <div className="col-md-4">
+                        <label className="form-label small fw-bold text-muted">
+                          Job Level *
+                        </label>
+                        <Select
+                          name="level"
+                          options={JOB_LEVEL_OPTIONS}
+                          value={
+                            JOB_LEVEL_OPTIONS.find(
+                              (opt) =>
+                                String(opt.value) ===
+                                String(form.level).replace(/\D/g, ""),
+                            ) || null
+                          }
+                          onChange={handleLevelSelectChange}
+                          isDisabled={isViewMode}
+                          styles={selectStyles}
+                          className="basic-single-select"
+                          classNamePrefix="select"
+                          placeholder="Select Job Level (1–5)..."
                         />
                       </div>
                     ) : (
@@ -1557,45 +1774,110 @@ const RatesList = ({ forcedType } = {}) => {
                           onChange={handleFormChange}
                           className="form-control clean-input"
                           placeholder="Enter job level"
+                          disabled={isViewMode}
                         />
                       </div>
                     )}
 
-                    {/* State dropdown */}
-                    <div className="col-md-4">
-                      <label className="form-label small fw-bold text-muted">
-                        Location State
-                      </label>
-                      <select
-                        id="state"
-                        value={form.state}
-                        onChange={handleFormChange}
-                        className="form-select clean-input"
-                        required
-                      >
-                        {stateOptions.map((s) => (
-                          <option key={s.value} value={s.value} disabled={s.disabled}>
-                            {s.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    {/* State dropdown / Multi-select for Charge Rates and Pay Rates */}
+                    {(isCharge || isPayRate) ? (
+                      <div className="col-md-4">
+                        <label className="form-label small fw-bold text-muted">
+                          Location State * (Multi-Select)
+                        </label>
+                        <Select
+                          isMulti
+                          name="state"
+                          options={CHARGE_STATES}
+                          value={selectedChargeStates}
+                          onChange={handleChargeStatesChange}
+                          isDisabled={isViewMode}
+                          styles={selectStyles}
+                          className="basic-multi-select"
+                          classNamePrefix="select"
+                          placeholder="Select states..."
+                        />
+                      </div>
+                    ) : (
+                      <div className="col-md-4">
+                        <label className="form-label small fw-bold text-muted">
+                          Location State
+                        </label>
+                        <select
+                          id="state"
+                          value={form.state}
+                          onChange={handleFormChange}
+                          className="form-select clean-input"
+                          disabled={isViewMode}
+                          required
+                        >
+                          {stateOptions.map((s) => (
+                            <option key={s.value} value={s.value} disabled={s.disabled}>
+                              {s.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Included Roles for Job Level in Charge Mode */}
+                    {isCharge && (
+                      <div className="col-12 mt-3">
+                        <div className="p-3 rounded-3 bg-light border">
+                          <div className="d-flex align-items-center justify-content-between mb-2">
+                            <span className="fw-bold small text-dark">
+                              <i
+                                className="fa fa-layer-group me-2"
+                                style={{ color: "#0A7C6E" }}
+                              ></i>
+                              Roles included in Level {currentLevelNum} (selected during Job Post to calculate level):
+                            </span>
+                            <span
+                              className="badge fw-semibold"
+                              style={{
+                                fontSize: "0.75rem",
+                                background: "rgba(10,124,110,0.1)",
+                                color: "#0A7C6E",
+                                border: "1px solid rgba(10,124,110,0.25)",
+                              }}
+                            >
+                              Level {currentLevelNum}
+                            </span>
+                          </div>
+                          <div className="d-flex flex-wrap gap-2">
+                            {(selectedLevelDef?.roles || []).map((role, idx) => (
+                              <span
+                                key={idx}
+                                className="badge bg-white text-dark border px-2 py-1 fw-normal"
+                                style={{ fontSize: "0.8rem" }}
+                              >
+                                <i className="fa fa-check text-success me-1"></i> {role}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Rates Matrices */}
                 <div className="row g-4">
-                  {RATE_CATEGORIES.map((cat) => (
-                    <div className="col-xl-6" key={cat}>
+                  {((isCharge || isPayRate) ? ["def"] : RATE_CATEGORIES).map((cat) => (
+                    <div className={(isCharge || isPayRate) ? "col-12" : "col-xl-6"} key={cat}>
                       <div className="bg-white rounded-3 p-4 shadow-sm border h-100">
                         <h6 className="fw-bold text-dark mb-4 pb-2 border-bottom text-capitalize">
                           <i
                             className={`fa ${cat === "def" ? "fa-clock" : "fa-briefcase"} me-2`}
                             style={{ color: "#0A7C6E" }}
                           ></i>
-                          {cat === "def"
-                            ? "Resource Partner Rates"
-                            : "EBA Agreement Rates"}
+                          {isCharge
+                            ? "Charge Rates"
+                            : isPayRate
+                              ? "Pay Rates"
+                              : cat === "def"
+                                ? "Resource Partner Rates"
+                                : "EBA Agreement Rates"}
                         </h6>
                         <div
                           className="d-none d-md-grid mb-3"
@@ -1642,6 +1924,7 @@ const RatesList = ({ forcedType } = {}) => {
                                     onChange={handleFormChange}
                                     className="form-control clean-input"
                                     placeholder="Metro"
+                                    disabled={isViewMode}
                                   />
                                 </div>
                               </div>
@@ -1658,6 +1941,7 @@ const RatesList = ({ forcedType } = {}) => {
                                     onChange={handleFormChange}
                                     className="form-control clean-input"
                                     placeholder="Regional"
+                                    disabled={isViewMode}
                                   />
                                 </div>
                               </div>
@@ -1673,25 +1957,28 @@ const RatesList = ({ forcedType } = {}) => {
 
             <div className="bg-white border-top px-4 py-3 d-flex justify-content-end gap-2">
               <button
+                type="button"
                 className="btn btn-light px-5 rounded-pill fw-bold border"
                 onClick={closeEditModal}
               >
                 Close
               </button>
-              <button
-                type="submit"
-                form="rateForm"
-                className="btn btn-primary-custom px-5 rounded-pill fw-bold shadow"
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <span>
-                    <i className="fa fa-spinner fa-spin me-2"></i>Saving...
-                  </span>
-                ) : (
-                  "Save Changes"
-                )}
-              </button>
+              {!isViewMode && (
+                <button
+                  type="submit"
+                  form="rateForm"
+                  className="btn btn-primary-custom px-5 rounded-pill fw-bold shadow"
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <span>
+                      <i className="fa fa-spinner fa-spin me-2"></i>Saving...
+                    </span>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

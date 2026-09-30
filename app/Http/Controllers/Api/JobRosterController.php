@@ -4985,7 +4985,8 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
             continue;
         }
  
-        $bucketRate = (float) $rate->{$group['rateColumn']};
+        // $bucketRate = (float) $rate->{$group['rateColumn']};
+        $bucketRate = (float) $rate->{$group['rateColumn']} * 1.10;
         $lineAmount = $groupHours * $bucketRate;
  
         $grossSubtotal += $lineAmount;

@@ -6358,7 +6358,7 @@ public function releaseContractorPayout($rosterId)
     //     return response()->json(['success' => false, 'message' => 'Resource partner has no connected Stripe account.'], 200);
     // }
 
-    $invoiceMeta = json_decode($roster->payout_invoice ?? '{}', true);
+    $invoiceMeta = json_decode($roster->invoice_payout ?? '{}', true);
 
     if (empty($invoiceMeta['gross_subtotal'])) {
         return response()->json(['success' => false, 'message' => 'Original invoice breakdown not found on roster.'], 200);

@@ -52,7 +52,8 @@ class PlatformFeeInvoiceService
 
         $chargeableBasis  = '$' . number_format((float) $d['chargeable_basis'], 2);
         $feeRatePercent   = number_format((float) $d['fee_rate_percent'], 1);
-        $feeAmount        = '$' . number_format((float) $d['fee_amount'], 2);
+        // $feeAmount        = '$' . number_format((float) $d['fee_amount'], 2);
+        $feeAmount        = '$' . 0;
         $gstPercent       = (float) ($d['gst_percent'] ?? 10);
         $gstAmount        = '$' . number_format((float) $d['gst_amount'], 2);
         $totalFeeDeducted = '$' . number_format((float) $d['total_fee_deducted'], 2);
@@ -116,7 +117,7 @@ class PlatformFeeInvoiceService
 
         // Header
         $html .= "<div class='header'><table><tr>";
-        $html .= "<td><div class='brand'>STAFFOO</div><div class='doc-subtitle'>PLATFORM SERVICE FEE TAX INVOICE</div></td>";
+        $html .= "<td><div class='brand'>STAFFOO</div><div class='doc-subtitle'>Staffoo Remittance</div></td>";
         $html .= "<td><div class='inv-number'>INVOICE #{$feeInvoiceNumber}</div><div class='inv-date'>Date: {$date}</div></td>";
         $html .= "</tr></table></div>";
         $html .= "<div class='accent-line'></div>";
@@ -131,7 +132,7 @@ class PlatformFeeInvoiceService
         $html .= "<div class='party-line'>Tarneit VIC 3029, Australia</div>";
         $html .= "</td>";
         $html .= "<td>";
-        $html .= "<div class='party-label'>BILLED TO (RESOURCE PARTNER)</div>";
+        $html .= "<div class='party-label'>REMITTANCE TO (RESOURCE PARTNER)</div>";
         $html .= "<div class='party-name'>{$contractorName}</div>";
         $html .= "<div class='party-line'>ABN: {$contractorAbn}</div>";
         $html .= "<div class='party-line'>Attn: {$contractorAttn}</div>";
@@ -152,7 +153,7 @@ class PlatformFeeInvoiceService
         $html .= "<div class='item-sub'>Client Booking: {$bookingLabel} | {$serviceLabel}</div></td>";
         $html .= "<td style='text-align:center;'>#{$jobRef}</td>";
         $html .= "<td style='text-align:right;'>{$chargeableBasis}</td>";
-        $html .= "<td style='text-align:right;'>{$feeRatePercent}%</td>";
+        $html .= "<td style='text-align:right;'>0%</td>";
         $html .= "<td style='text-align:right;'>{$feeAmount}</td>";
         $html .= "</tr>";
         $html .= "</tbody></table></div>";

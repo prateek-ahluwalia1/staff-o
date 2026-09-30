@@ -1611,7 +1611,7 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
                         Contractor Rate Acknowledgement &amp; Declaration
                       </h6>
                       <p>
-                        I, the undersigned authorized representative, hereby submit and acknowledge the proposed charge rates detailed below. I understand and agree that upon review and approval by Staffoo Admin, these acknowledged rates will take effect on my account. No post-approval signature email will be needed.
+                        I, the undersigned authorized representative, hereby submit and acknowledge the proposed charge rates detailed below. I understand and agree that upon review and approval by Staffoo Admin, these acknowledged rates will take effect on my account.
                       </p>
                     </div>
 

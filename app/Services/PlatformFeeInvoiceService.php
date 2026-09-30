@@ -159,7 +159,7 @@ class PlatformFeeInvoiceService
 
         // Totals
         $html .= "<div class='totals-wrap'><table class='tt'>";
-        $html .= "<tr><td class='lbl'>GST</td><td class='amt'>{$feeAmount}</td></tr>";
+        // $html .= "<tr><td class='lbl'>GST</td><td class='amt'>{$feeAmount}</td></tr>";
         // $html .= "<tr><td class='lbl'>GST ({$gstPercent}%)</td><td class='amt'>{$gstAmount}</td></tr>";
         $html .= "<tr class='grand'><td class='lbl'>GST</td><td class='amt'>{$feeAmount}</td></tr>";
         $html .= "<tr class='payout-row'><td class='lbl'>Net Payout Remitted to Partner</td><td class='amt'>{$netPayout}</td></tr>";

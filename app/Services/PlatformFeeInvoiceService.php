@@ -55,7 +55,8 @@ class PlatformFeeInvoiceService
         // $feeAmount        = '$' . number_format((float) $d['fee_amount'], 2);
         $feeAmount        = '$' . 0;
         $gstPercent       = (float) ($d['gst_percent'] ?? 10);
-        $gstAmount        = '$' . number_format((float) $d['gst_amount'], 2);
+        // $gstAmount        = '$' . number_format((float) $d['gst_amount'], 2);
+        $gstAmount        = '$' . 0;
         $totalFeeDeducted = '$' . number_format((float) $d['total_fee_deducted'], 2);
 
         $grossCaptured = number_format((float) $d['gross_captured'], 2);
@@ -162,7 +163,7 @@ class PlatformFeeInvoiceService
         $html .= "<div class='totals-wrap'><table class='tt'>";
         $html .= "<tr><td class='lbl'>Platform Fee (ex. GST)</td><td class='amt'>{$feeAmount}</td></tr>";
         $html .= "<tr><td class='lbl'>GST ({$gstPercent}%)</td><td class='amt'>{$gstAmount}</td></tr>";
-        $html .= "<tr class='grand'><td class='lbl'>Total Fee Deducted (incl. GST)</td><td class='amt'>{$totalFeeDeducted}</td></tr>";
+        // $html .= "<tr class='grand'><td class='lbl'>Total Fee Deducted (incl. GST)</td><td class='amt'>{$totalFeeDeducted}</td></tr>";
         $html .= "<tr class='payout-row'><td class='lbl'>Net Payout Remitted to Partner</td><td class='amt'>{$netPayout}</td></tr>";
         $html .= "</table></div>";
 

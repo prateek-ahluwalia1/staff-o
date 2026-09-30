@@ -6124,7 +6124,8 @@ public function releaseContractorPayout($rosterId)
 
         $feeAmount        = round($chargeableBasis * ($feeRatePercent / 100), 2);
         $gstAmount        = round($feeAmount * ($gstPercent / 100), 2);
-        $totalFeeDeducted = round($feeAmount + $gstAmount, 2);
+        // $totalFeeDeducted = round($feeAmount + $gstAmount, 2);
+        $totalFeeDeducted = 0;
         $netPayout        = round($grossCaptured - $totalFeeDeducted, 2);
 
         if ($netPayout <= 0) {

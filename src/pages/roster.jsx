@@ -124,14 +124,44 @@ const parseStateJobStats = (raw) => {
     });
   }
 
-  const allSummary = allData ? {
+  let allSummary = allData ? {
     todayJobs: Number(allData.today?.jobs ?? 0),
     todayUncovered: Number(allData.today?.uncovered ?? 0),
+    todayCovered: Number(allData.today?.covered ?? 0),
     weekJobs: Number(allData.week?.jobs ?? 0),
     weekUncovered: Number(allData.week?.uncovered ?? 0),
+    weekCovered: Number(allData.week?.covered ?? 0),
     totalJobs: Number(allData.total?.jobs ?? 0),
     totalUncovered: Number(allData.total?.uncovered ?? 0),
+    totalCovered: Number(allData.total?.covered ?? 0),
   } : null;
+
+  if (!allSummary && Object.keys(statesMap).length > 0) {
+    allSummary = Object.values(statesMap).reduce(
+      (acc, s) => ({
+        todayJobs: acc.todayJobs + (s.todayJobs || 0),
+        todayUncovered: acc.todayUncovered + (s.todayUncovered || 0),
+        todayCovered: acc.todayCovered + (s.todayCovered || 0),
+        weekJobs: acc.weekJobs + (s.weekJobs || 0),
+        weekUncovered: acc.weekUncovered + (s.weekUncovered || 0),
+        weekCovered: acc.weekCovered + (s.weekCovered || 0),
+        totalJobs: acc.totalJobs + (s.totalJobs || 0),
+        totalUncovered: acc.totalUncovered + (s.totalUncovered || 0),
+        totalCovered: acc.totalCovered + (s.totalCovered || 0),
+      }),
+      {
+        todayJobs: 0,
+        todayUncovered: 0,
+        todayCovered: 0,
+        weekJobs: 0,
+        weekUncovered: 0,
+        weekCovered: 0,
+        totalJobs: 0,
+        totalUncovered: 0,
+        totalCovered: 0,
+      }
+    );
+  }
 
   return { states: statesMap, all: allSummary };
 };
@@ -287,7 +317,6 @@ export default function RosterPage() {
 
   const stateStats = useMemo(() => parseStateJobStats(countData), [countData]);
   const stateStatsMap = stateStats.states;
-  const allStats = stateStats.all;
 
   const { submit, loading: submitLoading, data: submitData } = useSubmit({ isAuth: true });
   const { submit: saveUserAssignment, loading: saveLoading } = useSubmit({ isAuth: true });
@@ -663,48 +692,10 @@ export default function RosterPage() {
     return (
       <div className="staffoo-page-container">
         <div className="staffoo-header-card">
-          <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
-            <div>
-              <h2>Roster Operations</h2>
-              <p style={{ textTransform: "none", marginBottom: 0 }}>
-                Select a region below to manage sites, rosters, and shift assignments.
-              </p>
-              {allStats && (
-                <div className="d-flex flex-wrap gap-2 mt-2" style={{ fontSize: "12px" }}>
-                  <span className="badge rounded-pill" style={{ background: "rgba(254, 243, 199, 0.18)", color: "#fde68a", border: "1px solid rgba(254, 243, 199, 0.35)", fontWeight: 600, padding: "5px 12px" }}>
-                    <i className="fa-solid fa-bolt-lightning text-warning me-1"></i> Today's Jobs: <strong>{allStats.todayJobs}</strong>
-                  </span>
-                  <span className="badge rounded-pill" style={{ background: "rgba(16, 185, 129, 0.18)", color: "#a7f3d0", border: "1px solid rgba(16, 185, 129, 0.35)", fontWeight: 600, padding: "5px 12px" }}>
-                    <i className="fa-solid fa-calendar-days text-teal me-1"></i> This Week's Jobs: <strong>{allStats.weekJobs}</strong>
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Badges Above Grid: Quick State Badges */}
-            <div className="staffoo-header-badges d-flex flex-wrap gap-2 align-items-center">
-              {visibleStates.map((st) => {
-                const s = stateStatsMap[st.value.toLowerCase()];
-                const todayCnt = s?.todayJobs ?? 0;
-                const weekCnt = s?.weekJobs ?? 0;
-                const hasActive = todayCnt > 0 || weekCnt > 0;
-                return (
-                  <button
-                    key={st.value}
-                    type="button"
-                    className={`staffoo-header-badge-btn ${hasActive ? "has-new" : ""}`}
-                    onClick={() => openStateRosterInNewTab(st.value)}
-                    title={`Open ${st.label} (${todayCnt} today · ${weekCnt} this week)`}
-                  >
-                    <span className="header-badge-code">{st.value.toUpperCase()}</span>
-                    <span className="header-badge-count">
-                      {countLoading ? "…" : `${todayCnt} today · ${weekCnt} wk`}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <h2>Roster Operations</h2>
+          <p style={{ textTransform: "none", marginBottom: 0 }}>
+            Select a region below to manage sites, rosters, and shift assignments.
+          </p>
         </div>
 
         <div className="staffoo-grid-container">
@@ -719,8 +710,10 @@ export default function RosterPage() {
               const isFeatured = stateInfo.value === 'vic' || stateInfo.value === 'nsw';
               const stats = stateStatsMap[stateInfo.value.toLowerCase()];
               const todayJobs = stats?.todayJobs ?? 0;
+              const todayCovered = stats?.todayCovered ?? 0;
               const todayUncovered = stats?.todayUncovered ?? 0;
               const weekJobs = stats?.weekJobs ?? 0;
+              const weekCovered = stats?.weekCovered ?? 0;
               const weekUncovered = stats?.weekUncovered ?? 0;
 
               return (
@@ -743,20 +736,32 @@ export default function RosterPage() {
                         <>
                           <span
                             className={`state-badge-pill ${todayJobs > 0 ? "badge-today-active" : "badge-pill-muted"}`}
-                            title={`${todayJobs} jobs today${todayUncovered > 0 ? ` (${todayUncovered} uncovered)` : ""}`}
+                            title={`Today: ${todayCovered} covered, ${todayUncovered} uncovered (Total: ${todayJobs})`}
                           >
                             <i className="fa-solid fa-bolt me-1"></i>
-                            <span>Today:</span>
-                            <strong>{todayJobs}</strong>
+                            <span className="badge-period-label">Today:</span>
+                            <span className="badge-stat-item stat-covered">
+                              <strong>{todayCovered}</strong> cov
+                            </span>
+                            <span className="badge-stat-dot">·</span>
+                            <span className={`badge-stat-item stat-uncovered ${todayUncovered > 0 ? "has-val" : ""}`}>
+                              <strong>{todayUncovered}</strong> uncov
+                            </span>
                           </span>
 
                           <span
                             className={`state-badge-pill ${weekJobs > 0 ? "badge-week-active" : "badge-pill-muted"}`}
-                            title={`${weekJobs} jobs this week${weekUncovered > 0 ? ` (${weekUncovered} uncovered)` : ""}`}
+                            title={`Week: ${weekCovered} covered, ${weekUncovered} uncovered (Total: ${weekJobs})`}
                           >
                             <i className="fa-solid fa-calendar-days me-1"></i>
-                            <span>Week:</span>
-                            <strong>{weekJobs}</strong>
+                            <span className="badge-period-label">Week:</span>
+                            <span className="badge-stat-item stat-covered">
+                              <strong>{weekCovered}</strong> cov
+                            </span>
+                            <span className="badge-stat-dot">·</span>
+                            <span className={`badge-stat-item stat-uncovered ${weekUncovered > 0 ? "has-val" : ""}`}>
+                              <strong>{weekUncovered}</strong> uncov
+                            </span>
                           </span>
                         </>
                       )}

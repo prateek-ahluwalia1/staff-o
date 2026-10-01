@@ -824,6 +824,8 @@ public function updateGuardDocuments(Request $request)
                     'tas' => 'tas_document',
                     'wa'  => 'wa_document',
                     'sa'  => 'sa_document',
+                    'act' => 'act_document',
+                    'nt' => 'nt_document',
                 ];
 
                 $currentCategory = $request->document_category;

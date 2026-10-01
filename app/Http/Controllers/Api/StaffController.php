@@ -803,7 +803,7 @@ public function updateGuardDocuments(Request $request)
     $commonDocumentTypes = [
         'security_industry_membership_certificate',
         'asic_report',
-        'workcover',
+        'public_liability',
     ];
 
     if (in_array($updateDocuments->document_type, $commonDocumentTypes, true)) {

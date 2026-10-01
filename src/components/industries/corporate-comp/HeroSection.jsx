@@ -8,10 +8,10 @@ export default function HeroSection() {
       <div className="stf-wrap">
         <div className="stf-hero-grid">
           <div>
-            <span className="stf-eyebrow">Corporate &amp; office security</span>
-            <h1>Licensed security officers for your office or workplace, without the agency markup</h1>
+            <span className="stf-eyebrow">Corporate and office security</span>
+            <h1>Licensed corporate security officers, without <span style={{ color: "var(--green)" }}>the agency markup</span></h1>
             <p className="lead">
-              Staffoo is a marketplace, not an agency. Post your job once and independent, licensed security officers near you apply with their rate, license and reviews attached. You compare and confirm from your dashboard.
+Find professional, licensed security personnel for your office or corporate site. Book shifts online with Staffoo, monitor attendance in real time and keep clear incident records for full site transparency.
             </p>
 
             {/* Role Switcher Tabs */}
@@ -28,7 +28,7 @@ export default function HeroSection() {
                 className={`stf-role-tab ${heroRole === "guard" ? "active" : ""}`}
                 onClick={() => setHeroRole("guard")}
               >
-                I'm a guard looking for work
+                I'm security staff looking for work
               </button>
             </div>
 
@@ -62,7 +62,7 @@ export default function HeroSection() {
                         <circle cx="12" cy="8" r="4"></circle>
                         <path d="M4 21v-1a8 8 0 0116 0v1"></path>
                       </svg>
-                      <input type="text" placeholder="Guards needed" />
+                      <input type="text" placeholder="Staff needed" />
                     </div>
                     <div className="stf-field">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B6660" strokeWidth="2">
@@ -90,7 +90,7 @@ export default function HeroSection() {
                   </div>
                 </div>
                 <p className="stf-intent-note">
-                  You review every application and choose who to hire — Staffoo doesn't employ or supply guards. <a href="#">Hiring for a business or agency?</a>
+                  You review every application and choose who to hire Staffoo doesn't employ or supply security staff. <a href="#">Hiring for a business or agency?</a>
                 </p>
 
                 <div className="stf-trust-row">
@@ -117,16 +117,16 @@ export default function HeroSection() {
                 <div className="stf-proof">
                   <div className="stf-avatars"><i></i><i></i><i></i><i></i></div>
                   <p className="stf-proof-text">
-                    <b>2,400+ businesses</b> have hired through Staffoo · 4.9 star average guard rating
+                    <b>2,400+ businesses</b> have hired through Staffoo · 4.9 star average staff rating
                   </p>
                 </div>
 
                 <div className="stf-popular">
                   Popular:
-                  <a href="#">Reception &amp; concierge</a>
-                  <a href="#">Overnight patrols &amp; lockup</a>
-                  <a href="#">Access control &amp; ID checks</a>
-                  <a href="#">Shared workspaces</a>
+                  <a >Reception and concierge</a>
+                  <a >Overnight patrols and lockup</a>
+                  <a >Access control and ID checks</a>
+                  <a >Shared workspaces</a>
                 </div>
               </div>
             )}
@@ -204,10 +204,10 @@ export default function HeroSection() {
 
                 <div className="stf-popular">
                   Popular:
-                  <a href="#">Reception &amp; concierge</a>
-                  <a href="#">Overnight shifts</a>
-                  <a href="#">Corporate HQ</a>
-                  <a href="#">Shared workspaces</a>
+                  <a >Reception and concierge</a>
+                  <a >Overnight shifts</a>
+                  <a >Corporate HQ</a>
+                  <a >Shared workspaces</a>
                 </div>
               </div>
             )}
@@ -230,7 +230,10 @@ export default function HeroSection() {
                     <div className="stf-pv-name"><span className="stf-masked">A. Miller</span></div>
                     <div className="stf-pv-meta">Security Officer · 5 years · 4.8 star rating (61 reviews)</div>
                   </div>
-                  <div className="stf-pv-rate">$38<span>/hr</span></div>
+                  <div style={{ textAlign: "right" }}>
+                    <span className="stf-pv-accept">Active</span>
+                  </div>
+
                 </div>
                 <div className="stf-pv-row">
                   <div className="stf-pv-avatar" style={{ background: "linear-gradient(160deg,#14181C,#075E53)" }}></div>
@@ -238,7 +241,10 @@ export default function HeroSection() {
                     <div className="stf-pv-name"><span className="stf-masked">T. Henderson</span></div>
                     <div className="stf-pv-meta">Security Officer · 7 years · 4.9 star rating (88 reviews)</div>
                   </div>
-                  <div className="stf-pv-rate">$41<span>/hr</span></div>
+                  <div style={{ textAlign: "right" }}>
+                    <span className="stf-pv-accept">Active</span>
+                  </div>
+
                 </div>
                 <div className="stf-pv-row">
                   <div className="stf-pv-avatar" style={{ background: "linear-gradient(160deg,#075E53,#0A7C6E)" }}></div>
@@ -246,7 +252,9 @@ export default function HeroSection() {
                     <div className="stf-pv-name"><span className="stf-masked">K. Zhang</span></div>
                     <div className="stf-pv-meta">Security Officer · 3 years · 4.7 star rating (34 reviews)</div>
                   </div>
-                  <div className="stf-pv-rate">$36<span>/hr</span></div>
+<div style={{ textAlign: "right" }}>
+                    <span className="stf-pv-accept">Active</span>
+                  </div>
                 </div>
               </div>
               <div className="stf-pv-fade"></div>
@@ -255,11 +263,11 @@ export default function HeroSection() {
                   <rect x="4" y="10" width="16" height="11" rx="2"></rect>
                   <path d="M8 10V7a4 4 0 018 0v3"></path>
                 </svg>
-                Guard profiles unlock once you post a job
+                Security staff profiles unlock once you post a job
               </div>
             </div>
             <p className="stf-preview-caption">
-              Illustration of the client dashboard. Guard names, contact details and profiles are only visible to signed in clients.
+              Illustration of the client dashboard. Security staff names, contact details and profiles are only visible to signed in clients.
             </p>
           </div>
         </div>

@@ -76,8 +76,8 @@ function AnimatedStatNumber({ value }) {
 
 const defaultStatsData = [
   { value: "180+", label: "licensed crowd controllers" },
-  { value: "4.9★", label: "average guard rating" },
-  { value: "3 hrs", label: "median time to first applicant" },
+  { value: "4.9★", label: "average staff rating" },
+  { value: "1 hr", label: "median time to first applicant" },
   { value: "640", label: "event shifts filled this month" },
 ];
 

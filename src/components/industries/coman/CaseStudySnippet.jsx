@@ -3,8 +3,8 @@ import React from "react";
 const defaultCaseStudy = {
   category: "Case study — Events",
   title: "Crowd control for a 3-day festival",
-  description: "34 crowd controllers booked and confirmed in under a day — something our old agency never managed.",
-  quote: '"34 crowd controllers booked and confirmed in under a day — something our old agency never managed."',
+  description: "34 crowd controllers booked and confirmed in under a day something our old agency never managed.",
+  quote: '"34 crowd controllers booked and confirmed in under a day something our old agency never managed."',
   btnText: "Read the full case study",
   btnUrl: "#",
 };

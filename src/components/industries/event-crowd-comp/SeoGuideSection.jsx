@@ -9,7 +9,7 @@ export default function SeoGuideSection() {
             <div className="stf-kicker">Guide</div>
             <h2>Hiring event security in Australia: what to know before you book</h2>
             <p>
-              Event security is one of the few parts of running an event that carries a legal requirement attached to it. Whether you're putting on a 60-person engagement party or a three-day festival, the rules around who can work the door, how many guards you need and what they're allowed to do are set by your state — not by the venue and not by the security company quoting you.
+              Event security is one of the few parts of running an event that carries a legal requirement attached to it. Whether you're putting on a 60-person engagement party or a three-day festival, the rules around who can work the door, how many security staff you need and what they're allowed to do are set by your state not by the venue and not by the security company quoting you.
             </p>
             <p>
               This guide covers what event organisers most often get wrong when hiring crowd controllers, and what to check before you confirm anyone.
@@ -59,28 +59,28 @@ export default function SeoGuideSection() {
               <b>Worth knowing:</b> license conditions and category names change from time to time, and events serving alcohol often carry extra conditions. Confirm current requirements with your state regulator or your venue's liquor license before you finalise numbers.
             </div>
 
-            <h3 id="how-many">How many guards does your event need?</h3>
+            <h3 id="how-many">How many security staff does your event need?</h3>
             <p>
               There's no single national ratio, and venues, councils and liquor licenses often set their own conditions. As a starting point, most organisers work from patron numbers and then adjust for risk:
             </p>
             <ul>
-              <li><strong>Guest numbers</strong> — a common baseline is one crowd controller per 100 patrons, tightening as numbers climb.</li>
-              <li><strong>Alcohol</strong> — licensed events almost always need more guards than dry ones, and often RSA-trained ones.</li>
-              <li><strong>Entry points</strong> — every gate, bar and backstage door that needs monitoring is its own position.</li>
-              <li><strong>Hours and finish time</strong> — late finishes and public transport egress usually need extra cover at the end of the night.</li>
-              <li><strong>Event type</strong> — ticketed public events carry different risk to private functions with a known guest list.</li>
+              <li><strong>Guest numbers</strong> a common baseline is one crowd controller per 100 patrons, tightening as numbers climb.</li>
+              <li><strong>Alcohol</strong> licensed events almost always need more security staff than dry ones, and often RSA-trained ones.</li>
+              <li><strong>Entry points</strong> every gate, bar and backstage door that needs monitoring is its own position.</li>
+              <li><strong>Hours and finish time</strong> late finishes and public transport egress usually need extra cover at the end of the night.</li>
+              <li><strong>Event type</strong> ticketed public events carry different risk to private functions with a known guest list.</li>
             </ul>
             <p>If your venue or council has already set a condition, that number is the floor, not the target.</p>
 
-            <h3 id="cost">What event security costs — and what changes the price</h3>
+            <h3 id="cost">What event security costs and what changes the price</h3>
             <p>
               Rates for licensed crowd controllers in Australia generally sit between $38 and $55 an hour, depending on the work. The biggest factors are the time of day, the length of the shift, the day of the week, and how specialised the role is. Overnight, public holiday and last-minute shifts sit at the top of that range.
             </p>
             <p>
-              The other variable is who you book through. Agencies typically add a margin on top of the guard's rate for coordination and rostering. On Staffoo, guards set their own rate and you see it on their application, so the number you compare is the number you pay. You can see current averages in the <a className="inline" href="#pricing">pricing section above</a>.
+              The other variable is who you book through. Agencies typically add a margin on top of the security staff's rate for coordination and rostering. On Staffoo, security staff set their own rate and you see it on their application, so the number you compare is the number you pay. You can see current averages in the <a className="inline" href="#pricing">pricing section above</a>.
             </p>
 
-            <h3 id="vs">Crowd controller or security officer — which do you need?</h3>
+            <h3 id="vs">Crowd controller or security officer which do you need?</h3>
             <p>These are different licenses covering different work, and booking the wrong one can leave you non-compliant on the night.</p>
             <table>
               <thead>
@@ -109,28 +109,28 @@ export default function SeoGuideSection() {
               </tbody>
             </table>
 
-            <h3 id="checklist">What to check before you confirm a guard</h3>
+            <h3 id="checklist">What to check before you confirm security staff</h3>
             <ul>
-              <li><strong>License class and expiry</strong> — that it matches the work and is current in your state.</li>
-              <li><strong>Relevant experience</strong> — festival work and private function work are different jobs.</li>
-              <li><strong>Reviews from similar events</strong> — volume matters less than whether the events looked like yours.</li>
+              <li><strong>License class and expiry</strong> that it matches the work and is current in your state.</li>
+              <li><strong>Relevant experience</strong> festival work and private function work are different jobs.</li>
+              <li><strong>Reviews from similar events</strong> volume matters less than whether the events looked like yours.</li>
               <li><strong>Availability across the full bump-in and bump-out</strong>, not just the event window.</li>
               <li><strong>Who's responsible for insurance</strong> and what happens if someone can't make the shift.</li>
             </ul>
-            <p>On Staffoo, license verification happens before a guard can apply, and the license class, experience and review history sit on every application you receive.</p>
+            <p>On Staffoo, license verification happens before security staff can apply, and the license class, experience and review history sit on every application you receive.</p>
 
             <h3 id="direct">Hiring direct instead of through an agency</h3>
             <p>
-              Traditional agencies take your brief, roster guards internally and send you an invoice — you rarely know who's coming until the day, and you can't request the same person twice. Hiring direct through a platform flips that: you see who applied, you pick, and you can rebook the guards who worked out well. For organisers running recurring events, that continuity usually matters more than the hourly rate.
+              Traditional agencies take your brief, roster security staff internally and send you an invoice you rarely know who's coming until the day, and you can't request the same person twice. Hiring direct through a platform flips that: you see who applied, you pick, and you can rebook the security staff who worked out well. For organisers running recurring events, that continuity usually matters more than the hourly rate.
             </p>
-            <p>
+            {/* <p>
               If you're hiring for a different setting, the same process applies to <a className="inline" href="#">corporate and office security</a>, <a className="inline" href="#">retail security</a> and <a className="inline" href="#">construction site security</a>.
-            </p>
+            </p> */}
 
             <div className="stf-recap">
               <div className="stf-kicker">Before you post</div>
               <p>
-                Confirm the license class your state requires, size your headcount from patron numbers rather than a guess, and treat agency quotes as a ceiling — Staffoo shows you each guard's real rate on their application, before you confirm anyone.
+                Confirm the license class your state requires, size your headcount from patron numbers rather than a guess, and treat agency quotes as a ceiling Staffoo shows you each security staff's real rate on their application, before you confirm anyone.
               </p>
             </div>
           </article>
@@ -139,8 +139,8 @@ export default function SeoGuideSection() {
           <aside className="stf-seo-aside">
             <div className="stf-toc">
               <h4>On this page</h4>
-              <a href="#license">Do you need a licensed guard?</a>
-              <a href="#how-many">How many guards you need</a>
+              <a href="#license">Do you need licensed security staff?</a>
+              <a href="#how-many">How many security staff you need</a>
               <a href="#cost">What it costs</a>
               <a href="#vs">Crowd controller vs officer</a>
               <a href="#checklist">Pre-booking checklist</a>
@@ -158,7 +158,7 @@ export default function SeoGuideSection() {
               <a href="#">Licensing explained by state</a>
               <a href="#">How pricing works</a>
               <a href="#">Hiring for a business or agency</a>
-              <a href="#">Corporate &amp; office security</a>
+              <a href="#">Corporate and office security</a>
             </div>
 
             <div className="stf-aside-trust">

@@ -17,7 +17,7 @@ export default function SeoGuideSection() {
 
             <h3 id="licence">Do you legally need a licensed security officer?</h3>
             <p>
-              Yes, in every state. Loss prevention, floor presence, cash office watch and store lockup all count as licensable security work, even when the guard is working plain clothed. A staff member without a license can't be tasked with security duties.
+              Yes, in every state. Loss prevention, floor presence, cash office watch and store lockup all count as licensable security work, even when the security staff is working plain clothed. A staff member without a license can't be tasked with security duties.
             </p>
             <table>
               <thead>
@@ -35,7 +35,7 @@ export default function SeoGuideSection() {
                 </tr>
                 <tr>
                   <td>Victoria</td>
-                  <td>Private Security Individual Operator License, security guard activity</td>
+                  <td>Private Security Individual Operator License, security staff activity</td>
                   <td>Victoria Police Licensing and Regulation Division</td>
                 </tr>
                 <tr>
@@ -50,21 +50,21 @@ export default function SeoGuideSection() {
                 </tr>
                 <tr>
                   <td>South Australia</td>
-                  <td>Security Agents License, general guarding function</td>
+                  <td>Security Agents License, general security function</td>
                   <td>Consumer and Business Services</td>
                 </tr>
               </tbody>
             </table>
             <div className="stf-callout">
-              <b>Worth knowing:</b> a security guard's powers on your shop floor are limited to what any member of the public has under citizen's arrest provisions, they can't search a customer or their bags without consent. Brief your guard on your store's own procedures before their first shift.
+              <b>Worth knowing:</b> security staff's powers on your shop floor are limited to what any member of the public has under citizen's arrest provisions, they can't search a customer or their bags without consent. Brief your security staff on your store's own procedures before their first shift.
             </div>
 
-            <h3 id="how-many">How many guards does your store need?</h3>
+            <h3 id="how-many">How many security staff does your store need?</h3>
             <p>
               There's no single national ratio for retail. Most stores work from footprint and trading pattern, then adjust for risk:
             </p>
             <ul>
-              <li><strong>Store size and layout:</strong> multiple exits or blind spots each add to what one guard can realistically cover.</li>
+              <li><strong>Store size and layout:</strong> multiple exits or blind spots each add to what one security staff member can realistically cover.</li>
               <li><strong>Trading pattern:</strong> weekend and after work trade usually needs more cover than a quiet weekday morning.</li>
               <li><strong>Stock profile:</strong> high value or easily concealed stock raises the bar on loss prevention.</li>
               <li><strong>Seasonal peaks:</strong> sale periods and the lead up to Christmas are when most retailers add cover.</li>
@@ -74,10 +74,10 @@ export default function SeoGuideSection() {
 
             <h3 id="cost">What retail security costs</h3>
             <p>
-              Rates for licensed retail guards in Australia generally sit between $33 and $48 an hour, depending on the work. The biggest factors are the day of week, whether it's a peak trading period, and whether the role is floor presence or dedicated loss prevention. Weekend and holiday season shifts sit at the top of that range.
+              Rates for licensed retail security staff in Australia generally sit between $33 and $48 an hour, depending on the work. The biggest factors are the day of week, whether it's a peak trading period, and whether the role is floor presence or dedicated loss prevention. Weekend and holiday season shifts sit at the top of that range.
             </p>
             <p>
-              The other variable is who you book through. Agencies typically add a margin on top of the guard's rate for coordination and rostering. On Staffoo, guards set their own rate and you see it on their application, so the number you compare is the number you pay. You can see current averages in the pricing section above.
+              The other variable is who you book through. Agencies typically add a margin on top of the security staff's rate for coordination and rostering. On Staffoo, security staff set their own rate and you see it on their application, so the number you compare is the number you pay. You can see current averages in the pricing section above.
             </p>
 
             <h3 id="vs">Loss prevention officer or security officer, which do you need?</h3>
@@ -111,30 +111,30 @@ export default function SeoGuideSection() {
               </tbody>
             </table>
 
-            <h3 id="checklist">What to check before you confirm a guard</h3>
+            <h3 id="checklist">What to check before you confirm security staff</h3>
             <ul>
               <li><strong>License class and expiry:</strong> that it matches the work and is current in your state.</li>
               <li><strong>Relevant experience:</strong> retail floor experience is a different job to office or event work.</li>
               <li><strong>Reviews from similar stores:</strong> volume matters less than whether the stores looked like yours.</li>
               <li><strong>Availability across peak periods:</strong> weekends and sale events are when you need cover most.</li>
-              <li><strong>Who's responsible for insurance:</strong> and what happens if a guard can't make a shift.</li>
+              <li><strong>Who's responsible for insurance:</strong> and what happens if security staff can't make a shift.</li>
             </ul>
             <p>
-              On Staffoo, license verification happens before a guard can apply, and the license class, experience and review history sit on every application you receive.
+              On Staffoo, license verification happens before security staff can apply, and the license class, experience and review history sit on every application you receive.
             </p>
 
             <h3 id="direct">Hiring direct instead of through an agency</h3>
             <p>
-              Traditional agencies take your brief, roster guards internally and send you an invoice. You rarely know who's coming until the day, and you can't request the same person twice. Hiring direct through a platform flips that: you see who applied, you pick, and you can rebook the guards who worked out well. For a multi store retailer, that continuity across sites usually matters more than the hourly rate.
+              Traditional agencies take your brief, roster security staff internally and send you an invoice. You rarely know who's coming until the day, and you can't request the same person twice. Hiring direct through a platform flips that: you see who applied, you pick, and you can rebook the security staff who worked out well. For a multi store retailer, that continuity across sites usually matters more than the hourly rate.
             </p>
-            <p>
+            {/* <p>
               If you're hiring for a different setting, the same process applies to corporate and office security, event security and construction site security.
-            </p>
+            </p> */}
 
             <div className="stf-recap">
               <div className="stf-kicker">Before you post</div>
               <p>
-                Confirm the license type your state requires, size your cover from footprint and trading pattern rather than a guess, and treat agency quotes as a ceiling. Staffoo shows you each guard's real rate before you confirm anyone.
+                Confirm the license type your state requires, size your cover from footprint and trading pattern rather than a guess, and treat agency quotes as a ceiling. Staffoo shows you each security staff's real rate before you confirm anyone.
               </p>
             </div>
           </article>
@@ -143,8 +143,8 @@ export default function SeoGuideSection() {
           <aside className="stf-seo-aside">
             <div className="stf-toc">
               <h4>On this page</h4>
-              <a href="#license">Do you need a licensed guard?</a>
-              <a href="#how-many">How many guards you need</a>
+              <a href="#license">Do you need licensed security staff?</a>
+              <a href="#how-many">How many security staff you need</a>
               <a href="#cost">What it costs</a>
               <a href="#vs">Loss prevention vs security officer</a>
               <a href="#checklist">Pre booking checklist</a>
@@ -153,7 +153,7 @@ export default function SeoGuideSection() {
 
             <div className="stf-side-cta">
               <h4>Know what you need?</h4>
-              <p>Post the job free and start receiving applications from licensed retail security guards near you.</p>
+              <p>Post the job free and start receiving applications from licensed retail security staff near you.</p>
               <a href="#" className="stf-btn stf-btn-solid stf-btn-block">Post a retail security job</a>
             </div>
 
@@ -162,7 +162,7 @@ export default function SeoGuideSection() {
               <a href="#">Licensing explained by state</a>
               <a href="#">How pricing works</a>
               <a href="#">Hiring for a business or agency</a>
-              <a href="#">Corporate &amp; office security</a>
+              <a href="#">Corporate and office security</a>
             </div>
 
             <div className="stf-aside-trust">

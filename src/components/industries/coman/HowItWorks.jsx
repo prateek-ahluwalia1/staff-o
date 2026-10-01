@@ -4,12 +4,12 @@ const defaultSteps = [
   {
     num: "01",
     title: "Post the job",
-    desc: "Date, location, guards needed and license type. Free, and takes two minutes.",
+    desc: "Date, location, security staff needed and license type. Free, and takes two minutes.",
   },
   {
     num: "02",
     title: "Compare applicants",
-    desc: "Licensed guards apply with their rate, experience and reviews attached.",
+    desc: "Licensed security staff apply with their rate, experience and reviews attached.",
   },
   {
     num: "03",
@@ -18,7 +18,7 @@ const defaultSteps = [
   },
   {
     num: "04",
-    title: "Sign off & pay",
+    title: "Sign off and pay",
     desc: "Digital check-in on the day, payment releases once you confirm the job's done.",
   },
 ];

@@ -20,9 +20,9 @@ import "../../components/industries/event-crowd-comp/styles.css";
 export default function RetailSecurity() {
     // 1. Stats Band Data
     const retailStats = [
-        { value: "150+", label: "licensed retail security guards" },
-        { value: "4.8★", label: "average guard rating" },
-        { value: "2 hrs", label: "median time to first applicant" },
+        { value: "150+", label: "licensed retail security staff" },
+        { value: "4.8★", label: "average staff rating" },
+        { value: "1 hr", label: "median time to first applicant" },
         { value: "510", label: "retail shifts filled this month" },
     ];
 
@@ -39,12 +39,12 @@ export default function RetailSecurity() {
             iconPath: "M12 8v4l3 3 M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0",
         },
         {
-            title: "Store opening & closing",
+            title: "Store opening and closing",
             desc: "Cash office watch, alarm activation and a second set of eyes while the till is counted.",
             iconPath: "M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7z",
         },
         {
-            title: "Incident & CCTV coordination",
+            title: "Incident and CCTV coordination",
             desc: "Digital incident logs that line up with your camera footage, ready in your dashboard.",
             iconPath: "M4 6h16M4 12h16M4 18h10",
         },
@@ -53,9 +53,9 @@ export default function RetailSecurity() {
     // 3. How It Works Steps Data
     const retailSteps = [
         { num: "01", title: "Post the job", desc: "Store address, shift pattern and the type of cover needed. Free, and takes two minutes." },
-        { num: "02", title: "Compare applicants", desc: "Licensed guards apply with their rate, experience and reviews attached." },
+        { num: "02", title: "Compare applicants", desc: "Licensed security staff apply with their rate, experience and reviews attached." },
         { num: "03", title: "Confirm and brief", desc: "Message directly, share your store's procedures, lock in the shift." },
-        { num: "04", title: "Sign off & pay", desc: "Digital check in on the day, payment releases once you confirm the job's done." },
+        { num: "04", title: "Sign off and pay", desc: "Digital check in on the day, payment releases once you confirm the job's done." },
     ];
 
     // 4. Inside Dashboard Cards Data
@@ -97,7 +97,7 @@ export default function RetailSecurity() {
         },
         {
             title: "Check in, sign off and payment",
-            desc: "Guards check in on site, incidents are logged digitally, and payment releases only after you sign the shift off.",
+            desc: "security staff check in on site, incidents are logged digitally, and payment releases only after you sign the shift off.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-box">
@@ -127,28 +127,28 @@ export default function RetailSecurity() {
     // 7. FAQ Items Data
     const retailFaqs = [
         {
-            q: "Do I need a licensed guard for loss prevention?",
-            a: "Yes. Anyone deterring theft, monitoring the floor or managing a cash office watch needs a current security license in every state, whether they're in uniform or plain clothed. Every guard on Staffoo has their license verified before they can apply.",
+            q: "Do I need licensed security staff for loss prevention?",
+            a: "Yes. Anyone deterring theft, monitoring the floor or managing a cash office watch needs a current security license in every state, whether they're in uniform or plain clothed. Every security staff on Staffoo has their license verified before they can apply.",
         },
         {
-            q: "Can a security guard search or detain a customer?",
-            a: "A guard's powers are the same as any member of the public's under citizen's arrest law, they can't search a customer or their bags without consent, and detaining someone carries real legal risk if it's done wrong. Talk through your store's procedure with your guard before their first shift, and check your own state's rules if you're unsure.",
+            q: "Can security staff search or detain a customer?",
+            a: "Security staff's powers are the same as any member of the public's under citizen's arrest law, they can't search a customer or their bags without consent, and detaining someone carries real legal risk if it's done wrong. Talk through your store's procedure with your security staff before their first shift, and check your own state's rules if you're unsure.",
         },
         {
             q: "How quickly can I book cover for a sale event?",
-            a: "Most jobs get their first application within a couple of hours of posting. For a sale weekend or a known peak trading date, post early so guards can plan around it, and mark it urgent if you're covering a last minute gap.",
+            a: "Most jobs get their first application within a couple of hours of posting. For a sale weekend or a known peak trading date, post early so security staff can plan around it, and mark it urgent if you're covering a last minute gap.",
         },
         {
             q: "What's the difference between loss prevention and a security officer?",
             a: "Loss Prevention focuses specifically on shoplifting deterrence, often working plain clothed alongside your CCTV and store staff. A Security Officer is the more general, usually uniformed role covering floor presence, entrances and store lockup. You can filter for either when you post a job.",
         },
         {
-            q: "Can I book the same guard for a recurring weekend shift?",
-            a: "Yes. Once you've found a guard who knows your store, you can rebook them directly from your dashboard instead of posting a fresh job every week.",
+            q: "Can I book the same security staff for a recurring weekend shift?",
+            a: "Yes. Once you've found security staff who know your store, you can rebook them directly from your dashboard instead of posting a fresh job every week.",
         },
         {
             q: "Does Staffoo handle disputes if something goes missing on shift?",
-            a: "Staffoo is the platform that connects you with the guard, not the employer of record, so day to day incidents are between you and the guard the same way they would be with any contractor. Every shift has a digital check in and incident log in your dashboard, which gives you a clear record if you ever need one.",
+            a: "Staffoo is the platform that connects you with the security staff, not the employer of record, so day to day incidents are between you and the security staff the same way they would be with any contractor. Every shift has a digital check in and incident log in your dashboard, which gives you a clear record if you ever need one.",
         },
     ];
 
@@ -158,7 +158,7 @@ export default function RetailSecurity() {
     // 9. CTA Band Data
     const retailCtaData = {
         title: "Ready to protect your store?",
-        subtitle: "Post your job free. Pay only once a guard is confirmed and the shift is signed off.",
+        subtitle: "Post your job free. Pay only once a security staff is confirmed and the shift is signed off.",
         primaryBtnText: "Post a retail security job",
         primaryBtnUrl: "#",
         secondaryBtnText: "Talk to our team",
@@ -168,7 +168,7 @@ export default function RetailSecurity() {
     return (
         <>
             <Helmet>
-                <title>Retail Security Guards &amp; Loss Prevention for Hire</title>
+                <title>Retail Security Staff &amp; Loss Prevention for Hire</title>
                 <meta
                     name="description"
                     content="Post a retail security job on Staffoo and get applications from licensed loss prevention officers near you. Compare rates and reviews in your dashboard, book in hours."
@@ -206,7 +206,7 @@ export default function RetailSecurity() {
                 <WhatsCovered
                     kicker="What's covered"
                     title="Everything your store needs, one job post"
-                    description="Every guard on Staffoo holds a valid license for the work, checked before they're allowed to apply."
+                    description="Every security staff on Staffoo holds a valid license for the work, checked before they're allowed to apply."
                     items={retailWhatsCovered}
                 />
 

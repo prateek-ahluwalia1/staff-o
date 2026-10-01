@@ -21,15 +21,15 @@ export default function CorporateOffice() {
     // 1. Stats Band Data
     const corporateStats = [
         { value: "180+", label: "licensed security officers" },
-        { value: "4.9★", label: "average guard rating" },
-        { value: "3 hours", label: "median time to first applicant" },
+        { value: "4.9★", label: "average staff rating" },
+        { value: "1 hr", label: "median time to first applicant" },
         { value: "640", label: "office shifts filled this month" },
     ];
 
     // 2. What's Covered Data
     const corporateWhatsCovered = [
         {
-            title: "Reception & concierge",
+            title: "Reception and concierge",
             desc: "Professional front of house presence: visitor sign in, deliveries and a first impression that matches the building.",
             iconPath: "M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
         },
@@ -39,12 +39,12 @@ export default function CorporateOffice() {
             iconPath: "M12 8v4l3 3 M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0",
         },
         {
-            title: "Patrols & lockup",
+            title: "Patrols and lockup",
             desc: "Scheduled walk throughs, after hours building lockup, and alarm response when something trips.",
             iconPath: "M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7z",
         },
         {
-            title: "Incident & compliance reporting",
+            title: "Incident and compliance reporting",
             desc: "Digital incident logs aligned to your WHS obligations, ready in your dashboard.",
             iconPath: "M4 6h16M4 12h16M4 18h10",
         },
@@ -55,7 +55,7 @@ export default function CorporateOffice() {
         { num: "01", title: "Post the job", desc: "Site address, shift pattern and license type needed. Free, and takes two minutes." },
         { num: "02", title: "Compare applicants", desc: "Licensed security officers apply with their rate, experience and reviews attached." },
         { num: "03", title: "Confirm and brief", desc: "Message directly, share the site brief, lock in the shift." },
-        { num: "04", title: "Sign off & pay", desc: "Digital check in on the day, payment releases once you confirm the job's done." },
+        { num: "04", title: "Sign off and pay", desc: "Digital check in on the day, payment releases once you confirm the job's done." },
     ];
 
     // 4. Inside Dashboard Cards Data
@@ -97,7 +97,7 @@ export default function CorporateOffice() {
         },
         {
             title: "Check in, sign off and payment",
-            desc: "Guards check in on site, incidents are logged digitally, and payment releases only after you sign the shift off.",
+            desc: "security staff check in on site, incidents are logged digitally, and payment releases only after you sign the shift off.",
             renderShot: () => (
                 <div className="stf-inside-shot">
                     <div className="stf-mini-box">
@@ -117,7 +117,7 @@ export default function CorporateOffice() {
 
     // 6. Case Study Data
     const corporateCaseStudy = {
-        category: "Case study, Corporate & Office",
+        category: "Case study, Corporate and Office",
         title: "Reception security for a shared workspace campus",
         quote: '"Filled our overnight patrol roster in under a day. No more chasing an agency for cover."',
         btnText: "Read the full case study",
@@ -128,7 +128,7 @@ export default function CorporateOffice() {
     const corporateFaqs = [
         {
             q: "Do I need a licensed security officer for my office or workplace?",
-            a: "Yes. Reception, patrols, access control and after hours lockup all count as licensable security work in every state, whether the guard is standing at your front desk or checking doors after everyone's gone home. Every guard on Staffoo has their license verified before they can apply to a job.",
+            a: "Yes. Reception, patrols, access control and after hours lockup all count as licensable security work in every state, whether the security staff is standing at your front desk or checking doors after everyone's gone home. Every security staff member on Staffoo has their license verified before they can apply to a job.",
         },
         {
             q: "Can a security officer also handle reception and deliveries?",
@@ -136,19 +136,19 @@ export default function CorporateOffice() {
         },
         {
             q: "How quickly can I book office security?",
-            a: "Most ongoing contracts are staffed within a day or two of posting. For a single urgent shift, say covering a sick call or an unplanned after hours job, mark the post as urgent and available guards in the area are notified straight away.",
+            a: "Most ongoing contracts are staffed within a day or two of posting. For a single urgent shift, say covering a sick call or an unplanned after hours job, mark the post as urgent and available security staff in the area are notified straight away.",
         },
         {
             q: "What's the difference between a security officer and a crowd controller?",
-            a: "A Security Officer license covers static guarding, patrols and access control at a fixed site, which is what most office and workplace jobs need. A Crowd Controller license specifically covers screening, monitoring and removing people at licensed venues and events. Each application shows you exactly which license that guard holds, so you're not comparing the wrong skill set.",
+            a: "A Security Officer license covers static guarding, patrols and access control at a fixed site, which is what most office and workplace jobs need. A Crowd Controller license specifically covers screening, monitoring and removing people at licensed venues and events. Each application shows you exactly which license that security staff member holds, so you're not comparing the wrong skill set.",
         },
         {
             q: "Can I set up an ongoing contract, not just one off shifts?",
-            a: "Yes. Post a recurring roster the same way you'd post a single job, and guards apply the same way. Once you've found someone reliable you can rebook them directly from your dashboard instead of re posting each week.",
+            a: "Yes. Post a recurring roster the same way you'd post a single job, and security staff apply the same way. Once you've found someone reliable you can rebook them directly from your dashboard instead of re posting each week.",
         },
         {
-            q: "Does my building manager or landlord need to approve the guard?",
-            a: "That's between you and your building manager, Staffoo doesn't get involved in that approval. What we handle is the license check: every application already shows a verified, current security license, so whatever sign off your building requires, you're starting from a guard who's legally allowed to do the work.",
+            q: "Does my building manager or landlord need to approve the security staff?",
+            a: "That's between you and your building manager, Staffoo doesn't get involved in that approval. What we handle is the license check: every application already shows a verified, current security license, so whatever sign off your building requires, you're starting from a security staff member who's legally allowed to do the work.",
         },
     ];
 
@@ -158,7 +158,7 @@ export default function CorporateOffice() {
     // 9. CTA Band Data
     const corporateCtaData = {
         title: "Ready to secure your workplace?",
-        subtitle: "Post your job free. Pay only once a guard is confirmed and the shift is signed off.",
+        subtitle: "Post your job free. Pay only once a security staff is confirmed and the shift is signed off.",
         primaryBtnText: "Post a corporate security job",
         primaryBtnUrl: "#",
         secondaryBtnText: "Talk to our team",
@@ -168,7 +168,7 @@ export default function CorporateOffice() {
     return (
         <>
             <Helmet>
-                <title>Corporate &amp; Office Security Guards for Hire</title>
+                <title>Corporate &amp; Office Security Staff for Hire</title>
                 <meta
                     name="description"
                     content="Post a corporate or office security job on Staffoo and get applications from licensed security officers near you. Compare rates and reviews in your dashboard, book in hours."
@@ -193,7 +193,7 @@ export default function CorporateOffice() {
                             <span className="sep">/</span>
                             <a className="text-black" href="/industries/corporate-office">Industries</a>
                             <span className="sep">/</span>
-                            <span className="current">Corporate &amp; Office Security</span>
+                            <span className="current">Corporate and Office Security</span>
                         </div>
                     </div>
                 </div>
@@ -229,7 +229,7 @@ export default function CorporateOffice() {
 
                 <FaqSection
                     kicker="FAQ"
-                    title="Corporate & office security, answered"
+                    title="Corporate and office security, answered"
                     faqs={corporateFaqs}
                 />
 

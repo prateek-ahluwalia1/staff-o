@@ -3,7 +3,7 @@ import React from "react";
 const defaultCards = [
   {
     title: "Post a job in minutes",
-    desc: "Set the date, site address, license required and how many guards. Duplicate it next time instead of starting over.",
+    desc: "Set the date, site address, license required and how many security staff. Duplicate it next time instead of starting over.",
     renderShot: () => (
       <div className="stf-inside-shot">
         <div className="stf-mini-line short"></div>
@@ -38,7 +38,7 @@ const defaultCards = [
   },
   {
     title: "Check-in, reporting and payment",
-    desc: "Guards check in on site, incidents are logged digitally, and payment releases only after you sign the shift off.",
+    desc: "security staff check in on site, incidents are logged digitally, and payment releases only after you sign the shift off.",
     renderShot: () => (
       <div className="stf-inside-shot">
         <div className="stf-mini-box">
@@ -59,7 +59,7 @@ const defaultCards = [
 export default function InsideDashboard({
   kicker = "Inside your dashboard",
   title = "What you get once you're in",
-  description = "Posting, hiring, briefing and paying all happen in one place — no email threads, no separate invoice chase.",
+  description = "Posting, hiring, briefing and paying all happen in one place no email threads, no separate invoice chase.",
   cards = defaultCards,
 }) {
   const cardList = Array.isArray(cards) && cards.length > 0 ? cards : defaultCards;

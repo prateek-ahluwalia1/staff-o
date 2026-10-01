@@ -60,6 +60,40 @@ const Sidebar = memo(function Sidebar() {
     }
   );
 
+  const staffContractorId = type === "admin" ? 1 : userId;
+  const isCoverJobsVisible = type === "contractor" || isStaffCoverJobsVisible;
+
+  // Cover jobs count: from userdata (same as in edit-profile modal) with live API fallback
+  const { data: availableJobsRes, refetch: refetchAvailableJobs } = useFetch(
+    isCoverJobsVisible && token && staffContractorId
+      ? `api/jobs/available/${staffContractorId}?page=1`
+      : null,
+    {
+      isAuth: true,
+      immediate: Boolean(isCoverJobsVisible && token && staffContractorId),
+    }
+  );
+
+  const coverJobsCount = useMemo(() => {
+    const fromUserdata = Number(
+      userdata?.data?.available_jobs_count ??
+      userdata?.available_jobs_count ??
+      0
+    );
+    const fromApi = availableJobsRes ? Number(
+      availableJobsRes?.data?.jobs?.total ??
+      availableJobsRes?.data?.total ??
+      availableJobsRes?.jobs?.total ??
+      availableJobsRes?.total ??
+      0
+    ) : null;
+
+    if (fromApi !== null && !isNaN(fromApi)) {
+      return fromApi;
+    }
+    return fromUserdata;
+  }, [userdata, availableJobsRes]);
+
   useEffect(() => {
     if (convData) {
       const list = convData?.data || convData || [];
@@ -75,10 +109,13 @@ const Sidebar = memo(function Sidebar() {
       if (token && userId && refetchConversations) {
         refetchConversations();
       }
+      if (token && staffContractorId && refetchAvailableJobs) {
+        refetchAvailableJobs();
+      }
     };
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, [token, userId, refetchConversations]);
+  }, [token, userId, staffContractorId, refetchConversations, refetchAvailableJobs]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -367,12 +404,16 @@ const Sidebar = memo(function Sidebar() {
             const disabled = !isProfileActive && !isAlwaysAllowed;
             const isActive = location.pathname === item.to;
             const isChat = item.to === "/chat" || item.to.startsWith("/chat");
+            const isCoverJobs = item.to === "/cover-jobs" || item.to.startsWith("/cover-jobs");
             const showChatBadge = isChat && chatUnreadCount > 0;
+            const showCoverJobsBadge = isCoverJobs && coverJobsCount > 0;
+            const showBadge = showChatBadge || showCoverJobsBadge;
+            const badgeCount = isChat ? chatUnreadCount : coverJobsCount;
 
             const iconElement = (
               <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
                 <i className={item.icon} style={{ fontSize: "20px", minWidth: "24px", textAlign: "center" }}></i>
-                {showChatBadge && (
+                {showBadge && (
                   <span
                     style={{
                       position: "absolute",
@@ -393,8 +434,9 @@ const Sidebar = memo(function Sidebar() {
                       lineHeight: 1,
                       zIndex: 2,
                     }}
+                    title={isChat ? `${badgeCount} unread messages` : `${badgeCount} cover jobs available`}
                   >
-                    {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
+                    {badgeCount > 99 ? "99+" : badgeCount}
                   </span>
                 )}
               </span>

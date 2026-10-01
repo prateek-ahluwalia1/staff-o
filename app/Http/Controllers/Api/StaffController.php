@@ -733,35 +733,137 @@ class StaffController extends Controller
         }
     }
 
-    public function updateGuardDocuments(Request $request)
-    {
+    // public function updateGuardDocuments(Request $request)
+    // {
 
-        $updateDocuments = Document::where('id', $request->id)->first();
-        $old_data = $updateDocuments;
-        $updateDocuments->document_name = $request->document_name;
-        $updateDocuments->user_id = $request->user_id;
-        if (!empty($request->document_expiry) && $request->document_expiry == 'current, pending renewal') {
-            $updateDocuments->document_expiry = $request->document_expiry;
+    //     $updateDocuments = Document::where('id', $request->id)->first();
+    //     $old_data = $updateDocuments;
+    //     $updateDocuments->document_name = $request->document_name;
+    //     $updateDocuments->user_id = $request->user_id;
+    //     if (!empty($request->document_expiry) && $request->document_expiry == 'current, pending renewal') {
+    //         $updateDocuments->document_expiry = $request->document_expiry;
+    //     } else {
+    //         if (str_contains($request->document_expiry, '/')) {
+    //             $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->document_expiry)->format('Y-m-d');
+    //         } else {
+    //             $formattedExpiry = Carbon::parse($request->document_expiry)->format('Y-m-d');
+    //         }
+    //         $updateDocuments->document_expiry = $formattedExpiry;
+    //     }
+    //     $updateDocuments->document_no = (!empty($request->document_no) && $request->has('document_no') ? $request->document_no : '');
+    //     $updateDocuments->document_type = (!empty($request->document_type) && $request->has('document_type') ? $request->document_type : '');
+    //     $updateDocuments->working_rights = (!empty($request->working_rights) && $request->has('working_rights')) ? $request->working_rights : null;
+
+    //     if ($request->has('file')) {
+    //         $updateDocuments->file = $request->file;
+    //         $updateDocuments->file = str_replace(url('') . "/" . "staff_documents/", "", $request->file);
+    //     }
+    //     $updateDocuments->save();
+
+    //     return response()->json(['message' => "Staff Documents Updated Successfully!", 'code' => 200, 'success' => true]);
+    // }
+/**
+ * ONLY ADDITION: the block after $updateDocuments->save(), which propagates
+ * "common" document types (security_industry_membership_certificate,
+ * asic_report, workcover) to every other state the contractor is approved
+ * for, if they have more than one approved state. Everything above
+ * (validation, parsing, saving the original document) is unchanged.
+ */
+public function updateGuardDocuments(Request $request)
+{
+
+    $updateDocuments = Document::where('id', $request->id)->first();
+    $old_data = $updateDocuments;
+    $updateDocuments->document_name = $request->document_name;
+    $updateDocuments->user_id = $request->user_id;
+    if (!empty($request->document_expiry) && $request->document_expiry == 'current, pending renewal') {
+        $updateDocuments->document_expiry = $request->document_expiry;
+    } else {
+        if (str_contains($request->document_expiry, '/')) {
+            $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->document_expiry)->format('Y-m-d');
         } else {
-            if (str_contains($request->document_expiry, '/')) {
-                $formattedExpiry = Carbon::createFromFormat('d/m/Y', $request->document_expiry)->format('Y-m-d');
-            } else {
-                $formattedExpiry = Carbon::parse($request->document_expiry)->format('Y-m-d');
-            }
-            $updateDocuments->document_expiry = $formattedExpiry;
+            $formattedExpiry = Carbon::parse($request->document_expiry)->format('Y-m-d');
         }
-        $updateDocuments->document_no = (!empty($request->document_no) && $request->has('document_no') ? $request->document_no : '');
-        $updateDocuments->document_type = (!empty($request->document_type) && $request->has('document_type') ? $request->document_type : '');
-        $updateDocuments->working_rights = (!empty($request->working_rights) && $request->has('working_rights')) ? $request->working_rights : null;
-
-        if ($request->has('file')) {
-            $updateDocuments->file = $request->file;
-            $updateDocuments->file = str_replace(url('') . "/" . "staff_documents/", "", $request->file);
-        }
-        $updateDocuments->save();
-
-        return response()->json(['message' => "Staff Documents Updated Successfully!", 'code' => 200, 'success' => true]);
+        $updateDocuments->document_expiry = $formattedExpiry;
     }
+    $updateDocuments->document_no = (!empty($request->document_no) && $request->has('document_no') ? $request->document_no : '');
+    $updateDocuments->document_type = (!empty($request->document_type) && $request->has('document_type') ? $request->document_type : '');
+    $updateDocuments->working_rights = (!empty($request->working_rights) && $request->has('working_rights')) ? $request->working_rights : null;
+
+    if ($request->has('file')) {
+        $updateDocuments->file = $request->file;
+        $updateDocuments->file = str_replace(url('') . "/" . "staff_documents/", "", $request->file);
+    }
+    $updateDocuments->save();
+
+    // ============ NEW: propagate common documents across all approved states ============
+    // Only applies to contractors with MORE THAN ONE approved state, and only
+    // for document types that are shared/common across states (same licence/
+    // certificate regardless of which state it's filed under).
+    $commonDocumentTypes = [
+        'security_industry_membership_certificate',
+        'asic_report',
+        'workcover',
+    ];
+
+    if (in_array($updateDocuments->document_type, $commonDocumentTypes, true)) {
+        $user = \App\Models\User::find($request->user_id);
+
+        if ($user && $user->user_type === 'contractor') {
+            $statesAllowed = [];
+            if (!empty($user->states_allowed)) {
+                $statesAllowed = json_decode($user->states_allowed, true) ?? [];
+            }
+
+            if (count($statesAllowed) > 1) {
+                // Same state -> document_category mapping used elsewhere in the app
+                $stateDocumentMap = [
+                    'vic' => 'contractor_document',
+                    'nsw' => 'nsw_document',
+                    'qld' => 'qld_document',
+                    'tas' => 'tas_document',
+                    'wa'  => 'wa_document',
+                    'sa'  => 'sa_document',
+                ];
+
+                $currentCategory = $request->document_category;
+
+                foreach ($statesAllowed as $state) {
+                    $state = strtolower(trim($state));
+
+                    if (!isset($stateDocumentMap[$state])) {
+                        continue; // unmapped state (e.g. act/nt) — skip
+                    }
+
+                    $targetCategory = $stateDocumentMap[$state];
+
+                    // Don't re-process the state whose document we just updated above
+                    if ($targetCategory === $currentCategory) {
+                        continue;
+                    }
+
+                    \App\Models\Document::updateOrCreate(
+                        [
+                            'user_id'           => $user->id,
+                            'document_category' => $targetCategory,
+                            'document_type'     => $updateDocuments->document_type,
+                        ],
+                        [
+                            'document_name'    => $updateDocuments->document_name,
+                            'document_no'      => $updateDocuments->document_no,
+                            'document_expiry'  => $updateDocuments->document_expiry,
+                            'working_rights'   => $updateDocuments->working_rights,
+                            'file'             => $updateDocuments->file,
+                        ]
+                    );
+                }
+            }
+        }
+    }
+    // ============ END NEW ============
+
+    return response()->json(['message' => "Staff Documents Updated Successfully!", 'code' => 200, 'success' => true]);
+}
 
     public function editUser($id)
     {

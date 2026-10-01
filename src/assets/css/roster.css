@@ -1441,6 +1441,43 @@
     font-weight: 500;
 }
 
+.state-badge-pill .badge-period-label {
+    opacity: 0.85;
+    margin-right: 2px;
+}
+
+.state-badge-pill .badge-stat-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 10.5px;
+}
+
+.state-badge-pill .badge-stat-item.stat-covered {
+    color: #15803d;
+}
+
+.state-badge-pill .badge-stat-item.stat-covered strong {
+    color: #166534;
+}
+
+.state-badge-pill .badge-stat-item.stat-uncovered {
+    color: #64748b;
+}
+
+.state-badge-pill .badge-stat-item.stat-uncovered.has-val {
+    color: #b91c1c;
+}
+
+.state-badge-pill .badge-stat-item.stat-uncovered.has-val strong {
+    color: #991b1b;
+}
+
+.state-badge-pill .badge-stat-dot {
+    opacity: 0.35;
+    margin: 0 1px;
+}
+
 /* Featured (Victoria) card badge styling */
 .staffoo-state-card.is-featured .state-badge-pill.badge-today-active {
     background: rgba(254, 243, 199, 0.25);
@@ -1469,6 +1506,40 @@
 }
 .staffoo-state-card.is-featured .state-badge-pill.badge-pill-muted strong {
     color: rgba(255, 255, 255, 0.85);
+}
+
+.staffoo-state-card.is-featured .state-badge-pill .badge-stat-item.stat-covered {
+    color: #a7f3d0;
+}
+.staffoo-state-card.is-featured .state-badge-pill .badge-stat-item.stat-covered strong {
+    color: #ffffff;
+}
+
+.staffoo-state-card.is-featured .state-badge-pill .badge-stat-item.stat-uncovered {
+    color: rgba(255, 255, 255, 0.75);
+}
+.staffoo-state-card.is-featured .state-badge-pill .badge-stat-item.stat-uncovered.has-val {
+    color: #fecaca;
+}
+.staffoo-state-card.is-featured .state-badge-pill .badge-stat-item.stat-uncovered.has-val strong {
+    color: #ffffff;
+}
+
+.staffoo-state-card.is-featured .state-badge-pill .badge-stat-item.stat-covered {
+    color: #a7f3d0;
+}
+.staffoo-state-card.is-featured .state-badge-pill .badge-stat-item.stat-covered strong {
+    color: #ffffff;
+}
+
+.staffoo-state-card.is-featured .state-badge-pill .badge-stat-item.stat-uncovered {
+    color: rgba(255, 255, 255, 0.75);
+}
+.staffoo-state-card.is-featured .state-badge-pill .badge-stat-item.stat-uncovered.has-val {
+    color: #fecaca;
+}
+.staffoo-state-card.is-featured .state-badge-pill .badge-stat-item.stat-uncovered.has-val strong {
+    color: #ffffff;
 }
 
 /* ── Embedded Accordion (Add Shift Modal) ── */

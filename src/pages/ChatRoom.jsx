@@ -100,7 +100,7 @@ const ChatRoom = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState(null);
   const [mobileChatActive, setMobileChatActive] = useState(false);
-  const scrollRef = useRef();
+  const messagesContainerRef = useRef(null);
   const pickerRef = useRef();
 
   const isMobileView = () => window.innerWidth < 768;
@@ -153,7 +153,15 @@ const ChatRoom = () => {
   }, [convData, dispatch]);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    const scrollToBottom = () => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop =
+          messagesContainerRef.current.scrollHeight;
+      }
+    };
+    scrollToBottom();
+    const timer = setTimeout(scrollToBottom, 50);
+    return () => clearTimeout(timer);
   }, [messages]);
 
   useEffect(() => {
@@ -1640,7 +1648,7 @@ const ChatRoom = () => {
               </div>
 
               {/* Messages */}
-              <div className="chatroom-messages">
+              <div className="chatroom-messages" ref={messagesContainerRef}>
                 {loadingMessages ? (
                   <div className="text-center text-muted py-5">
                     <i className="fa fa-spinner fa-spin fa-2x mb-3" style={{ color: "#0A7C6E" }}></i>
@@ -1718,7 +1726,6 @@ const ChatRoom = () => {
                     </div>
                   ))
                 )}
-                <div ref={scrollRef} />
               </div>
 
               {/* Footer Input */}

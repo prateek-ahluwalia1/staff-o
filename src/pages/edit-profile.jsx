@@ -2151,7 +2151,11 @@ export default function EditProfile() {
       )}
 
       {activeTab === "rates" && userType === "contractor" && (
-        <ContractorRatesView selectedStates={formData.states_allowed || []} />
+        <ContractorRatesView
+          selectedStates={formData.states_allowed || []}
+          onRatesUpdated={() => refetch()}
+          onSuccess={() => refetch()}
+        />
       )}
 
       {activeTab === "cards" && userType === "customer" && (

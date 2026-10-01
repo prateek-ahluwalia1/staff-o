@@ -1,12 +1,13 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { setUser } from "../store/slices/authSlice";
 import { toast } from "react-toastify";
 import useFetch from "../hooks/useFetch";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
 import SignaturePad from "../components/contracts/SignaturePad";
-import { resolveSignatureUrl } from "../utils/exports";
+import { apiURL, resolveSignatureUrl } from "../utils/exports";
 const STATE_NAME_MAP = {
   NSW: "New South Wales", VIC: "Victoria", QLD: "Queensland",
   WA: "Western Australia", SA: "South Australia", TAS: "Tasmania",
@@ -104,8 +105,15 @@ const checkIfFormChanged = (currentForm, initialForm, states) => {
   return false;
 };
 
-const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnly = false }) => {
-  const { userdata } = useSelector((state) => state.auth || {});
+const ContractorRatesView = ({
+  selectedStates = [],
+  contractorId = null,
+  readOnly = false,
+  onRatesUpdated,
+  onSuccess,
+}) => {
+  const dispatch = useDispatch();
+  const { userdata, token } = useSelector((state) => state.auth || {});
   const userId = userdata?.data?.id || userdata?.id;
   const userType = userdata?.data?.user_type || userdata?.user_type;
 
@@ -687,6 +695,29 @@ const ContractorRatesView = ({ selectedStates = [], contractorId = null, readOnl
         setInitialFormState(null);
         if (typeof refetchRequests === "function") refetchRequests();
         if (typeof refetchActiveRates === "function") refetchActiveRates();
+        if (typeof onRatesUpdated === "function") onRatesUpdated();
+        if (typeof onSuccess === "function") onSuccess();
+
+        // Fetch latest user profile to sync active status and details into Redux immediately
+        const syncUserId = targetContractorId || userId;
+        if (syncUserId && token) {
+          try {
+            const userRes = await fetch(`${apiURL}api/user-edit/${syncUserId}`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: "application/json",
+              },
+            });
+            if (userRes.ok) {
+              const userData = await userRes.json();
+              if (userData && (userData.success || userData.data)) {
+                dispatch(setUser({ userdata: userData }));
+              }
+            }
+          } catch (e) {
+            console.error("Failed to sync updated user profile after rate update:", e);
+          }
+        }
       } else {
         toast.error(res?.message || res?.error || "Failed to save rate update requests.");
         console.error(res?.message || res?.error || "Failed to save rate update requests.");

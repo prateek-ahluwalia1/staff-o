@@ -12,7 +12,10 @@ const useFetch = (endpoint, { isAuth = false, immediate = true, method = "GET", 
 
   const fetchData = useCallback(
     async (overrideEndpoint, requestOptions = {}) => {
-      const url = overrideEndpoint || endpoint;
+      const url =
+        typeof overrideEndpoint === "string" && overrideEndpoint
+          ? overrideEndpoint
+          : endpoint;
       if (!url) return;
 
       const requestMethod = requestOptions.method || method;

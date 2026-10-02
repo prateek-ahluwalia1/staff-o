@@ -46,7 +46,14 @@
                     </tr>
                     <tr>
                         <td style="padding:16px 28px; background:#F9FAFB; border-top:1px solid #E5E7EB; text-align:center;">
-                            <span style="font-size:11px; color:#9CA3AF;">
+                            <!-- App download badges -->
+<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto; padding:20px 0 10px 0;">
+<tr>
+<td style="padding:0 5px;"><a href="https://apps.apple.com/pk/app/staffoo/id6798964069" target="_blank"><img src="https://apis.staffoo.com.au/uploads/app-store-badge.png" alt="Download on the App Store" width="120" height="41" style="display:block; border:0; width:120px; height:auto;"></a></td>
+<td style="padding:0 5px;"><a href="https://play.google.com/store/apps/details?id=com.staffoo" target="_blank"><img src="https://apis.staffoo.com.au/uploads/google-play-badge.png" alt="Get it on Google Play" width="120" height="41" style="display:block; border:0; width:120px; height:auto;"></a></td>
+</tr>
+</table>
+<span style="font-size:11px; color:#9CA3AF;">
                                 Capital Services Pty Ltd (t/a Staffoo) — ABN 48 613 317 838
                             </span>
                         </td>

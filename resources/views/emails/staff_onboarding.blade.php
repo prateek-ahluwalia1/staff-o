@@ -227,7 +227,14 @@
                     <tr>
                         <td style="background: #F7FBFD; padding: 20px 32px 28px 32px; text-align: center; border-top: 1px solid #E2EDF2;">
                             <img src="https://apis.staffoo.com.au/uploads/staffologo.png" alt="STAFFOO" width="100" height="auto" style="display: inline-block; width: 100px; opacity: 0.7; margin-bottom: 12px;">
-                            <p style="font-size: 12px; color: #8EA3B2; margin: 8px 0 0 0;">© {{ date('Y') }} STAFFOO</p>
+                            <!-- App download badges -->
+<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto; padding:20px 0 10px 0;">
+<tr>
+<td style="padding:0 5px;"><a href="https://apps.apple.com/pk/app/staffoo/id6798964069" target="_blank"><img src="https://apis.staffoo.com.au/uploads/app-store-badge.png" alt="Download on the App Store" width="120" height="41" style="display:block; border:0; width:120px; height:auto;"></a></td>
+<td style="padding:0 5px;"><a href="https://play.google.com/store/apps/details?id=com.staffoo" target="_blank"><img src="https://apis.staffoo.com.au/uploads/google-play-badge.png" alt="Get it on Google Play" width="120" height="41" style="display:block; border:0; width:120px; height:auto;"></a></td>
+</tr>
+</table>
+<p style="font-size: 12px; color: #8EA3B2; margin: 8px 0 0 0;">© {{ date('Y') }} STAFFOO</p>
                             <p style="font-size: 11px; color: #9EB2C0; margin: 8px 0 0 0;">
                                 <a href="https://staffoo.com.au/privacy-policy" style="color: #6F8F9F; text-decoration: none;">Privacy</a> &nbsp;|&nbsp; 
                                 <a href="https://staffoo.com.au/contact-us" style="color: #6F8F9F; text-decoration: none;">Support Center</a>

@@ -121,7 +121,14 @@
                                                     <span style="color:#C8D6DE;">|</span>
                                                     <a href="https://staffoo.com.au/terms-of-use" style="color:#00A37E; text-decoration:none; font-size:12px; margin:0 8px;">Terms</a>
                                                 </div>
-                                                <!-- tiny app badge hint (optional) -->
+                                                <!-- App download badges -->
+<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto; padding:20px 0 10px 0;">
+<tr>
+<td style="padding:0 5px;"><a href="https://apps.apple.com/pk/app/staffoo/id6798964069" target="_blank"><img src="https://apis.staffoo.com.au/uploads/app-store-badge.png" alt="Download on the App Store" width="120" height="41" style="display:block; border:0; width:120px; height:auto;"></a></td>
+<td style="padding:0 5px;"><a href="https://play.google.com/store/apps/details?id=com.staffoo" target="_blank"><img src="https://apis.staffoo.com.au/uploads/google-play-badge.png" alt="Get it on Google Play" width="120" height="41" style="display:block; border:0; width:120px; height:auto;"></a></td>
+</tr>
+</table>
+<!-- tiny app badge hint (optional) -->
                                                 <p style="font-size:11px; color:#A8BBC9; margin-top:18px; margin-bottom:0;">
                                                      Manage shifts, track time and grow with STAFFOO
                                                 </p>

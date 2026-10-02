@@ -96,7 +96,14 @@
             <p style="margin: 0;">
                 &copy; {{ date('Y') }} Staffoo. All rights reserved.
             </p>
-            <div style="margin-top: 15px;">
+            <!-- App download badges -->
+<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto; padding:20px 0 10px 0;">
+<tr>
+<td style="padding:0 5px;"><a href="https://apps.apple.com/pk/app/staffoo/id6798964069" target="_blank"><img src="https://apis.staffoo.com.au/uploads/app-store-badge.png" alt="Download on the App Store" width="120" height="41" style="display:block; border:0; width:120px; height:auto;"></a></td>
+<td style="padding:0 5px;"><a href="https://play.google.com/store/apps/details?id=com.staffoo" target="_blank"><img src="https://apis.staffoo.com.au/uploads/google-play-badge.png" alt="Get it on Google Play" width="120" height="41" style="display:block; border:0; width:120px; height:auto;"></a></td>
+</tr>
+</table>
+<div style="margin-top: 15px;">
                 <a href="https://staffoo.com.au" style="margin: 0 10px; color: #1a237e; text-decoration: none;">Website</a> |
                 <a href="mailto:admin@staffoo.com.au" style="margin: 0 10px; color: #1a237e; text-decoration: none;">Support</a> |
                 <a href="https://staffoo.com.au/privacy-policy" style="margin: 0 10px; color: #1a237e; text-decoration: none;">Privacy Policy</a>

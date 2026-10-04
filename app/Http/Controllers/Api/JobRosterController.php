@@ -5829,12 +5829,12 @@ public function request_charge_rate(Request $request)
             // If any rates exceeded the RP ceilings, warn the contractor by email
             if (!empty($exceededBlocks) && !empty($contractor->email)) {
                 try {
-                    Mail::to($contractor->email)->send(
-                        new ChargeRateRpWarningMail(
-                            $contractor->name ?? 'Contractor',
-                            $exceededBlocks
-                        )
-                    );
+                    // Mail::to($contractor->email)->send(
+                    //     new ChargeRateRpWarningMail(
+                    //         $contractor->name ?? 'Contractor',
+                    //         $exceededBlocks
+                    //     )
+                    // );
                 } catch (\Exception $e) {
                     Log::error('Auto-approve: RP warning email failed', [
                         'user_id' => $contractor->id ?? null,
@@ -6080,6 +6080,26 @@ private function getRpBrackets(): array
     ];
 }
 
+private function getStaffooVicNswBrackets(): array
+{
+    return [
+        'metro' => [
+            1 => ['day' => 49.96, 'night' => 58.63, 'saturday' => 69.95, 'sunday' => 89.93, 'public_hol' => 109.91],
+            2 => ['day' => 51.40, 'night' => 60.33, 'saturday' => 71.96, 'sunday' => 92.52, 'public_hol' => 113.08],
+            3 => ['day' => 52.26, 'night' => 61.33, 'saturday' => 73.17, 'sunday' => 94.06, 'public_hol' => 114.98],
+            4 => ['day' => 53.14, 'night' => 62.37, 'saturday' => 74.39, 'sunday' => 95.65, 'public_hol' => 116.90],
+            5 => ['day' => 54.84, 'night' => 64.36, 'saturday' => 76.78, 'sunday' => 98.72, 'public_hol' => 120.66],
+        ],
+        'regional' => [
+            1 => ['day' => 54.41, 'night' => 63.84, 'saturday' => 76.16, 'sunday' => 97.92, 'public_hol' => 119.68],
+            2 => ['day' => 55.97, 'night' => 65.69, 'saturday' => 78.35, 'sunday' => 100.74, 'public_hol' => 123.13],
+            3 => ['day' => 56.90, 'night' => 66.78, 'saturday' => 79.67, 'sunday' => 102.43, 'public_hol' => 125.20],
+            4 => ['day' => 57.87, 'night' => 67.91, 'saturday' => 81.00, 'sunday' => 104.16, 'public_hol' => 127.29],
+            5 => ['day' => 59.72, 'night' => 70.09, 'saturday' => 83.61, 'sunday' => 107.49, 'public_hol' => 131.38],
+        ],
+    ];
+}
+
 /**
  * Compare the "Default" Metro + Regional rates in a rate-entry array against
  * the RP ceiling brackets for the given level.
@@ -6135,6 +6155,89 @@ private function getRpExceedances(array $rateEntry, int $level): array
  *   3. Fires the approval email + push notification to the contractor.
  *   4. Generates the signed contract when all pending requests for this user are done.
  */
+// private function performAutoApprove(int $requestId, object $contractor): void
+// {
+//     $rateRequest = DB::table('charge_rate_requests')->where('id', $requestId)->first();
+
+//     if (!$rateRequest || $rateRequest->status !== 'pending') {
+//         return;
+//     }
+
+//     $rateFieldLabels = $this->chargeRateFieldLabels();
+
+//     $charge_rate = \App\Models\ContractorChargeRate::where('user_id', $rateRequest->user_id)
+//         ->where('state', $rateRequest->state)
+//         ->first();
+
+//     if (!$charge_rate) {
+//         $charge_rate = new \App\Models\ContractorChargeRate();
+//     }
+
+//     $charge_rate->title   = $rateRequest->title;
+//     $charge_rate->user_id = $rateRequest->user_id;
+//     $charge_rate->state   = $rateRequest->state;
+
+//     foreach ($rateFieldLabels as $column => $label) {
+//         $charge_rate->{$column} = $rateRequest->{$column} ?? 0;
+//     }
+
+//     $charge_rate->effective_from = $rateRequest->effective_from;
+//     $charge_rate->save();
+
+//     DB::table('charge_rate_requests')->where('id', $requestId)->update([
+//         'status'                    => 'approved',
+//         'reviewed_by'               => 0,   // 0 = auto-approved by system
+//         'reviewed_at'               => now(),
+//         'contractor_charge_rate_id' => $charge_rate->id,
+//     ]);
+
+//     // Email contractor: their request was approved
+//     if (!empty($contractor->email)) {
+//         try {
+//             Mail::to($contractor->email)->send(new ChargeRateApprovedMail(
+//                 $contractor->name ?? 'Contractor',
+//                 $rateRequest->title,
+//                 $rateRequest->state,
+//                 $rateRequest->effective_from
+//             ));
+//         } catch (\Exception $e) {
+//             Log::error('Auto-approve: contractor approval email failed', [
+//                 'charge_rate_request_id' => $requestId,
+//                 'error'                  => $e->getMessage(),
+//             ]);
+//         }
+//     }
+
+//     // Push notification to contractor
+//     if (!empty($contractor->notification_token)) {
+//         try {
+//             send_push_notification([
+//                 'message'            => 'Your charge rate request for ' . strtoupper($rateRequest->state) . ' has been approved.',
+//                 'title'              => 'Charge Rate Approved',
+//                 'notification_token' => $contractor->notification_token,
+//                 'page'               => 'charge-rates',
+//             ]);
+//         } catch (\Exception $e) {
+//             Log::error('Auto-approve: contractor push notification failed', [
+//                 'charge_rate_request_id' => $requestId,
+//                 'error'                  => $e->getMessage(),
+//             ]);
+//         }
+//     }
+
+//     // Generate signed contract once ALL pending requests for this user are done
+//     $remainingPending = DB::table('charge_rate_requests')
+//         ->where('user_id', $rateRequest->user_id)
+//         ->where('status', 'pending')
+//         ->exists();
+
+//     if (!$remainingPending) {
+//         $allApprovedRates = \App\Models\ContractorChargeRate::where('user_id', $rateRequest->user_id)->get();
+//         if ($allApprovedRates->isNotEmpty()) {
+//             $this->generateAndSendSignedContract($contractor, $rateRequest, $allApprovedRates);
+//         }
+//     }
+// }
 private function performAutoApprove(int $requestId, object $contractor): void
 {
     $rateRequest = DB::table('charge_rate_requests')->where('id', $requestId)->first();
@@ -6142,6 +6245,104 @@ private function performAutoApprove(int $requestId, object $contractor): void
     if (!$rateRequest || $rateRequest->status !== 'pending') {
         return;
     }
+
+    // ── VIC / NSW rate-cap check ──────────────────────────────────────────────
+    // For VIC or NSW requests, compare against Staffoo Level-1 charge-rate ceilings.
+    // Uses getStaffooVicNswBrackets() — separate from the RP brackets used for other states.
+    // If any rate exceeds the Level-1 ceiling → reject automatically.
+    if (in_array(strtoupper(trim($rateRequest->state ?? '')), ['VIC', 'NSW'])) {
+        $rateEntryArray = (array) $rateRequest; // cast stdClass → array for field access
+        $staffooBrackets = $this->getStaffooVicNswBrackets();
+
+        // Same field-to-slot mapping as getRpExceedances()
+        $checks = [
+            'def_metro_mon_to_fri_day_rate'   => ['metro',    'day',        'Metro Mon–Fri Day'],
+            'def_metro_mon_to_fri_night_rate' => ['metro',    'night',      'Metro Mon–Fri Night'],
+            'def_metro_sat_day_rate'          => ['metro',    'saturday',   'Metro Saturday'],
+            'def_metro_sun_day_rate'          => ['metro',    'sunday',     'Metro Sunday'],
+            'def_metro_pub_holi_day_rate'     => ['metro',    'public_hol', 'Metro Public Holiday'],
+            'def_reg_mon_to_fri_day_rate'     => ['regional', 'day',        'Regional Mon–Fri Day'],
+            'def_reg_mon_to_fri_night_rate'   => ['regional', 'night',      'Regional Mon–Fri Night'],
+            'def_reg_sat_day_rate'            => ['regional', 'saturday',   'Regional Saturday'],
+            'def_reg_sun_day_rate'            => ['regional', 'sunday',     'Regional Sunday'],
+            'def_reg_pub_holi_day_rate'       => ['regional', 'public_hol', 'Regional Public Holiday'],
+        ];
+
+        $exceeded = [];
+        foreach ($checks as $field => [$area, $slot, $humanLabel]) {
+            $requested = isset($rateEntryArray[$field]) ? (float) $rateEntryArray[$field] : 0;
+            $max       = $staffooBrackets[$area][1][$slot] ?? null; // always Level-1 for VIC/NSW
+            if ($max !== null && $requested > $max) {
+                $exceeded[] = [
+                    'field'     => $field,
+                    'label'     => $humanLabel,
+                    'requested' => $requested,
+                    'rp_max'    => $max,
+                ];
+            }
+        }
+
+        if (!empty($exceeded)) {
+            // Build a human-readable reason listing every field that failed
+            $lines = array_map(
+                fn($e) => "• {$e['label']}: requested \${$e['requested']} > max \${$e['rp_max']}",
+                $exceeded
+            );
+            $reason = 'Your requested rates for ' . strtoupper($rateRequest->state)
+                . ' exceed the Staffoo Level-1 charge-rate ceiling:'
+                . "\n" . implode("\n", $lines);
+
+            DB::table('charge_rate_requests')->where('id', $requestId)->update([
+                'status'      => 'rejected',
+                'reviewed_by' => 0,          // 0 = auto-rejected by system
+                'reviewed_at' => now(),
+                'review_note' => $reason,
+            ]);
+
+            // Email contractor: request rejected
+            if (!empty($contractor->email)) {
+                try {
+                    Mail::to($contractor->email)->send(new ChargeRateRejectedMail(
+                        $contractor->name ?? 'Contractor',
+                        $rateRequest->title,
+                        $rateRequest->state,
+                        $reason
+                    ));
+                } catch (\Exception $e) {
+                    Log::error('Auto-reject (VIC/NSW cap): rejection email failed', [
+                        'charge_rate_request_id' => $requestId,
+                        'error'                  => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            // Push notification to contractor
+            if (!empty($contractor->notification_token)) {
+                try {
+                    send_push_notification([
+                        'message'            => 'Your charge rate request for ' . strtoupper($rateRequest->state) . ' has been rejected.',
+                        'title'              => 'Charge Rate Rejected',
+                        'notification_token' => $contractor->notification_token,
+                        'page'               => 'charge-rates',
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Auto-reject (VIC/NSW cap): contractor push notification failed', [
+                        'charge_rate_request_id' => $requestId,
+                        'error'                  => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            Log::info('Auto-rejected charge rate request (VIC/NSW Level-1 cap exceeded)', [
+                'charge_rate_request_id' => $requestId,
+                'state'                  => $rateRequest->state,
+                'exceeded_fields'        => array_column($exceeded, 'field'),
+            ]);
+
+            return; // stop here — do NOT approve
+        }
+    }
+    // ── END VIC / NSW rate-cap check ─────────────────────────────────────────
 
     $rateFieldLabels = $this->chargeRateFieldLabels();
 

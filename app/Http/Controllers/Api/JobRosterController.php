@@ -6084,18 +6084,18 @@ private function getStaffooVicNswBrackets(): array
 {
     return [
         'metro' => [
-            1 => ['day' => 49.96, 'night' => 58.63, 'saturday' => 69.95, 'sunday' => 89.93, 'public_hol' => 109.91],
-            2 => ['day' => 51.40, 'night' => 60.33, 'saturday' => 71.96, 'sunday' => 92.52, 'public_hol' => 113.08],
-            3 => ['day' => 52.26, 'night' => 61.33, 'saturday' => 73.17, 'sunday' => 94.06, 'public_hol' => 114.98],
-            4 => ['day' => 53.14, 'night' => 62.37, 'saturday' => 74.39, 'sunday' => 95.65, 'public_hol' => 116.90],
-            5 => ['day' => 54.84, 'night' => 64.36, 'saturday' => 76.78, 'sunday' => 98.72, 'public_hol' => 120.66],
+            1 => ['day' => 42.04, 'night' => 51.17, 'saturday' => 63.06, 'sunday' => 84.08, 'public_hol' => 105.10],
+            2 => ['day' => 43.25, 'night' => 52.65, 'saturday' => 64.88, 'sunday' => 86.51, 'public_hol' => 108.14],
+            3 => ['day' => 43.98, 'night' => 53.52, 'saturday' => 65.98, 'sunday' => 87.96, 'public_hol' => 109.95],
+            4 => ['day' => 44.72, 'night' => 54.42, 'saturday' => 67.09, 'sunday' => 89.44, 'public_hol' => 111.80],
+            5 => ['day' => 46.15, 'night' => 56.17, 'saturday' => 69.23, 'sunday' => 92.31, 'public_hol' => 115.38],
         ],
         'regional' => [
-            1 => ['day' => 54.41, 'night' => 63.84, 'saturday' => 76.16, 'sunday' => 97.92, 'public_hol' => 119.68],
-            2 => ['day' => 55.97, 'night' => 65.69, 'saturday' => 78.35, 'sunday' => 100.74, 'public_hol' => 123.13],
-            3 => ['day' => 56.90, 'night' => 66.78, 'saturday' => 79.67, 'sunday' => 102.43, 'public_hol' => 125.20],
-            4 => ['day' => 57.87, 'night' => 67.91, 'saturday' => 81.00, 'sunday' => 104.16, 'public_hol' => 127.29],
-            5 => ['day' => 59.72, 'night' => 70.09, 'saturday' => 83.61, 'sunday' => 107.49, 'public_hol' => 131.38],
+            1 => ['day' => 44.77, 'night' => 54.48, 'saturday' => 67.15, 'sunday' => 89.53, 'public_hol' => 111.91],
+            2 => ['day' => 46.06, 'night' => 56.06, 'saturday' => 69.09, 'sunday' => 92.12, 'public_hol' => 115.14],
+            3 => ['day' => 46.83, 'night' => 56.99, 'saturday' => 70.25, 'sunday' => 93.66, 'public_hol' => 117.08],
+            4 => ['day' => 47.62, 'night' => 57.95, 'saturday' => 71.43, 'sunday' => 95.23, 'public_hol' => 119.05],
+            5 => ['day' => 49.14, 'night' => 59.81, 'saturday' => 73.72, 'sunday' => 98.29, 'public_hol' => 122.86],
         ],
     ];
 }

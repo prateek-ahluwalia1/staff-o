@@ -28,12 +28,11 @@
         <h1>Required Updated Charge Rates</h1>
     </div>
     <div class="body">
-        <p>Hi {{ $contractorName }},</p>
+        <p>Hi</p>
 
         <p>
-            Your charge rate request <strong>"{{ $title }}"</strong> for
-            <strong>{{ strtoupper($state) }}</strong> has been reviewed and was
-            <strong>not approved</strong> by Staffoo.
+            Please note that rate you have submitted, our team who are responsible for reviewing the information and providing recommendations and outcomes.
+            Unfortunately, have declined and not approved.
         </p>
 
         @if(!empty($reviewNote))
@@ -43,8 +42,23 @@
             </div>
         @endif
 
-        <p>Your rates has been reviewed by Staffoo and unfortunately is not being approved.</p>
-        <p>Please revise your rates and send it back.</p>
+        <p>
+            In the meantime, to ensure your submission aligns with the final review requirements, we recommend adjusting your rates to fall within the following ranges. Please update your profile and resubmit using these guidelines:
+        </p>
+
+        <p><strong>Rates (For VIC &amp; NSW)</strong></p>
+
+        <p>
+            Day: $40 to $44<br>
+            Night: $48 to $54<br>
+            Saturday: $60 to $67<br>
+            Sunday: $80 to $89<br>
+            Public Hol: $100 to $111
+        </p>
+
+        <p>Please resubmit your rates with these adjustments as soon as possible.</p>
+
+        <p>Thanks for your support.</p>
 
         <p>Thank you,<br>STAFFOO Team</p>
     </div>

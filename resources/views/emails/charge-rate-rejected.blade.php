@@ -35,13 +35,6 @@
             Unfortunately, have declined and not approved.
         </p>
 
-        @if(!empty($reviewNote))
-            <div class="note-box">
-                <strong>Admin note:</strong><br>
-                {{ $reviewNote }}
-            </div>
-        @endif
-
         <p>
             In the meantime, to ensure your submission aligns with the final review requirements, we recommend adjusting your rates to fall within the following ranges. Please update your profile and resubmit using these guidelines:
         </p>

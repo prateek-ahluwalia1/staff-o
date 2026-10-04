@@ -5844,8 +5844,8 @@ public function request_charge_rate(Request $request)
             }
 
             $message = $isUpdate
-                ? 'Charge rate updated and auto-approved.'
-                : 'Charge rate submitted and auto-approved.';
+                ? 'Charge rate updated.'
+                : 'Charge rate submitted.';
 
             return response()->json([
                 'success' => true,

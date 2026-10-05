@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * ============================================================================
+ * ADD THIS METHOD to your existing app/Services/TwilioService.php
+ * ============================================================================
+ *
+ * Do NOT replace the file. Paste this method in alongside sendWhatsapp().
+ *
+ * Why a second method:
+ *
+ * Your existing sendWhatsapp() always sends through an approved template
+ * (contentSid + contentVariables). That is required when you message someone
+ * who has NOT messaged you in the last 24 hours — Meta blocks free-form text
+ * outside that window.
+ *
+ * The support bridge is the opposite case: the guard messages US first, so
+ * every reply lands inside the 24-hour customer service window where
+ * free-form text is allowed. Free-form is better here because the agent's
+ * replies vary in length and a single-variable template mangles them.
+ *
+ * Keep both:
+ *   sendWhatsapp()          -> outbound, cold, template required
+ *   sendWhatsappFreeform()  -> replying inside the 24h window
+ */
+
+public function sendWhatsappFreeform(string $phone, string $message): bool
+{
+    // WhatsApp hard-caps a message body at 1600 characters. The agent should
+    // be brief anyway, but never let a long reply fail silently.
+    if (mb_strlen($message) > 1500) {
+        $message = mb_substr($message, 0, 1490) . '…';
+    }
+
+    $this->client->messages->create('whatsapp:' . $this->normalize($phone), [
+        'from' => config('services.twilio.whatsapp_from'),
+        'body' => $message,
+    ]);
+
+    return true;
+}

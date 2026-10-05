@@ -28,6 +28,8 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\VisaController;
 use App\Http\Controllers\IvrController2;
 use App\Http\Controllers\Api\StripeWebhookController;
+use App\Http\Controllers\Api\WhatsappWebhookController;
+use App\Http\Controllers\Api\RetellFunctionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +41,21 @@ use App\Http\Controllers\Api\StripeWebhookController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+// Twilio posts here on every inbound WhatsApp message.
+// Set this URL in Twilio Console > Messaging > your WhatsApp sender >
+// "When a message comes in".
+Route::post('/whatsapp/incoming', [WhatsappWebhookController::class, 'handle'])
+    ->name('whatsapp.incoming');
+
+// Retell custom functions. Register these two URLs on BOTH the voice agent
+// and the chat agent — one implementation serves both channels.
+Route::post('/retell/job-request', [RetellFunctionController::class, 'jobRequest'])
+    ->name('retell.job-request');
+
+Route::post('/retell/escalate', [RetellFunctionController::class, 'escalate'])
+    ->name('retell.escalate');
+    
 Route::post('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 Route::get('/email-verification/{email}/{token}', [AuthController::class, 'EmailVerification'])->name('guard.email.verification');
 Route::post('/register/user', [AuthController::class, 'register']);

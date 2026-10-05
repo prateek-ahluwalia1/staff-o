@@ -67,4 +67,19 @@ return [
     'voice_url'     => env('TWILIO_VOICE_URL'),       // TwiML endpoint for calls
     'whatsapp_generic_template_sid' => env('TEMPLATE_SID'),
 ],
+
+    'retell' => [
+        'api_key'               => env('RETELL_API_KEY'),
+
+        // The CHAT agent id (not the voice one). Create a chat agent in
+        // Retell and paste the same prompt into it.
+        'chat_agent_id'         => env('RETELL_CHAT_AGENT_ID'),
+
+        // Start a fresh conversation if the person has been quiet this long.
+        // 180 = 3 hours.
+        'chat_timeout_minutes'  => env('RETELL_CHAT_TIMEOUT_MINUTES', 180),
+
+        // Where job requests and escalations land.
+        'escalation_email'      => env('RETELL_ESCALATION_EMAIL', 'abdulsamad.idenbrid@gmail.com'),
+    ],
 ];

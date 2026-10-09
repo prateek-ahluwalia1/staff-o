@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\LeaveManagementController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\RtmController;
 use Illuminate\Support\Facades\Artisan;
+use App\Http\Controllers\Api\AgentLookupController;
 
 use App\Http\Controllers\AgoraController;
 use App\Http\Controllers\Api\DashboardController;
@@ -74,6 +75,24 @@ Route::post('stripe/webhook', [StripeWebhookController::class, 'handle']);
 Route::prefix('contact-us')->group(function () {
     Route::post('/', [ContactUsController::class, 'store']);
     Route::get('/inquiry-types', [ContactUsController::class, 'getInquiryTypes']);
+});
+
+Route::middleware('retell.secret')->prefix('retell')->group(function () {
+
+    Route::post('/account-status', [AgentLookupController::class, 'accountStatus'])
+        ->name('retell.account-status');
+
+    Route::post('/why-no-jobs', [AgentLookupController::class, 'whyNoJobs'])
+        ->name('retell.why-no-jobs');
+
+    Route::post('/my-shifts', [AgentLookupController::class, 'myShifts'])
+        ->name('retell.my-shifts');
+
+    Route::post('/pay-status', [AgentLookupController::class, 'payStatus'])
+        ->name('retell.pay-status');
+
+    Route::post('/resend-verification', [AgentLookupController::class, 'resendVerification'])
+        ->name('retell.resend-verification');
 });
 
 // Route::prefix('user')->group(function () {

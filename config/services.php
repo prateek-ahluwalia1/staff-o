@@ -69,17 +69,13 @@ return [
 ],
 
     'retell' => [
-        'api_key'               => env('RETELL_API_KEY'),
+        'api_key'              => env('RETELL_API_KEY'),
+        'chat_agent_id'        => env('RETELL_CHAT_AGENT_ID'),
+        'chat_timeout_minutes' => env('RETELL_CHAT_TIMEOUT_MINUTES', 180),
+        'escalation_email'     => env('RETELL_ESCALATION_EMAIL', 'abdulsamad.idenbrid@gmail.com'),
 
-        // The CHAT agent id (not the voice one). Create a chat agent in
-        // Retell and paste the same prompt into it.
-        'chat_agent_id'         => env('RETELL_CHAT_AGENT_ID'),
-
-        // Start a fresh conversation if the person has been quiet this long.
-        // 180 = 3 hours.
-        'chat_timeout_minutes'  => env('RETELL_CHAT_TIMEOUT_MINUTES', 180),
-
-        // Where job requests and escalations land.
-        'escalation_email'      => env('RETELL_ESCALATION_EMAIL', 'abdulsamad.idenbrid@gmail.com'),
+        // NEW — the shared secret the lookup endpoints require.
+        // Generate with:  php -r "echo bin2hex(random_bytes(32));"
+        'function_secret'      => env('RETELL_FUNCTION_SECRET'),
     ],
 ];

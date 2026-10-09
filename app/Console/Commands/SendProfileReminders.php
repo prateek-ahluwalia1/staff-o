@@ -30,15 +30,14 @@ class SendProfileReminders extends Command
 
         $this->info("Sending reminders to inactive users (gap = {$gap} days, min age = {$minAge} days)...");
 
-        // $users = User::where('is_active', 0)
-        //     ->whereIn('user_type', ['staff', 'contractor'])
-        //     ->where('created_at', '<=', $registeredBefore)          // registered at least 2 days ago
-        //     ->where(function ($q) use ($cutoff) {
-        //         $q->whereNull('last_reminder_sent_at')              // never reminded
-        //           ->orWhere('last_reminder_sent_at', '<=', $cutoff); // OR last reminder > 2 days ago
-        //     })
-        //     ->get();
-        $users = User::where('id', 624)->get();
+        $users = User::where('is_active', 0)
+            ->whereIn('user_type', ['staff', 'contractor'])
+            ->where('created_at', '<=', $registeredBefore)          // registered at least 2 days ago
+            ->where(function ($q) use ($cutoff) {
+                $q->whereNull('last_reminder_sent_at')              // never reminded
+                  ->orWhere('last_reminder_sent_at', '<=', $cutoff); // OR last reminder > 2 days ago
+            })
+            ->get();
 
         $this->info("Found {$users->count()} user(s) to process.");
 

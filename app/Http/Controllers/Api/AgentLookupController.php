@@ -399,7 +399,12 @@ class AgentLookupController extends Controller
 
         if ($identifier !== '') {
             if (Str::contains($identifier, '@')) {
-                return $query->whereRaw('LOWER(email) = ?', [strtolower($identifier)])->first();
+                // A form-encoded body turns "+" into a space, which breaks every
+                // plus-addressed Gmail account (name+tag@gmail.com). An email can
+                // never legitimately contain a space, so putting the + back is safe.
+                $email = str_replace(' ', '+', $identifier);
+
+                return $query->whereRaw('LOWER(email) = ?', [strtolower($email)])->first();
             }
 
             // STAFO123, stafo 123, or just 123
@@ -441,7 +446,15 @@ class AgentLookupController extends Controller
         $args       = $request->input('args', []) + $request->all();
         $identifier = $args['email'] ?? $args['staffo_id'] ?? $args['identifier'] ?? null;
 
-        Log::info('[Agent] lookup miss', ['identifier' => $identifier]);
+        // When nothing arrived at all, the body usually failed to parse — a bad
+        // Content-Type, or a shell that mangled the quoting. Log enough to tell
+        // that apart from a genuine "no such account".
+        Log::info('[Agent] lookup miss', [
+            'identifier'   => $identifier,
+            'keys_received' => array_keys($args),
+            'content_type' => $request->header('Content-Type'),
+            'raw_body'     => $identifier === '' ? Str::limit($request->getContent(), 200) : null,
+        ]);
 
         return response()->json([
             'result' => $identifier

@@ -460,14 +460,23 @@ class ProfileCompletionService
     /** The points maths, said the way a person would say it. */
     private function pointsSentence(int $points, array $documents): string
     {
-        $counting = array_filter($documents, fn ($d) => $d['counts'] && ($d['points'] ?? 0) > 0);
+        // array_values matters: array_filter keeps the original keys, so if the
+        // only scoring document sat at index 3 the list below starts at 3 and
+        // $parts[0] does not exist.
+        $counting = array_values(array_filter(
+            $documents,
+            fn ($d) => !empty($d['counts']) && ($d['points'] ?? 0) > 0
+        ));
 
         if ($counting === []) {
             return 'None of your documents are counting towards the hundred points yet. '
                  . 'A passport or a driver license front is worth seventy on its own.';
         }
 
-        $parts = array_map(fn ($d) => $d['label'] . ' at ' . $d['points'], $counting);
+        $parts = array_values(array_map(
+            fn ($d) => ($d['label'] ?? 'that document') . ' at ' . ($d['points'] ?? 0),
+            $counting
+        ));
         $short = 100 - $points;
 
         $sentence = count($parts) === 1

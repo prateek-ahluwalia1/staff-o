@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import Select from "react-select";
 import PDFGenerator from "../utils/PDFGenerator";
 import { apiURL, COUNTRIES } from "../utils/exports";
+import { validateDocument } from "../utils/documentValidator";
 import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
 import { useSelector, useDispatch } from "react-redux";
@@ -378,7 +379,16 @@ const FormCardFooter = ({
 const labelCls = "form-label fw-semibold text-dark";
 
 /* ---------- Document Upload Field with Submission Indicator ---------- */
-const DocumentUploadField = ({ label, required, filePath, onUpload, accept = ".pdf,.doc,.docx,.jpg,.jpeg,.png", error }) => {
+const DocumentUploadField = ({
+    label,
+    required,
+    filePath,
+    onUpload,
+    accept = ".pdf,.doc,.docx,.jpg,.jpeg,.png",
+    error,
+    validating = false,
+    validatingStatus = "",
+}) => {
     const [showReplace, setShowReplace] = useState(false);
 
     const resolveDocUrl = (pathOrUrl) => {
@@ -412,6 +422,7 @@ const DocumentUploadField = ({ label, required, filePath, onUpload, accept = ".p
                         type="button"
                         className="btn btn-sm btn-light border rounded-pill"
                         onClick={() => setShowReplace(!showReplace)}
+                        disabled={validating}
                     >
                         <i className="fa-solid fa-rotate me-1"></i> Replace
                     </button>
@@ -424,6 +435,7 @@ const DocumentUploadField = ({ label, required, filePath, onUpload, accept = ".p
                                 onUpload(e);
                                 setShowReplace(false);
                             }}
+                            disabled={validating}
                             style={{ fontSize: "0.85rem" }}
                         />
                     )}
@@ -437,7 +449,14 @@ const DocumentUploadField = ({ label, required, filePath, onUpload, accept = ".p
                         accept={accept}
                         onChange={onUpload}
                         required={required}
+                        disabled={validating}
                     />
+                </div>
+            )}
+            {validating && (
+                <div className="d-flex align-items-center gap-2 text-primary small mt-2">
+                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span className="fw-semibold">{validatingStatus || "Checking document contents..."}</span>
                 </div>
             )}
             <FieldError error={error} />
@@ -910,7 +929,7 @@ const SuperannuationForm = ({ values, loading, onChange, onSubmit, onDownloadPDF
 /* ---------- Employee Onboarding Form ---------- */
 const EmployeeOnboardingForm = ({
     values, loading, onChange, onSubmit,
-    onDocUpload, verifyingSecurityLicense, onVerifySecurityLicense,
+    onDocUpload, docValidatingField, docValidatingStatus, verifyingSecurityLicense, onVerifySecurityLicense,
     onDownloadPDF, securityLicenceModified, errors = {}, isTasOrSa = false
 }) => {
     return (
@@ -1058,6 +1077,8 @@ const EmployeeOnboardingForm = ({
                                 filePath={values.passport_doc}
                                 onUpload={(e) => onDocUpload(e, "passport_doc")}
                                 error={errors.passport_doc}
+                                validating={docValidatingField === "passport_doc"}
+                                validatingStatus={docValidatingStatus}
                             />
                         </div>
                     </div>
@@ -1297,6 +1318,8 @@ const EmployeeOnboardingForm = ({
                                         filePath={values.security_license_doc}
                                         onUpload={(e) => onDocUpload(e, "security_license_doc")}
                                         error={errors.security_license_doc}
+                                        validating={docValidatingField === "security_license_doc"}
+                                        validatingStatus={docValidatingStatus}
                                     />
                                 )}
                             </div>
@@ -1332,6 +1355,8 @@ const EmployeeOnboardingForm = ({
                                     filePath={values.first_aid_doc}
                                     onUpload={(e) => onDocUpload(e, "first_aid_doc")}
                                     error={errors.first_aid_doc}
+                                    validating={docValidatingField === "first_aid_doc"}
+                                    validatingStatus={docValidatingStatus}
                                 />
                             </div>
                         </div>
@@ -1584,6 +1609,8 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
     const [verifyingSecurityLicense, setVerifyingSecurityLicense] = useState(false);
     const [staffState, setStaffState] = useState("");
+    const [docValidatingField, setDocValidatingField] = useState(null);
+    const [docValidatingStatus, setDocValidatingStatus] = useState(null);
 
     const isTasOrSa = useMemo(() => {
         const s = (staffState || "").trim().toLowerCase();
@@ -1811,13 +1838,41 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             return;
         }
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("user_id", userId);
-        formData.append("type", fieldName);
-
+        // Validate document content using centralized frontend validator
+        setDocValidatingField(fieldName);
+        setDocValidatingStatus("Checking document contents...");
         setLoading(true);
+
         try {
+            const userState = (staffState || onboardForm?.state || "").trim();
+            const valRes = await validateDocument(
+                file,
+                fieldName,
+                userState,
+                fieldName,
+                (msg) => setDocValidatingStatus(msg),
+                { state: userState }
+            );
+
+            if (!valRes.isValid) {
+                setErrors((prev) => ({ ...prev, [fieldName]: valRes.error }));
+                setDocValidatingField(null);
+                setLoading(false);
+                return;
+            }
+
+            // Clear any previous error on this field
+            setErrors((prev) => {
+                const copy = { ...prev };
+                delete copy[fieldName];
+                return copy;
+            });
+
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("user_id", userId);
+            formData.append("type", fieldName);
+
             const res = await submit("api/upload-staff-file", formData, {
                 method: "POST",
                 headers: { "Content-Type": "multipart/form-data" },
@@ -1825,20 +1880,17 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
             if (res?.success || res?.file_path) {
                 const uploadedPath = res?.file_path || res?.data?.file_path || file.name;
                 setOnboardForm((prev) => ({ ...prev, [fieldName]: uploadedPath }));
-                setErrors((prev) => {
-                    const copy = { ...prev };
-                    delete copy[fieldName];
-                    return copy;
-                });
                 setDataModified(true);
-                toast.success("Document uploaded successfully.");
+                toast.success(`${valRes.docDisplayName || "Document"} verified and uploaded successfully!`);
             } else {
                 toast.error("Failed to upload document.");
             }
         } catch (err) {
             console.error("Upload error:", err);
-            toast.error("Error uploading document.");
+            setErrors((prev) => ({ ...prev, [fieldName]: "This file could not be read. Please upload a clearer PDF or image." }));
         } finally {
+            setDocValidatingField(null);
+            setDocValidatingStatus(null);
             setLoading(false);
         }
     };
@@ -2194,6 +2246,8 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
                     onSubmit={(e) => handleFormSubmit(e, 0)}
                     dataModified={dataModified}
                     onDocUpload={handleDocUpload}
+                    docValidatingField={docValidatingField}
+                    docValidatingStatus={docValidatingStatus}
                     verifyingSecurityLicense={verifyingSecurityLicense}
                     onVerifySecurityLicense={handleVerifySecurityLicense}
                     onDownloadPDF={downloadPDF}

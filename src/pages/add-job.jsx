@@ -14,6 +14,11 @@ import ReviewStep from "../components/job/ReviewStep";
 import PaymentModal from "../components/job/PaymentModal";
 import PriceRangeModal from "../components/job/PriceRangeModal";
 import AdminClientProfile from "../components/job/AdminClientProfile";
+import {
+  determineJobRegion,
+  classifyPostcode,
+  extractPostcodeFromAddress,
+} from "../utils/australianRegionClassifier";
 import "../assets/css/job-wizard-theme.css";
 
 
@@ -150,6 +155,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
   const [form, setForm] = useState({
     user_id: "", title: "", location: "", address: "", city: "", state: "", postcode: "", coordinates: "",
+    region: "",
     scheduleMode: "single", dateRange: [null, null], scheduleDays: [],
     jobType: "", customJobType: "", attachments: [], document_types: [], tasks: [],
     termsAccepted: false, paymentOption: "full", description: "",
@@ -426,6 +432,9 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       setStateCheckResult(null);
       setPriceRange(null);
     }
+    if (name === "coordinates") {
+      setForm((prev) => ({ ...prev, region: "" }));
+    }
 
     setScheduleError((prev) => {
       if (prev && ["scheduleDays", "dateRange"].includes(name)) {
@@ -445,6 +454,12 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         : "";
       const siteTitle = initialSite.site_name || initialSite.displayName || initialSite.title || "Roster job";
       const siteJobType = initialSite.jobType || initialSite.job_type || "static-security";
+      const sitePostcode = initialSite.postcode || extractPostcodeFromAddress(initialSite.address || initialSite.site_address || "");
+      let siteRegion = "";
+      if (sitePostcode) {
+        const cRes = classifyPostcode(sitePostcode);
+        if (cRes.isValid && cRes.region) siteRegion = cRes.region;
+      }
       setSelectedSiteId(siteId);
       setForm((f) => ({
         ...f,
@@ -454,6 +469,8 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         address: initialSite.address || initialSite.site_address || f.address,
         coordinates: initialSite.coordinates || initialSite.latlng || f.coordinates,
         user_id: (initialSite.user_id && String(initialSite.user_id)) || (initialSite.customer_id && String(initialSite.customer_id)) || f.user_id,
+        postcode: sitePostcode || f.postcode,
+        region: siteRegion || f.region,
       }));
 
       if (dateString) {
@@ -710,7 +727,8 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         return {
           start_time: toApiDateTime(day.date, shift.startTime),
           end_time: toApiDateTime(endDate, shift.endTime),
-          number_of_guards: shift.numGuards
+          number_of_guards: shift.numGuards,
+          region: form.region || "metro"
         };
       })
     );
@@ -720,6 +738,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       const res = await submitPriceRange("api/calculate-job-amount", {
         shifts: shiftsPayload,
         state: form.state,
+        region: form.region || "metro",
       }, { method: "POST" });
 
       const payload = res?.data || res || {};
@@ -774,6 +793,29 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         return;
       }
 
+      // Automatically determine and validate region (metro / regional)
+      let currentRegion = form.region;
+      if (!currentRegion) {
+        setResolvingLocation(true);
+        const regionRes = await determineJobRegion({
+          coordinates: form.coordinates,
+          postcode: form.postcode,
+          address: form.address || form.location,
+        });
+        setResolvingLocation(false);
+        if (!regionRes.success || !regionRes.region) {
+          const errMsg = regionRes.error || "Unable to determine whether this location is Metro or Regional. Please select a valid Australian location.";
+          toast.error(errMsg);
+          setLocationError(errMsg);
+          return;
+        }
+        currentRegion = regionRes.region;
+        setField("region", currentRegion);
+        if (regionRes.postcode && !form.postcode) {
+          setField("postcode", regionRes.postcode);
+        }
+      }
+
       const isSplit = await runStateCheck();
       if (isSplit === null) return;
 
@@ -814,7 +856,9 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     else navigate(-1);
   }
 
-  function buildJobPayload(document_list = []) {
+  function buildJobPayload(document_list = [], determinedRegion = null) {
+    const activeRegion = determinedRegion || form.region;
+
     const shiftsPayload = form.scheduleDays.flatMap(day =>
       day.shifts.map(shift => {
         let endDateTime = `${day.date}T${shift.endTime}`;
@@ -828,7 +872,8 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
         return {
           start: `${day.date}T${shift.startTime}`,
           end: endDateTime,
-          numberOfGuards: shift.numGuards
+          numberOfGuards: shift.numGuards,
+          region: activeRegion
         };
       })
     );
@@ -844,6 +889,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       state: form.state,
       shifts: shiftsPayload,
       job_location_state: form.state,
+      region: activeRegion,
       is_document: (form.document_types && form.document_types.length > 0) || document_list.length > 0,
       document_list,
       document_types: form.document_types || [],
@@ -910,11 +956,21 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
   async function handleHoldPayment({ paymentMethodId, cardHolderName, savedCard }) {
     if (!pendingDraft?.payload) return { success: false, message: "Missing job draft." };
+    const activeRegion = pendingDraft.payload.region || form.region;
+    const holdShifts = (pendingDraft.payload.shifts || []).map((shift) => ({
+      ...shift,
+      region: shift.region || activeRegion,
+    }));
     const holdBody = {
       job_level: calculatedLevel,
-      shifts: pendingDraft.payload.shifts, user_id: Number(pendingDraft.payload.user_id), card_holder_name: cardHolderName || savedCard?.card_holder_name || "",
-      payment_method_id: paymentMethodId || savedCard?.payment_method_id || null, payment_option: pendingDraft.payload.payment_option,
-      amount_to_charge: pendingDraft.payload.financials.amount_to_charge_today, requires_110_buffer: true
+      region: activeRegion,
+      shifts: holdShifts,
+      user_id: Number(pendingDraft.payload.user_id),
+      card_holder_name: cardHolderName || savedCard?.card_holder_name || "",
+      payment_method_id: paymentMethodId || savedCard?.payment_method_id || null,
+      payment_option: pendingDraft.payload.payment_option,
+      amount_to_charge: pendingDraft.payload.financials.amount_to_charge_today,
+      requires_110_buffer: true
     };
     const holdRes = await submitJob("api/payment/hold", holdBody, { method: "POST" });
     if (!holdRes?.success) return { success: false, message: holdRes?.message || "Payment hold failed." };
@@ -984,6 +1040,25 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       return;
     }
 
+    let activeRegion = form.region;
+    if (!activeRegion) {
+      const regionRes = await determineJobRegion({
+        coordinates: form.coordinates,
+        postcode: form.postcode,
+        address: form.address || form.location,
+      });
+      if (!regionRes.success || !regionRes.region) {
+        toast.error(regionRes.error || "Unable to determine whether this job location is Metro or Regional. Please review the location.");
+        isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, overview: true })) : setStep(0);
+        return;
+      }
+      activeRegion = regionRes.region;
+      setField("region", activeRegion);
+      if (regionRes.postcode && !form.postcode) {
+        setField("postcode", regionRes.postcode);
+      }
+    }
+
     // 3. Validate Schedule
     if (form.scheduleDays.length === 0) {
       toast.error("Schedule is required. Please select at least one date.");
@@ -1043,7 +1118,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     setPostingJob(true);
     try {
       const document_list = await uploadAllAttachments();
-      const payload = buildJobPayload(document_list);
+      const payload = buildJobPayload(document_list, activeRegion);
 
       if (isAdmin) {
         const postRes = await submitJob("api/job-post", {
@@ -1296,6 +1371,13 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                       setField("address", address);
                       setField("coordinates", selected.siteData.coordinates || "");
                       if (foundState) setField("state", foundState.toLowerCase());
+
+                      const sitePostcode = selected.siteData.postcode || extractPostcodeFromAddress(address);
+                      if (sitePostcode) {
+                        setField("postcode", sitePostcode);
+                        const cRes = classifyPostcode(sitePostcode);
+                        if (cRes.isValid && cRes.region) setField("region", cRes.region);
+                      }
                     }
                     if (selected.value === "manual" || selected.isManual) {
                       setSelectedSiteId("manual");
@@ -1303,6 +1385,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                       setField("address", "");
                       setField("coordinates", "");
                       setField("state", "");
+                      setField("region", "");
                       setLocationError("");
 
                       setTimeout(() => {

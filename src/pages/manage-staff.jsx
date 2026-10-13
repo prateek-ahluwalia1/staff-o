@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import { apiURL } from "../utils/exports";
 import { getProfileImageUrlFromUserdata } from "../utils/profileImage";
 import UserProfileView from "../components/UserProfileView";
+import { validateDocument, isDocumentValidationApplicable } from "../utils/documentValidator";
 
 const AUSTRALIAN_STATE_PILLS = [
   { label: "All", value: "all" },
@@ -433,6 +434,9 @@ const ManageStaff = () => {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [verifyingDoc, setVerifyingDoc] = useState(false);
   const [dragActiveField, setDragActiveField] = useState(null);
+  const [docValidating, setDocValidating] = useState(false);
+  const [docValidationStatus, setDocValidationStatus] = useState(null);
+  const [docValidationError, setDocValidationError] = useState(null);
   const [docForm, setDocForm] = useState({
     notes: "",
     no: false,
@@ -616,6 +620,10 @@ const ManageStaff = () => {
     setActiveModalTab("personal");
     setShowDocModal(false);
     setSelectedDoc(null);
+    setDragActiveField(null);
+    setDocValidating(false);
+    setDocValidationError(null);
+    setDocValidationStatus(null);
     if (user) {
       const staffData = user.staff || {};
       const rawControlRoom = staffData.is_control_room_license ?? user.is_control_room_license ?? 0;
@@ -689,12 +697,20 @@ const ManageStaff = () => {
         work_entitlement: "",
       });
     }
+    setDragActiveField(null);
+    setDocValidating(false);
+    setDocValidationError(null);
+    setDocValidationStatus(null);
     setShowDocModal(true);
   };
 
   const closeDocumentModal = () => {
     setShowDocModal(false);
     setSelectedDoc(null);
+    setDragActiveField(null);
+    setDocValidationError(null);
+    setDocValidating(false);
+    setDocValidationStatus(null);
   };
 
   const handleDocNumberChange = (e) => {
@@ -714,11 +730,59 @@ const ManageStaff = () => {
       toast.error(`File too large. Max ${MAX_SIZE_MB}MB.`);
       return;
     }
+
+    const currentDocType = selectedDoc?.document_type || docForm.document_type || "";
+    const currentDocName = name === "working_rights_file"
+      ? "working_rights_file"
+      : (docForm.document_name || selectedDoc?.document_name || "");
+    const userState = (editingUser?.state || editingUser?.staff?.state || formData?.state || "").trim();
+
+    let verifiedDocName = null;
+
+    if (isDocumentValidationApplicable("staff", currentDocType, userState, currentDocName)) {
+      setDocValidating(true);
+      setDocValidationStatus("Checking document contents...");
+      setDocValidationError(null);
+
+      try {
+        const valRes = await validateDocument(
+          file,
+          currentDocType,
+          userState,
+          currentDocName,
+          (msg) => setDocValidationStatus(msg),
+          { state: userState }
+        );
+
+        if (!valRes.isValid) {
+          setDocValidationError(valRes.error);
+          setDocValidating(false);
+          return;
+        }
+
+        verifiedDocName = valRes.docDisplayName || "Document";
+      } catch (err) {
+        console.error("Document validation error:", err);
+        const errMsg = "This file could not be read. Please upload a clearer PDF or image.";
+        setDocValidationError(errMsg);
+        setDocValidating(false);
+        return;
+      } finally {
+        setDocValidating(false);
+      }
+    }
+
+    setDocValidationError(null);
     const fd = new FormData();
     fd.append("file", file);
     fd.append("folder", "staff_documents");
     const res = await uploadFile("api/upload-file", fd, { method: "POST" });
     if (res?.success) {
+      if (verifiedDocName) {
+        toast.success(`${verifiedDocName} verified and uploaded successfully!`);
+      } else {
+        toast.success("File uploaded successfully!");
+      }
       if (name === "working_rights_file") {
         setDocForm((prev) => ({
           ...prev,
@@ -778,6 +842,9 @@ const ManageStaff = () => {
     if (type === "checkbox") {
       setDocForm((prev) => ({ ...prev, [name]: checked }));
     } else if (name === "document_name") {
+      setDocValidationError(null);
+      setDocValidating(false);
+      setDocValidationStatus(null);
       setDocForm((prev) => ({
         ...prev,
         document_name: value,
@@ -2144,13 +2211,32 @@ const ManageStaff = () => {
                             </p>
                           </div>
                         )}
+                        {docValidating && (
+                          <div
+                            className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
+                            style={{
+                              backgroundColor: "rgba(255, 255, 255, 0.94)",
+                              zIndex: 30,
+                              borderRadius: "12px",
+                              backdropFilter: "blur(2px)",
+                            }}
+                          >
+                            <div className="spinner-border" style={{ color: "#0A7C6E", width: "2.4rem", height: "2.4rem" }} role="status" />
+                            <p className="fw-semibold text-dark mt-2 mb-1" style={{ fontSize: "0.95rem" }}>
+                              {docValidationStatus || "Checking document contents..."}
+                            </p>
+                            <span className="text-muted small" style={{ fontSize: "0.78rem" }}>
+                              Verifying document category rules
+                            </span>
+                          </div>
+                        )}
                         {uploadLoading && (
                           <div className="position-absolute top-50 start-50 translate-middle">
                             <div className="spinner-border text-primary" />
                             <p className="small mt-1">Uploading...</p>
                           </div>
                         )}
-                        <input type="file" style={{ display: "none" }} onChange={handleDocFormChange} name="working_rights_file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+                        <input type="file" style={{ display: "none" }} onChange={handleDocFormChange} name="working_rights_file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" disabled={uploadLoading || docValidating} />
                       </label>
                     </div>
                     <div className="col-12 col-md-6">
@@ -2159,7 +2245,7 @@ const ManageStaff = () => {
                         className="position-relative p-3 text-center w-100 d-flex flex-column align-items-center justify-content-center"
                         style={{
                           minHeight: "200px",
-                          cursor: "pointer",
+                          cursor: (uploadLoading || docValidating) ? "not-allowed" : "pointer",
                           border: dragActiveField === "file_wr" ? "2px dashed #0A7C6E" : "2px dashed #cbd5e1",
                           backgroundColor: dragActiveField === "file_wr" ? "#f0fdf4" : "#f8fafc",
                           borderRadius: "12px",
@@ -2170,10 +2256,29 @@ const ManageStaff = () => {
                         onDragLeave={(e) => handleDragLeave(e, "file_wr")}
                         onDrop={(e) => handleDrop(e, "file_wr")}
                       >
+                        {docValidating && (
+                          <div
+                            className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
+                            style={{
+                              backgroundColor: "rgba(255, 255, 255, 0.94)",
+                              zIndex: 30,
+                              borderRadius: "12px",
+                              backdropFilter: "blur(2px)",
+                            }}
+                          >
+                            <div className="spinner-border" style={{ color: "#0A7C6E", width: "2.4rem", height: "2.4rem" }} role="status" />
+                            <p className="fw-semibold text-dark mt-2 mb-1" style={{ fontSize: "0.95rem" }}>
+                              {docValidationStatus || "Checking document contents..."}
+                            </p>
+                            <span className="text-muted small" style={{ fontSize: "0.78rem" }}>
+                              Verifying document category rules
+                            </span>
+                          </div>
+                        )}
                         {docForm.file_url ? (
                           <div className="d-flex flex-column align-items-center w-100 p-2">
                             {docForm.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                              <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: "140px", objectFit: "contain", borderRadius: "8px", opacity: uploadLoading ? 0.3 : 1 }} />
+                              <img src={docForm.file_url.startsWith("http") ? docForm.file_url : `${apiURL}staff_documents/${docForm.file_url}`} alt="Preview" style={{ width: "100%", maxHeight: "140px", objectFit: "contain", borderRadius: "8px", opacity: (uploadLoading || docValidating) ? 0.3 : 1 }} />
                             ) : (
                               <div className="text-center py-2">
                                 <i className="fa-solid fa-file-pdf fa-3x text-danger mb-2"></i>
@@ -2222,14 +2327,26 @@ const ManageStaff = () => {
                             <p className="small mt-1">Uploading...</p>
                           </div>
                         )}
-                        <input type="file" style={{ display: "none" }} onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+                        <input type="file" style={{ display: "none" }} onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" disabled={uploadLoading || docValidating} />
                       </label>
                     </div>
                   </div>
 
+                  {docValidationError && (
+                    <div
+                      className="alert alert-danger d-flex align-items-start gap-2 mt-2 p-2 px-3 small border-0 shadow-sm"
+                      style={{ borderRadius: "10px", backgroundColor: "#FEF2F2", color: "#991B1B" }}
+                    >
+                      <i className="fa-solid fa-triangle-exclamation mt-1 flex-shrink-0" style={{ color: "#DC2626" }}></i>
+                      <div>
+                        <strong>Verification Notice:</strong> {docValidationError}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="d-flex gap-2 mt-3">
-                    <button type="button" className="btn btn-outline-secondary w-50" onClick={closeDocumentModal} disabled={uploadLoading || submitLoading}>Cancel</button>
-                    <button type="submit" className="btn btn-success w-50" disabled={uploadLoading || submitLoading || !docForm.working_rights_file_path || !docForm.file_path}>
+                    <button type="button" className="btn btn-outline-secondary w-50" onClick={closeDocumentModal} disabled={uploadLoading || submitLoading || docValidating}>Cancel</button>
+                    <button type="submit" className="btn btn-success w-50" disabled={uploadLoading || submitLoading || docValidating || !docForm.working_rights_file_path || !docForm.file_path}>
                       {submitLoading ? "Saving..." : "Upload"}
                     </button>
                   </div>
@@ -2335,19 +2452,50 @@ const ManageStaff = () => {
                           </p>
                         </div>
                       )}
+                      {docValidating && (
+                        <div
+                          className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
+                          style={{
+                            backgroundColor: "rgba(255, 255, 255, 0.94)",
+                            zIndex: 30,
+                            borderRadius: "12px",
+                            backdropFilter: "blur(2px)",
+                          }}
+                        >
+                          <div className="spinner-border" style={{ color: "#0A7C6E", width: "2.4rem", height: "2.4rem" }} role="status" />
+                          <p className="fw-semibold text-dark mt-2 mb-1" style={{ fontSize: "0.95rem" }}>
+                            {docValidationStatus || "Checking document contents..."}
+                          </p>
+                          <span className="text-muted small" style={{ fontSize: "0.78rem" }}>
+                            Verifying document category rules
+                          </span>
+                        </div>
+                      )}
                       {uploadLoading && (
                         <div className="position-absolute top-50 start-50 translate-middle">
                           <div className="spinner-border text-primary" />
                           <p className="small mt-1">Uploading...</p>
                         </div>
                       )}
-                      <input type="file" style={{ display: "none" }} onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" />
+                      <input type="file" style={{ display: "none" }} onChange={handleDocFormChange} name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp" disabled={uploadLoading || docValidating} />
                     </label>
+
+                    {docValidationError && (
+                      <div
+                        className="alert alert-danger d-flex align-items-start gap-2 mt-2 p-2 px-3 small border-0 shadow-sm"
+                        style={{ borderRadius: "10px", backgroundColor: "#FEF2F2", color: "#991B1B" }}
+                      >
+                        <i className="fa-solid fa-triangle-exclamation mt-1 flex-shrink-0" style={{ color: "#DC2626" }}></i>
+                        <div>
+                          <strong>Verification Notice:</strong> {docValidationError}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="d-flex gap-2 mt-3">
-                    <button type="button" className="btn btn-outline-secondary w-50" onClick={closeDocumentModal} disabled={uploadLoading || submitLoading}>Cancel</button>
-                    <button type="submit" className="btn btn-success w-50" disabled={uploadLoading || submitLoading || !docForm.document_expiry || !docForm.file_url}>
+                    <button type="button" className="btn btn-outline-secondary w-50" onClick={closeDocumentModal} disabled={uploadLoading || submitLoading || docValidating}>Cancel</button>
+                    <button type="submit" className="btn btn-success w-50" disabled={uploadLoading || submitLoading || docValidating || !docForm.document_expiry || !docForm.file_url}>
                       {submitLoading ? "Saving..." : "Upload"}
                     </button>
                   </div>

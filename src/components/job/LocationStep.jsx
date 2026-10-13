@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "react-toastify";
+import { classifyPostcode } from "../../utils/australianRegionClassifier";
 
 const STATE_MAP = {
   'Victoria': 'vic',
@@ -56,7 +57,13 @@ export default function LocationStep({
       setField("address", canonicalAddress);
       if (city) setField("city", city);
       if (state) setField("state", state);
-      if (postcode) setField("postcode", postcode);
+      if (postcode) {
+        setField("postcode", postcode);
+        const classification = classifyPostcode(postcode);
+        if (classification.isValid && classification.region) {
+          setField("region", classification.region);
+        }
+      }
       if (setLocationError) setLocationError("");
     },
     [setField, setLocationError]

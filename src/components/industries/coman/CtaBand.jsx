@@ -1,6 +1,10 @@
 import React from "react";
 
 export default function CtaBand({
+
+  
+
+
   title = "Ready to secure your event?",
   subtitle = "Post your job free pay only once a security staff is confirmed and the shift is signed off.",
   primaryBtnText = "Post an event security job",
@@ -16,7 +20,7 @@ export default function CtaBand({
           {subtitle && <p>{subtitle}</p>}
           <div className="stf-cta-actions">
             {primaryBtnText && (
-              <a href={primaryBtnUrl || "#"} className="stf-btn stf-btn-solid stf-btn-lg">
+              <a href={primaryBtnUrl } className="stf-btn stf-btn-solid stf-btn-lg">
                 {primaryBtnText}
               </a>
             )}

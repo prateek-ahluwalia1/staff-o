@@ -4,8 +4,8 @@ import { useSelector } from "react-redux";
 
 export default function WhyStaffoo() {
   const { token } = useSelector((state) => state?.auth || {});
-  const postJobRoute = token ? "/edit-profile" : "/register";
-  const findJobRoute = token ? "/edit-profile" : "/login";
+  const postJobRoute = token ? "/dashboard" : "/register";
+  const findJobRoute = token ? "/dashboard" : "/register";
 
   return (
     <section className="whystaffoo-section split">

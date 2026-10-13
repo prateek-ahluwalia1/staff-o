@@ -5,8 +5,8 @@ import "../../styles/staffoo.css"
 
 function Hero() {
   const { token } = useSelector((state) => state.auth)
-  const postJobRoute = token ? "/edit-profile" : "/register"
-  const findJobRoute = token ? "/edit-profile" : "/login"
+  const postJobRoute = token ? "/dashboard" : "/register"
+  const findJobRoute = token ? "/dashboard" : "/register"
 
   const [activeTab, setActiveTab] = useState('client')
 
@@ -66,12 +66,12 @@ function Hero() {
             {activeTab === 'client' ? (
               <>
                 <Link to={postJobRoute} className="nh-btn nh-btn-solid nh-btn-lg">Post a job</Link>
-                <Link to={findJobRoute} className="nh-btn nh-btn-outline nh-btn-lg">Find a staff</Link>
+                {/* <Link to={findJobRoute} className="nh-btn nh-btn-outline nh-btn-lg">Find a staff</Link> */}
               </>
             ) : (
               <>
                 <Link to={findJobRoute} className="nh-btn nh-btn-solid nh-btn-lg">Browse open jobs</Link>
-                <Link to={postJobRoute} className="nh-btn nh-btn-outline nh-btn-lg">Find a job</Link>
+                {/* <Link to={postJobRoute} className="nh-btn nh-btn-outline nh-btn-lg">Find a job</Link> */}
               </>
             )}
           </div>
@@ -79,6 +79,12 @@ function Hero() {
           {/* Trust row */}
           <div className="nh-trust-row">
             <style>{`
+              .nh-hero-actions .nh-btn {
+                min-width: 200px !important;
+                justify-content: center !important;
+                text-align: center !important;
+              }
+
               .nh-trust-item {
                 display: inline-flex !important;
                 align-items: center !important;

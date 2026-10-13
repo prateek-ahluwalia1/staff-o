@@ -2,6 +2,8 @@ import React from "react";
 import { Helmet } from "react-helmet";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
+import { useSelector } from 'react-redux';
+
 
 import HeroSection from "../../components/forclients/postajob/HeroSection";
 import FillItFasterSection from "../../components/forclients/postajob/FillItFasterSection";
@@ -112,6 +114,13 @@ export default function Postajob() {
 
 
 
+  
+    const { token } = useSelector((state) => state.auth)
+
+
+  const postJobRoute = token ? "/dashboard" : "/register"
+
+
   return (
     <>
       <Helmet>
@@ -156,7 +165,7 @@ export default function Postajob() {
 
         <HowItWorks
           kicker="How it works"
-          title="From posting to guards on site"
+          title="From posting to Staff on site"
           description="Security staff accept jobs directly, so there is no shortlist to review and no candidate to approve. The moment a licensed security staff takes a position, it is booked."
           steps={postAJobSteps}
         />
@@ -175,8 +184,8 @@ export default function Postajob() {
         <CtaBand
           title="Post your job and let the security staff come to you"
           subtitle="Free to post, no lock in contract, and most jobs have their first security staff booked within a few hours."
-          primaryBtnText="Post your job"
-          primaryBtnUrl="/register"
+          primaryBtnText="Post a job"
+          primaryBtnUrl={postJobRoute}
           secondaryBtnText="Talk to our team"
           secondaryBtnUrl="/contact-us"
         />

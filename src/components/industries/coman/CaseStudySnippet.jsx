@@ -32,7 +32,7 @@ export default function CaseStudySnippet({ caseStudy = defaultCaseStudy }) {
                 ))}
               </div>
             )}
-            <a href={data.btnUrl || "#"} className="stf-btn stf-btn-outline stf-btn-sm">
+            <a  className="stf-btn stf-btn-outline stf-btn-sm">
               {data.btnText || "Read the full case study"}
             </a>
           </div>

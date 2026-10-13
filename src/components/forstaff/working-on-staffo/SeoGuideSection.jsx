@@ -1,6 +1,18 @@
 import React from "react";
+import { useSelector } from 'react-redux';
+
+
 
 export default function SeoGuideSection() {
+
+
+    const { token } = useSelector((state) => state.auth)
+
+
+  const postJobRoute = token ? "/dashboard" : "/register"
+
+
+
     return (
         <section className="stf-section">
             <div className="stf-wrap">
@@ -52,12 +64,12 @@ export default function SeoGuideSection() {
                         <div className="stf-side-cta">
                             <h4>Documents ready?</h4>
                             <p>Upload them today, get verified within a business day, and start picking shifts near you.</p>
-                            <a href="#" className="stf-btn stf-btn-solid stf-btn-block">Get verified</a>
+                            <a href={postJobRoute} className="stf-btn stf-btn-solid stf-btn-block">Get verified</a>
                             <div className="stf-aside-module" style={{ marginTop: "16px", background: "transparent", border: "none", padding: 0 }}>
-                                <a href="#">→ Licensing and requirements</a>
-                                <a href="#">→ How picking shifts works</a>
-                                <a href="#">→ Getting paid</a>
-                                <a href="#">→ Insurance and your ABN</a>
+                                <a > Licensing and requirements</a>
+                                <a > How picking shifts works</a>
+                                <a > Getting paid</a>
+                                <a > Insurance and your ABN</a>
                             </div>
                         </div>
                     </aside>

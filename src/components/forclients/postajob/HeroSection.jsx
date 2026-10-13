@@ -1,7 +1,19 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from 'react-redux';
+import "../../../styles/staffoo.css";
+
+
+
 
 export default function HeroSection() {
+
+    const { token } = useSelector((state) => state.auth)
+
+
+  const postJobRoute = token ? "/dashboard" : "/register"
+
+
   return (
     <section className="stf-hero">
       <div className="stf-wrap">
@@ -14,7 +26,7 @@ export default function HeroSection() {
               Set the date, the site and the rate you want to pay. Your job goes straight to verified staff in the area, and they accept it from their phone. No quotes to chase, no agency in the middle, and nothing to pay until a staff member is booked.
             </p>
 
-            <div className="stf-intent-card">
+            {/* <div className="stf-intent-card">
               <div className="stf-intent-head">
                 <h3>Tell us about the job</h3>
                 <span className="stf-free-tag">Free to post</span>
@@ -69,7 +81,21 @@ export default function HeroSection() {
               <div className="stf-live">
                 <span className="stf-live-dot"></span> 340 licensed guards active near you this week
               </div>
+            </div> */}
+
+
+            {/* CTAs */}
+            <div className="nh-hero-actions">
+              <Link to={postJobRoute} className="nh-btn nh-btn-solid nh-btn-lg">Post a job</Link>
             </div>
+            <style>{`
+              .nh-hero-actions .nh-btn {
+                min-width: 200px !important;
+                justify-content: center !important;
+                text-align: center !important;
+              }
+            `}</style>
+
 
             <div className="stf-trust-row">
               <div className="stf-trust-item">
@@ -99,11 +125,11 @@ export default function HeroSection() {
             </div>
 
             <div className="stf-popular">
-              Popular:
-              <Link to="/industries/event-crowd-control">Event security</Link>
-              <Link to="/industries/construction-sites">Overnight site cover</Link>
-              <Link to="/industries/retail-security">Retail security</Link>
-              <Link to="/forclients/post-job">Ongoing rosters</Link>
+              
+              <a >Event security</a>
+              < a>Overnight site cover</a>
+              <a >Retail security</a>
+              <a >Ongoing rosters</a>
             </div>
           </div>
 
@@ -122,7 +148,7 @@ export default function HeroSection() {
                   <div style={{ height: "7px", width: "75%", background: "var(--green)" }}></div>
                 </div>
                 <div style={{ fontSize: "12.5px", color: "var(--text-secondary)", marginTop: "8px" }}>
-                  <b style={{ color: "var(--ink)", fontWeight: 600 }}>9 of 12 guards</b> booked so far
+                  <b style={{ color: "var(--ink)", fontWeight: 600 }}>9 of 12 staff</b> booked so far
                 </div>
               </div>
               <div className="stf-pv-body">
@@ -154,7 +180,7 @@ export default function HeroSection() {
                   <div className="stf-pv-avatar" style={{ background: "#DCE5DE" }}></div>
                   <div>
                     <div className="stf-pv-name" style={{ color: "var(--text-secondary)" }}>Position 10</div>
-                    <div className="stf-pv-meta">Waiting for a guard to accept</div>
+                    <div className="stf-pv-meta">Waiting for a staff to accept</div>
                   </div>
                   <span className="stf-pv-tag" style={{ background: "var(--amber-light)", color: "var(--amber-dark)" }}>Open</span>
                 </div>
@@ -165,15 +191,16 @@ export default function HeroSection() {
                   <rect x="4" y="10" width="16" height="11" rx="2"></rect>
                   <path d="M8 10V7a4 4 0 018 0v3"></path>
                 </svg>
-                Guard profiles unlock once you post a job
+                Staff profiles unlock once you post a job
               </div>
             </div>
             <p style={{ fontSize: "12.5px", color: "var(--text-secondary)", textAlign: "center", marginTop: "14px" }}>
-              Illustration of the job view in your dashboard. Guard names and contact details are visible only to signed in clients.
+              Illustration of the job view in your dashboard. Staff names and contact details are visible only to signed in clients.
             </p>
           </div>
         </div>
       </div>
+      
     </section>
   );
 }

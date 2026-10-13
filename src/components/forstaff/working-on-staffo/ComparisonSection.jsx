@@ -1,6 +1,14 @@
 import React from "react";
+import { useSelector } from 'react-redux';
+
 
 export default function ComparisonSection() {
+
+    
+    const { token } = useSelector((state) => state.auth)
+
+
+  const postJobRoute = token ? "/dashboard" : "/register"
     return (
         <>
             {/* Mid-Page CTA Strip */}
@@ -11,7 +19,7 @@ export default function ComparisonSection() {
                             <h3>License and ABN ready?</h3>
                             <p>Upload them today and you could be accepting shifts tomorrow.</p>
                         </div>
-                        <a href="#" className="stf-btn stf-btn-solid stf-btn-lg">Get verified</a>
+                        <a href={postJobRoute} className="stf-btn stf-btn-solid stf-btn-lg">Get verified</a>
                     </div>
                 </div>
             </section>

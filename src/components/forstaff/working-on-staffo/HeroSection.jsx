@@ -1,6 +1,17 @@
 import React from "react";
+import { useSelector } from 'react-redux';
+import { Link } from "react-router-dom";
+
 
 export default function HeroSection() {
+
+    
+    const { token } = useSelector((state) => state.auth)
+
+
+  const postJobRoute = token ? "/dashboard" : "/register"
+
+
     return (
         <section className="stf-hero">
             <div className="stf-wrap">
@@ -12,45 +23,19 @@ export default function HeroSection() {
                             Staffoo shows you security shifts near you with the pay rate on the job before you commit. Tap accept and it's yours no application queue, no waiting on a callback, and no commission taken out of what you earn.
                         </p>
 
-                        <div className="stf-intent-card">
-                            <div className="stf-intent-head">
-                                <h3>See what's near you</h3>
-                                <span className="stf-free-tag">Free to join</span>
-                            </div>
-                            <div className="stf-intent-row">
-                                <div className="stf-field">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B6660" strokeWidth="2">
-                                        <path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z"></path>
-                                        <circle cx="12" cy="10" r="2.6"></circle>
-                                    </svg>
-                                    <input type="text" placeholder="Suburb or postcode" />
-                                </div>
-                                <div className="stf-field">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B6660" strokeWidth="2">
-                                        <path d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7z"></path>
-                                    </svg>
-                                    <select defaultValue="License you hold">
-                                        <option>License you hold</option>
-                                        <option>Security Officer (unarmed)</option>
-                                        <option>Security Officer (armed)</option>
-                                        <option>Crowd Controller</option>
-                                        <option>Control room operator</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <a href="/register" className="stf-btn stf-btn-solid stf-btn-cta stf-btn-block">
-                                Find shifts near you
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                                    <path d="M5 12h13M12 6l6 6-6 6"></path>
-                                </svg>
-                            </a>
-                            <p className="stf-intent-alt">
-                                Takes about 2 minutes · <a href="/login">Already registered? Log in</a>
-                            </p>
-                            <div className="stf-live">
-                                <span className="stf-live-dot"></span> 47 new shifts posted near you this week
-                            </div>
-                        </div>
+
+
+     
+ <div className="nh-hero-actions">
+              <Link to={postJobRoute} className="nh-btn nh-btn-solid nh-btn-lg">Browse open jobs</Link>
+            </div>
+            <style>{`
+              .nh-hero-actions .nh-btn {
+                min-width: 200px !important;
+                justify-content: center !important;
+                text-align: center !important;
+              }
+            `}</style>
 
                         <div className="stf-trust-row">
                             <div className="stf-trust-item">

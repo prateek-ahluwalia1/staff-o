@@ -14,10 +14,21 @@ import StatsBand from "../../components/industries/coman/StatsBand";
 import CaseStudySnippet from "../../components/industries/coman/CaseStudySnippet";
 import FaqSection from "../../components/industries/coman/FaqSection";
 import CtaBand from "../../components/industries/coman/CtaBand";
+import { useSelector } from 'react-redux';
+
 
 import "../../components/industries/event-crowd-comp/styles.css";
 
 export default function HowToApply() {
+
+
+
+     const { token } = useSelector((state) => state.auth)
+
+
+  const postJobRoute = token ? "/dashboard" : "/register"
+
+
     // 1. Stats Counter Data
     const applyStats = [
         { value: "15 min", label: "to complete the whole thing" },
@@ -148,7 +159,7 @@ export default function HowToApply() {
                     title="Fifteen minutes now, shifts tonight"
                     subtitle="Have your license, ID and certificates on your phone, and your tax and super details handy. Documents verify on the spot and your profile goes live as soon as the forms are in."
                     primaryBtnText="Start your application"
-                    primaryBtnUrl="/register"
+                    primaryBtnUrl={postJobRoute}
                     secondaryBtnText="See what shifts pay"
                     secondaryBtnUrl="#"
                 />

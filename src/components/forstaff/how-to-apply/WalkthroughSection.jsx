@@ -1,6 +1,15 @@
 import React from "react";
+import { useSelector } from 'react-redux';
+
 
 export default function WalkthroughSection() {
+
+    
+    const { token } = useSelector((state) => state.auth)
+
+
+  const postJobRoute = token ? "/dashboard" : "/register"
+
     return (
         <section className="stf-section" style={{ background: "var(--tint)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
             <div className="stf-wrap">
@@ -170,7 +179,7 @@ export default function WalkthroughSection() {
                         <div className="stf-side-cta">
                             <h4>Got everything?</h4>
                             <p>Start now and your profile could be live within the hour.</p>
-                            <a href="/register" className="stf-btn stf-btn-solid stf-btn-block">Start your application</a>
+                            <a href={postJobRoute} className="stf-btn stf-btn-solid stf-btn-block">Start your application</a>
                         </div>
                     </aside>
                 </div>

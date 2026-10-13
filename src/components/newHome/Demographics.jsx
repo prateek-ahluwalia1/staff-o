@@ -6,8 +6,8 @@ import "../../styles/staffoo.css"
 // Demographics is now the CTA Band — "Ready to get started?"
 function Demographics() {
   const { token } = useSelector((state) => state.auth)
-  const postJobRoute = token ? "/edit-profile" : "/register"
-  const findJobRoute = token ? "/edit-profile" : "/login"
+  const postJobRoute = token ? "/dashboard" : "/register"
+  const findJobRoute = token ? "/dashboard" : "/register"
 
   return (
     <section className="nh-section">
@@ -17,7 +17,7 @@ function Demographics() {
           <p>Join in minutes - no setup fees, no lock-in contracts.</p>
           <div className="nh-cta-actions">
             <Link to={postJobRoute} className="nh-btn nh-btn-solid nh-btn-lg">Post a job</Link>
-            <Link to={findJobRoute} className="nh-btn nh-btn-outline nh-btn-lg">Sign up as a staff</Link>
+            <Link to={findJobRoute} className="nh-btn nh-btn-outline nh-btn-lg">Browse open jobs</Link>
           </div>
         </div>
       </div>

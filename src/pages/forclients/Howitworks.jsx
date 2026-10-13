@@ -3,6 +3,8 @@ import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
+import { useSelector } from 'react-redux';
+
 
 // Custom page sections
 import HeroSection from "../../components/forclients/howitwork/HeroSection";
@@ -21,6 +23,13 @@ import CtaBand from "../../components/industries/coman/CtaBand";
 import "../../components/industries/event-crowd-comp/styles.css";
 
 export default function Howitworks() {
+
+
+  
+      const { token } = useSelector((state) => state.auth)
+  
+  
+    const postJobRoute = token ? "/dashboard" : "/register"
   const statsData = [
     { value: "3,100", label: "verified licensed staff" },
     { value: "3 hrs", label: "median time to first booking" },
@@ -169,7 +178,7 @@ export default function Howitworks() {
           title="See how quickly your first job fills"
           subtitle="Post a job in about two minutes and licensed staff near your site can start accepting it today."
           primaryBtnText="Post a job"
-          primaryBtnUrl="/register"
+          primaryBtnUrl={postJobRoute}
           secondaryBtnText="Talk to our team"
           secondaryBtnUrl="/contact-us"
         />

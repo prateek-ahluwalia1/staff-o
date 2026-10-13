@@ -1,7 +1,14 @@
 import { color } from "framer-motion";
 import React from "react";
+import { useSelector } from "react-redux";
 
 export default function HeroSection() {
+
+    const { token } = useSelector((state) => state.auth)
+
+
+  const postJobRoute = token ? "/dashboard" : "/register"
+
     return (
         <section className="stf-hero">
             <div className="stf-wrap">
@@ -14,7 +21,7 @@ export default function HeroSection() {
                         </p>
 
                         <div className="stf-hero-actions">
-                            <a href="/register" className="stf-btn stf-btn-solid stf-btn-cta">
+                            <a href={postJobRoute} className="stf-btn stf-btn-solid stf-btn-cta">
                                 Start your application
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                                     <path d="M5 12h13M12 6l6 6-6 6"></path>

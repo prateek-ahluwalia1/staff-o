@@ -421,6 +421,12 @@ html { scroll-behavior: smooth; } */
   flex-wrap: wrap;
 }
 
+.nh-hero-actions .nh-btn {
+  min-width: 200px;
+  justify-content: center;
+  text-align: center;
+}
+
 .nh-trust-row {
   display: flex;
   gap: 28px;

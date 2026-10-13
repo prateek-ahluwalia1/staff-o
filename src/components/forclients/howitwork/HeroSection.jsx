@@ -1,7 +1,16 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from 'react-redux';
 
 export default function HeroSection() {
+
+
+  
+    const { token } = useSelector((state) => state.auth)
+
+
+  const postJobRoute = token ? "/dashboard" : "/register"
+
   return (
     <section className="stf-hero">
       <div className="stf-wrap">
@@ -12,14 +21,18 @@ export default function HeroSection() {
             <p className="lead">
               Staffoo connects you directly with licensed security staff near your site. You post the job and set the rate, verified staff accept it from their phone, and you approve the hours afterwards. No quotes to chase and no lock in contract.
             </p>
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "24px" }}>
-              <Link to="/register" className="stf-btn stf-btn-solid stf-btn-cta">
-                Post a job
-              </Link>
-              <Link to="/pricing" className="stf-btn stf-btn-outline stf-btn-lg">
-                See pricing
-              </Link>
+           
+ <div className="nh-hero-actions">
+              <Link to={postJobRoute} className="nh-btn nh-btn-solid nh-btn-lg">Post a job</Link>
             </div>
+            <style>{`
+              .nh-hero-actions .nh-btn {
+                min-width: 200px !important;
+                justify-content: center !important;
+                text-align: center !important;
+              }
+            `}</style>
+
             <div className="stf-trust-row">
               <div className="stf-trust-item">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A7C6E" strokeWidth="2">

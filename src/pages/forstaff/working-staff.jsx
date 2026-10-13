@@ -2,6 +2,9 @@ import React from "react";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
 import { Helmet } from "react-helmet";
+import { useSelector } from 'react-redux';
+
+
 
 import HeroSection from "../../components/forstaff/working-on-staffo/HeroSection";
 import ComparisonSection from "../../components/forstaff/working-on-staffo/ComparisonSection";
@@ -112,6 +115,12 @@ export default function WorkingStaff() {
     // 6. Coverage Grid Data
 
 
+    const { token } = useSelector((state) => state.auth)
+    
+    
+      const postJobRoute = token ? "/dashboard" : "/register"
+
+
     return (
         <>
             <Helmet>
@@ -182,7 +191,7 @@ export default function WorkingStaff() {
                     title="Your license, your week, your full rate"
                     subtitle="Upload your documents today, get verified within a business day, and start picking up shifts near you."
                     primaryBtnText="Get verified"
-                    primaryBtnUrl="#"
+                    primaryBtnUrl={postJobRoute}
                     secondaryBtnText="See how it works"
                     secondaryBtnUrl="#"
                 />

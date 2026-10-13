@@ -143,12 +143,22 @@ class JobRosterController extends Controller
                 $guardWorkingHours = calCulateGuardWeekHours($start, $end);
     
                 // ─── BASE AMOUNT PER GUARD ────────────────────────────────
-                $jobAmount =
+                if($request->region == 'metro'){
+                   $jobAmount =
                     ($chargeRate->def_metro_mon_to_fri_day_rate   * ($hours['morning']          ?? 0)) +
                     ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night']             ?? 0)) +
                     ($chargeRate->def_metro_sat_day_rate          * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
                     ($chargeRate->def_metro_sun_day_rate          * (($hours['sunday_morning']   ?? 0) + ($hours['sunday_night']   ?? 0)))+
                     ($chargeRate->def_metro_pub_holi_day_rate     * (($hours['ph_morning'] ?? 0) + ($hours['ph_night'] ?? 0)));
+                }else{
+                   $jobAmount =
+                    ($chargeRate->def_reg_mon_to_fri_day_rate   * ($hours['morning']          ?? 0)) +
+                    ($chargeRate->def_reg_mon_to_fri_night_rate * ($hours['night']             ?? 0)) +
+                    ($chargeRate->def_reg_sat_day_rate          * (($hours['saturday_morning'] ?? 0) + ($hours['saturday_night'] ?? 0))) +
+                    ($chargeRate->def_reg_sun_day_rate          * (($hours['sunday_morning']   ?? 0) + ($hours['sunday_night']   ?? 0)))+
+                    ($chargeRate->def_reg_pub_holi_day_rate     * (($hours['ph_morning'] ?? 0) + ($hours['ph_night'] ?? 0)));
+                }
+               
     
                 // $serviceFee  = round($jobAmount * 0.10, 2);
                 $cleanBaseTotal = (float) str_replace([',', '$'], '', $jobAmount);
@@ -200,6 +210,7 @@ class JobRosterController extends Controller
                         'publish_status'   => 1,
                         'roster_id'        => $jobNewRoster->id,
                         'job_instrcutions' => $jobInstructionsValue,
+                        'region'           => $request->region,
                         'created_by'       => $request->user_id,
                         'assigned_to'      => $request->assigned_staff_id ?? null,
                         'notified_users'   => json_encode([]),
@@ -2734,11 +2745,21 @@ private function sendStaffActivationNotification(User $user): void
 
                 if (!empty($chargerate)) {
 
+                if($roster->region == 'metro'){
                     $roster['day_rate']            = $chargerate->def_metro_mon_to_fri_day_rate;
                     $roster['night_rate']          = $chargerate->def_metro_mon_to_fri_night_rate;
                     $roster['public_holiday_rate'] = $chargerate->def_metro_pub_holi_day_rate;
                     $roster['saturday_rate']       = $chargerate->def_metro_sat_day_rate;
                     $roster['sunday_rate']         = $chargerate->def_metro_sun_day_rate;
+                }else{
+                    $roster['day_rate']            = $chargerate->def_reg_mon_to_fri_day_rate;
+                    $roster['night_rate']          = $chargerate->def_reg_mon_to_fri_night_rate;
+                    $roster['public_holiday_rate'] = $chargerate->def_reg_pub_holi_day_rate;
+                    $roster['saturday_rate']       = $chargerate->def_reg_sat_day_rate;
+                    $roster['sunday_rate']         = $chargerate->def_reg_sun_day_rate;
+                }
+
+                  
 
                     $roster['total_amount'] =
                         ($roster['day_rate']            * $roster['morning_hours']) +
@@ -3019,7 +3040,9 @@ private function sendStaffActivationNotification(User $user): void
                 $end   = dbFormateDateTime($shift['end']);
     
                 $hours = getShiftHours($start, $end, 1, 0);
-                $shiftAmount =
+
+                if($shift['region'] == 'metro'){
+                    $shiftAmount =
                     ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
                     ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
                     ($chargeRate->def_metro_sat_day_rate * ($hours['saturday_morning'] ?? 0)) +
@@ -3028,6 +3051,17 @@ private function sendStaffActivationNotification(User $user): void
                     ($chargeRate->def_metro_sun_night_rate * ($hours['sunday_night'] ?? 0)) +
                     ($chargeRate->def_metro_pub_holi_day_rate * ($hours['ph_morning'] ?? 0)) +
                     ($chargeRate->def_metro_pub_holi_night_rate * ($hours['ph_night'] ?? 0));
+                }else{
+                  $shiftAmount =
+                    ($chargeRate->def_reg_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
+                    ($chargeRate->def_reg_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
+                    ($chargeRate->def_reg_sat_day_rate * ($hours['saturday_morning'] ?? 0)) +
+                    ($chargeRate->def_reg_sat_night_rate * ($hours['saturday_night'] ?? 0)) +
+                    ($chargeRate->def_reg_sun_day_rate * ($hours['sunday_morning'] ?? 0)) +
+                    ($chargeRate->def_reg_sun_night_rate * ($hours['sunday_night'] ?? 0)) +
+                    ($chargeRate->def_reg_pub_holi_day_rate * ($hours['ph_morning'] ?? 0)) +
+                    ($chargeRate->def_reg_pub_holi_night_rate * ($hours['ph_night'] ?? 0));
+                }
                     
                 $hours_array[] = $hours;
                 $baseTotal_arr[] = $shiftAmount; 
@@ -4505,6 +4539,79 @@ public function checkState(Request $request)
     ]);
 }
 
+// public function calculateJobAmount(Request $request)
+// {
+//     // Validate request
+//     $validator = Validator::make($request->all(), [
+//         'shifts' => 'required|array|min:1',
+//         'shifts.*.start_time' => 'required',
+//         'shifts.*.end_time' => 'required',
+//         'shifts.*.number_of_guards' => 'required|integer|min:1',
+//         'state' => 'required|string'
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Validation failed',
+//             'errors' => $validator->errors()
+//         ], 422);
+//     }
+
+//     // Calculate total hours for all shifts
+//     $totalHours = [
+//         'morning' => 0,
+//         'night' => 0,
+//         'saturday_morning' => 0,
+//         'saturday_night' => 0,
+//         'sunday_morning' => 0,
+//         'sunday_night' => 0,
+//         'ph_morning' => 0,
+//         'ph_night' => 0
+//     ];
+
+//     foreach ($request->shifts as $shift) {
+//         $hours = getShiftHours($shift['start_time'], $shift['end_time']);
+//         $guards = $shift['number_of_guards'] ?? 1;
+        
+//         foreach ($totalHours as $key => $value) {
+//             $totalHours[$key] += ($hours[$key] ?? 0) * $guards;
+//         }
+//     }
+
+//     // Get charge rates
+//     $chargeRates = ContractorChargeRate::where('state', $request->state)->get();
+
+//     if ($chargeRates->isEmpty()) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'No charge rates found'
+//         ], 404);
+//     }
+
+//     // Calculate amounts
+//     $amounts = [];
+//     foreach ($chargeRates as $rate) {
+//         $amount = 
+//             ($rate->def_metro_mon_to_fri_day_rate * $totalHours['morning']) +
+//             ($rate->def_metro_mon_to_fri_night_rate * $totalHours['night']) +
+//             ($rate->def_metro_sat_day_rate * ($totalHours['saturday_morning'] + $totalHours['saturday_night'])) +
+//             ($rate->def_metro_sun_day_rate * ($totalHours['sunday_morning'] + $totalHours['sunday_night'])) +
+//             ($rate->def_metro_pub_holi_day_rate * ($totalHours['ph_morning'] + $totalHours['ph_night']));
+        
+//         $amounts[] = round($amount, 2);
+//     }
+
+//     return response()->json([
+//         'success' => true,
+//         'data' => [
+//             'min' => min($amounts),
+//             'max' => max($amounts),
+//             'difference' => round(max($amounts) - min($amounts), 2),
+//             'average' => round(array_sum($amounts) / count($amounts), 2)
+//         ]
+//     ]);
+// }
 public function calculateJobAmount(Request $request)
 {
     // Validate request
@@ -4513,6 +4620,7 @@ public function calculateJobAmount(Request $request)
         'shifts.*.start_time' => 'required',
         'shifts.*.end_time' => 'required',
         'shifts.*.number_of_guards' => 'required|integer|min:1',
+        'shifts.*.region' => 'required|string|in:metro,reg',
         'state' => 'required|string'
     ]);
 
@@ -4524,28 +4632,7 @@ public function calculateJobAmount(Request $request)
         ], 422);
     }
 
-    // Calculate total hours for all shifts
-    $totalHours = [
-        'morning' => 0,
-        'night' => 0,
-        'saturday_morning' => 0,
-        'saturday_night' => 0,
-        'sunday_morning' => 0,
-        'sunday_night' => 0,
-        'ph_morning' => 0,
-        'ph_night' => 0
-    ];
-
-    foreach ($request->shifts as $shift) {
-        $hours = getShiftHours($shift['start_time'], $shift['end_time']);
-        $guards = $shift['number_of_guards'] ?? 1;
-        
-        foreach ($totalHours as $key => $value) {
-            $totalHours[$key] += ($hours[$key] ?? 0) * $guards;
-        }
-    }
-
-    // Get charge rates
+    // Get charge rates for the state
     $chargeRates = ContractorChargeRate::where('state', $request->state)->get();
 
     if ($chargeRates->isEmpty()) {
@@ -4555,17 +4642,44 @@ public function calculateJobAmount(Request $request)
         ], 404);
     }
 
-    // Calculate amounts
+    // Calculate amounts for each charge rate
     $amounts = [];
-    foreach ($chargeRates as $rate) {
-        $amount = 
-            ($rate->def_metro_mon_to_fri_day_rate * $totalHours['morning']) +
-            ($rate->def_metro_mon_to_fri_night_rate * $totalHours['night']) +
-            ($rate->def_metro_sat_day_rate * ($totalHours['saturday_morning'] + $totalHours['saturday_night'])) +
-            ($rate->def_metro_sun_day_rate * ($totalHours['sunday_morning'] + $totalHours['sunday_night'])) +
-            ($rate->def_metro_pub_holi_day_rate * ($totalHours['ph_morning'] + $totalHours['ph_night']));
-        
-        $amounts[] = round($amount, 2);
+
+    foreach ($chargeRates as $chargeRate) {
+        $totalAmount = 0;
+
+        foreach ($request->shifts as $shift) {
+            $hours = getShiftHours($shift['start_time'], $shift['end_time']);
+            $guards = $shift['number_of_guards'] ?? 1;
+            $region = $shift['region'];
+
+            if ($region === 'metro') {
+                $shiftAmount =
+                    ($chargeRate->def_metro_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
+                    ($chargeRate->def_metro_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
+                    ($chargeRate->def_metro_sat_day_rate * ($hours['saturday_morning'] ?? 0)) +
+                    ($chargeRate->def_metro_sat_night_rate * ($hours['saturday_night'] ?? 0)) +
+                    ($chargeRate->def_metro_sun_day_rate * ($hours['sunday_morning'] ?? 0)) +
+                    ($chargeRate->def_metro_sun_night_rate * ($hours['sunday_night'] ?? 0)) +
+                    ($chargeRate->def_metro_pub_holi_day_rate * ($hours['ph_morning'] ?? 0)) +
+                    ($chargeRate->def_metro_pub_holi_night_rate * ($hours['ph_night'] ?? 0));
+            } else {
+                $shiftAmount =
+                    ($chargeRate->def_reg_mon_to_fri_day_rate * ($hours['morning'] ?? 0)) +
+                    ($chargeRate->def_reg_mon_to_fri_night_rate * ($hours['night'] ?? 0)) +
+                    ($chargeRate->def_reg_sat_day_rate * ($hours['saturday_morning'] ?? 0)) +
+                    ($chargeRate->def_reg_sat_night_rate * ($hours['saturday_night'] ?? 0)) +
+                    ($chargeRate->def_reg_sun_day_rate * ($hours['sunday_morning'] ?? 0)) +
+                    ($chargeRate->def_reg_sun_night_rate * ($hours['sunday_night'] ?? 0)) +
+                    ($chargeRate->def_reg_pub_holi_day_rate * ($hours['ph_morning'] ?? 0)) +
+                    ($chargeRate->def_reg_pub_holi_night_rate * ($hours['ph_night'] ?? 0));
+            }
+
+            // Multiply by number of guards for this shift
+            $totalAmount += $shiftAmount * $guards;
+        }
+
+        $amounts[] = round($totalAmount, 2);
     }
 
     return response()->json([
@@ -4925,262 +5039,6 @@ public function contractor_accept_job(Request $request, $id)
     }
 }
  
-// private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster)
-// {
-//     // 1. Get contractor's rate card for this site's state
-//     $rate = DB::table('contractor_chargerates')
-//         ->where('user_id', $contractor->id)
-//         ->where('state', $updatedRoster->state)
-//         ->first();
- 
-//     if (!$rate) {
-//         Log::warning('No ContractorChargeRate found', [
-//             'contractor_id' => $contractor->id,
-//             'state' => $updatedRoster->state,
-//         ]);
-//         return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
-//     }
- 
-//     // 2. Split the shift into day/night/weekend/PH buckets and build per-bucket line items
-//     $hours = getShiftHours($updatedRoster->start, $updatedRoster->end);
- 
-//     // NEW: Mon-Fri stays split into separate Day/Night rows (labeled accordingly).
-//     // Saturday/Sunday/Public Holiday are COMBINED into a single row each (day + night
-//     // hours summed together), using the "day" rate column — since night and day
-//     // rates are equal for these three, showing them as two rows was redundant.
-//     $bucketGroups = [
-//         'mon_fri_day'    => ['label' => 'Day',            'hourKeys' => ['morning'],                            'rateColumn' => 'def_metro_mon_to_fri_day_rate'],
-//         'mon_fri_night'  => ['label' => 'Night',          'hourKeys' => ['night'],                              'rateColumn' => 'def_metro_mon_to_fri_night_rate'],
-//         'saturday'       => ['label' => 'Saturday',       'hourKeys' => ['saturday_morning', 'saturday_night'], 'rateColumn' => 'def_metro_sat_day_rate'],
-//         'sunday'         => ['label' => 'Sunday',         'hourKeys' => ['sunday_morning', 'sunday_night'],     'rateColumn' => 'def_metro_sun_day_rate'],
-//         'public_holiday' => ['label' => 'Public Holiday', 'hourKeys' => ['ph_morning', 'ph_night'],             'rateColumn' => 'def_metro_pub_holi_day_rate'],
-//     ];
- 
-//     $grossSubtotal = 0.0;
-//     $totalHours    = 0.0;
-//     $shiftLines    = [];
- 
-//     $rosterStart = \Carbon\Carbon::parse($updatedRoster->start);
-//     $rosterEnd   = \Carbon\Carbon::parse($updatedRoster->end);
- 
-//     // NEW (fixed): find the actual Saturday/Sunday calendar date within the
-//     // shift's date range, by day-of-week — NOT by guessing via "contains
-//     // 'night' in the bucket key" (that was wrong: saturday_night/sunday_night
-//     // both contain "night" as a substring, which incorrectly pushed BOTH
-//     // rows to the end date instead of each bucket's own actual day).
-//     $startDateOnly = $rosterStart->copy()->startOfDay();
-//     $endDateOnly   = $rosterEnd->copy()->startOfDay();
- 
-//     $saturdayDate = null;
-//     $sundayDate   = null;
-//     foreach ([$startDateOnly, $endDateOnly] as $candidateDate) {
-//         if ($candidateDate->isSaturday()) {
-//             $saturdayDate = $candidateDate;
-//         }
-//         if ($candidateDate->isSunday()) {
-//             $sundayDate = $candidateDate;
-//         }
-//     }
- 
-//     foreach ($bucketGroups as $groupKey => $group) {
-//         $groupHours = 0.0;
-//         foreach ($group['hourKeys'] as $hourKey) {
-//             $groupHours += (float) ($hours[$hourKey] ?? 0);
-//         }
-//         if ($groupHours <= 0) {
-//             continue;
-//         }
- 
-//         // $bucketRate = (float) $rate->{$group['rateColumn']};
-//         $bucketRate = (float) $rate->{$group['rateColumn']} * 1.10;
-//         $lineAmount = $groupHours * $bucketRate;
- 
-//         $grossSubtotal += $lineAmount;
-//         $totalHours    += $groupHours;
- 
-//         // NEW (fixed): Saturday/Sunday buckets use the matching calendar date
-//         // found above. Mon-Fri Day/Night and Public Holiday fall back to the
-//         // shift's start date (Public Holiday date-matching would need an
-//         // actual holiday calendar lookup, which isn't available here — this
-//         // keeps prior behaviour for that case; flag if that needs solving too).
-//         if ($groupKey === 'saturday' && $saturdayDate) {
-//             $lineDate = $saturdayDate;
-//         } elseif ($groupKey === 'sunday' && $sundayDate) {
-//             $lineDate = $sundayDate;
-//         } else {
-//             $lineDate = $rosterStart;
-//         }
- 
-//         $shiftLines[] = [
-//             'description' => $updatedRoster->job_type,
-//             'site'        => $updatedRoster->address ?? 'N/A',
-//             // Swap this for a real badge/reference field on the guard's staff
-//             // record if you have one — falling back to the raw user id for now.
-//             'guard_ref'   => 'SG-' . $updatedRoster->assigned_to,
-//             'date'        => $lineDate->format('d/m/Y'),
-//             'hours'       => $groupHours,
-//             'hours_label' => $group['label'], // rendered as "9.0 (Day)" etc.
-//             'rate'        => $bucketRate,
-//             'amount'      => round($lineAmount, 2),
-//         ];
-//     }
- 
-//     if ($grossSubtotal <= 0) {
-//         Log::warning('Invoice gross subtotal is zero, skipping payment link', [
-//             'roster_id' => $updatedRoster->id,
-//         ]);
-//         return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
-//     }
- 
-//     // 3. Apply Staffoo platform promotion discount, then GST on the net amount
-//     $discountPercent = 5;
-//     $gstPercent      = 10;
- 
-//     $discountAmount = round($grossSubtotal * ($discountPercent / 100), 2);
-//     $netTaxable     = round($grossSubtotal - $discountAmount, 2);
-//     $gstAmount      = round($netTaxable * ($gstPercent / 100), 2);
-//     $grandTotal     = round($netTaxable + $gstAmount, 2);
- 
-//     // 4. Get client details
-//     $client = DB::table('users')->where('id', $updatedRoster->created_by)->first();
- 
-//     // 5. Build invoice number — e.g. STF-2026-1082-D
-//     $invoiceNumber = 'STF' . '-' . str_pad($updatedRoster->id, 4, '0', STR_PAD_LEFT);
- 
-//     // 6. Create Stripe product/price/payment link
-//     \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
- 
-//     try {
-//         $product = \Stripe\Product::create([
-//             'name' => "Invoice {$invoiceNumber} - " . ($updatedRoster->address ?? 'Job Shift'),
-//         ]);
- 
-//         $price = \Stripe\Price::create([
-//             'product'     => $product->id,
-//             'unit_amount' => (int) round($grandTotal * 100), // cents
-//             'currency'    => 'aud',
-//         ]);
- 
-//         $paymentLink = \Stripe\PaymentLink::create([
-//             'line_items' => [
-//                 ['price' => $price->id, 'quantity' => 1],
-//             ],
-//             'payment_intent_data' => [
-//                 'capture_method' => 'manual', // authorize/hold only — capture happens later, after shift completion
-//                 'metadata' => [
-//                     'roster_id'      => $updatedRoster->id,
-//                     'contractor_id'  => $contractor->id,
-//                     'invoice_number' => $invoiceNumber,
-//                 ],
-//             ],
-//             'metadata' => [
-//                 'roster_id'      => $updatedRoster->id,
-//                 'contractor_id'  => $contractor->id,
-//                 'invoice_number' => $invoiceNumber,
-//             ],
-//             'after_completion' => [
-//                 'type' => 'redirect',
-//                 'redirect' => ['url' => 'https://staging.app.staffoo.com.au/my-job-applications?roster_id=' . $updatedRoster->id],
-//             ],
-//         ]);
-//     } catch (\Exception $e) {
-//         Log::error('Stripe payment link creation failed', ['error' => $e->getMessage()]);
-//         return ['success' => false, 'payment_link' => null, 'invoice_number' => null];
-//     }
- 
-//     // 7. Build PDF invoice (contractor-branded)
-//     $invoiceData = [
-//         'invoice_number' => $invoiceNumber,
-//         'date'            => now()->format('d M Y'),
- 
-//         'contractor' => [
-//             'name'           => $contractor->contractor->company_name ?? $contractor->name,
-//             'abn'            => $contractor->contractor->abn ?? 'N/A',
-//             // These two likely need adding to the `contractors` table if not already there.
-//             'license_number' => $contractor->contractor->security_license_no ?? 'N/A',
-//             'address'        => $contractor->address ?? '',
-//         ],
-//         'client' => [
-//             'name'    => $client->name ?? 'Client',
-//             // These likely need adding to `users` (or a client profile table) if not already there.
-//             'abn'     => $client->abn ?? 'N/A',
-//             'attn'    => $client->billing_contact ?? 'Accounts Payable',
-//             'address' => $client->address ?? '',
-//         ],
- 
-//         'shifts' => $shiftLines,
- 
-//         'gross_subtotal'   => round($grossSubtotal, 2),
-//         'discount_percent' => $discountPercent,
-//         'discount_amount'  => $discountAmount,
-//         'net_taxable'      => $netTaxable,
-//         'gst_percent'      => $gstPercent,
-//         'gst_amount'       => $gstAmount,
-//         'total_payable'    => $grandTotal,
- 
-//         // Set to 'PENDING' at generation time; flip to 'PAID / SECURED' from the
-//         // Stripe webhook once the payment/hold actually clears.
-//         'payment_status' => 'PENDING',
-//     ];
- 
-//     try {
-//         $invoiceService = new ContractorInvoiceService();
-//         $pdfBytes = $invoiceService->generatePdf($invoiceData);
-//          $directory = storage_path('app/public/invoices');
-//          if (!file_exists($directory)) {
-//             mkdir($directory, 0755, true);
-//          }
-//         $filename = "{$invoiceNumber}.pdf";
-//         $filePath = $directory . DIRECTORY_SEPARATOR . $filename;
-//         file_put_contents($filePath, $pdfBytes);
- 
-//     } catch (\Exception $e) {
-//         Log::error('Invoice PDF generation failed', ['error' => $e->getMessage()]);
-//         return ['success' => false, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
-//     }
- 
-//     // 8. Save link/invoice number + breakdown on roster
-//     // (invoice_meta lets the webhook rebuild an accurate Transaction row later,
-//     //  since Stripe only sends back the charged amount in cents, not the breakdown)
-//     DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
-//         'invoice_filename'  => $filename,
-//         'payment_intent_id' => $paymentLink->url,
-//         // 'payment_status'    => 'pending',
-//         'invoice_meta'      => json_encode([
-//             'gross_subtotal'   => round($grossSubtotal, 2),
-//             'discount_percent' => $discountPercent,
-//             'discount_amount'  => $discountAmount,
-//             'net_taxable'      => $netTaxable,
-//             'gst_percent'      => $gstPercent,
-//             'gst_amount'       => $gstAmount,
-//             'total_payable'    => $grandTotal,
-//             'currency'         => 'aud',
-//         ]),
-//     ]);
- 
-//     // 9. Email client with PDF + pay link
-//     // Pay Now in the email points to our own redirect gate, NOT the raw
-//     // Stripe link directly — this is what stops repeated clicks from
-//     // creating duplicate holds (see Stripeweebhookcontroller).
-//     $wrappedPayLink = config('app.url') . '/emails/pay/' . $updatedRoster->id;
- 
-//     if (!empty($client->email)) {
-//         try {
-//             Mail::to($client->email)->send(new ContractorInvoiceMail(
-//                 $client->name ?? 'Client',
-//                 $pdfBytes,
-//                 $invoiceNumber,
-//                 $wrappedPayLink,
-//                 $contractor->contractor->company_name ?? $contractor->name
-//             ));
-//         } catch (\Exception $e) {
-//             Log::error('Invoice email send failed', ['error' => $e->getMessage()]);
-//         }
-//     }
- 
-//     return ['success' => true, 'payment_link' => $paymentLink->url, 'invoice_number' => $invoiceNumber];
-// }
-
 private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster)
 {
     // 1. Get contractor's rate card for this site's state
@@ -5200,13 +5058,23 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
     // 2. Split the shift into day/night/weekend/PH buckets and build per-bucket line items
     $hours = getShiftHours($updatedRoster->start, $updatedRoster->end);
 
-    $bucketGroups = [
-        'mon_fri_day'    => ['label' => 'Day',            'hourKeys' => ['morning'],                            'rateColumn' => 'def_metro_mon_to_fri_day_rate'],
-        'mon_fri_night'  => ['label' => 'Night',          'hourKeys' => ['night'],                              'rateColumn' => 'def_metro_mon_to_fri_night_rate'],
-        'saturday'       => ['label' => 'Saturday',       'hourKeys' => ['saturday_morning', 'saturday_night'], 'rateColumn' => 'def_metro_sat_day_rate'],
-        'sunday'         => ['label' => 'Sunday',         'hourKeys' => ['sunday_morning', 'sunday_night'],     'rateColumn' => 'def_metro_sun_day_rate'],
-        'public_holiday' => ['label' => 'Public Holiday', 'hourKeys' => ['ph_morning', 'ph_night'],             'rateColumn' => 'def_metro_pub_holi_day_rate'],
-    ];
+    if($updatedRoster->region == 'metro'){
+        $bucketGroups = [
+            'mon_fri_day'    => ['label' => 'Day',            'hourKeys' => ['morning'],                            'rateColumn' => 'def_metro_mon_to_fri_day_rate'],
+            'mon_fri_night'  => ['label' => 'Night',          'hourKeys' => ['night'],                              'rateColumn' => 'def_metro_mon_to_fri_night_rate'],
+            'saturday'       => ['label' => 'Saturday',       'hourKeys' => ['saturday_morning', 'saturday_night'], 'rateColumn' => 'def_metro_sat_day_rate'],
+            'sunday'         => ['label' => 'Sunday',         'hourKeys' => ['sunday_morning', 'sunday_night'],     'rateColumn' => 'def_metro_sun_day_rate'],
+            'public_holiday' => ['label' => 'Public Holiday', 'hourKeys' => ['ph_morning', 'ph_night'],             'rateColumn' => 'def_metro_pub_holi_day_rate'],
+        ];
+    }else{
+        $bucketGroups = [
+            'mon_fri_day'    => ['label' => 'Day',            'hourKeys' => ['morning'],                            'rateColumn' => 'def_reg_mon_to_fri_day_rate'],
+            'mon_fri_night'  => ['label' => 'Night',          'hourKeys' => ['night'],                              'rateColumn' => 'def_reg_mon_to_fri_night_rate'],
+            'saturday'       => ['label' => 'Saturday',       'hourKeys' => ['saturday_morning', 'saturday_night'], 'rateColumn' => 'def_reg_sat_day_rate'],
+            'sunday'         => ['label' => 'Sunday',         'hourKeys' => ['sunday_morning', 'sunday_night'],     'rateColumn' => 'def_reg_sun_day_rate'],
+            'public_holiday' => ['label' => 'Public Holiday', 'hourKeys' => ['ph_morning', 'ph_night'],             'rateColumn' => 'def_reg_pub_holi_day_rate'],
+        ];
+    }
 
     $grossSubtotal = 0.0;
     $totalHours    = 0.0;

@@ -159,7 +159,9 @@ class AdminStaffController extends Controller
         
         // Calculate profile completion and update status for each staff member
         foreach ($staffList as $staff) {
-            $this->calculateProfileCompletion($staff);
+            if($staff->admin_approved == 1){
+             $this->calculateProfileCompletion($staff);
+            }
         }
 
         // Re-query with pagination after status updates

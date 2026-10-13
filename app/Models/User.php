@@ -35,7 +35,8 @@ class User extends Authenticatable
             'current_coordinates',
             'is_email_approved',
             'states_allowed',
-            'last_reminder_sent_at'
+            'last_reminder_sent_at',
+            'admin_approved'
         ];
     
         protected $hidden = [

@@ -249,6 +249,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::any('/signout/{id}', [JobRosterController::class, 'jobSignout'])->name('job.signout');
     Route::get('/jobs/available/{id}', [JobRosterController::class, 'getAvailableJobs']);
 
+    Route::any('/get-sites', [JobRosterController::class, 'getSites']);
+    Route::any('/update_site_radius/{id}', [JobRosterController::class, 'updateRadius']);
     Route::any('/job-details', [JobRosterController::class, 'getJobsDetail']);
     Route::any('/jobDetails/{id}', [JobRosterController::class, 'jobSpecificDetail'])->name('job.detail');
     Route::any('/guard/jobs/{type}/{duration}', [JobRosterController::class, 'getGuardJobs'])->name('guard.job.detail');
@@ -330,6 +332,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('submit-guard-questionnaire', [QuestionnaireController::class, 'submitQNA']);
     Route::post('update-induction-read-status', [QuestionnaireController::class, 'updateReadStatus']);
 
+    Route::any('user-approved-status/{id}', [GeneralController::class, 'userApproval']);
+    Route::post('/change-user-type', [GeneralController::class, 'changeUserType']);
+
 
     Route::prefix('admin')->group(function () {
 
@@ -361,6 +366,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('invoice/history/{transaction_id}', [JobRosterController::class, 'getEmailHistoryByTransaction']);
         
         Route::get('/', [GeneralController::class, 'getAdmins']);
+        Route::get('/support-admin', [GeneralController::class, 'getSupportAdmin']);
+
         
         //public holiday
         Route::any('add-public-holiday', [GeneralController::class, 'addPH']);

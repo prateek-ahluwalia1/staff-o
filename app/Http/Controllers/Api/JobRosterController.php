@@ -670,7 +670,9 @@ public function getContractorStaff(Request $request, $id)
     }
 
     foreach ($guards as $staff) {
-        $this->calculateStaffProfileCompletion($staff);
+        if($staff->admin_approved == 1){
+         $this->calculateStaffProfileCompletion($staff);    
+        }
     }
 
     return response()->json([
@@ -1324,7 +1326,11 @@ private function sendStaffActivationNotification(User $user): void
                 return response()->json(['success' => false, 'message' => 'Please send coordinates.', 'code' => 404]);
             }
 
-            $coordsString = $job->guards->current_coordinates ?? $job->guards->coordinates ?? '0,0';
+            $coordsString = $job->guards->current_coordinates;
+            
+            if ($job->guards->current_coordinates == null ||  $job->guards->current_coordinates == '') {
+                return response()->json(['success' => false, 'message' => 'Staff coordinates not set.', 'code' => 404]);
+            }
                 
             $coordinates = explode(',', $coordsString);
 
@@ -1338,7 +1344,7 @@ private function sendStaffActivationNotification(User $user): void
             if ($job->site->signin_radius > 0) {
                 $signin_radius = $job->site->signin_radius / 1000;
             } else {
-                $signin_radius = 0.31;
+                $signin_radius = 0.50;
             }
             if ($distance > $signin_radius) {
                 return response()->json(['success' => false, 'error' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'message' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'code' => 404]);
@@ -5665,7 +5671,7 @@ public function request_charge_rate(Request $request)
     ]);
 
     try {
-        $contractor = DB::table('users')->where('id', $request->user_id)->first();
+        $contractor = DB::table('users')->with('contractor')->where('id', $request->user_id)->first();
 
         if (!$contractor) {
             return response()->json([
@@ -7149,7 +7155,7 @@ private function generateAndSendSignedContract($contractor, $rateRequest, $charg
             try {
                 Mail::to($contractor->email)->send(new ContractSignedMail(
                     $contractor->name ?? 'Contractor',
-                    $contractor->contractor->company_name ?? $contractor->name ?? 'Contractor',
+                    $contractor->contractor->company_name ?? 'Contractor',
                     $rateRequest->state,
                     $contractNumber,
                     $signedPdfBytes
@@ -7167,7 +7173,7 @@ private function generateAndSendSignedContract($contractor, $rateRequest, $charg
         try {
             Mail::to($adminAddress)->send(new ContractSignedMail(
                 'Admin',
-                $contractor->contractor->company_name ?? $contractor->name ?? 'Contractor',
+                $contractor->contractor->company_name ?? 'Contractor',
                 $rateRequest->state,
                 $contractNumber,
                 $signedPdfBytes
@@ -7342,7 +7348,7 @@ public function signContract(Request $request, $token)
             try {
                 Mail::to($contractor->email)->send(new ContractSignedMail(
                     $contractor->name ?? 'Contractor',
-                    $contractor->contractor->company_name ?? $contractor->name ?? 'Contractor',
+                    $contractor->contractor->company_name ?? 'Contractor',
                     $contract->state,
                     $contract->contract_number,
                     $signedPdfBytes
@@ -7357,7 +7363,7 @@ public function signContract(Request $request, $token)
         try {
             Mail::to($adminAddress)->send(new ContractSignedMail(
                 'Admin',
-                $contractor->contractor->company_name ?? $contractor->name ?? 'Contractor',
+                $contractor->contractor->company_name ?? 'Contractor',
                 $contract->state,
                 $contract->contract_number,
                 $signedPdfBytes
@@ -7527,4 +7533,93 @@ public function stats(Request $request)
         ],
     ]);
 }
+
+ public function getSites(Request $request)
+    {
+        try {
+            $query = Site::query();
+
+            // Optional: Filter by user_id if provided
+            if ($request->has('user_id')) {
+                $query->where('user_id', $request->user_id);
+            }
+
+            // Optional: Filter by state
+            if ($request->has('state')) {
+                $query->where('state', $request->state);
+            }
+
+            // Optional: Search by site name
+            if ($request->has('search')) {
+                $query->where('site_name', 'LIKE', '%' . $request->search . '%');
+            }
+
+            // Pagination
+            $perPage = $request->get('per_page', 15);
+            $sites = $query->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sites retrieved successfully',
+                'data' => $sites
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve sites',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateRadius(Request $request, $id)
+    {
+        try {
+            // Validate the request
+            $validator = Validator::make($request->all(), [
+                'signin_radius' => 'required|numeric|min:1|max:10000',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Find the site
+            $site = Site::find($id);
+
+            if (!$site) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Site not found'
+                ], 404);
+            }
+
+            // Update the signin_radius
+            $site->signin_radius = $request->signin_radius;
+            $site->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Signin radius updated successfully',
+                'data' => [
+                    'id' => $site->id,
+                    'site_name' => $site->site_name,
+                    'signin_radius' => $site->signin_radius,
+                    'updated_at' => $site->updated_at
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update signin radius',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

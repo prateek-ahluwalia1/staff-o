@@ -104,7 +104,9 @@ public function index(Request $request)
 
     // Calculate profile completion and update status for each contractor
     foreach ($contractorList as $contractor) {
-        $this->calculateProfileCompletion($contractor);
+        if($contractor->admin_approved == 1){
+          $this->calculateProfileCompletion($contractor);
+        }
     }
 
     // Re-query with pagination after status updates
@@ -164,110 +166,6 @@ public function index(Request $request)
         'message' => 'Contractors retrieved successfully'
     ]);
 }
-//  public function index(Request $request)
-// {
-//     $query = User::where('user_type', 'contractor')->whereNotIn('id', [1])
-//         ->with('contractor', 'documents');
-
-//     // Search functionality
-//     if ($request->has('search')) {
-//         $search = $request->search;
-//         $query->where(function($q) use ($search) {
-//             $q->where('name', 'like', "%{$search}%")
-//               ->orWhere('email', 'like', "%{$search}%")
-//               ->orWhereHas('contractor', function($q) use ($search) {
-//                   $q->where('company_name', 'like', "%{$search}%")
-//                     ->orWhere('phone', 'like', "%{$search}%")
-//                     ->orWhere('registration_number', 'like', "%{$search}%");
-//               });
-//         });
-//     }
-
-//     // Filter by status
-//     if ($request->has('status')) {
-//         if ($request->status === 'active') {
-//             $query->where('is_active', 1);
-//         } elseif ($request->status === 'inactive') {
-//             $query->where('is_active', 0);
-//         }
-//     }
-
-//     // Filter by city/state/country
-//     if ($request->has('city')) {
-//         $query->where('city', $request->city);
-//     }
-    
-      
-//    if ($request->filled('state')) {
-//     $stateMap = [
-//         'vic' => ['vic', 'victoria'],
-//         'nsw' => ['nsw', 'new south wales'],
-//         'qld' => ['qld', 'queensland'],
-//         'sa'  => ['sa',  'south australia'],
-//         'wa'  => ['wa',  'western australia'],
-//         'tas' => ['tas', 'tasmania'],
-//         'act' => ['act', 'australian capital territory'],
-//         'nt'  => ['nt',  'northern territory'],
-//     ];
-
-//     $input  = strtolower(trim($request->state));
-//     $values = [$input]; // fallback: use as-is if not a known AU state
-
-//     foreach ($stateMap as $aliases) {
-//         if (in_array($input, $aliases, true)) {
-//             $values = $aliases;
-//             break;
-//         }
-//     }
-
-//     $query->where(function ($q) use ($values) {
-
-//         // --- Site state matches one of the aliases ---
-//         $q->whereIn(DB::raw('LOWER(TRIM(state))'), $values)
-
-//           // --- OR states_allowed JSON array contains the state ---
-//           ->orWhere(function ($q2) use ($values) {
-//               foreach ($values as $v) {
-//                   $q2->orWhereRaw(
-//                       'JSON_CONTAINS(LOWER(states_allowed), ?)',
-//                       [json_encode(strtolower($v))]
-//                   );
-//               }
-//           });
-
-//     });
-// }
-    
-//     if ($request->has('country')) {
-//         $query->where('country', $request->country);
-//     }
-
-//     // Sorting
-//     $sortField = $request->get('sort_field', 'created_at');
-//     $sortDirection = $request->get('sort_direction', 'desc');
-//     $query->orderBy($sortField, $sortDirection);
-
-//     // Get all contractors before pagination to check their status
-//     $contractorList = $query->get();
-    
-//     // Calculate profile completion and update status for each contractor
-//     foreach ($contractorList as $contractor) {
-//         $this->calculateProfileCompletion($contractor);
-//     }
-
-//     // Re-query with pagination after status updates
-//     if($request->page){
-//     $contractors = $query->orderBy('id', 'desc')->paginate(50);
-//     }else{
-//     $contractors = $contractorList;
-//     }
-
-//     return response()->json([
-//         'success' => true,
-//         'data' => $contractors,
-//         'message' => 'Contractors retrieved successfully'
-//     ]);
-// }
 
 private function calculateProfileCompletion(User $user): int
 {

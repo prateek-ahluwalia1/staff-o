@@ -352,6 +352,13 @@ class AuthController extends Controller
             ], 401);
         }
 
+        if ($user->admin_approved == 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is block. Contact support.'
+            ], 403);
+        }
+
         if ($user->is_email_approved == 0) {
             return response()->json([
                 'success' => false,

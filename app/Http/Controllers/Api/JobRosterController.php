@@ -99,7 +99,7 @@ class JobRosterController extends Controller
                     'site_name'        => $firstPart,
                     'site_description' => $request->description,
                     'address'          => $request->address,
-                    'signin_radius'    => 300,
+                    'signin_radius'    => 500,
                     'coordinates'      => $request->coordinates,
                     'state'            => $request->job_location_state,
                 ]);

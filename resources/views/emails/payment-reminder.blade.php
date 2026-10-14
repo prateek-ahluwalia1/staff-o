@@ -56,7 +56,7 @@
                 The following jobs have an accepted contractor but are still marked as payment not required.
                 Please review and follow up with the relevant clients as needed.
             @else
-                The job{{ count($jobs) === 1 ? '' : 's' }} below {{ count($jobs) === 1 ? 'has' : 'have' }} been accepted by a resource partner, but payment
+                The job{{ count($jobs) === 1 ? '' : 's' }} below {{ count($jobs) === 1 ? 'has' : 'have' }} been accepted, but payment
                 has not yet been arranged. Please arrange payment at your earliest convenience to avoid
                 any disruption to your booking.
             @endif

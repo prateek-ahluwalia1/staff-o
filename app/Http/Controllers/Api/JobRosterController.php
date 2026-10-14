@@ -4840,7 +4840,7 @@ public function calculateJobAmount(Request $request)
         'shifts.*.start_time' => 'required',
         'shifts.*.end_time' => 'required',
         'shifts.*.number_of_guards' => 'required|integer|min:1',
-        'shifts.*.region' => 'required|string|in:metro,reg',
+        'shifts.*.region' => 'required|string',
         'state' => 'required|string'
     ]);
 

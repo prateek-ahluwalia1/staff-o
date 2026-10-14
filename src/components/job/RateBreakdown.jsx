@@ -46,7 +46,23 @@ export default function RateBreakdown({ rate, paymentOption = "full" }) {
       `}</style>
 
       <div className="jw-rate-head px-4 py-3 d-flex align-items-center justify-content-between gap-2">
-        <h6 className="fw-bold mb-0 text-truncate"><i className="fa-solid fa-file-invoice-dollar me-2"></i> Breakdown</h6>
+        <div className="d-flex align-items-center gap-2 text-truncate">
+          <h6 className="fw-bold mb-0 text-truncate"><i className="fa-solid fa-file-invoice-dollar me-2"></i> Breakdown</h6>
+          {rate.region && (
+            <span
+              className="badge text-uppercase"
+              style={{
+                fontSize: "0.68rem",
+                letterSpacing: "0.5px",
+                backgroundColor: rate.region === "regional" ? "rgba(74, 111, 165, 0.45)" : "rgba(10, 124, 110, 0.55)",
+                color: "#fff",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+              }}
+            >
+              {rate.region === "regional" ? "Regional Rate" : "Metro Rate"}
+            </span>
+          )}
+        </div>
         <span className="badge jw-hours-chip rounded-pill px-2 py-1 fw-bold text-nowrap">{totalHours.toFixed(2)} Hrs</span>
       </div>
 

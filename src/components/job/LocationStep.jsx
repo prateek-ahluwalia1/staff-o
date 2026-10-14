@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "react-toastify";
-import { classifyPostcode } from "../../utils/australianRegionClassifier";
+import {
+  classifyPostcode,
+  extractPostcodeFromAddress,
+  determineJobRegion,
+} from "../../utils/australianRegionClassifier";
 
 const STATE_MAP = {
   'Victoria': 'vic',
@@ -31,39 +35,87 @@ export default function LocationStep({
   const [googleReady, setGoogleReady] = useState(false);
 
   const fillAddress = useCallback(
-    (place, options = {}) => {
+    async (place, options = {}) => {
       let block = "", area = "", city = "", state = "", postcode = "";
 
       place.address_components?.forEach((component) => {
-        const types = component.types;
+        const types = component.types || [];
         if (types.includes("sublocality_level_1")) block = component.long_name;
         if (types.includes("sublocality")) area = component.long_name;
         if (types.includes("locality")) city = component.long_name;
 
         // Intercept the state and map it to the short form
         if (types.includes("administrative_area_level_1")) {
-          // If the long name is in our map, use it. Otherwise, fallback to Google's short_name (lowercased)
           state = STATE_MAP[component.long_name] || component.short_name.toLowerCase();
         }
 
         if (types.includes("postal_code")) postcode = component.long_name;
       });
 
+      if (!postcode && options.fallbackPostcode) {
+        postcode = options.fallbackPostcode;
+      }
+      if (!state && options.fallbackState) {
+        state = options.fallbackState;
+      }
+
       const finalAddress = [block, area, city, state, postcode].filter(Boolean).join(", ");
       const canonicalAddress = finalAddress || place.formatted_address || "";
       const placeLabel = place.name ? `${place.name}${place.formatted_address ? `, ${place.formatted_address}` : ""}` : canonicalAddress;
 
-      setField("location", options.preferPlaceLabel ? placeLabel : canonicalAddress);
-      setField("address", canonicalAddress);
-      if (city) setField("city", city);
-      if (state) setField("state", state);
+      // Extract postcode from address strings if still missing
+      if (!postcode) {
+        postcode = extractPostcodeFromAddress(canonicalAddress) ||
+                   extractPostcodeFromAddress(place.formatted_address || "") ||
+                   extractPostcodeFromAddress(place.name || "") || "";
+      }
+
+      // Extract state if still missing
+      if (!state && canonicalAddress) {
+        const match = canonicalAddress.match(/\b(vic|nsw|qld|tas|wa|sa|act|nt)\b/i);
+        if (match) state = match[1].toLowerCase();
+      }
+
+      const coords = options.coordinates || (place.geometry?.location ? `${place.geometry.location.lat()},${place.geometry.location.lng()}` : "");
+
+      // Determine region
+      let region = "";
       if (postcode) {
-        setField("postcode", postcode);
         const classification = classifyPostcode(postcode);
         if (classification.isValid && classification.region) {
-          setField("region", classification.region);
+          region = classification.region;
+          if (!state && classification.state) state = classification.state;
         }
       }
+
+      // If region still not determined and coords available, resolve via determineJobRegion
+      if (!region && coords) {
+        try {
+          const detRes = await determineJobRegion({
+            coordinates: coords,
+            postcode,
+            address: canonicalAddress,
+          });
+          if (detRes.success && detRes.region) {
+            region = detRes.region;
+            if (!postcode && detRes.postcode) postcode = detRes.postcode;
+            if (!state && detRes.state) state = detRes.state;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      setField({
+        location: options.preferPlaceLabel ? placeLabel : canonicalAddress,
+        address: canonicalAddress,
+        city: city || "",
+        state: state || "",
+        postcode: postcode || "",
+        region: region || "",
+        ...(coords ? { coordinates: coords } : {}),
+      });
+
       if (setLocationError) setLocationError("");
     },
     [setField, setLocationError]
@@ -71,10 +123,30 @@ export default function LocationStep({
 
   const reverseGeocode = useCallback(
     (lat, lng) => {
+      if (!window.google?.maps?.Geocoder) return;
       const geocoder = new window.google.maps.Geocoder();
       geocoder.geocode({ location: { lat, lng } }, (results, status) => {
         if (status === "OK" && results && results.length > 0) {
-          fillAddress(results[0]);
+          let foundPostcode = "";
+          let foundState = "";
+
+          for (const res of results) {
+            for (const comp of res.address_components || []) {
+              if (comp.types.includes("postal_code") && !foundPostcode) {
+                foundPostcode = comp.long_name;
+              }
+              if (comp.types.includes("administrative_area_level_1") && !foundState) {
+                foundState = STATE_MAP[comp.long_name] || comp.short_name.toLowerCase();
+              }
+            }
+          }
+
+          fillAddress(results[0], {
+            preferPlaceLabel: false,
+            fallbackPostcode: foundPostcode,
+            fallbackState: foundState,
+            coordinates: `${lat},${lng}`,
+          });
         }
       });
     },
@@ -100,7 +172,6 @@ export default function LocationStep({
     const gmap = new window.google.maps.Map(mapRef.current, {
       center: { lat: initialLatLng[0], lng: initialLatLng[1] },
       zoom: 15,
-      // Disable default UI elements on mobile to save space if desired
       disableDefaultUI: window.innerWidth < 768,
       zoomControl: true,
     });
@@ -115,13 +186,12 @@ export default function LocationStep({
       const pos = marker.getPosition();
       const lat = pos.lat();
       const lng = pos.lng();
-      setField("coordinates", `${lat},${lng}`);
       reverseGeocode(lat, lng);
     });
 
     setMap(gmap);
     markerRef.current = marker;
-  }, [googleReady, map, form?.coordinates, setField, reverseGeocode]);
+  }, [googleReady, map, form?.coordinates, reverseGeocode]);
 
   useEffect(() => {
     if (!map || !markerRef.current || !form?.coordinates) return;
@@ -158,8 +228,7 @@ export default function LocationStep({
       selectingPlaceRef.current = true;
       const lat = place.geometry.location.lat();
       const lng = place.geometry.location.lng();
-      setField("coordinates", `${lat},${lng}`);
-      fillAddress(place, { preferPlaceLabel: true });
+      fillAddress(place, { preferPlaceLabel: true, coordinates: `${lat},${lng}` });
 
       if (markerRef.current) markerRef.current.setPosition({ lat, lng });
       if (map) map.setCenter({ lat, lng });
@@ -171,7 +240,7 @@ export default function LocationStep({
       if (listener && typeof listener.remove === "function") listener.remove();
       autocompleteRef.current = null;
     };
-  }, [googleReady, map, setField, fillAddress]);
+  }, [googleReady, map, fillAddress]);
 
   const handleUseCurrent = () => {
     if (!navigator.geolocation) return toast.error("Geolocation is not supported by your browser.");
@@ -180,7 +249,6 @@ export default function LocationStep({
       (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-        setField("coordinates", `${lat},${lng}`);
         reverseGeocode(lat, lng);
         if (markerRef.current) markerRef.current.setPosition({ lat, lng });
         if (map) map.setCenter({ lat, lng });
@@ -241,13 +309,30 @@ export default function LocationStep({
           </div>
         </div>
         {isConfirmed && (
-          <span className="jw-chip flex-shrink-0">
-            <i className="fa-solid fa-circle-check"></i> Location set
-          </span>
+          <div className="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+            <span className="jw-chip flex-shrink-0">
+              <i className="fa-solid fa-circle-check"></i> Location set
+            </span>
+            {form?.region && (
+              <span
+                className="badge text-uppercase fw-bold px-2 py-1 flex-shrink-0 shadow-sm"
+                style={{
+                  fontSize: "0.72rem",
+                  letterSpacing: "0.5px",
+                  backgroundColor: form.region === "regional" ? "#4a6fa5" : "#0A7C6E",
+                  color: "#fff",
+                  borderRadius: "999px",
+                }}
+              >
+                <i className={`fa-solid ${form.region === "regional" ? "fa-mountain-sun" : "fa-city"} me-1`}></i>
+                {form.region === "regional" ? "Regional Rate" : "Metro Rate"}
+                {form.state ? ` (${form.state.toUpperCase()})` : ""}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Changed g-2 to g-3 for better mobile stacking spacing, added col-12 classes */}
       <div className="row g-3 mb-3">
         <div className="col-12 col-md-8 col-lg-9">
           <div className={`input-group shadow-sm jw-loc-search ${locationError ? "has-error" : ""}`}>
@@ -259,13 +344,20 @@ export default function LocationStep({
               value={form?.location || ""}
               autoComplete="off"
               onChange={(e) => {
-                setField("location", e.target.value);
+                const val = e.target.value;
                 if (selectingPlaceRef.current) {
                   if (setLocationError) setLocationError("");
                   return;
                 }
-                setField("coordinates", "");
-                setField("address", "");
+                setField({
+                  location: val,
+                  address: "",
+                  coordinates: "",
+                  city: "",
+                  state: "",
+                  postcode: "",
+                  region: "",
+                });
                 if (setLocationError) setLocationError("");
               }}
               className="form-control form-control-lg border-0 ps-2"
@@ -280,9 +372,15 @@ export default function LocationStep({
                 type="button"
                 className="btn btn-white border-0 text-muted hover-bg-light pe-4"
                 onClick={() => {
-                  setField("location", "");
-                  setField("address", "");
-                  setField("coordinates", "");
+                  setField({
+                    location: "",
+                    address: "",
+                    coordinates: "",
+                    city: "",
+                    state: "",
+                    postcode: "",
+                    region: "",
+                  });
                   if (setLocationError) setLocationError("");
                 }}
               >

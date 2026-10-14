@@ -1,28 +1,34 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 export default function CtaBand({
-
-  
-
-
   title = "Ready to secure your event?",
   subtitle = "Post your job free pay only once a security staff is confirmed and the shift is signed off.",
   primaryBtnText = "Post an event security job",
   primaryBtnUrl = "#",
   secondaryBtnText = "Talk to our team",
   secondaryBtnUrl = "#",
+  id,
 }) {
+  const isInternal = primaryBtnUrl && primaryBtnUrl.startsWith("/") && !primaryBtnUrl.startsWith("//");
+
   return (
-    <section className="stf-section" style={{ paddingTop: 0 }}>
+    <section className="stf-section" style={{ paddingTop: 0 }} id={id}>
       <div className="stf-wrap">
         <div className="stf-cta-band">
           {title && <h2>{title}</h2>}
           {subtitle && <p>{subtitle}</p>}
           <div className="stf-cta-actions">
             {primaryBtnText && (
-              <a href={primaryBtnUrl } className="stf-btn stf-btn-solid stf-btn-lg">
-                {primaryBtnText}
-              </a>
+              isInternal ? (
+                <Link to={primaryBtnUrl} className="stf-btn stf-btn-solid stf-btn-lg">
+                  {primaryBtnText}
+                </Link>
+              ) : (
+                <a href={primaryBtnUrl} className="stf-btn stf-btn-solid stf-btn-lg">
+                  {primaryBtnText}
+                </a>
+              )
             )}
             {/* {secondaryBtnText && (
               <a href={secondaryBtnUrl || "#"} className="stf-btn stf-btn-outline stf-btn-lg">

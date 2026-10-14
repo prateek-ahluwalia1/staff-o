@@ -5,7 +5,11 @@ import Select from "react-select";
 import { toast } from "react-toastify";
 import useSubmit from "../hooks/useSubmit";
 import useFetch from "../hooks/useFetch";
-import { computeShiftBreakdown, mapApiRates } from "../utils/rateCalculator";
+import {
+  computeShiftBreakdown,
+  mapApiRates,
+  normalizeRegion,
+} from "../utils/rateCalculator";
 import StepProgress from "../components/job/StepProgress";
 import LocationStep from "../components/job/LocationStep";
 import ScheduleStep from "../components/job/ScheduleStep";
@@ -186,6 +190,49 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
     review: false
   });
 
+  // State for public holidays of the selected state
+  const [publicHolidays, setPublicHolidays] = useState([]);
+  const { submit: fetchHolidaysSubmit } = useSubmit({ isAuth: true });
+
+  useEffect(() => {
+    const loadHolidays = async () => {
+      if (!form.state) return;
+      try {
+        const res = await fetchHolidaysSubmit(
+          "api/admin/get-public-holiday",
+          { state: form.state.toLowerCase() },
+          { method: "POST", silentErrorToast: true }
+        );
+        const list = res?.data?.data || res?.data || res?.holidays || [];
+        if (Array.isArray(list)) {
+          setPublicHolidays(list);
+        }
+      } catch {
+        // silent fallback if unauthenticated/unavailable
+      }
+    };
+    loadHolidays();
+  }, [form.state, fetchHolidaysSubmit]);
+
+  // Auto-resolve region if location info changes and region needs updating
+  useEffect(() => {
+    let resolved = "";
+    if (form.postcode) {
+      const cRes = classifyPostcode(form.postcode);
+      if (cRes.isValid && cRes.region) resolved = cRes.region;
+    }
+    if (!resolved && (form.address || form.location)) {
+      const extracted = extractPostcodeFromAddress(form.address || form.location);
+      if (extracted) {
+        const cRes = classifyPostcode(extracted);
+        if (cRes.isValid && cRes.region) resolved = cRes.region;
+      }
+    }
+    if (resolved && resolved !== form.region) {
+      setForm((prev) => ({ ...prev, region: resolved }));
+    }
+  }, [form.postcode, form.address, form.location, form.region]);
+
   // --- DYNAMIC LEVEL & RATE CALCULATION ---
   const activeJobTitle = form.jobType === "others" ? form.customJobType : form.jobType;
   const calculatedLevel = useMemo(() => calculateJobLevel(activeJobTitle), [activeJobTitle]);
@@ -193,12 +240,32 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   const selectedChargeRate = useMemo(() => {
     const ratesList = chargeratesData?.data || [];
     if (!ratesList.length) return null;
-    const match = ratesList.find(r => String(r.level) === String(calculatedLevel));
-    return match || ratesList[0];
-  }, [chargeratesData, calculatedLevel]);
 
-  const dynamicRates = useMemo(() => mapApiRates(selectedChargeRate), [selectedChargeRate]);
-  const breakdown = useMemo(() => computeShiftBreakdown(form.scheduleDays, dynamicRates), [form.scheduleDays, dynamicRates]);
+    const levelRates = ratesList.filter(r => String(r.level) === String(calculatedLevel));
+    if (!levelRates.length) return ratesList[0];
+
+    if (form.state) {
+      const stateLower = form.state.toLowerCase();
+      const stateMatch = levelRates.find(r => {
+        if (!r.state) return false;
+        const rStates = String(r.state).toLowerCase().split(",").map(s => s.trim());
+        return rStates.includes(stateLower) || rStates.some(s => s === stateLower);
+      });
+      if (stateMatch) return stateMatch;
+    }
+
+    return levelRates[0];
+  }, [chargeratesData, calculatedLevel, form.state]);
+
+  // Select corresponding rate fields based on validated region ('metro' vs 'regional')
+  const dynamicRates = useMemo(
+    () => mapApiRates(selectedChargeRate, null, form.region),
+    [selectedChargeRate, form.region]
+  );
+  const breakdown = useMemo(
+    () => computeShiftBreakdown(form.scheduleDays, dynamicRates, { holidays: publicHolidays }),
+    [form.scheduleDays, dynamicRates, publicHolidays]
+  );
 
 
   const toggleEmbeddedAccordion = (section) => {
@@ -403,7 +470,23 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   const { submit: submitCustomer, loading: submittingCustomer } = useSubmit({ isAuth: true });
 
 
-  const setField = useCallback((name, value) => {
+  const setField = useCallback((nameOrObj, maybeValue) => {
+    if (typeof nameOrObj === "object" && nameOrObj !== null) {
+      setForm((f) => {
+        let updatedForm = { ...f, ...nameOrObj };
+        return updatedForm;
+      });
+
+      if ("coordinates" in nameOrObj || "state" in nameOrObj) {
+        setStateCheckResult(null);
+        setPriceRange(null);
+      }
+      return;
+    }
+
+    const name = nameOrObj;
+    const value = maybeValue;
+
     setForm((f) => {
       let updatedForm = { ...f, [name]: value };
 
@@ -432,7 +515,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       setStateCheckResult(null);
       setPriceRange(null);
     }
-    if (name === "coordinates") {
+    if (name === "coordinates" && !value) {
       setForm((prev) => ({ ...prev, region: "" }));
     }
 
@@ -728,17 +811,23 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
           start_time: toApiDateTime(day.date, shift.startTime),
           end_time: toApiDateTime(endDate, shift.endTime),
           number_of_guards: shift.numGuards,
-          region: form.region || "metro"
+          region: normalizeRegion(form.region) || form.region
         };
       })
     );
+
+    const validRegion = normalizeRegion(form.region);
+    if (!validRegion) {
+      toast.error("Please ensure a valid Metro or Regional location is selected.");
+      return null;
+    }
 
     try {
       // 2. Send the entire array of shifts instead of just one
       const res = await submitPriceRange("api/calculate-job-amount", {
         shifts: shiftsPayload,
         state: form.state,
-        region: form.region || "metro",
+        region: validRegion,
       }, { method: "POST" });
 
       const payload = res?.data || res || {};
@@ -794,27 +883,24 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       }
 
       // Automatically determine and validate region (metro / regional)
-      let currentRegion = form.region;
-      if (!currentRegion) {
-        setResolvingLocation(true);
-        const regionRes = await determineJobRegion({
-          coordinates: form.coordinates,
-          postcode: form.postcode,
-          address: form.address || form.location,
-        });
-        setResolvingLocation(false);
-        if (!regionRes.success || !regionRes.region) {
-          const errMsg = regionRes.error || "Unable to determine whether this location is Metro or Regional. Please select a valid Australian location.";
-          toast.error(errMsg);
-          setLocationError(errMsg);
-          return;
-        }
-        currentRegion = regionRes.region;
-        setField("region", currentRegion);
-        if (regionRes.postcode && !form.postcode) {
-          setField("postcode", regionRes.postcode);
-        }
+      setResolvingLocation(true);
+      const regionRes = await determineJobRegion({
+        coordinates: form.coordinates,
+        postcode: form.postcode,
+        address: form.address || form.location,
+      });
+      setResolvingLocation(false);
+      if (!regionRes.success || !regionRes.region) {
+        const errMsg = regionRes.error || "Unable to determine whether this location is Metro or Regional. Please select a valid Australian location.";
+        toast.error(errMsg);
+        setLocationError(errMsg);
+        return;
       }
+      setField({
+        region: regionRes.region,
+        ...(regionRes.postcode ? { postcode: regionRes.postcode } : {}),
+        ...(regionRes.state && !form.state ? { state: regionRes.state } : {}),
+      });
 
       const isSplit = await runStateCheck();
       if (isSplit === null) return;
@@ -857,7 +943,12 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
   }
 
   function buildJobPayload(document_list = [], determinedRegion = null) {
-    const activeRegion = determinedRegion || form.region;
+    const rawRegion = determinedRegion || form.region;
+    const activeRegion = normalizeRegion(rawRegion);
+    if (!activeRegion) {
+      toast.error("A valid Australian Metro or Regional location is required.");
+      throw new Error("Job location region must be either 'metro' or 'regional'.");
+    }
 
     const shiftsPayload = form.scheduleDays.flatMap(day =>
       day.shifts.map(shift => {
@@ -956,7 +1047,11 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
 
   async function handleHoldPayment({ paymentMethodId, cardHolderName, savedCard }) {
     if (!pendingDraft?.payload) return { success: false, message: "Missing job draft." };
-    const activeRegion = pendingDraft.payload.region || form.region;
+    const rawRegion = pendingDraft.payload.region || form.region;
+    const activeRegion = normalizeRegion(rawRegion);
+    if (!activeRegion) {
+      return { success: false, message: "Missing or invalid job region. Please select a valid Metro or Regional location." };
+    }
     const holdShifts = (pendingDraft.payload.shifts || []).map((shift) => ({
       ...shift,
       region: shift.region || activeRegion,
@@ -1057,6 +1152,13 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       if (regionRes.postcode && !form.postcode) {
         setField("postcode", regionRes.postcode);
       }
+    }
+
+    activeRegion = normalizeRegion(activeRegion);
+    if (!activeRegion) {
+      toast.error("Please select a valid Australian Metro or Regional location.");
+      isEmbedded ? setEmbeddedAccordion((p) => ({ ...p, overview: true })) : setStep(0);
+      return;
     }
 
     // 3. Validate Schedule
@@ -1367,25 +1469,50 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                         const match = address.match(/\b(vic|nsw|qld|tas|wa|sa|act|nt)\b/i);
                         if (match) foundState = match[1].toLowerCase();
                       }
-                      setField("location", address);
-                      setField("address", address);
-                      setField("coordinates", selected.siteData.coordinates || "");
-                      if (foundState) setField("state", foundState.toLowerCase());
 
                       const sitePostcode = selected.siteData.postcode || extractPostcodeFromAddress(address);
+                      let siteRegion = "";
                       if (sitePostcode) {
-                        setField("postcode", sitePostcode);
                         const cRes = classifyPostcode(sitePostcode);
-                        if (cRes.isValid && cRes.region) setField("region", cRes.region);
+                        if (cRes.isValid && cRes.region) siteRegion = cRes.region;
+                        if (!foundState && cRes.state) foundState = cRes.state;
+                      }
+
+                      setField({
+                        location: address,
+                        address: address,
+                        coordinates: selected.siteData.coordinates || "",
+                        state: foundState ? foundState.toLowerCase() : "",
+                        postcode: sitePostcode || "",
+                        region: siteRegion || "",
+                      });
+
+                      if (!siteRegion && selected.siteData.coordinates) {
+                        determineJobRegion({
+                          coordinates: selected.siteData.coordinates,
+                          postcode: sitePostcode,
+                          address,
+                        }).then((res) => {
+                          if (res.success && res.region) {
+                            setField({
+                              region: res.region,
+                              ...(res.postcode ? { postcode: res.postcode } : {}),
+                              ...(res.state && !foundState ? { state: res.state } : {}),
+                            });
+                          }
+                        }).catch(() => {});
                       }
                     }
                     if (selected.value === "manual" || selected.isManual) {
                       setSelectedSiteId("manual");
-                      setField("location", "");
-                      setField("address", "");
-                      setField("coordinates", "");
-                      setField("state", "");
-                      setField("region", "");
+                      setField({
+                        location: "",
+                        address: "",
+                        coordinates: "",
+                        state: "",
+                        postcode: "",
+                        region: "",
+                      });
                       setLocationError("");
 
                       setTimeout(() => {
@@ -1397,7 +1524,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
                           window.scrollBy({ top: 500, behavior: "smooth" });
                         }
                       }, 150);
-                    } else {
+                    } else if (selected.siteData) {
                       setSelectedSiteId(selected.siteData.id);
                       setLocationError("");
                     }

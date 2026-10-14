@@ -267,6 +267,41 @@ export function extractPostcodeFromAddress(address) {
   return null;
 }
 
+export async function reverseGeocodeLocation(lat, lng) {
+  if (typeof window !== "undefined" && window.google?.maps?.Geocoder) {
+    return new Promise((resolve) => {
+      try {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+          if (status === "OK" && Array.isArray(results) && results.length > 0) {
+            let postcode = null;
+            let state = null;
+            for (const result of results) {
+              const components = result.address_components || [];
+              for (const comp of components) {
+                if (!postcode && comp.types && comp.types.includes("postal_code")) {
+                  postcode = comp.long_name;
+                }
+                if (!state && comp.types && comp.types.includes("administrative_area_level_1")) {
+                  state = comp.short_name ? comp.short_name.toLowerCase() : null;
+                }
+              }
+            }
+            resolve({ postcode, state });
+          } else {
+            resolve({ postcode: null, state: null });
+          }
+        });
+      } catch (err) {
+        console.warn("Google Maps reverse geocoding error:", err);
+        resolve({ postcode: null, state: null });
+      }
+    });
+  }
+
+  return { postcode: null, state: null };
+}
+
 /**
  * Reverse geocodes coordinates to retrieve the Australian postal code.
  * Reuses window.google.maps.Geocoder if present in the browser.
@@ -276,32 +311,8 @@ export function extractPostcodeFromAddress(address) {
  * @returns {Promise<string|null>}
  */
 export async function reverseGeocodePostcode(lat, lng) {
-  if (typeof window !== "undefined" && window.google?.maps?.Geocoder) {
-    return new Promise((resolve) => {
-      try {
-        const geocoder = new window.google.maps.Geocoder();
-        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-          if (status === "OK" && Array.isArray(results) && results.length > 0) {
-            for (const result of results) {
-              const components = result.address_components || [];
-              const postComp = components.find((c) => c.types && c.types.includes("postal_code"));
-              if (postComp?.long_name) {
-                return resolve(postComp.long_name);
-              }
-            }
-            resolve(null);
-          } else {
-            resolve(null);
-          }
-        });
-      } catch (err) {
-        console.warn("Google Maps reverse geocoding error:", err);
-        resolve(null);
-      }
-    });
-  }
-
-  return null;
+  const geo = await reverseGeocodeLocation(lat, lng);
+  return geo?.postcode || null;
 }
 
 /**
@@ -325,19 +336,25 @@ export async function determineJobRegion({ coordinates, postcode, address } = {}
     };
   }
 
-  // 2. Identify postcode from explicit input or address string
-  let targetPostcode = postcode ? String(postcode).trim() : null;
-
-  if (!targetPostcode && address) {
+  // 2. Identify postcode: check address string first if present, then passed postcode
+  let targetPostcode = null;
+  if (address) {
     targetPostcode = extractPostcodeFromAddress(address);
+  }
+  if (!targetPostcode && postcode) {
+    targetPostcode = String(postcode).trim();
   }
 
   // 3. If postcode not found, attempt reverse-geocoding via coordinates
+  let geoState = null;
   if (!targetPostcode && coordRes.lat !== undefined && coordRes.lng !== undefined) {
     try {
-      const geoPostcode = await reverseGeocodePostcode(coordRes.lat, coordRes.lng);
-      if (geoPostcode) {
-        targetPostcode = geoPostcode;
+      const geo = await reverseGeocodeLocation(coordRes.lat, coordRes.lng);
+      if (geo?.postcode) {
+        targetPostcode = geo.postcode;
+      }
+      if (geo?.state) {
+        geoState = geo.state;
       }
     } catch (e) {
       console.warn("Reverse geocode attempt failed:", e);
@@ -352,7 +369,7 @@ export async function determineJobRegion({ coordinates, postcode, address } = {}
         success: true,
         region: classification.region,
         postcode: classification.postcode,
-        state: classification.state,
+        state: classification.state || geoState,
       };
     }
     return {
@@ -362,7 +379,61 @@ export async function determineJobRegion({ coordinates, postcode, address } = {}
     };
   }
 
-  // 5. If postcode could not be found or reverse-geocoded:
+  // 5. Fallback: classify based on coordinates proximity to Australian capital cities
+  if (coordRes.lat !== undefined && coordRes.lng !== undefined) {
+    const metroCapitals = [
+      { name: "Sydney", lat: -33.8688, lng: 151.2093, radiusKm: 60, state: "nsw" },
+      { name: "Melbourne", lat: -37.8136, lng: 144.9631, radiusKm: 60, state: "vic" },
+      { name: "Brisbane", lat: -27.4698, lng: 153.0251, radiusKm: 55, state: "qld" },
+      { name: "Perth", lat: -31.9505, lng: 115.8605, radiusKm: 55, state: "wa" },
+      { name: "Adelaide", lat: -34.9285, lng: 138.6007, radiusKm: 50, state: "sa" },
+      { name: "Canberra", lat: -35.2809, lng: 149.1300, radiusKm: 40, state: "act" },
+      { name: "Hobart", lat: -42.8821, lng: 147.3272, radiusKm: 30, state: "tas" },
+      { name: "Darwin", lat: -12.4634, lng: 130.8456, radiusKm: 30, state: "nt" },
+    ];
+
+    const haversineKm = (lat1, lon1, lat2, lon2) => {
+      const R = 6371;
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+
+    let nearest = null;
+    let minDistance = Infinity;
+    for (const cap of metroCapitals) {
+      const d = haversineKm(coordRes.lat, coordRes.lng, cap.lat, cap.lng);
+      if (d < minDistance) {
+        minDistance = d;
+        nearest = cap;
+      }
+    }
+
+    if (nearest && minDistance <= nearest.radiusKm) {
+      return {
+        success: true,
+        region: "metro",
+        postcode: null,
+        state: nearest.state,
+      };
+    } else {
+      return {
+        success: true,
+        region: "regional",
+        postcode: null,
+        state: nearest ? nearest.state : null,
+      };
+    }
+  }
+
+  // 6. If postcode could not be found or classified:
   return {
     success: false,
     region: null,

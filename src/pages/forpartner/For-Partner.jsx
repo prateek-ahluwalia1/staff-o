@@ -1,12 +1,18 @@
 import React from "react";
 import { Helmet } from "react-helmet";
-import { Link } from "react-router-dom";
 import Header from "../../components/newHome/Header";
 import Footer from "../../components/newHome/Footer";
+import CtaBand from "../../components/industries/coman/CtaBand";
 import "../../styles/staffoo.css";
 import "./For-Partner.css";
+import "../../components/industries/event-crowd-comp/styles.css";
+import { useSelector } from "react-redux";
+
 
 export default function ForPartner() {
+    const { token } = useSelector((state) => state.auth);
+    const postJobRoute = token ? "/dashboard" : "/register";
+
     return (
         <div className="nh-page">
             <Helmet>
@@ -103,7 +109,7 @@ export default function ForPartner() {
 
                                 </p>
                                 <div className="partner-hero-actions">
-                                    <a href="/register" className="partner-btn partner-btn-solid">
+                                    <a href={postJobRoute} className="partner-btn partner-btn-solid">
                                         Apply as a partner
                                     </a>
                                     {/* <a href="#how-it-works" className="partner-btn partner-btn-outline">
@@ -406,19 +412,13 @@ export default function ForPartner() {
                     </section>
 
                     {/* CTA Band */}
-                    <section style={{ paddingBottom: "60px" }}>
-                        <div className="wrap">
-                            <div className="cta-band" id="apply">
-                                <div>
-                                    <h2>Ready to put your staff to work</h2>
-                                    <p>Apply in a few minutes. Most license checks are completed within one business day.</p>
-                                </div>
-                                <Link to="/register" className="btn btn-primary">
-                                    Apply as a resource partner
-                                </Link>
-                            </div>
-                        </div>
-                    </section>
+                    <CtaBand
+                        id="apply"
+                        title="Ready to put your staff to work"
+                        subtitle="Apply in a few minutes. Most license checks are completed within one business day."
+                        primaryBtnText="Apply as a resource partner"
+                        primaryBtnUrl={postJobRoute}
+                    />
                 </main>
 
                 {/* Disclaimer Note */}

@@ -27,7 +27,7 @@ class Kernel extends ConsoleKernel
             ->weekly()
             ->mondays()
             ->at('08:00');
-        $schedule->command('jobs:send-payment-reminders')->everyFifteenMinutes();
+        $schedule->command('jobs:send-payment-reminders')->everySixHours();        
         // $schedule->command('profiles:send-reminders --gap=2 --min-age=2')
         //      ->dailyAt('09:00')
         //      ->withoutOverlapping()

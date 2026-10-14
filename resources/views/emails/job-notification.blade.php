@@ -90,7 +90,7 @@
             </div>
             <div class="body">
 
-                <p>New Job Available - Check Your App Now.</p>
+                <p>New job available - check your app and portal now.</p>
 
                 <div class="job-details">
                     <table>

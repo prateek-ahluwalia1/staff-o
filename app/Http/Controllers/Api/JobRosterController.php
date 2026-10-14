@@ -36,6 +36,7 @@ use Stripe\Stripe;
 use Stripe\Transfer;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use App\Mail\InvoiceMail;
+use App\Mail\CancellationReceiptMail;
 use App\Services\InvoiceService;
 use App\Services\ContractorInvoiceService;
 use Illuminate\Support\Facades\Storage;
@@ -3207,6 +3208,225 @@ private function sendStaffActivationNotification(User $user): void
             ], 500);
         }
     }
+    // ─────────────────────────────────────────────────────────────────────────
+    // CANCEL JOB & HOLD
+    // POST /payment/cancel  { payment_intent_id }
+    //
+    // • Job NOT confirmed  → delete rosters + void the Stripe hold (no charge).
+    // • Job IS confirmed   → apply 4-hour minimum cancellation fee when the
+    //   cancellation happens within 2 hrs of shift start (Metro) or 4 hrs (Regional).
+    //   Refund = amount_already_charged − total_cancel_fee  (≥ 0).
+    //   Sends a cancellation receipt to the client.
+    // ─────────────────────────────────────────────────────────────────────────
+    public function cancelHold(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'payment_intent_id' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $paymentIntentId = $request->payment_intent_id;
+
+            // ── 1. Load transaction ───────────────────────────────────────────
+            $transaction = Transaction::where('payment_intent_id', $paymentIntentId)->first();
+
+            if (!$transaction) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaction not found.',
+                ], 404);
+            }
+
+            // ── 2. Load all job rosters attached to this payment ──────────────
+            $jobIds = json_decode($transaction->job_roster_id, true) ?? [];
+
+            if (empty($jobIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No jobs found for this payment.',
+                ], 404);
+            }
+
+            // Only touch jobs that are not already completed
+            $jobs = JobRoster::whereIn('id', $jobIds)
+                ->whereNotIn('job_status', ['completed'])
+                ->get();
+
+            $confirmedJobs = $jobs->where('job_status', 'confirmed');
+
+            Stripe::setApiKey(config('services.stripe.secret'));
+
+            // ══════════════════════════════════════════════════════════════════
+            // CASE A – No confirmed jobs → void hold and delete rosters
+            // ══════════════════════════════════════════════════════════════════
+            if ($confirmedJobs->isEmpty()) {
+
+                $intent = PaymentIntent::retrieve($paymentIntentId);
+
+                if (in_array($intent->status, [
+                    'requires_capture',
+                    'requires_confirmation',
+                    'requires_payment_method',
+                ])) {
+                    $intent->cancel();
+                }
+
+                JobRoster::whereIn('id', $jobIds)
+                    ->whereNotIn('job_status', ['completed'])
+                    ->delete();
+
+                $transaction->update(['status' => 'cancelled']);
+
+                return response()->json([
+                    'success'       => true,
+                    'message'       => 'Job cancelled successfully. No charge applied.',
+                    'refund_amount' => 0,
+                ]);
+            }
+
+            // ══════════════════════════════════════════════════════════════════
+            // CASE B – Has confirmed jobs → apply cancellation-fee policy
+            // ══════════════════════════════════════════════════════════════════
+            $now             = Carbon::now();
+            $totalCancelFee  = 0.0;
+            $cancellationDetails = [];
+
+            foreach ($confirmedJobs as $job) {
+
+                $shiftStart      = Carbon::parse($job->start);
+                $minsUntilShift  = $now->diffInMinutes($shiftStart, false); // negative if past
+                $hoursUntilShift = $minsUntilShift / 60;
+
+                // Threshold: Metro < 2 hrs, Regional < 4 hrs
+                $thresholdHours = ($job->region === 'metro') ? 2 : 4;
+
+                $feeApplies = ($hoursUntilShift > 0 && $hoursUntilShift < $thresholdHours);
+
+                if ($feeApplies) {
+                    $jobHours  = (float) $job->hours;
+                    $jobAmount = (float) $job->job_amount;
+
+                    if ($jobHours > 0) {
+                        $hourlyRate = $jobAmount / $jobHours;
+                        $minFee     = round($hourlyRate * 4, 2);
+                    } else {
+                        // Fallback: keep full amount if hours are not set
+                        $minFee = $jobAmount;
+                    }
+
+                    // Cap at what was charged for this job (no extra billing)
+                    $cancelFee      = min($minFee, $jobAmount);
+                    $totalCancelFee += $cancelFee;
+                } else {
+                    $cancelFee = 0.0;
+                }
+
+                $cancellationDetails[] = [
+                    'job_id'            => $job->id,
+                    'region'            => $job->region ?? 'unknown',
+                    'hours_until_shift' => round(max($hoursUntilShift, 0), 2),
+                    'cancel_fee'        => $cancelFee,
+                    'fee_applied'       => $feeApplies,
+                ];
+            }
+
+            $totalCancelFee = round($totalCancelFee, 2);
+            $amountCharged  = (float) $transaction->amount_charged;
+            $refundAmount   = max(round($amountCharged - $totalCancelFee, 2), 0);
+
+            // ── 3. Stripe: capture fee or refund ─────────────────────────────
+            $refundId = null;
+
+            $stripeIntent = PaymentIntent::retrieve($paymentIntentId);
+
+            if ($stripeIntent->status === 'requires_capture') {
+                // Full payment held but not yet captured
+                if ($totalCancelFee > 0) {
+                    $cancelFeeCents = (int) round(min($totalCancelFee, $amountCharged) * 100);
+                    $captured = $stripeIntent->capture(['amount_to_capture' => $cancelFeeCents]);
+                    $chargeId = $captured->latest_charge ?? null;
+                    $transaction->update([
+                        'status'    => 'cancelled_with_fee',
+                        'charge_id' => $chargeId,
+                        'response'  => json_encode($captured),
+                    ]);
+                } else {
+                    // No fee at all → void the hold
+                    $stripeIntent->cancel();
+                    $transaction->update(['status' => 'cancelled']);
+                }
+
+            } elseif ($stripeIntent->status === 'succeeded') {
+                // Split: first half already captured → issue Stripe refund
+                if ($refundAmount > 0) {
+                    $refundCents = (int) round($refundAmount * 100);
+                    $refund      = \Stripe\Refund::create([
+                        'payment_intent' => $paymentIntentId,
+                        'amount'         => $refundCents,
+                    ]);
+                    $refundId = $refund->id;
+                }
+                $transaction->update(['status' => 'cancelled_with_fee']);
+            }
+
+            // ── 4. Mark all cancellable jobs as cancelled ─────────────────────
+            JobRoster::whereIn('id', $jobIds)
+                ->whereNotIn('job_status', ['completed'])
+                ->update([
+                    'job_status'     => 'cancelled',
+                    'payment_status' => 'cancelled',
+                ]);
+
+            // ── 5. Send cancellation receipt to client ────────────────────────
+            $user = User::find($transaction->user_id);
+
+            if ($user) {
+                $receiptNumber = 'CR-' . rand(100000, 999999);
+                Mail::to($user->email)->queue(new CancellationReceiptMail(
+                    clientName:           $user->name,
+                    receiptNumber:        $receiptNumber,
+                    totalCharged:         $amountCharged,
+                    cancellationFee:      $totalCancelFee,
+                    refundAmount:         $refundAmount,
+                    cancellationDetails:  $cancellationDetails,
+                    paymentIntentId:      $paymentIntentId,
+                ));
+            }
+
+            // ── 6. Response ───────────────────────────────────────────────────
+            $message = $refundAmount > 0
+                ? "Job cancelled. Cancellation fee of A\${$totalCancelFee} applied. Refund of A\${$refundAmount} issued to your original payment method."
+                : "Job cancelled. Cancellation fee of A\${$totalCancelFee} applied. No refund due.";
+
+            return response()->json([
+                'success'          => true,
+                'message'          => $message,
+                'cancellation_fee' => $totalCancelFee,
+                'refund_amount'    => $refundAmount,
+                'refund_id'        => $refundId,
+            ]);
+
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Stripe error: ' . $e->getMessage(),
+            ], 500);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     //Guards Payslips
     public function uploadPayslips(Request $request)
     {
@@ -4694,6 +4914,350 @@ public function calculateJobAmount(Request $request)
 }
 
 //new code here
+// public function contractor_accept_job(Request $request, $id)
+// {
+//     $a = null;
+//     $b = '';
+ 
+//     // Get the roster with conditions
+//     $roster = DB::table('job_rosters')
+//         ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+//         ->where('job_rosters.id', '=', $request->input('roster_id'))
+//         ->where(function ($query) use ($a, $b) {
+//             return $query->where('job_rosters.assigned_to', '=', $a)
+//                 ->orWhere('job_rosters.assigned_to', '=', $b)
+//                 ->orWhere('job_rosters.accepted_by', '=', $a)
+//                 ->orWhere('job_rosters.accepted_by', '=', $b);
+//         })
+//         ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates', 'sites.state')
+//         ->first();
+ 
+//     if ($roster != null) {
+//         // Check if assigned_to is already set
+//         if (!is_null($roster->assigned_to) && $roster->assigned_to != '') {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'This job has already been assigned to a staff member.',
+//                 'data' => null,
+//             ], 200);
+//         }
+ 
+//         // Check if accepted_by is already set by another contractor
+//         if (!is_null($roster->accepted_by) && $roster->accepted_by != '' && $roster->accepted_by != $id) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'This job has already been accepted by another resource partner.',
+//                 'data' => null,
+//             ], 200);
+//         }
+ 
+//         // Allow contractor to assign guard if they already accepted the job
+//         // Only return error if trying to accept again WITHOUT assigning a guard
+//         if ($roster->accepted_by == $id && !$request->has('guard_id')) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'You have already accepted this job.',
+//                 'data' => null,
+//             ], 200);
+//         }
+ 
+//         // Only check for rosterExists if NOT already accepted by this contractor
+//         if ($roster->accepted_by != $id) {
+//             $rosterExists = DB::table('job_rosters')
+//                 ->where('id', '=', $request->input('roster_id'))
+//                 ->whereNull('assigned_to')
+//                 ->whereNull('accepted_by')
+//                 ->first();
+ 
+//             if (!$rosterExists) {
+//                 return response()->json([
+//                     'success' => false,
+//                     'message' => 'Job already accepted or not available!',
+//                     'data' => null,
+//                 ], 200);
+//             }
+//         }
+//     }
+ 
+//     try {
+//         $contractor = \App\Models\User::with('contractor')->find($id);
+ 
+//         if (!$contractor || !$contractor->contractor) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Resource partner data not found.',
+//                 'data' => null,
+//             ], 200);
+//         }
+ 
+//         if ($request->has('guard_id') && !empty($request->guard_id)) {
+ 
+//             if (!$this->canAcceptJob($request->guard_id, $roster->start, $roster->end)) {
+//                 // Get previous shift details
+//                 $lastShift = DB::table('job_rosters')
+//                     ->where('assigned_to', $request->guard_id)
+//                     ->where('end', '<=', $roster->start)
+//                     ->orderBy('end', 'desc')
+//                     ->first();
+ 
+//                 // Get next shift details
+//                 $nextShift = DB::table('job_rosters')
+//                     ->where('assigned_to', $request->guard_id)
+//                     ->where('start', '>=', $roster->end)
+//                     ->orderBy('start', 'asc')
+//                     ->first();
+ 
+//                 $previousRestHours = 0;
+//                 $nextRestHours = 0;
+//                 $restrictionReason = '';
+ 
+//                 if ($lastShift) {
+//                     $previousRestHours = Carbon::parse($lastShift->end)->diffInHours(Carbon::parse($roster->start));
+//                     if ($previousRestHours < 8) {
+//                         $restrictionReason = 'Only ' . $previousRestHours . ' hours rest before this shift. Need 8 hours.';
+//                     }
+//                 }
+ 
+//                 if ($nextShift && empty($restrictionReason)) {
+//                     $nextRestHours = Carbon::parse($roster->end)->diffInHours(Carbon::parse($nextShift->start));
+//                     if ($nextRestHours < 8) {
+//                         $restrictionReason = 'Only ' . $nextRestHours . ' hours rest after this shift. Need 8 hours.';
+//                     }
+//                 }
+ 
+//                 return response()->json([
+//                     'success' => false,
+//                     'message' => 'Staff must complete 8 hours rest before or after accepting this shift.',
+//                     'data' => null,
+//                     'details' => [
+//                         'guard_id' => $request->guard_id,
+//                         'shift_start' => $roster->start,
+//                         'shift_end' => $roster->end,
+//                         'previous_shift' => $lastShift ? [
+//                             'end' => $lastShift->end,
+//                             'rest_hours_available' => $previousRestHours,
+//                             'rest_hours_required' => 8,
+//                             'rest_hours_shortfall' => max(0, 8 - $previousRestHours)
+//                         ] : null,
+//                         'next_shift' => $nextShift ? [
+//                             'start' => $nextShift->start,
+//                             'rest_hours_available' => $nextRestHours,
+//                             'rest_hours_required' => 8,
+//                             'rest_hours_shortfall' => max(0, 8 - $nextRestHours)
+//                         ] : null,
+//                         'restriction_reason' => $restrictionReason
+//                     ],
+//                     'roster_details' => [
+//                         'id' => $roster->id,
+//                         'site' => $roster->address,
+//                         'hours' => $roster->hours,
+//                         'asap' => $roster->asap
+//                     ]
+//                 ], 200);
+//             }
+ 
+//             // Calculate weekly hours
+//             $rosterStart = Carbon::parse($roster->start);
+//             $weekStart = $rosterStart->copy()->startOfWeek();
+//             $weekEnd = $rosterStart->copy()->endOfWeek();
+ 
+//             $currentWeekHours = DB::table('job_rosters')
+//                 ->where('assigned_to', $request->guard_id)
+//                 ->whereBetween('start', [$weekStart, $weekEnd])
+//                 ->sum('hours');
+ 
+//             $currentWeekHours = $currentWeekHours ?? 0;
+//             $currentJobHours = $roster->hours ?? 0;
+//             $totalHours = $currentWeekHours + $currentJobHours;
+ 
+//             // Get user with staff relationship
+//             $user = \App\Models\User::with('staff')->find($request->guard_id);
+ 
+//             if (!$user || !$user->staff) {
+//                 return response()->json([
+//                     'success' => false,
+//                     'message' => 'Staff data not found.',
+//                     'data' => null,
+//                     'details' => [
+//                         'guard_id' => $request->guard_id,
+//                         'user_exists' => $user ? true : false,
+//                         'staff_exists' => $user && $user->staff ? true : false
+//                     ]
+//                 ], 200);
+//             }
+ 
+//             // Check visa type and weekly limits
+//             $visaType = $user->staff->staff_document_type;
+//             $maxHours = $visaType === 'student_visa' ? 24 : 38;
+ 
+//             if ($totalHours > $maxHours) {
+//                 return response()->json([
+//                     'success' => false,
+//                     'message' => $visaType === 'student_visa'
+//                         ? 'Weekly limit exceeded (24 hours for student visa).'
+//                         : 'Weekly limit exceeded (38 hours allowed).',
+//                     'data' => null,
+//                     'details' => [
+//                         'guard_id' => $request->guard_id,
+//                         'visa_type' => $visaType,
+//                         'max_weekly_hours' => $maxHours,
+//                         'current_week_hours' => $currentWeekHours,
+//                         'current_job_hours' => $currentJobHours,
+//                         'total_hours' => $totalHours,
+//                         'hours_remaining' => $maxHours - $totalHours,
+//                         'week_start' => $weekStart->format('Y-m-d'),
+//                         'week_end' => $weekEnd->format('Y-m-d')
+//                     ],
+//                     'roster_details' => [
+//                         'id' => $roster->id,
+//                         'start' => $roster->start,
+//                         'end' => $roster->end,
+//                         'hours' => $roster->hours
+//                     ]
+//                 ], 200);
+//             }
+ 
+//             // Check if already assigned to this shift
+//             $is_already_assign = DB::table('job_rosters')
+//                 ->where('assigned_to', $request->guard_id)
+//                 ->whereBetween('start', [$roster->start, $roster->end])
+//                 ->first();
+ 
+//             if ($is_already_assign != null) {
+//                 return response()->json([
+//                     'success' => false,
+//                     'message' => 'Staff is already assigned to a shift during this time.',
+//                     'data' => null,
+//                     'details' => [
+//                         'guard_id' => $request->guard_id,
+//                         'requested_shift' => [
+//                             'start' => $roster->start,
+//                             'end' => $roster->end
+//                         ],
+//                         'existing_shift' => [
+//                             'id' => $is_already_assign->id,
+//                             'start' => $is_already_assign->start,
+//                             'end' => $is_already_assign->end
+//                         ]
+//                     ]
+//                 ], 200);
+//             }
+//         }
+ 
+//         // Get guard details if provided
+//         $guardName = 'Guard';
+//         if ($request->has('guard_id') && !empty($request->guard_id)) {
+//             $guard = \App\Models\User::find($request->guard_id);
+//             $guardName = $guard ? $guard->name : 'Guard';
+//         }
+ 
+//         // Update the roster
+//         $updateData = ['accepted_by' => $id];
+ 
+//         // Only update assigned_to if guard_id is provided
+//         if ($request->has('guard_id') && !empty($request->guard_id)) {
+//             $updateData['assigned_to'] = $request->guard_id;
+//             $updateData['job_status'] = "confirmed";
+//             $updateData['publish_status'] = 1;
+//         }
+ 
+//         DB::table('job_rosters')
+//             ->where('id', '=', $request->roster_id)
+//             ->update($updateData);
+ 
+//         // Get updated roster data
+//         $updatedRoster = DB::table('job_rosters')
+//             ->join('sites', 'sites.id', '=', 'job_rosters.site_id')
+//             ->where('job_rosters.id', '=', $request->roster_id)
+//             ->select('job_rosters.*', 'sites.id as jobId', 'sites.address', 'sites.coordinates', 'sites.state')
+//             ->first();
+ 
+//         $startTime = Carbon::parse($updatedRoster->start)->format('g:i A');
+//         $endTime = Carbon::parse($updatedRoster->end)->format('g:i A');
+ 
+//         // ============ INVOICE + STRIPE PAYMENT LINK ============
+//         // Only runs when a guard was assigned AND the site requires contractor invoicing
+//         $invoiceResult = null;
+//         if ($updatedRoster->contractor_invoice == 0 && $updatedRoster->payment_intent_id == null) {
+//             $invoiceResult = $this->generateContractorInvoiceAndPaymentLink($contractor, $updatedRoster);
+ 
+//             // If invoicing is required, job stays pending until payment clears via webhook
+//             if ($invoiceResult['success']) {
+//                 DB::table('job_rosters')->where('id', $updatedRoster->id)->update([
+//                     'job_status' => 'pending',
+//                 ]);
+//                 $updatedRoster->job_status = 'pending';
+//             }
+//         }
+ 
+//         // ============ SEND NOTIFICATIONS ============
+ 
+//         // 1. Send notification to Client (created_by)
+//         $client = DB::table('users')
+//             ->where('notification_token', '!=', '')
+//             ->where('id', '=', $updatedRoster->created_by)
+//             ->select('notification_token', 'name')
+//             ->first();
+ 
+//         if ($client && !empty($client->notification_token)) {
+//             $message = $request->has('guard_id') && !empty($request->guard_id)
+//                 ? $guardName . ' accepted and confirmed the job.'
+//                 : 'Job has been accepted by contractor.';
+ 
+//             $clientNotificationData = [
+//                 'message' => $message,
+//                 'title' => 'Job Accepted',
+//                 'notification_token' => $client->notification_token,
+//                 'page' => 'my-job-applications',
+//                 'roster_id' => $request->roster_id
+//             ];
+//             send_push_notification($clientNotificationData);
+//         }
+ 
+//         // 3. Send notification to Staff/Guard (only if guard_id is provided)
+//         if ($request->has('guard_id') && !empty($request->guard_id)) {
+//             $guardUser = DB::table('users')
+//                 ->where('notification_token', '!=', '')
+//                 ->where('id', '=', $request->guard_id)
+//                 ->select('notification_token', 'name')
+//                 ->first();
+ 
+//             if ($guardUser && !empty($guardUser->notification_token)) {
+//                 $guardNotificationData = [
+//                     'message' => ($contractor->name ?? 'Contractor') . " assigned you a shift from {$startTime} to {$endTime}.",
+//                     'title' => 'New Job Assignment',
+//                     'notification_token' => $guardUser->notification_token,
+//                     'page' => 'my-job-applications',
+//                     'roster_id' => $request->roster_id
+//                 ];
+//                 send_push_notification($guardNotificationData);
+//             }
+//         }
+ 
+//         // Prepare response data
+//         $responseData = [
+//             'roster' => $updatedRoster,
+//             'update_details' => $updateData,
+//             'invoice' => $invoiceResult,
+//         ];
+ 
+//         return response()->json([
+//             'success' => true,
+//             'message' => $request->has('guard_id') && !empty($request->guard_id)
+//                 ? 'Job accepted and assigned to guard successfully.'
+//                 : 'Job accepted successfully.',
+//             'data' => $responseData
+//         ], 200);
+ 
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'An error occurred while processing the request.',
+//             'error' => $e->getMessage(),
+//             'trace' => $e->getTraceAsString()
+//         ], 500);
+//     }
+// }
 public function contractor_accept_job(Request $request, $id)
 {
     $a = null;
@@ -5012,6 +5576,69 @@ public function contractor_accept_job(Request $request, $id)
                 ];
                 send_push_notification($guardNotificationData);
             }
+        }
+ 
+        // ============ SEND EMAILS ============
+ 
+        // 1. Send email to Guard (only if guard_id is provided)
+        if ($request->has('guard_id') && !empty($request->guard_id)) {
+            $guardUserForEmail = \App\Models\User::find($request->guard_id);
+            if ($guardUserForEmail && !empty($guardUserForEmail->email)) {
+                try {
+                    $guardEmailData = [
+                        'guard_name'       => $guardUserForEmail->name,
+                        'contractor_name'  => $contractor->name ?? 'Contractor',
+                        'site_name'        => $updatedRoster->address ?? 'N/A',
+                        'start_time'       => Carbon::parse($updatedRoster->start)->format('D, d M Y g:i A'),
+                        'end_time'         => Carbon::parse($updatedRoster->end)->format('D, d M Y g:i A'),
+                    ];
+                    Mail::send('emails.guard_job_assigned', $guardEmailData, function ($message) use ($guardUserForEmail) {
+                        $message->to($guardUserForEmail->email, $guardUserForEmail->name)
+                                ->subject('New Job Assignment');
+                    });
+                } catch (\Exception $e) {
+                    Log::error('Guard email failed: ' . $e->getMessage());
+                }
+            }
+        }
+ 
+        // 2. Send email to Contractor
+        if ($contractor && !empty($contractor->email)) {
+            try {
+                $contractorEmailData = [
+                    'contractor_name' => $contractor->name ?? 'Contractor',
+                    'site_name'       => $updatedRoster->address ?? 'N/A',
+                    'start_time'      => Carbon::parse($updatedRoster->start)->format('D, d M Y g:i A'),
+                    'end_time'        => Carbon::parse($updatedRoster->end)->format('D, d M Y g:i A'),
+                    'guard_name'      => ($request->has('guard_id') && !empty($request->guard_id)) ? $guardName : null,
+                    'has_guard'       => ($request->has('guard_id') && !empty($request->guard_id)),
+                ];
+                Mail::send('emails.contractor_job_accepted', $contractorEmailData, function ($message) use ($contractor) {
+                    $message->to($contractor->email, $contractor->name)
+                            ->subject('Job Accepted Successfully');
+                });
+            } catch (\Exception $e) {
+                Log::error('Contractor email failed: ' . $e->getMessage());
+            }
+        }
+ 
+        // 3. Send email to Admin
+        try {
+            $adminEmailData = [
+                'contractor_name' => $contractor->name ?? 'Contractor',
+                'site_name'       => $updatedRoster->address ?? 'N/A',
+                'start_time'      => Carbon::parse($updatedRoster->start)->format('D, d M Y g:i A'),
+                'end_time'        => Carbon::parse($updatedRoster->end)->format('D, d M Y g:i A'),
+                'guard_name'      => ($request->has('guard_id') && !empty($request->guard_id)) ? $guardName : null,
+                'has_guard'       => ($request->has('guard_id') && !empty($request->guard_id)),
+                'roster_id'       => $updatedRoster->id,
+            ];
+            Mail::send('emails.admin_job_accepted', $adminEmailData, function ($message) {
+                $message->to(config('shahbazkhan062@gmail.com'))
+                        ->subject('Job Accepted - Admin Notification');
+            });
+        } catch (\Exception $e) {
+            Log::error('Admin email failed: ' . $e->getMessage());
         }
  
         // Prepare response data

@@ -29,7 +29,7 @@ class GeneralController extends Controller
 
     public function getSupportAdmin()
     {
-        $admin = User::where('user_type', 'admin')->where('email', 'skumraa@staffoo.com.au')->get();
+        $admin = User::where('user_type', 'admin')->where('email', 'Amrit.Arora@Staffoo.com.au')->get();
 
         return response()->json([
             'success' => true,

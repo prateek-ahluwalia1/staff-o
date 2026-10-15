@@ -6067,7 +6067,7 @@ private function generateContractorInvoiceAndPaymentLink($contractor, $updatedRo
             ],
             'after_completion' => [
                 'type' => 'redirect',
-                'redirect' => ['url' => 'https://staging.app.staffoo.com.au/my-job-applications?roster_id=' . $updatedRoster->id],
+                'redirect' => ['url' => 'https://staffoo.com.au/my-job-applications?roster_id=' . $updatedRoster->id],
             ],
         ]);
     } catch (\Exception $e) {

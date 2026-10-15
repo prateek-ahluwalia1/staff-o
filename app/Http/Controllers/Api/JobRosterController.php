@@ -2053,235 +2053,459 @@ private function sendStaffActivationNotification(User $user): void
             }
         }
 
+        // public function fetchCustomerSites(Request $request)
+        // {
+        //     if (!$request->has('user_id') || empty($request->user_id)) {
+        //         return response()->json([
+        //             'success' => false,
+        //             'data' => null,
+        //             'code' => 404
+        //         ]);
+        //     }
+
+        //     $user = User::where('id', $request->user_id)->first();
+
+        //     if (!$user) {
+        //         return response()->json([
+        //             'success' => false,
+        //             'data' => null,
+        //             'code' => 404
+        //         ]);
+        //     }
+
+        //     // Date Range
+        //     $start = $request->has('start') && $request->start != ''
+        //         ? dbFormate($request->start) . ' 00:00'
+        //         : Carbon::now()->startOfWeek()->format('Y-m-d 00:00');
+
+        //     $end = $request->has('end') && $request->end != ''
+        //         ? dbFormate($request->end) . ' 23:59'
+        //         : Carbon::now()->endOfWeek()->format('Y-m-d 23:59');
+
+        //     $roster_id = $request->roster_id;
+
+        //     $states = [];
+        //     if ($request->has('states') && !empty($request->states)) {
+        //         // If states is a string (comma-separated), convert to array
+        //         if (is_string($request->states)) {
+        //             $states = array_map('trim', explode(',', $request->states));
+        //         } 
+        //         // If states is already an array
+        //         else if (is_array($request->states)) {
+        //             $states = $request->states;
+        //         }
+        //     }
+
+        //     /*
+        //     |--------------------------------------------------------------------------
+        //     | Extract notify_user IDs (only for contractor)
+        //     |--------------------------------------------------------------------------
+        //     */
+
+        //     $notifyUserIds = [];
+
+        //     if ($user->user_type === 'contractor') {
+        //         $notifyUserIds = JobRoster::whereBetween('start', [$start, $end])
+        //             ->where('roster_id', $roster_id)
+        //             ->pluck('assigned_to')
+        //             ->unique()
+        //             ->values()
+        //             ->toArray();
+
+        //         if (empty($notifyUserIds)) {
+        //             return response()->json([
+        //                 'success' => false,
+        //                 'data' => null,
+        //                 'code' => 404
+        //             ]);
+        //         }
+
+        //     }
+
+        //     $contractorUserIds = [];
+        //     $contractorUserIds = User::whereIn('id', $notifyUserIds)
+        //     ->where('user_id', $user->id)
+        //     ->pluck('id')
+        //     ->toArray();
+
+        //     $siteIds = [];
+        //     if (!empty($states)) {
+        //         $siteIds = Site::whereIn('state', $states)->pluck('id')->toArray();
+        //     }
+        //     /*
+        //     |--------------------------------------------------------------------------
+        //     | Main Query
+        //     |--------------------------------------------------------------------------
+        //     */
+            
+        //     $sites = Site::whereHas('jobRoster', function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
+
+        //         $q->whereBetween('start', [$start, $end])
+        //             ->where('roster_id', $roster_id);
+
+        //         if ($user->user_type === 'staff') {
+        //             $q->where('assigned_to', $user->id);
+        //         }
+
+        //         if ($user->user_type === 'customer') {
+        //             $q->where('created_by', $user->id);
+        //         }
+
+        //         if ($user->user_type === 'contractor') {
+        //             $q->whereIn('assigned_to', $contractorUserIds)
+        //             ->orWhere('accepted_by', $user->id);
+        //         }
+        //     });
+
+        //     if (!empty($states)) {
+        //     $sites->whereIn('state', $states);
+
+        //     }
+        //     $sites = $sites->with(['jobRoster' => function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
+        //             $q->whereBetween('start', [$start, $end])
+        //                 ->where('roster_id', $roster_id)
+        //                 ->orderBy('start', 'asc')
+        //                 ->with(['guards.staff', 'customer.customer', 'contractor.contractor']);
+                        
+        //             if ($user->user_type === 'staff') {
+        //                 $q->where('assigned_to', $user->id);
+        //             }
+
+        //             if ($user->user_type === 'customer') {
+        //                 $q->where('created_by', $user->id);
+        //             }
+
+        //             if ($user->user_type === 'contractor') {
+        //                 $q->whereIn('assigned_to', $contractorUserIds)
+        //                 ->orWhere('accepted_by', $user->id);
+
+        //             }
+        //         }])
+        //         ->get();
+
+        //     if ($sites->isEmpty()) {
+        //         return response()->json([
+        //             'success' => false,
+        //             'data' => null,
+        //             'code' => 404
+        //         ]);
+        //     }
+
+        //     /*
+        //     |--------------------------------------------------------------------------
+        //     | Unpublished Shift Count
+        //     |--------------------------------------------------------------------------
+        //     */
+
+        //     $unpublishCountQuery = JobRoster::whereBetween('start', [$start, $end])
+        //         ->where('roster_id', $roster_id)
+        //         ->whereNotNull('assigned_to')
+        //         ->where('publish_status', 0)
+        //         ->when($user->user_type === 'staff', function ($q) use ($user) {
+        //             $q->where('assigned_to', $user->id);
+        //         })
+        //         ->when($user->user_type === 'customer', function ($q) use ($user) {
+        //             $q->where('created_by', $user->id);
+        //         })
+        //         ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds, $user) {
+        //             $q->whereIn('assigned_to', $contractorUserIds)
+        //                 ->orWhere('accepted_by', $user->id);
+
+        //         });
+
+        //         if (!empty($states)) {
+        //             $unpublishCountQuery->whereHas('site', function ($q) use ($states) {
+        //                 $q->whereIn('state', $states);
+        //             });
+        //         }
+
+        //         $unpublishCount = $unpublishCountQuery->count();
+
+        //     /*
+        //     |--------------------------------------------------------------------------
+        //     | Daily Hours Calculation
+        //     |--------------------------------------------------------------------------
+        //     */
+
+        //     $data_arry = [];
+        //     $total_hours = 0;
+
+        //     $dateRange = getDatesFromRange(
+        //         dbFormate($request->start),
+        //         dbFormate($request->end)
+        //     );
+
+        // if ($dateRange) {
+        //         // Base query for hours
+        //         $hoursBaseQuery = JobRoster::where('roster_id', $roster_id)
+        //             ->when($user->user_type === 'staff', function ($q) use ($user) {
+        //                 $q->where('assigned_to', $user->id);
+        //             })
+        //             ->when($user->user_type === 'customer', function ($q) use ($user) {
+        //                 $q->where('created_by', $user->id);
+        //             })
+        //             ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds, $user) {
+        //                 $q->whereIn('assigned_to', $contractorUserIds)
+        //                 ->orWhere('accepted_by', $user->id);
+        //             });
+                
+        //         // Apply state filter to hours base query
+        //         if (!empty($states)) {
+        //             $hoursBaseQuery->whereHas('site', function ($q) use ($states) {
+        //                 $q->whereIn('state', $states);
+        //             });
+        //         }
+                
+        //         // Get hours grouped by date
+        //         $hoursByDate = (clone $hoursBaseQuery)
+        //             ->whereBetween('start', [$start, $end])
+        //             ->selectRaw('DATE(start) as date, SUM(hours) as total_hours')
+        //             ->groupBy('date')
+        //             ->get()
+        //             ->keyBy('date');
+                
+        //         foreach ($dateRange as $date) {
+        //             $formattedDate = dateFormat($date);
+        //             $dailyHours = isset($hoursByDate[$date]) ? $hoursByDate[$date]->total_hours : 0;
+                    
+        //             $data_arry[$formattedDate] = round($dailyHours, 2);
+        //             $total_hours += $dailyHours;
+        //         }
+        //     }
+
+        //     return response()->json([
+        //         'success' => true,
+        //         'data' => $sites,
+        //         'unpublish_shift_count' => $unpublishCount,
+        //         'days_hours' => $data_arry,
+        //         'total_hours' => round($total_hours, 2),
+        //         'code' => 200
+        //     ]);
+        // }
         public function fetchCustomerSites(Request $request)
-        {
-            if (!$request->has('user_id') || empty($request->user_id)) {
-                return response()->json([
-                    'success' => false,
-                    'data' => null,
-                    'code' => 404
-                ]);
-            }
+{
+    // ── Normalize user_id (accept scalar or array) ───────────────────────
+    $userIdInput = $request->input('user_id');
+    if (is_array($userIdInput)) {
+        $userIdInput = $userIdInput[0] ?? null;
+    }
 
-            $user = User::where('id', $request->user_id)->first();
+    if (empty($userIdInput)) {
+        return response()->json([
+            'success' => false,
+            'data'    => null,
+            'code'    => 404
+        ]);
+    }
 
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'data' => null,
-                    'code' => 404
-                ]);
-            }
+    $user = User::where('id', $userIdInput)->first();
 
-            // Date Range
-            $start = $request->has('start') && $request->start != ''
-                ? dbFormate($request->start) . ' 00:00'
-                : Carbon::now()->startOfWeek()->format('Y-m-d 00:00');
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'data'    => null,
+            'code'    => 404
+        ]);
+    }
 
-            $end = $request->has('end') && $request->end != ''
-                ? dbFormate($request->end) . ' 23:59'
-                : Carbon::now()->endOfWeek()->format('Y-m-d 23:59');
+    // ── Date Range ────────────────────────────────────────────────────────
+    $start = $request->has('start') && $request->start != ''
+        ? dbFormate($request->start) . ' 00:00'
+        : Carbon::now()->startOfWeek()->format('Y-m-d 00:00');
 
-            $roster_id = $request->roster_id;
+    $end = $request->has('end') && $request->end != ''
+        ? dbFormate($request->end) . ' 23:59'
+        : Carbon::now()->endOfWeek()->format('Y-m-d 23:59');
 
-            $states = [];
-            if ($request->has('states') && !empty($request->states)) {
-                // If states is a string (comma-separated), convert to array
-                if (is_string($request->states)) {
-                    $states = array_map('trim', explode(',', $request->states));
-                } 
-                // If states is already an array
-                else if (is_array($request->states)) {
-                    $states = $request->states;
-                }
-            }
+    $roster_id = $request->roster_id;
 
-            /*
-            |--------------------------------------------------------------------------
-            | Extract notify_user IDs (only for contractor)
-            |--------------------------------------------------------------------------
-            */
+    // ── Normalize states ──────────────────────────────────────────────────
+    $states = [];
+    if ($request->has('states') && !empty($request->states)) {
+        if (is_string($request->states)) {
+            $states = array_map('trim', explode(',', $request->states));
+        } elseif (is_array($request->states)) {
+            $states = $request->states;
+        }
+    }
 
-            $notifyUserIds = [];
+    /*
+    |--------------------------------------------------------------------------
+    | Build user-scoped IDs
+    |--------------------------------------------------------------------------
+    | For contractors we need to know:
+    |   - which job ids they have ACCEPTED (accepted_by = user->id)
+    |   - which staff belong to them (user_id = contractor->id) → assigned_to
+    */
 
-            if ($user->user_type === 'contractor') {
-                $notifyUserIds = JobRoster::whereBetween('start', [$start, $end])
-                    ->where('roster_id', $roster_id)
-                    ->pluck('assigned_to')
-                    ->unique()
-                    ->values()
-                    ->toArray();
+    $contractorUserIds = [];
 
-                if (empty($notifyUserIds)) {
-                    return response()->json([
-                        'success' => false,
-                        'data' => null,
-                        'code' => 404
-                    ]);
-                }
-
-            }
-
-            $contractorUserIds = [];
-            $contractorUserIds = User::whereIn('id', $notifyUserIds)
-            ->where('user_id', $user->id)
+    if ($user->user_type === 'contractor') {
+        // IDs of staff members that belong to this contractor
+        $contractorUserIds = User::where('user_id', $user->id)
             ->pluck('id')
             ->toArray();
 
-            $siteIds = [];
-            if (!empty($states)) {
-                $siteIds = Site::whereIn('state', $states)->pluck('id')->toArray();
-            }
-            /*
-            |--------------------------------------------------------------------------
-            | Main Query
-            |--------------------------------------------------------------------------
-            */
-            
-            $sites = Site::whereHas('jobRoster', function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
+        // Include the contractor themselves so we can match accepted_by
+        $contractorUserIds[] = $user->id;
+        $contractorUserIds   = array_values(array_unique($contractorUserIds));
+    }
 
-                $q->whereBetween('start', [$start, $end])
-                    ->where('roster_id', $roster_id);
+    /*
+    |--------------------------------------------------------------------------
+    | Main Query
+    |--------------------------------------------------------------------------
+    */
 
-                if ($user->user_type === 'staff') {
-                    $q->where('assigned_to', $user->id);
-                }
+    $sitesQuery = Site::whereHas('jobRoster', function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
 
-                if ($user->user_type === 'customer') {
-                    $q->where('created_by', $user->id);
-                }
+        $q->whereBetween('start', [$start, $end])
+          ->where('roster_id', $roster_id);
 
-                if ($user->user_type === 'contractor') {
-                    $q->whereIn('assigned_to', $contractorUserIds)
+        if ($user->user_type === 'staff') {
+            $q->where('assigned_to', $user->id);
+        }
+
+        if ($user->user_type === 'customer') {
+            $q->where('created_by', $user->id);
+        }
+
+        if ($user->user_type === 'contractor') {
+            $q->where(function ($sub) use ($contractorUserIds, $user) {
+                $sub->whereIn('assigned_to', $contractorUserIds)
                     ->orWhere('accepted_by', $user->id);
-                }
+            });
+        }
+    });
+
+    if (!empty($states)) {
+        $sitesQuery->whereIn('state', $states);
+    }
+
+    $sites = $sitesQuery->with(['jobRoster' => function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
+
+            $q->whereBetween('start', [$start, $end])
+              ->where('roster_id', $roster_id)
+              ->orderBy('start', 'asc')
+              ->with(['guards.staff', 'customer.customer', 'contractor.contractor']);
+
+            if ($user->user_type === 'staff') {
+                $q->where('assigned_to', $user->id);
+            }
+
+            if ($user->user_type === 'customer') {
+                $q->where('created_by', $user->id);
+            }
+
+            if ($user->user_type === 'contractor') {
+                $q->where(function ($sub) use ($contractorUserIds, $user) {
+                    $sub->whereIn('assigned_to', $contractorUserIds)
+                        ->orWhere('accepted_by', $user->id);
+                });
+            }
+        }])
+        ->get();
+
+    if ($sites->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'data'    => null,
+            'code'    => 404
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Unpublished Shift Count
+    |--------------------------------------------------------------------------
+    */
+
+    $unpublishCountQuery = JobRoster::whereBetween('start', [$start, $end])
+        ->where('roster_id', $roster_id)
+        ->whereNotNull('assigned_to')
+        ->where('publish_status', 0)
+        ->when($user->user_type === 'staff', function ($q) use ($user) {
+            $q->where('assigned_to', $user->id);
+        })
+        ->when($user->user_type === 'customer', function ($q) use ($user) {
+            $q->where('created_by', $user->id);
+        })
+        ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds, $user) {
+            $q->where(function ($sub) use ($contractorUserIds, $user) {
+                $sub->whereIn('assigned_to', $contractorUserIds)
+                    ->orWhere('accepted_by', $user->id);
+            });
+        });
+
+    if (!empty($states)) {
+        $unpublishCountQuery->whereHas('site', function ($q) use ($states) {
+            $q->whereIn('state', $states);
+        });
+    }
+
+    $unpublishCount = $unpublishCountQuery->count();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Daily Hours Calculation
+    |--------------------------------------------------------------------------
+    */
+
+    $data_arry   = [];
+    $total_hours = 0;
+
+    $dateRange = getDatesFromRange(
+        dbFormate($request->start),
+        dbFormate($request->end)
+    );
+
+    if ($dateRange) {
+
+        $hoursBaseQuery = JobRoster::where('roster_id', $roster_id)
+            ->when($user->user_type === 'staff', function ($q) use ($user) {
+                $q->where('assigned_to', $user->id);
+            })
+            ->when($user->user_type === 'customer', function ($q) use ($user) {
+                $q->where('created_by', $user->id);
+            })
+            ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds, $user) {
+                $q->where(function ($sub) use ($contractorUserIds, $user) {
+                    $sub->whereIn('assigned_to', $contractorUserIds)
+                        ->orWhere('accepted_by', $user->id);
+                });
             });
 
-            if (!empty($states)) {
-            $sites->whereIn('state', $states);
-
-            }
-            $sites = $sites->with(['jobRoster' => function ($q) use ($start, $end, $roster_id, $user, $contractorUserIds) {
-                    $q->whereBetween('start', [$start, $end])
-                        ->where('roster_id', $roster_id)
-                        ->orderBy('start', 'asc')
-                        ->with(['guards.staff', 'customer.customer', 'contractor.contractor']);
-                        
-                    if ($user->user_type === 'staff') {
-                        $q->where('assigned_to', $user->id);
-                    }
-
-                    if ($user->user_type === 'customer') {
-                        $q->where('created_by', $user->id);
-                    }
-
-                    if ($user->user_type === 'contractor') {
-                        $q->whereIn('assigned_to', $contractorUserIds)
-                        ->orWhere('accepted_by', $user->id);
-
-                    }
-                }])
-                ->get();
-
-            if ($sites->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'data' => null,
-                    'code' => 404
-                ]);
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Unpublished Shift Count
-            |--------------------------------------------------------------------------
-            */
-
-            $unpublishCountQuery = JobRoster::whereBetween('start', [$start, $end])
-                ->where('roster_id', $roster_id)
-                ->whereNotNull('assigned_to')
-                ->where('publish_status', 0)
-                ->when($user->user_type === 'staff', function ($q) use ($user) {
-                    $q->where('assigned_to', $user->id);
-                })
-                ->when($user->user_type === 'customer', function ($q) use ($user) {
-                    $q->where('created_by', $user->id);
-                })
-                ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds, $user) {
-                    $q->whereIn('assigned_to', $contractorUserIds)
-                        ->orWhere('accepted_by', $user->id);
-
-                });
-
-                if (!empty($states)) {
-                    $unpublishCountQuery->whereHas('site', function ($q) use ($states) {
-                        $q->whereIn('state', $states);
-                    });
-                }
-
-                $unpublishCount = $unpublishCountQuery->count();
-
-            /*
-            |--------------------------------------------------------------------------
-            | Daily Hours Calculation
-            |--------------------------------------------------------------------------
-            */
-
-            $data_arry = [];
-            $total_hours = 0;
-
-            $dateRange = getDatesFromRange(
-                dbFormate($request->start),
-                dbFormate($request->end)
-            );
-
-        if ($dateRange) {
-                // Base query for hours
-                $hoursBaseQuery = JobRoster::where('roster_id', $roster_id)
-                    ->when($user->user_type === 'staff', function ($q) use ($user) {
-                        $q->where('assigned_to', $user->id);
-                    })
-                    ->when($user->user_type === 'customer', function ($q) use ($user) {
-                        $q->where('created_by', $user->id);
-                    })
-                    ->when($user->user_type === 'contractor', function ($q) use ($contractorUserIds, $user) {
-                        $q->whereIn('assigned_to', $contractorUserIds)
-                        ->orWhere('accepted_by', $user->id);
-                    });
-                
-                // Apply state filter to hours base query
-                if (!empty($states)) {
-                    $hoursBaseQuery->whereHas('site', function ($q) use ($states) {
-                        $q->whereIn('state', $states);
-                    });
-                }
-                
-                // Get hours grouped by date
-                $hoursByDate = (clone $hoursBaseQuery)
-                    ->whereBetween('start', [$start, $end])
-                    ->selectRaw('DATE(start) as date, SUM(hours) as total_hours')
-                    ->groupBy('date')
-                    ->get()
-                    ->keyBy('date');
-                
-                foreach ($dateRange as $date) {
-                    $formattedDate = dateFormat($date);
-                    $dailyHours = isset($hoursByDate[$date]) ? $hoursByDate[$date]->total_hours : 0;
-                    
-                    $data_arry[$formattedDate] = round($dailyHours, 2);
-                    $total_hours += $dailyHours;
-                }
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => $sites,
-                'unpublish_shift_count' => $unpublishCount,
-                'days_hours' => $data_arry,
-                'total_hours' => round($total_hours, 2),
-                'code' => 200
-            ]);
+        if (!empty($states)) {
+            $hoursBaseQuery->whereHas('site', function ($q) use ($states) {
+                $q->whereIn('state', $states);
+            });
         }
+
+        $hoursByDate = (clone $hoursBaseQuery)
+            ->whereBetween('start', [$start, $end])
+            ->selectRaw('DATE(start) as date, SUM(hours) as total_hours')
+            ->groupBy('date')
+            ->get()
+            ->keyBy('date');
+
+        foreach ($dateRange as $date) {
+            $formattedDate = dateFormat($date);
+            $dailyHours    = isset($hoursByDate[$date]) ? $hoursByDate[$date]->total_hours : 0;
+
+            $data_arry[$formattedDate] = round($dailyHours, 2);
+            $total_hours += $dailyHours;
+        }
+    }
+
+    return response()->json([
+        'success'                => true,
+        'data'                   => $sites,
+        'unpublish_shift_count'  => $unpublishCount,
+        'days_hours'             => $data_arry,
+        'total_hours'            => round($total_hours, 2),
+        'code'                   => 200
+    ]);
+}
 
         public function getJobs(Request $request, $type, $duration, $id)
         {

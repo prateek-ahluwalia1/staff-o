@@ -3426,231 +3426,234 @@ private function sendStaffActivationNotification(User $user): void
     //         ], 500);
     //     }
     // }
-     public function cancelHold(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'job_id' => 'required|integer',
-        ]);
+    public function cancelHold(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'job_id' => 'required|integer',
+    ]);
 
-        if ($validator->fails()) {
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'errors'  => $validator->errors(),
+        ], 422);
+    }
+
+    try {
+        $jobId = (int) $request->job_id;
+
+        // ── 1. Load job roster ────────────────────────────────────────────
+        $job = JobRoster::find($jobId);
+
+        if (!$job) {
             return response()->json([
                 'success' => false,
-                'errors'  => $validator->errors(),
+                'message' => 'Job not found.',
+            ], 404);
+        }
+
+        if (in_array($job->job_status, ['completed', 'cancelled'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Job cannot be cancelled (status: ' . $job->job_status . ').',
             ], 422);
         }
 
-        try {
-            $jobId = (int) $request->job_id;
+        // ══════════════════════════════════════════════════════════════════
+        // SCENARIO A – Non-VIC/NSW: no payment intent at booking time.
+        //              Payment collected at end of job → just cancel roster.
+        // ══════════════════════════════════════════════════════════════════
+        if (empty($job->payment_intent_id)) {
 
-            // ── 1. Load job roster ────────────────────────────────────────────
-            $job = JobRoster::find($jobId);
+            $job->job_status     = 'cancelled';
+            $job->payment_status = 'cancelled';
+            $job->save();
 
-            if (!$job) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Job not found.',
-                ], 404);
-            }
-
-            if (in_array($job->job_status, ['completed', 'cancelled'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Job cannot be cancelled (status: ' . $job->job_status . ').',
-                ], 422);
-            }
-
-            // ══════════════════════════════════════════════════════════════════
-            // SCENARIO A – Non-VIC/NSW: no payment intent at booking time.
-            //              Payment collected at end of job → just cancel roster.
-            // ══════════════════════════════════════════════════════════════════
-            if (empty($job->payment_intent_id)) {
-
-                $job->update([
-                    'job_status'     => 'cancelled',
-                    'payment_status' => 'cancelled',
-                ]);
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Job cancelled successfully. Payment will be adjusted at end of job.',
-                ]);
-            }
-
-            // ══════════════════════════════════════════════════════════════════
-            // SCENARIO B – VIC/NSW: payment intent exists → apply Stripe logic
-            // ══════════════════════════════════════════════════════════════════
-            $paymentIntentId = $job->payment_intent_id;
-
-            // ── 2. Load transaction ───────────────────────────────────────────
-            $transaction = Transaction::where('payment_intent_id', $paymentIntentId)->first();
-
-            if (!$transaction) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Transaction not found for this job.',
-                ], 404);
-            }
-
-            Stripe::setApiKey(config('services.stripe.secret'));
-
-            // ── 3. NOT confirmed → void intent (if last active) + cancel ──────
-            if ($job->job_status !== 'confirmed') {
-
-                $allJobIds   = json_decode($transaction->job_roster_id, true) ?? [];
-                $activeCount = JobRoster::whereIn('id', $allJobIds)
-                    ->whereNotIn('job_status', ['completed', 'cancelled'])
-                    ->where('id', '!=', $jobId)
-                    ->count();
-
-                if ($activeCount === 0) {
-                    // Last active job under this intent → void the Stripe hold
-                    $intent = PaymentIntent::retrieve($paymentIntentId);
-                    if (in_array($intent->status, [
-                        'requires_capture',
-                        'requires_confirmation',
-                        'requires_payment_method',
-                    ])) {
-                        $intent->cancel();
-                    }
-                    $transaction->update(['status' => 'cancelled']);
-                }
-
-                $job->update([
-                    'job_status'     => 'cancelled',
-                    'payment_status' => 'cancelled',
-                ]);
-
-                return response()->json([
-                    'success'       => true,
-                    'message'       => 'Job cancelled successfully. No charge applied.',
-                    'refund_amount' => 0,
-                ]);
-            }
-
-            // ── 4. Confirmed job → apply cancellation-fee policy ─────────────
-            $now             = Carbon::now();
-            $shiftStart      = Carbon::parse($job->start);
-            $minsUntilShift  = $now->diffInMinutes($shiftStart, false); // negative if past
-            $hoursUntilShift = $minsUntilShift / 60;
-
-            // Metro threshold: 2 hrs  |  Regional threshold: 4 hrs
-            $thresholdHours = ($job->region === 'metro') ? 2 : 4;
-            $feeApplies     = ($hoursUntilShift > 0 && $hoursUntilShift < $thresholdHours);
-
-            $jobAmount = (float) $job->job_amount;
-
-            if ($feeApplies) {
-                $jobHours = (float) $job->hours;
-                $minFee   = ($jobHours > 0)
-                    ? round(($jobAmount / $jobHours) * 4, 2)
-                    : $jobAmount; // fallback: keep full amount if hours not set
-                $cancelFee = min($minFee, $jobAmount);
-            } else {
-                $cancelFee = 0.0;
-            }
-
-            // ── 5. Proportional share of what was charged for this job ────────
-            // job_paid_share = job_amount × (amount_charged / total_amount)
-            // Handles both split-payment (50 %) and full-payment (100 %) scenarios.
-            $totalAmount   = (float) $transaction->total_amount;
-            $amountCharged = (float) $transaction->amount_charged;
-
-            $jobPaidShare = ($totalAmount > 0)
-                ? round($jobAmount * ($amountCharged / $totalAmount), 2)
-                : $amountCharged;
-
-            $refundAmount = max(round($jobPaidShare - $cancelFee, 2), 0);
-
-            // ── 6. Stripe: capture fee or issue refund ────────────────────────
-            $refundId     = null;
-            $stripeIntent = PaymentIntent::retrieve($paymentIntentId);
-
-            if ($stripeIntent->status === 'requires_capture') {
-                // Full amount held but not yet captured
-                if ($cancelFee > 0) {
-                    $cancelFeeCents = (int) round(min($cancelFee, $amountCharged) * 100);
-                    $captured = $stripeIntent->capture(['amount_to_capture' => $cancelFeeCents]);
-                    $transaction->update([
-                        'status'   => 'cancelled_with_fee',
-                        'response' => json_encode($captured),
-                    ]);
-                } else {
-                    // No fee → void the hold entirely
-                    $stripeIntent->cancel();
-                    $transaction->update(['status' => 'cancelled']);
-                }
-
-            } elseif ($stripeIntent->status === 'succeeded') {
-                // Split payment already captured → issue a partial Stripe refund
-                if ($refundAmount > 0) {
-                    $refundCents = (int) round($refundAmount * 100);
-                    $refund      = \Stripe\Refund::create([
-                        'payment_intent' => $paymentIntentId,
-                        'amount'         => $refundCents,
-                    ]);
-                    $refundId = $refund->id;
-                }
-                $transaction->update(['status' => 'cancelled_with_fee']);
-            }
-
-            // ── 7. Mark job as cancelled ──────────────────────────────────────
-            $job->update([
-                'job_status'     => 'cancelled',
-                'payment_status' => 'cancelled',
+            return response()->json([
+                'success' => true,
+                'message' => 'Job cancelled successfully. Payment will be adjusted at end of job.',
             ]);
-
-            // ── 8. Send cancellation receipt to client ────────────────────────
-            $user = User::find($transaction->user_id);
-
-            if ($user) {
-                $receiptNumber = 'CR-' . rand(100000, 999999);
-                Mail::to($user->email)->queue(new CancellationReceiptMail(
-                    clientName:          $user->name,
-                    receiptNumber:       $receiptNumber,
-                    totalCharged:        $jobPaidShare,
-                    cancellationFee:     $cancelFee,
-                    refundAmount:        $refundAmount,
-                    cancellationDetails: [[
-                        'job_id'            => $job->id,
-                        'region'            => $job->region ?? 'unknown',
-                        'hours_until_shift' => round(max($hoursUntilShift, 0), 2),
-                        'cancel_fee'        => $cancelFee,
-                        'fee_applied'       => $feeApplies,
-                    ]],
-                    paymentIntentId:     $paymentIntentId,
-                ));
-            }
-
-            // ── 9. Response ───────────────────────────────────────────────────
-            if ($cancelFee > 0 && $refundAmount > 0) {
-                $message = "Job cancelled. Cancellation fee of A\${$cancelFee} applied. Refund of A\${$refundAmount} issued to your original payment method.";
-            } elseif ($cancelFee > 0) {
-                $message = "Job cancelled. Cancellation fee of A\${$cancelFee} applied. No refund due.";
-            } else {
-                $message = "Job cancelled. No charge applied. Full refund of A\${$jobPaidShare} issued to your original payment method.";
-            }
-
-            return response()->json([
-                'success'          => true,
-                'message'          => $message,
-                'cancellation_fee' => $cancelFee,
-                'refund_amount'    => $refundAmount,
-                'refund_id'        => $refundId,
-            ]);
-
-        } catch (\Stripe\Exception\ApiErrorException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Stripe error: ' . $e->getMessage(),
-            ], 500);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Server error: ' . $e->getMessage(),
-            ], 500);
         }
+
+        // ══════════════════════════════════════════════════════════════════
+        // SCENARIO B – VIC/NSW: payment intent exists → apply Stripe logic
+        // ══════════════════════════════════════════════════════════════════
+        $paymentIntentId = $job->payment_intent_id;
+
+        // ── 2. Load transaction ───────────────────────────────────────────
+        $transaction = Transaction::where('payment_intent_id', $paymentIntentId)->first();
+
+        if (!$transaction) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaction not found for this job.',
+            ], 404);
+        }
+
+        Stripe::setApiKey(config('services.stripe.secret'));
+
+        // ── 3. NOT confirmed → void intent (if last active) + cancel ──────
+        if ($job->job_status !== 'confirmed') {
+
+            $allJobIds   = json_decode($transaction->job_roster_id, true) ?? [];
+            $activeCount = JobRoster::whereIn('id', $allJobIds)
+                ->whereNotIn('job_status', ['completed', 'cancelled'])
+                ->where('id', '!=', $jobId)
+                ->count();
+
+            if ($activeCount === 0) {
+                // Last active job under this intent → void the Stripe hold
+                $intent = PaymentIntent::retrieve($paymentIntentId);
+                if (in_array($intent->status, [
+                    'requires_capture',
+                    'requires_confirmation',
+                    'requires_payment_method',
+                ])) {
+                    $intent->cancel();
+                }
+
+                $transaction->status = 'cancelled';
+                $transaction->save();
+            }
+
+            $job->job_status     = 'cancelled';
+            $job->payment_status = 'cancelled';
+            $job->save();
+
+            return response()->json([
+                'success'       => true,
+                'message'       => 'Job cancelled successfully. No charge applied.',
+                'refund_amount' => 0,
+            ]);
+        }
+
+        // ── 4. Confirmed job → apply cancellation-fee policy ─────────────
+        $now             = Carbon::now();
+        $shiftStart      = Carbon::parse($job->start);
+        $minsUntilShift  = $now->diffInMinutes($shiftStart, false); // negative if past
+        $hoursUntilShift = $minsUntilShift / 60;
+
+        // Metro threshold: 2 hrs  |  Regional threshold: 4 hrs
+        $thresholdHours = ($job->region === 'metro') ? 2 : 4;
+        $feeApplies     = ($hoursUntilShift > 0 && $hoursUntilShift < $thresholdHours);
+
+        $jobAmount = (float) $job->job_amount;
+
+        if ($feeApplies) {
+            $jobHours = (float) $job->hours;
+            $minFee   = ($jobHours > 0)
+                ? round(($jobAmount / $jobHours) * 4, 2)
+                : $jobAmount; // fallback: keep full amount if hours not set
+            $cancelFee = min($minFee, $jobAmount);
+        } else {
+            $cancelFee = 0.0;
+        }
+
+        // ── 5. Proportional share of what was charged for this job ────────
+        // job_paid_share = job_amount × (amount_charged / total_amount)
+        // Handles both split-payment (50 %) and full-payment (100 %) scenarios.
+        $totalAmount   = (float) $transaction->total_amount;
+        $amountCharged = (float) $transaction->amount_charged;
+
+        $jobPaidShare = ($totalAmount > 0)
+            ? round($jobAmount * ($amountCharged / $totalAmount), 2)
+            : $amountCharged;
+
+        $refundAmount = max(round($jobPaidShare - $cancelFee, 2), 0);
+
+        // ── 6. Stripe: capture fee or issue refund ────────────────────────
+        $refundId     = null;
+        $stripeIntent = PaymentIntent::retrieve($paymentIntentId);
+
+        if ($stripeIntent->status === 'requires_capture') {
+            // Full amount held but not yet captured
+            if ($cancelFee > 0) {
+                $cancelFeeCents = (int) round(min($cancelFee, $amountCharged) * 100);
+                $captured = $stripeIntent->capture(['amount_to_capture' => $cancelFeeCents]);
+
+                $transaction->status   = 'cancelled_with_fee';
+                $transaction->response = json_encode($captured);
+                $transaction->save();
+            } else {
+                // No fee → void the hold entirely
+                $stripeIntent->cancel();
+
+                $transaction->status = 'cancelled';
+                $transaction->save();
+            }
+
+        } elseif ($stripeIntent->status === 'succeeded') {
+            // Split payment already captured → issue a partial Stripe refund
+            if ($refundAmount > 0) {
+                $refundCents = (int) round($refundAmount * 100);
+                $refund      = \Stripe\Refund::create([
+                    'payment_intent' => $paymentIntentId,
+                    'amount'         => $refundCents,
+                ]);
+                $refundId = $refund->id;
+            }
+
+            $transaction->status = 'cancelled_with_fee';
+            $transaction->save();
+        }
+
+        // ── 7. Mark job as cancelled ──────────────────────────────────────
+        $job->job_status     = 'cancelled';
+        $job->payment_status = 'cancelled';
+        $job->save();
+
+        // ── 8. Send cancellation receipt to client ────────────────────────
+        $user = User::find($transaction->user_id);
+
+        if ($user) {
+            $receiptNumber = 'CR-' . rand(100000, 999999);
+            Mail::to($user->email)->queue(new CancellationReceiptMail(
+                clientName:          $user->name,
+                receiptNumber:       $receiptNumber,
+                totalCharged:        $jobPaidShare,
+                cancellationFee:     $cancelFee,
+                refundAmount:        $refundAmount,
+                cancellationDetails: [[
+                    'job_id'            => $job->id,
+                    'region'            => $job->region ?? 'unknown',
+                    'hours_until_shift' => round(max($hoursUntilShift, 0), 2),
+                    'cancel_fee'        => $cancelFee,
+                    'fee_applied'       => $feeApplies,
+                ]],
+                paymentIntentId:     $paymentIntentId,
+            ));
+        }
+
+        // ── 9. Response ───────────────────────────────────────────────────
+        if ($cancelFee > 0 && $refundAmount > 0) {
+            $message = "Job cancelled. Cancellation fee of A\${$cancelFee} applied. Refund of A\${$refundAmount} issued to your original payment method.";
+        } elseif ($cancelFee > 0) {
+            $message = "Job cancelled. Cancellation fee of A\${$cancelFee} applied. No refund due.";
+        } else {
+            $message = "Job cancelled. No charge applied. Full refund of A\${$jobPaidShare} issued to your original payment method.";
+        }
+
+        return response()->json([
+            'success'          => true,
+            'message'          => $message,
+            'cancellation_fee' => $cancelFee,
+            'refund_amount'    => $refundAmount,
+            'refund_id'        => $refundId,
+        ]);
+
+    } catch (\Stripe\Exception\ApiErrorException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Stripe error: ' . $e->getMessage(),
+        ], 500);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Server error: ' . $e->getMessage(),
+        ], 500);
     }
+}
 
     //Guards Payslips
     public function uploadPayslips(Request $request)

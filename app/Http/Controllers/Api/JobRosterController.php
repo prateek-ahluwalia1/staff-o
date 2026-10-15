@@ -2165,7 +2165,7 @@ private function sendStaffActivationNotification(User $user): void
                     $q->whereBetween('start', [$start, $end])
                         ->where('roster_id', $roster_id)
                         ->orderBy('start', 'asc')
-                        ->with(['guards.staff', 'customer.customer']);
+                        ->with(['guards.staff', 'customer.customer', 'contractor.contractor']);
                         
                     if ($user->user_type === 'staff') {
                         $q->where('assigned_to', $user->id);

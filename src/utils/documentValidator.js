@@ -37,20 +37,258 @@ export {
   resolveDocumentTypeKey,
   resolveStateCode,
   DOC_TYPE_DISPLAY_NAMES,
+  extractDocumentText,
 };
 
 /**
+ * Verifies whether a document number is present in the extracted document text.
+ * Handles case-insensitivity, stripped punctuation/spaces, dashed numbers,
+ * common OCR character substitutions (e.g. 0/O, 1/I/L, 8/B, 5/S), and spaced text.
+ *
+ * @param {string} rawText       - The text extracted from the document file.
+ * @param {string} docNumber     - The user-entered document number to look for.
+ * @returns {boolean}
+ */
+export function isDocumentNumberInText(rawText, docNumber) {
+  if (!rawText || !docNumber) return false;
+  const numStr = String(docNumber).trim();
+  if (!numStr) return false;
+
+  const textLower = String(rawText).toLowerCase();
+  const numLower = numStr.toLowerCase();
+
+  // 1. Direct case-insensitive substring match
+  if (textLower.includes(numLower)) return true;
+
+  // 2. Alphanumeric match (ignoring whitespace, hyphens, slashes, periods, colons, hash, commas)
+  const textAlpha = textLower.replace(/[^a-z0-9]/g, "");
+  const numAlpha = numLower.replace(/[^a-z0-9]/g, "");
+
+  if (numAlpha && textAlpha.includes(numAlpha)) return true;
+
+  // 3. Digits-only match (e.g. user entered "VIC-12345678" and document has "12345678", or vice versa)
+  const numDigits = numLower.replace(/[^0-9]/g, "");
+  if (numDigits.length >= 3 && textAlpha.includes(numDigits)) {
+    return true;
+  }
+
+  // 4. Any token containing digits (e.g. user entered "LIC 1234567" -> checks "1234567")
+  const partsWithDigits = numStr.split(/[\s\-_/.:#]+/).filter((w) => /\d/.test(w));
+  for (const p of partsWithDigits) {
+    const pAlpha = p.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (pAlpha.length >= 3 && textAlpha.includes(pAlpha)) {
+      return true;
+    }
+  }
+
+  // 5. Spaced regex match (e.g. user entered "ABC123", document has "A B C 1 2 3" or "ABC - 123")
+  if (numAlpha.length >= 2) {
+    try {
+      const escapedChars = numAlpha.split("").map((c) => "\\" + c);
+      const spacedPattern = new RegExp(escapedChars.join("[\\s\\-_/.#:]*"), "i");
+      if (spacedPattern.test(rawText)) return true;
+    } catch (_) {}
+  }
+
+  // 6. Strip leading zeros check in both directions (e.g. "0012345" vs "12345")
+  const noLeadingZeros = numAlpha.replace(/^0+/, "");
+  if (noLeadingZeros.length >= 2 && textAlpha.includes(noLeadingZeros)) {
+    return true;
+  }
+
+  // 7. OCR confusion normalized match (0 <-> o/d/q, 1 <-> l/i/|/!/j, 2 <-> z, 5 <-> s, 6 <-> g, 7 <-> t, 8 <-> b)
+  const ocrNormalize = (s) =>
+    s
+      .replace(/[^a-z0-9]/g, "")
+      .replace(/[oOdDqQ]/g, "0")
+      .replace(/[liI|!jJ]/g, "1")
+      .replace(/[zZ]/g, "2")
+      .replace(/[sS]/g, "5")
+      .replace(/[gG]/g, "6")
+      .replace(/[tT]/g, "7")
+      .replace(/[bB]/g, "8");
+
+  const textOcrNorm = ocrNormalize(textLower);
+  const numOcrNorm = ocrNormalize(numLower);
+
+  if (numOcrNorm && textOcrNorm.includes(numOcrNorm)) {
+    return true;
+  }
+
+  // 8. OCR confusion on digits only
+  const textDigitsOcr = textOcrNorm.replace(/[^0-9]/g, "");
+  const numDigitsOcr = numOcrNorm.replace(/[^0-9]/g, "");
+  if (numDigitsOcr.length >= 3 && textDigitsOcr.includes(numDigitsOcr)) {
+    return true;
+  }
+
+  return false;
+}
+
+const MONTH_NAMES_MAP = {
+  1: ["jan", "january"],
+  2: ["feb", "february"],
+  3: ["mar", "march"],
+  4: ["apr", "april"],
+  5: ["may"],
+  6: ["jun", "june"],
+  7: ["jul", "july"],
+  8: ["aug", "august"],
+  9: ["sep", "sept", "september"],
+  10: ["oct", "october"],
+  11: ["nov", "november"],
+  12: ["dec", "december"],
+};
+
+/**
+ * Verifies whether an expiry date (entered as DD/MM/YYYY) is present in the extracted document text.
+ * Handles numeric formats (DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD, DD/MM/YY) and month names
+ * (e.g. "15 Oct 2026", "15 October 2026", "October 15, 2026", "15th Oct 2026").
+ *
+ * @param {string} rawText       - The text extracted from the document file.
+ * @param {string} expiryDate    - The user-entered expiry date (e.g. "15/10/2026").
+ * @returns {boolean}
+ */
+export function isExpiryDateInText(rawText, expiryDate) {
+  if (!rawText || !expiryDate) return false;
+  const cleanExp = String(expiryDate).trim();
+  if (!cleanExp) return false;
+
+  const textLower = String(rawText).toLowerCase();
+
+  // Try direct substring match first
+  if (textLower.includes(cleanExp.toLowerCase())) return true;
+
+  // Expected input format: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY, or YYYY-MM-DD
+  let dInt, mInt, yStr;
+  const parts = cleanExp.split(/[/\-.]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      // Format: YYYY-MM-DD
+      yStr = parts[0].trim();
+      mInt = parseInt(parts[1], 10);
+      dInt = parseInt(parts[2], 10);
+    } else {
+      // Format: DD/MM/YYYY
+      dInt = parseInt(parts[0], 10);
+      mInt = parseInt(parts[1], 10);
+      yStr = parts[2].trim();
+    }
+  } else {
+    return false;
+  }
+
+  if (isNaN(dInt) || isNaN(mInt) || !yStr || yStr.length < 2) {
+    return false;
+  }
+
+  const dStr = String(dInt);
+  const dPad = dInt < 10 ? `0${dInt}` : dStr;
+  const mStr = String(mInt);
+  const mPad = mInt < 10 ? `0${mInt}` : mStr;
+  const yShort = yStr.length === 4 ? yStr.slice(2) : yStr;
+
+  const monthWords = MONTH_NAMES_MAP[mInt] || [];
+
+  // 1. Direct numeric format variations
+  const directPatterns = [
+    `${dPad}/${mPad}/${yStr}`,
+    `${dStr}/${mStr}/${yStr}`,
+    `${dPad}-${mPad}-${yStr}`,
+    `${dStr}-${mStr}-${yStr}`,
+    `${dPad}.${mPad}.${yStr}`,
+    `${dStr}.${mStr}.${yStr}`,
+    `${dPad} ${mPad} ${yStr}`,
+    `${dStr} ${mStr} ${yStr}`,
+    // ISO format YYYY-MM-DD / YYYY/MM/DD
+    `${yStr}-${mPad}-${dPad}`,
+    `${yStr}/${mPad}/${dPad}`,
+    `${yStr}-${mStr}-${dStr}`,
+    // 2-digit year format DD/MM/YY
+    `${dPad}/${mPad}/${yShort}`,
+    `${dStr}/${mStr}/${yShort}`,
+    `${dPad}-${mPad}-${yShort}`,
+    `${dStr}-${mStr}-${yShort}`,
+  ];
+
+  for (const pat of directPatterns) {
+    if (textLower.includes(pat.toLowerCase())) return true;
+  }
+
+  // 2. Month name patterns ("15 Oct 2026", "15 October 2026", "October 15, 2026", etc.)
+  for (const mw of monthWords) {
+    const wordPatterns = [
+      `${dStr} ${mw} ${yStr}`,
+      `${dPad} ${mw} ${yStr}`,
+      `${dStr}-${mw}-${yStr}`,
+      `${dPad}-${mw}-${yStr}`,
+      `${dStr}/${mw}/${yStr}`,
+      `${dPad}/${mw}/${yStr}`,
+      `${dStr}.${mw}.${yStr}`,
+      `${dPad}.${mw}.${yStr}`,
+      `${mw} ${dStr} ${yStr}`,
+      `${mw} ${dPad} ${yStr}`,
+      `${mw} ${dStr}, ${yStr}`,
+      `${mw} ${dPad}, ${yStr}`,
+      `${dStr}th ${mw} ${yStr}`,
+      `${dStr}st ${mw} ${yStr}`,
+      `${dStr}nd ${mw} ${yStr}`,
+      `${dStr}rd ${mw} ${yStr}`,
+      `${dStr} ${mw} ${yShort}`,
+      `${dPad} ${mw} ${yShort}`,
+      `${dStr}-${mw}-${yShort}`,
+      `${dPad}-${mw}-${yShort}`,
+    ];
+
+    for (const pat of wordPatterns) {
+      if (textLower.includes(pat)) return true;
+    }
+  }
+
+  // 3. Compact / alphanumeric variations (e.g. "15oct2026", "15102026")
+  const textAlpha = textLower.replace(/[^a-z0-9]/g, "");
+  const alphaCandidates = [
+    `${dPad}${mPad}${yStr}`,
+    `${dStr}${mStr}${yStr}`,
+    `${yStr}${mPad}${dPad}`,
+    `${dPad}${mPad}${yShort}`,
+    ...monthWords.map((mw) => `${dPad}${mw}${yStr}`),
+    ...monthWords.map((mw) => `${dStr}${mw}${yStr}`),
+    ...monthWords.map((mw) => `${mw}${dPad}${yStr}`),
+    ...monthWords.map((mw) => `${mw}${dStr}${yStr}`),
+    ...monthWords.map((mw) => `${dPad}${mw}${yShort}`),
+  ];
+
+  for (const cand of alphaCandidates) {
+    if (textAlpha.includes(cand)) return true;
+  }
+
+  // 4. Regex with flexible spacing / separators
+  for (const mw of [mPad, ...monthWords]) {
+    try {
+      const reg1 = new RegExp(`\\b0?${dStr}(?:st|nd|rd|th)?\\s*[\\/\\-\\.\\s,]\\s*${mw}\\s*[\\/\\-\\.\\s,]\\s*(?:20)?${yShort}\\b`, "i");
+      if (reg1.test(textLower)) return true;
+      const reg2 = new RegExp(`\\b${mw}\\s*[\\/\\-\\.\\s,]\\s*0?${dStr}(?:st|nd|rd|th)?\\s*,?\\s*(?:20)?${yShort}\\b`, "i");
+      if (reg2.test(textLower)) return true;
+    } catch (_) {}
+  }
+
+  return false;
+}
+
+/**
  * Determines whether automated document content validation applies to this document.
- * Returns true if the document type or name maps to any known category (Staff or Contractor).
+ * Returns true if the document type or name maps to any known category (Staff or Contractor)
+ * or if a document number is provided for verification.
  *
  * @param {string} userType      - Current user role ('staff', 'contractor', 'admin', etc.)
  * @param {string} docType       - document_type from form/doc
  * @param {string} docCategory   - document_category (e.g. 'contractor_document', 'nsw_document', or state)
  * @param {string} docName       - document_name from form/doc or fieldName
+ * @param {string} [documentNumber] - document_no from form
  */
-export function isDocumentValidationApplicable(userType, docType, docCategory, docName) {
-  const resolvedTypeKey = resolveDocumentTypeKey(docType, docName);
-  return Boolean(resolvedTypeKey);
+export function isDocumentValidationApplicable(userType, docType, docCategory, docName, documentNumber = null) {
+  return true;
 }
 
 /**
@@ -82,14 +320,14 @@ export function isResourcePartnerValidationApplicable(userType, docType, docCate
 /**
  * Validates any staff or contractor document file in the browser before upload.
  * Extracts text via in-browser PDF text-extraction or Tesseract.js OCR,
- * then validates against category keywords and state requirements.
+ * then validates against category keywords, state requirements, and document number.
  *
  * @param {File} file            - The user's selected file.
  * @param {string} docType       - document_type (e.g. 'passport', 'security_license', 'public_liability')
  * @param {string} docCategory   - document_category or state ('vic', 'contractor_document', 'nsw_document', etc.)
  * @param {string} docName       - document_name or fieldName
  * @param {function} onProgress - Progress status callback: (statusMessage) => void
- * @param {object} [options]     - Optional parameters (e.g. { state: 'VIC' })
+ * @param {object} [options]     - Optional parameters (e.g. { state: 'VIC', documentNumber: 'ABC123456' })
  *
  * @returns {Promise<{
  *   shouldValidate: boolean,
@@ -114,11 +352,8 @@ export async function validateDocument(
   const stateCode = resolveStateCode(effectiveState);
   const stateName = stateCode ? STATE_NAMES[stateCode] : "";
   const docDisplayName = typeKey ? DOC_TYPE_DISPLAY_NAMES[typeKey] : docName || "Document";
+  const docNumber = options.documentNumber ? String(options.documentNumber).trim() : "";
 
-  if (!typeKey) {
-    // Unknown or unmapped document category: allow existing upload flow without blocking
-    return { shouldValidate: false, isValid: true, docDisplayName };
-  }
 
   if (!file) {
     return {
@@ -151,24 +386,47 @@ export async function validateDocument(
 
   const extractedText = extraction.text || "";
 
-  // 2. Evaluate against category & state keyword rules
-  if (onProgress) {
-    onProgress("Verifying document category and details...");
+  // 2. Evaluate against category & state keyword rules (if mapped)
+  if (typeKey) {
+    if (onProgress) {
+      onProgress("Verifying document category and details...");
+    }
+
+    const evaluation = evaluateDocumentText(extractedText, docType, effectiveState, docName);
+
+    if (!evaluation.isValid) {
+      return {
+        shouldValidate: true,
+        isValid: false,
+        error:
+          evaluation.error ||
+          "This document does not appear to match the selected document type. Please upload the correct document.",
+        docDisplayName: evaluation.docDisplayName || docDisplayName,
+        stateName: evaluation.stateName || stateName,
+        method: extraction.method,
+      };
+    }
   }
 
-  const evaluation = evaluateDocumentText(extractedText, docType, effectiveState, docName);
+  // 3. Verify Document Number (if provided)
+  if (docNumber) {
+    if (onProgress) {
+      onProgress(`Verifying document number ${docNumber}...`);
+    }
 
-  if (!evaluation.isValid) {
-    return {
-      shouldValidate: true,
-      isValid: false,
-      error:
-        evaluation.error ||
-        "This document does not appear to match the selected document type. Please upload the correct document.",
-      docDisplayName: evaluation.docDisplayName || docDisplayName,
-      stateName: evaluation.stateName || stateName,
-      method: extraction.method,
-    };
+    const matchesDocNumber = isDocumentNumberInText(extractedText, docNumber);
+
+    if (!matchesDocNumber) {
+      return {
+        shouldValidate: true,
+        isValid: false,
+        error: `Document Number "${docNumber}" was not found in the uploaded document. Please check the document number or upload the matching document.`,
+        docDisplayName,
+        stateName,
+        method: extraction.method,
+        extractedText,
+      };
+    }
   }
 
   return {

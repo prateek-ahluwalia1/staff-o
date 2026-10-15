@@ -1,5 +1,5 @@
-export const apiURL = "https://apis.staffoo.com.au/";
-// export const apiURL = "https://apis-staging.staffoo.com.au/";
+// export const apiURL = "https://apis.staffoo.com.au/";
+export const apiURL = "https://apis-staging.staffoo.com.au/";
 export const STRIPE_PUBLISHABLE_KEY =
 //  "pk_live_51TBYBwDb535HMVUZ1mcJVHqhJqwz4jMfvFsDnBNuY3vtSOTIm3rUO1HGRZwgzLe5Efg7gpHUDIMJRMnl0aT5mqnU00b7sA5kOl";
   "pk_test_51TBYBwDb535HMVUZHtQiPJGDYYZex0gIGvFWtuKR9FRage5WxqqzkLDvKBUpq4MfPkWhgDDM7z3WZrURpwWFBkbo005rxvV6q9";

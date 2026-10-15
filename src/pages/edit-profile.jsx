@@ -17,8 +17,9 @@ import { Link } from "react-router-dom";
 import {
   validateDocument,
   isDocumentValidationApplicable,
-  validateResourcePartnerDocument,
-  isResourcePartnerValidationApplicable,
+  isDocumentNumberInText,
+  isExpiryDateInText,
+  extractDocumentText,
 } from "../utils/documentValidator";
 
 const PremiumModal = ({ open, onClose, children, title, wide = false }) => {
@@ -551,6 +552,7 @@ export default function EditProfile() {
     working_rights_file_url: "",
     show_working_rights: false,
     work_entitlement: "",
+    extracted_text: "",
   });
 
   const isPhoneVerified = Boolean(
@@ -1580,12 +1582,12 @@ export default function EditProfile() {
   };
 
   const handleDocNumberChange = (e) => {
-    const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    const value = e.target.value.replace(/[^a-zA-Z0-9\s\-_/.]/g, "").toUpperCase();
+    setDocValidationError(null);
     setDocForm((prev) => ({
       ...prev,
       document_no: value,
       is_verified: false,
-      document_expiry: "",
     }));
   };
 
@@ -1600,6 +1602,7 @@ export default function EditProfile() {
 
   const uploadDocFile = async (file, name) => {
     if (!file) return;
+
     const MAX_SIZE_MB = 10;
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
       toast.error(`File too large. Max ${MAX_SIZE_MB}MB.`);
@@ -1615,6 +1618,7 @@ export default function EditProfile() {
       : (docForm.document_name || selectedDoc?.document_name || "");
 
     let verifiedDocName = null;
+    let extractedText = "";
 
     if (
       isDocumentValidationApplicable(
@@ -1645,6 +1649,7 @@ export default function EditProfile() {
         }
 
         verifiedDocName = valRes.docDisplayName || "Document";
+        extractedText = valRes.extractedText || "";
       } catch (err) {
         console.error("Document validation error:", err);
         const errMsg = "This file could not be read. Please upload a clearer PDF or image.";
@@ -1676,8 +1681,10 @@ export default function EditProfile() {
       } else {
         setDocForm((prev) => ({
           ...prev,
+          file: file,
           file_path: res.path || res.data?.path || "",
           file_url: res.url || res.data?.url || "",
+          extracted_text: extractedText,
         }));
       }
     }
@@ -1719,7 +1726,9 @@ export default function EditProfile() {
       name === "document_expiry" &&
       (docForm.document_name === "Security License" ||
         docForm.document_name === "Security Master License" ||
-        docForm.document_name === "Visa")
+        docForm.document_name === "Visa" ||
+        docForm.document_name === "White Card" ||
+        docForm.document_type === "white_card")
     ) {
       return;
     }
@@ -1730,9 +1739,13 @@ export default function EditProfile() {
       setDocValidationError(null);
       setDocValidating(false);
       setDocValidationStatus(null);
+      const isDocWhiteCard = value === "White Card" || value === "white_card";
       setDocForm((prev) => ({
         ...prev,
         document_name: value,
+        document_expiry: isDocWhiteCard ? "01/01/2036" : (prev.document_expiry || ""),
+        is_verified: isDocWhiteCard,
+        show_working_rights: false,
       }));
     } else if (type === "file") {
       const file = files?.[0];
@@ -1749,17 +1762,84 @@ export default function EditProfile() {
       return;
     }
 
-    if (!docForm.show_working_rights && !docForm.document_expiry) {
+    const isWhiteCard =
+      (docForm.document_type || selectedDoc?.document_type) === "white_card" ||
+      (docForm.document_name || selectedDoc?.document_name) === "White Card";
+
+    const docNo = (docForm.document_no || "").trim();
+    if (!docNo) {
+      setDocValidationError("Please enter Document Number.");
+      toast.error("Please enter Document Number.");
+      return;
+    }
+
+    const docExpiry = isWhiteCard ? "01/01/2036" : (docForm.document_expiry || "").trim();
+    if (!docForm.show_working_rights && !isWhiteCard && !docExpiry) {
+      setDocValidationError("Please enter Expiry Date.");
       toast.error("Please enter a valid expiry date.");
       return;
     }
+
+    if (!docForm.file_path && !selectedDoc?.file) {
+      setDocValidationError("Please upload the document file.");
+      toast.error("Please upload the document file.");
+      return;
+    }
+
+    // Verify document number and expiry date against uploaded document
+    let rawText = docForm.extracted_text || "";
+    if (!rawText && docForm.file) {
+      setDocValidating(true);
+      setDocValidationStatus("Checking document contents...");
+      try {
+        const ext = await extractDocumentText(docForm.file);
+        if (ext?.success && ext.text) {
+          rawText = ext.text;
+          setDocForm((prev) => ({ ...prev, extracted_text: rawText }));
+        }
+      } catch (_) {}
+      finally {
+        setDocValidating(false);
+      }
+    }
+
+    if (rawText) {
+      const hasDocNumber = isDocumentNumberInText(rawText, docNo);
+      const hasExpiry = isWhiteCard ? true : isExpiryDateInText(rawText, docExpiry);
+
+      if (!hasDocNumber && !hasExpiry) {
+        const errMsg = `Document Number "${docNo}" and Expiry Date "${docExpiry}" were not found in the uploaded document.`;
+        setDocValidationError(errMsg);
+        toast.error("Both Document Number and Expiry Date do not match the uploaded document.");
+        return;
+      }
+      if (!hasDocNumber) {
+        const errMsg = `Document Number "${docNo}" was not found in the uploaded document. Please check the document number.`;
+        setDocValidationError(errMsg);
+        toast.error(`Document Number "${docNo}" was not found in the document.`);
+        return;
+      }
+      if (!hasExpiry) {
+        const errMsg = `Expiry Date "${docExpiry}" was not found in the uploaded document. Please check the expiry date.`;
+        setDocValidationError(errMsg);
+        toast.error(`Expiry Date "${docExpiry}" was not found in the document.`);
+        return;
+      }
+    } else if (docForm.file || docForm.file_path) {
+      const errMsg = `Could not verify Document Number "${docNo}" in the uploaded document. Please upload a clear document image or PDF.`;
+      setDocValidationError(errMsg);
+      toast.error("Could not verify document number. Please upload a clearer file.");
+      return;
+    }
+
+    setDocValidationError(null);
 
     const payload = {
       user_id: userId,
       no: docForm.no,
       exp: docForm.exp,
-      document_no: docForm.document_no,
-      document_expiry: docForm.show_working_rights ? "" : docForm.document_expiry,
+      document_no: docNo,
+      document_expiry: docForm.show_working_rights ? "" : docExpiry,
       file: docForm.file_path || (selectedDoc?.file ?? ""),
       document_name: docForm.document_name,
       document_type: selectedDoc?.document_type || docForm.document_type || "",
@@ -2522,23 +2602,31 @@ export default function EditProfile() {
               setDocValidating(false);
               setDocValidationStatus(null);
               const displayName = doc.document_name || doc.document_type || "";
+              const isDocWhiteCard =
+                (doc.document_type || "").toLowerCase() === "white_card" ||
+                (displayName || "").toLowerCase() === "white card";
+              const displayExpiry = isDocWhiteCard
+                ? "01/01/2036"
+                : (isoToDisplay(doc.document_expiry) || "");
+
               if (!doc.document_no && !doc.document_expiry && !doc.file) {
                 setDocForm({
                   notes: "",
                   no: false,
                   exp: false,
                   document_no: "",
-                  document_expiry: "",
+                  document_expiry: isDocWhiteCard ? "01/01/2036" : "",
                   file: null,
                   file_path: "",
                   file_url: "",
                   document_name: displayName,
                   document_type: doc.document_type || "",   // ← keep original slug
                   document_category: doc.document_category || "",
-                  is_verified: !!doc.document_expiry,
+                  is_verified: isDocWhiteCard || !!doc.document_expiry,
                   working_rights_file_path: doc.working_rights || "",
                   working_rights_file_url: doc.working_rights || "",
                   show_working_rights: !!doc.working_rights,
+                  extracted_text: "",
                 });
               } else {
                 setDocForm({
@@ -2546,17 +2634,18 @@ export default function EditProfile() {
                   no: false,
                   exp: false,
                   document_no: doc.document_no || "",
-                  document_expiry: isoToDisplay(doc.document_expiry) || "",
+                  document_expiry: displayExpiry,
                   file: null,
                   file_path: doc.file || "",
                   file_url: doc.file || "",
                   document_name: displayName,
                   document_type: doc.document_type || "",   // ← keep original slug
                   document_category: doc.document_category || "",
-                  is_verified: !!doc.document_expiry,
+                  is_verified: isDocWhiteCard || !!doc.document_expiry,
                   working_rights_file_path: doc.working_rights || "",
                   working_rights_file_url: doc.working_rights || "",
                   show_working_rights: !!doc.working_rights,
+                  extracted_text: "",
                 });
               }
               setShowDocModal(true);
@@ -2583,6 +2672,7 @@ export default function EditProfile() {
                 working_rights_file_path: "",
                 working_rights_file_url: "",
                 show_working_rights: false,
+                extracted_text: "",
               });
               setShowDocModal(true);
             }}
@@ -2921,40 +3011,50 @@ export default function EditProfile() {
           ) : (
             <>
               {/* Document Number + Expiry Date side-by-side on desktop */}
-              <div className="row g-3">
-                <div className="col-12 col-md-6">{documentNumberField}</div>
-                <div className="col-12 col-md-6">
-                  <label className="form-label fw-semibold">Expiry Date <span className="text-danger">*</span></label>
-                  <div className="input-group position-relative">
-                    <button type="button" className="input-group-text bg-white text-muted border-end-0"
-                      onClick={(e) => { e.preventDefault(); const p = document.getElementById("doc_expiry_picker"); if (p) { try { p.showPicker(); } catch (_) { p.focus(); } } }}
-                      style={{ cursor: "pointer", zIndex: 10 }}
-                      disabled={isLicenseRequiringVerify || docForm.document_name === "Visa"}
-                      title="Open Calendar">
-                      <i className="fa-solid fa-calendar-days text-primary"></i>
-                    </button>
-                    <input type="date" id="doc_expiry_picker" className="position-absolute"
-                      style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
-                      value={docForm.document_expiry ? (() => { const parts = docForm.document_expiry.split("/"); if (parts.length === 3) { const [d, m, y] = parts; return `${y}-${m}-${d}`; } return ""; })() : ""}
-                      onChange={(e) => { const isoDate = e.target.value; if (isoDate) { const [y, m, d] = isoDate.split("-"); setDocForm((prev) => ({ ...prev, document_expiry: `${d}/${m}/${y}` })); } }}
-                      disabled={isLicenseRequiringVerify || docForm.document_name === "Visa"}
-                    />
-                    <input type="text" className="form-control border-start-0 ps-0" name="document_expiry" placeholder="DD/MM/YYYY"
-                      value={docForm.document_expiry}
-                      onChange={(e) => {
-                        let value = e.target.value.replace(/\D/g, "");
-                        if (value.length > 8) value = value.substring(0, 8);
-                        if (value.length > 2 && value.length <= 4) { value = value.replace(/^(\d{2})(\d+)/, "$1/$2"); }
-                        else if (value.length > 4) { value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3"); }
-                        setDocForm((prev) => ({ ...prev, document_expiry: value }));
-                      }}
-                      required maxLength={10} pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
-                      disabled={isLicenseRequiringVerify || docForm.document_name === "Visa"}
-                      style={{ backgroundColor: isLicenseRequiringVerify || docForm.document_name === "Visa" ? "#e9ecef" : "white" }}
-                    />
+              {(() => {
+                const isWhiteCard =
+                  (docForm.document_type || selectedDoc?.document_type) === "white_card" ||
+                  (docForm.document_name || selectedDoc?.document_name) === "White Card";
+
+                return (
+                  <div className="row g-3">
+                    <div className={isWhiteCard ? "col-12" : "col-12 col-md-6"}>{documentNumberField}</div>
+                    {!isWhiteCard && (
+                      <div className="col-12 col-md-6">
+                        <label className="form-label fw-semibold">Expiry Date <span className="text-danger">*</span></label>
+                        <div className="input-group position-relative">
+                          <button type="button" className="input-group-text bg-white text-muted border-end-0"
+                            onClick={(e) => { e.preventDefault(); const p = document.getElementById("doc_expiry_picker"); if (p) { try { p.showPicker(); } catch (_) { p.focus(); } } }}
+                            style={{ cursor: "pointer", zIndex: 10 }}
+                            disabled={isLicenseRequiringVerify || docForm.document_name === "Visa"}
+                            title="Open Calendar">
+                            <i className="fa-solid fa-calendar-days text-primary"></i>
+                          </button>
+                          <input type="date" id="doc_expiry_picker" className="position-absolute"
+                            style={{ opacity: 0, width: 0, height: 0, pointerEvents: "none", bottom: 0, left: 40 }}
+                            value={docForm.document_expiry ? (() => { const parts = docForm.document_expiry.split("/"); if (parts.length === 3) { const [d, m, y] = parts; return `${y}-${m}-${d}`; } return ""; })() : ""}
+                            onChange={(e) => { const isoDate = e.target.value; if (isoDate) { const [y, m, d] = isoDate.split("-"); setDocForm((prev) => ({ ...prev, document_expiry: `${d}/${m}/${y}` })); } }}
+                            disabled={isLicenseRequiringVerify || docForm.document_name === "Visa"}
+                          />
+                          <input type="text" className="form-control border-start-0 ps-0" name="document_expiry" placeholder="DD/MM/YYYY"
+                            value={docForm.document_expiry}
+                            onChange={(e) => {
+                              let value = e.target.value.replace(/\D/g, "");
+                              if (value.length > 8) value = value.substring(0, 8);
+                              if (value.length > 2 && value.length <= 4) { value = value.replace(/^(\d{2})(\d+)/, "$1/$2"); }
+                              else if (value.length > 4) { value = value.replace(/^(\d{2})(\d{2})(\d+)/, "$1/$2/$3"); }
+                              setDocForm((prev) => ({ ...prev, document_expiry: value }));
+                            }}
+                            required maxLength={10} pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/\d{4}$"
+                            disabled={isLicenseRequiringVerify || docForm.document_name === "Visa"}
+                            style={{ backgroundColor: isLicenseRequiringVerify || docForm.document_name === "Visa" ? "#e9ecef" : "white" }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
+                );
+              })()}
 
               <div className="mb-3 mt-3">
                 <label className="form-label fw-semibold">Document/Image <span className="text-danger">*</span></label>
@@ -3079,7 +3179,7 @@ export default function EditProfile() {
                 <button
                   type="submit"
                   className="btn btn-success w-50"
-                  disabled={uploadLoading || submitLoading || docValidating || !docForm.document_expiry || !docForm.file_url}
+                  disabled={uploadLoading || submitLoading || docValidating || (!(((docForm.document_type || selectedDoc?.document_type) === "white_card") || ((docForm.document_name || selectedDoc?.document_name) === "White Card")) && !docForm.document_expiry) || !docForm.file_url}
                 >
                   {submitLoading ? "Saving..." : "Upload"}
                 </button>

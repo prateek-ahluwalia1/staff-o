@@ -15,8 +15,9 @@ import UserProfileView from "../components/UserProfileView";
 import {
   validateDocument,
   isDocumentValidationApplicable,
-  validateResourcePartnerDocument,
-  isResourcePartnerValidationApplicable,
+  isDocumentNumberInText,
+  isExpiryDateInText,
+  extractDocumentText,
 } from "../utils/documentValidator";
 
 const AUSTRALIAN_STATE_PILLS = [
@@ -1062,12 +1063,19 @@ const ManageUsers = () => {
     if (doc) {
       const displayName = doc.document_name || doc.document_type || "";
       const workingRights = doc.working_rights || "";
+      const isDocWhiteCard =
+        (doc.document_type || doc.document_name) === "white_card" ||
+        displayName === "White Card";
+      const displayExpiry = isDocWhiteCard
+        ? "01/01/2036"
+        : (isoToDisplay(doc.document_expiry) || "");
+
       setDocForm({
         notes: "",
         no: doc.no || false,
         exp: doc.exp || false,
         document_no: doc.document_no || "",
-        document_expiry: isoToDisplay(doc.document_expiry) || "",
+        document_expiry: displayExpiry,
         file: null,
         file_path: doc.file || "",
         file_url: doc.file || "",
@@ -1079,6 +1087,7 @@ const ManageUsers = () => {
         working_rights_file_url: workingRights,
         show_working_rights: !!workingRights,
         work_entitlement: doc.work_entitlement || "",
+        extracted_text: "",
       });
     } else {
       setDocForm({
@@ -1098,6 +1107,7 @@ const ManageUsers = () => {
         working_rights_file_url: "",
         show_working_rights: false,
         work_entitlement: "",
+        extracted_text: "",
       });
     }
     setDragActiveField(null);
@@ -1118,6 +1128,7 @@ const ManageUsers = () => {
 
   const uploadDocFile = async (file, fieldName) => {
     if (!file) return;
+
     const MAX_SIZE_MB = 10;
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
       toast.error(`File too large. Max ${MAX_SIZE_MB}MB.`);
@@ -1134,6 +1145,7 @@ const ManageUsers = () => {
       : (docForm.document_name || selectedDoc?.document_name || "");
 
     let verifiedDocName = null;
+    let extractedText = "";
 
     if (
       isDocumentValidationApplicable(
@@ -1164,6 +1176,7 @@ const ManageUsers = () => {
         }
 
         verifiedDocName = valRes.docDisplayName || "Document";
+        extractedText = valRes.extractedText || "";
       } catch (err) {
         console.error("Document validation error:", err);
         const errMsg = "This file could not be read. Please upload a clearer PDF or image.";
@@ -1182,7 +1195,7 @@ const ManageUsers = () => {
     const res = await uploadFile("api/upload-file", fd, { method: "POST" });
     if (res?.success) {
       if (verifiedDocName) {
-        toast.success(`${verifiedDocName} verified and uploaded successfully!`);
+        toast.success(`${verifiedDocName} verified and attached!`);
       } else {
         toast.success("File uploaded successfully!");
       }
@@ -1193,6 +1206,7 @@ const ManageUsers = () => {
           ...prev,
           working_rights_file_path: filePath,
           working_rights_file_url: fileUrl,
+          working_rights_extracted_text: extractedText,
         }));
       } else {
         setDocForm((prev) => ({
@@ -1200,6 +1214,7 @@ const ManageUsers = () => {
           file: file,
           file_path: filePath,
           file_url: fileUrl,
+          extracted_text: extractedText,
         }));
       }
     }
@@ -1229,14 +1244,14 @@ const ManageUsers = () => {
   };
 
   const handleDocNumberChange = (e) => {
-    const value = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    const value = e.target.value.replace(/[^a-zA-Z0-9\s\-_/.]/g, "").toUpperCase();
+    setDocValidationError(null);
     setDocForm(prev => {
       if (prev.document_name === "Visa") return { ...prev, document_no: value };
       return {
         ...prev,
         document_no: value,
         is_verified: false,
-        document_expiry: "",
       };
     });
   };
@@ -1276,16 +1291,13 @@ const ManageUsers = () => {
       setDocValidationError(null);
       setDocValidating(false);
       setDocValidationStatus(null);
+      const isDocWhiteCard = value === "White Card" || value === "white_card";
       setDocForm(prev => ({
         ...prev,
         document_name: value,
-        document_no: "",
-        document_expiry: "",
-        is_verified: false,
+        document_expiry: isDocWhiteCard ? "01/01/2036" : (prev.document_expiry || ""),
+        is_verified: isDocWhiteCard,
         show_working_rights: false,
-        working_rights_file_path: "",
-        working_rights_file_url: "",
-        work_entitlement: "",
       }));
     } else if (type === "file") {
       const file = files?.[0];
@@ -1497,12 +1509,85 @@ const ManageUsers = () => {
       toast.error("Please save the profile first before uploading documents.");
       return;
     }
+
+    const isWhiteCard =
+      (docForm.document_type || selectedDoc?.document_type) === "white_card" ||
+      (docForm.document_name || selectedDoc?.document_name) === "White Card";
+
+    const docNo = (docForm.document_no || "").trim();
+    if (!docNo) {
+      setDocValidationError("Please enter Document Number.");
+      toast.error("Please enter Document Number.");
+      return;
+    }
+
+    const docExpiry = isWhiteCard ? "01/01/2036" : (docForm.document_expiry || "").trim();
+    if (!isWhiteCard && !docExpiry) {
+      setDocValidationError("Please enter Expiry Date.");
+      toast.error("Please enter Expiry Date.");
+      return;
+    }
+
+    if (!docForm.file_path) {
+      setDocValidationError("Please upload the document file.");
+      toast.error("Please upload the document file.");
+      return;
+    }
+
+    // Verify document number and expiry date against uploaded document
+    let rawText = docForm.extracted_text || "";
+    if (!rawText && docForm.file) {
+      setDocValidating(true);
+      setDocValidationStatus("Checking document contents...");
+      try {
+        const ext = await extractDocumentText(docForm.file);
+        if (ext?.success && ext.text) {
+          rawText = ext.text;
+          setDocForm((prev) => ({ ...prev, extracted_text: rawText }));
+        }
+      } catch (_) {}
+      finally {
+        setDocValidating(false);
+      }
+    }
+
+    if (rawText) {
+      const hasDocNumber = isDocumentNumberInText(rawText, docNo);
+      const hasExpiry = isWhiteCard ? true : isExpiryDateInText(rawText, docExpiry);
+
+      if (!hasDocNumber && !hasExpiry) {
+        const errMsg = `Document Number "${docNo}" and Expiry Date "${docExpiry}" were not found in the uploaded document.`;
+        setDocValidationError(errMsg);
+        toast.error("Both Document Number and Expiry Date do not match the uploaded document.");
+        return;
+      }
+      if (!hasDocNumber) {
+        const errMsg = `Document Number "${docNo}" was not found in the uploaded document. Please check the document number.`;
+        setDocValidationError(errMsg);
+        toast.error(`Document Number "${docNo}" was not found in the document.`);
+        return;
+      }
+      if (!hasExpiry) {
+        const errMsg = `Expiry Date "${docExpiry}" was not found in the uploaded document. Please check the expiry date.`;
+        setDocValidationError(errMsg);
+        toast.error(`Expiry Date "${docExpiry}" was not found in the document.`);
+        return;
+      }
+    } else if (docForm.file || docForm.file_path) {
+      const errMsg = `Could not verify Document Number "${docNo}" in the uploaded document. Please upload a clear document image or PDF.`;
+      setDocValidationError(errMsg);
+      toast.error("Could not verify document number. Please upload a clearer file.");
+      return;
+    }
+
+    setDocValidationError(null);
+
     const payload = {
       user_id: editingUser.id,
       no: docForm.no,
       exp: docForm.exp,
-      document_no: docForm.document_no,
-      document_expiry: docForm.document_expiry,
+      document_no: docNo,
+      document_expiry: docExpiry,
       file: docForm.file_path,
       document_name: docForm.document_name,
       document_type: selectedDoc?.document_type || docForm.document_type || "",
@@ -1818,6 +1903,10 @@ const ManageUsers = () => {
   };
 
   const docModalTitle = selectedDoc ? "Update Document" : "Add New Document";
+
+  const isWhiteCard =
+    (docForm.document_type || selectedDoc?.document_type) === "white_card" ||
+    (docForm.document_name || selectedDoc?.document_name) === "White Card";
 
   const isDocSelfExpiryState = checkIsDocSelfExpiry(
     docForm.document_category || selectedDoc?.document_category || "",
@@ -3090,10 +3179,11 @@ const ManageUsers = () => {
             <>
               {/* Document Number + Expiry Date side-by-side on desktop */}
               <div className="row g-3">
-                <div className="col-12 col-md-6">{documentNumberField}</div>
-                <div className="col-12 col-md-6">
-                  <label className="form-label fw-semibold">Expiry Date <span className="text-danger">*</span></label>
-                  <div className="input-group position-relative">
+                <div className={isWhiteCard ? "col-12" : "col-12 col-md-6"}>{documentNumberField}</div>
+                {!isWhiteCard && (
+                  <div className="col-12 col-md-6">
+                    <label className="form-label fw-semibold">Expiry Date <span className="text-danger">*</span></label>
+                    <div className="input-group position-relative">
                     <button
                       type="button"
                       className="input-group-text bg-white text-muted border-end-0"
@@ -3162,6 +3252,7 @@ const ManageUsers = () => {
                     />
                   </div>
                 </div>
+                )}
               </div>
 
               <div className="mb-3 mt-3">

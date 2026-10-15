@@ -458,6 +458,14 @@
     border-color: rgba(159, 18, 57, 0.25);
 }
 
+.bg-cancelled,
+.bg-canceled,
+.bg-deleted {
+    background: rgba(220, 38, 38, 0.12);
+    color: #dc2626;
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
 .bg-mock {
     background: rgba(124, 58, 237, 0.1);
     color: var(--st-mock);
@@ -489,9 +497,9 @@
     background: #ffffff;
 
     /* Bigger size & padding */
-    padding: 4px 7px;
+    padding: 3px 6px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 12px;
 
     /* Lift it off the background */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -502,7 +510,7 @@
 
 /* Make the handshake icon inside slightly larger */
 .vr-accepted-icon i {
-    font-size: 14px;
+    font-size: 12px;
 }
 
 /* Hidden on desktop, shown in mobile footer grid */
@@ -818,6 +826,48 @@
     background: linear-gradient(135deg, #cbd5e1, var(--st-uncoverd));
 }
 
+.bg-cancelled.vr-shift-card,
+.bg-canceled.vr-shift-card,
+.bg-deleted.vr-shift-card,
+.vr-shift-card.is-cancelled {
+    background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%) !important;
+    border: 1.5px dashed rgba(254, 202, 202, 0.55) !important;
+    box-shadow: 0 2px 8px rgba(153, 27, 27, 0.3) !important;
+}
+
+.bg-cancelled.vr-shift-card .vr-shift-time,
+.bg-canceled.vr-shift-card .vr-shift-time,
+.bg-deleted.vr-shift-card .vr-shift-time,
+.vr-shift-card.is-cancelled .vr-shift-time {
+    color: #ffffff !important;
+}
+
+.bg-cancelled.vr-shift-card .vr-shift-guard,
+.bg-canceled.vr-shift-card .vr-shift-guard,
+.bg-deleted.vr-shift-card .vr-shift-guard,
+.vr-shift-card.is-cancelled .vr-shift-guard {
+    color: #fee2e2 !important;
+}
+
+.vr-cancelled-badge {
+    background: rgba(0, 0, 0, 0.45);
+    color: #ffffff;
+    padding: 2px 6px;
+    margin: 3px;
+    border-radius: 4px;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: auto;
+    border: 1px solid rgba(254, 202, 202, 0.4);
+    line-height: 1.1;
+    flex-shrink: 0;
+}
+
 .vr-shift-time {
     font-size: 12px;
     font-weight: 800;
@@ -869,14 +919,28 @@
 .vr-shift-actions {
     position: absolute;
     inset: 0;
-    background: rgba(10, 20, 35, 0.82);
+    background: rgba(10, 20, 35, 0.88);
     backdrop-filter: blur(2px);
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
+    justify-content: flex-start;
+    justify-content: safe center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 0 10px;
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    -webkit-overflow-scrolling: touch;
+}
+
+.vr-shift-actions::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+    width: 0;
+    height: 0;
 }
 
 .vr-shift-card:hover .vr-shift-actions {
@@ -887,21 +951,33 @@
     background: #ffffff;
     border: none;
     color: var(--slate);
-    border-radius: 7px;
-    width: 26px;
-    height: 26px;
+    border-radius: 6px;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 10px;
     cursor: pointer;
-    transition: 0.15s;
+    transition: transform 0.15s, background-color 0.15s, color 0.15s;
+    flex-shrink: 0;
 }
 
 .vr-shift-actions button:hover {
     background: var(--teal);
     color: #ffffff;
-    transform: scale(1.1);
+    transform: scale(1.08);
+}
+
+.vr-shift-actions button.vr-action-delete:hover {
+    background: #e11d48;
+    color: #ffffff;
+}
+
+.vr-shift-actions button.vr-action-delete:hover i {
+    color: #ffffff !important;
 }
 
 /* --- 6. FOOTER --- */

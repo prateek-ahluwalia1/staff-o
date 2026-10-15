@@ -246,6 +246,24 @@ function combineDateAndTime(dateObj, timeValue) {
   return isValid(merged) ? merged : null;
 }
 
+const isShiftCancelled = (s) => {
+  if (!s) return false;
+  const rawJobStatus = String(s.job_status || "").toLowerCase().trim();
+  const rawStatusField = String(s.status || "").toLowerCase().trim();
+  return (
+    ["cancelled", "canceled", "deleted", "cancel", "delete"].includes(rawJobStatus) ||
+    ["cancelled", "canceled", "deleted", "cancel", "delete"].includes(rawStatusField) ||
+    Number(s.is_cancelled) === 1 ||
+    s.is_cancelled === true ||
+    s.is_cancelled === "1" ||
+    Number(s.is_deleted) === 1 ||
+    s.is_deleted === true ||
+    s.is_deleted === "1" ||
+    Boolean(s.deleted_at) ||
+    Boolean(s.cancelled_at)
+  );
+};
+
 export default function RosterPage() {
   const location = useLocation();
   const { userdata } = useSelector((state) => state.auth);
@@ -321,6 +339,9 @@ export default function RosterPage() {
   const { submit, loading: submitLoading, data: submitData } = useSubmit({ isAuth: true });
   const { submit: saveUserAssignment, loading: saveLoading } = useSubmit({ isAuth: true });
   const { submit: submitHolidayList } = useSubmit({ isAuth: true });
+  const { submit: fetchContractorStaff } = useSubmit({ isAuth: true });
+  const [contractorGuards, setContractorGuards] = useState([]);
+  const [contractorGuardsLoading, setContractorGuardsLoading] = useState(false);
 
   const [startDate, setStartDate] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [endDate, setEndDate] = useState(() => addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), 6));
@@ -328,7 +349,7 @@ export default function RosterPage() {
   const [modal, setModal] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [weeksToView, setWeeksToView] = useState(1);
-  const [editForm, setEditForm] = useState({ startTime: "", endTime: "" });
+  const [editForm, setEditForm] = useState({ date: null, startTime: "", endTime: "" });
   const [timeEditError, setTimeEditError] = useState("");
   const [removeReason, setRemoveReason] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -472,7 +493,10 @@ export default function RosterPage() {
       const weekShifts = roster.filter((shift) =>
         weekDays.some((d) => isSameDay(d.dateObj, shift.startDate))
       );
-      const totalHours = weekShifts.reduce((sum, shift) => sum + Number(shift.hours || 0), 0);
+      const totalHours = weekShifts.reduce((sum, shift) => {
+        if (isShiftCancelled(shift)) return sum;
+        return sum + Number(shift.hours || 0);
+      }, 0);
       const shiftWithCustomer = (site.job_roster || []).find(shift => shift?.customer?.name);
       const clientName = shiftWithCustomer?.customer?.name || "Unknown Client";
 
@@ -501,6 +525,7 @@ export default function RosterPage() {
     let grandTotal = 0;
     filteredSites.forEach((site) => {
       site.jobRoster.forEach((shift) => {
+        if (isShiftCancelled(shift)) return;
         const dayIndex = weekDays.findIndex((d) => isSameDay(d.dateObj, shift.startDate));
         if (dayIndex !== -1) {
           const shiftHrs = Number(shift.hours || 0);
@@ -512,12 +537,65 @@ export default function RosterPage() {
     return { totals, grandTotal };
   }, [filteredSites, weekDays]);
 
-  const guards = useMemo(() => staffData?.guards || [], [staffData?.guards]);
+  const modalAcceptedBy = useMemo(() => {
+    const raw = modal?.shift?.accepted_by;
+    if (raw != null && raw !== "null" && raw !== "" && raw !== 0 && raw !== "0") {
+      return raw;
+    }
+    return null;
+  }, [modal?.shift?.accepted_by]);
+
+  useEffect(() => {
+    if (
+      userRole === "admin" &&
+      modalAcceptedBy &&
+      (modal?.type === "admin_assign" || modal?.type === "shift_breakdown")
+    ) {
+      let isMounted = true;
+      setContractorGuardsLoading(true);
+      fetchContractorStaff(
+        `api/get-contractor-active-staff/${modalAcceptedBy}`,
+        {},
+        { method: "POST" }
+      )
+        .then((res) => {
+          if (!isMounted) return;
+          const list =
+            res?.guards ||
+            res?.data?.guards ||
+            (Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []);
+          setContractorGuards(list);
+          setContractorGuardsLoading(false);
+        })
+        .catch((err) => {
+          if (!isMounted) return;
+          console.error("Failed to fetch contractor staff:", err);
+          setContractorGuards([]);
+          setContractorGuardsLoading(false);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    } else {
+      setContractorGuards([]);
+      setContractorGuardsLoading(false);
+    }
+  }, [userRole, modalAcceptedBy, modal?.type, modal?.shift?.id, fetchContractorStaff]);
+
+  const defaultGuards = useMemo(() => staffData?.guards || staffData?.data?.guards || [], [staffData]);
+
+  const guards = useMemo(() => {
+    if (userRole === "admin" && modalAcceptedBy) {
+      return contractorGuards;
+    }
+    return defaultGuards;
+  }, [userRole, modalAcceptedBy, contractorGuards, defaultGuards]);
 
   const guardOptions = useMemo(() => {
     return guards.map((g) => ({
       value: g.id,
-      label: g.name,
+      label: g.name ? g.name : `${g.first_name || ""} ${g.last_name || ""}`.trim() || g.email || `Staff #${g.id}`,
     }));
   }, [guards]);
 
@@ -593,7 +671,19 @@ export default function RosterPage() {
     if (modalType === "add_shift" && userRole !== "admin") {
       return;
     }
-    if (modalType === "time" && shift?.assigned_to) {
+    const isSignedIn =
+      Number(shift?.signin_status) === 1 ||
+      shift?.signin_status === true ||
+      shift?.signin_status === "1" ||
+      Number(shift?.roster_activity?.signin_status) === 1 ||
+      shift?.roster_activity?.signin_status === true ||
+      shift?.roster_activity?.signin_status === "1";
+
+    if ((modalType === "time" || modalType === "delete") && isSignedIn) {
+      toast.warning("Cannot edit or delete a shift after sign in.");
+      return;
+    }
+    if (modalType === "time" && shift?.assigned_to && userRole !== "admin") {
       toast.warning("Cannot edit time while a guard is assigned to this shift.");
       return;
     }
@@ -602,7 +692,11 @@ export default function RosterPage() {
       setTimeEditError("");
       const startT = (shift.start || "").split(" ")[1] || "00:00";
       const endT = (shift.end || "").split(" ")[1] || "00:00";
-      setEditForm({ startTime: startT, endTime: endT });
+      setEditForm({
+        date: shift.startDate ? new Date(shift.startDate) : new Date(),
+        startTime: startT,
+        endTime: endT,
+      });
     }
     setModal({ type: modalType, site, shift, dateStr, dateKey });
   };
@@ -620,8 +714,9 @@ export default function RosterPage() {
       let res;
       if (modal.type === "time" && modal.shift) {
         setTimeEditError("");
-        const startDateTime = combineDateAndTime(modal.shift.startDate, editForm.startTime);
-        const endDateTime = combineDateAndTime(modal.shift.endDate, editForm.endTime);
+        const selectedDate = editForm.date || modal.shift.startDate;
+        const startDateTime = combineDateAndTime(selectedDate, editForm.startTime);
+        const endDateTime = combineDateAndTime(selectedDate, editForm.endTime);
         if (!startDateTime || !endDateTime) { setTimeEditError("Invalid times."); return; }
         const normalizedEndDateTime = endDateTime <= startDateTime ? addDays(endDateTime, 1) : endDateTime;
         const durationHours = (normalizedEndDateTime.getTime() - startDateTime.getTime()) / (1000 * 60 * 60);
@@ -633,6 +728,22 @@ export default function RosterPage() {
           admin_id: userId,
         };
         res = await saveUserAssignment(`api/update-roster-time`, payload, { method: "POST" });
+      } else if (modal.type === "delete" && modal.shift) {
+        const jobId =
+          modal.shift.id ||
+          modal.shift.job_id ||
+          modal.shift.rawShift?.id ||
+          modal.shift.rawShift?.job_id;
+
+        if (!jobId) {
+          toast.error("Job ID not found for this job.");
+          return;
+        }
+
+        const payload = {
+          job_id: jobId,
+        };
+        res = await saveUserAssignment(`api/payment/cancel`, payload, { method: "POST" });
       } else if (modal.type === "admin_assign" && modal.shift) {
         if (!selectedUserId) { toast.error("Select a user."); return; }
         const payload = userRole === "admin" ? { roster_id: modal.shift.id, admin_id: userId } : { roster_id: modal.shift.id, guard_id: selectedUserId }
@@ -651,7 +762,7 @@ export default function RosterPage() {
       if (res === undefined) return;
       fetchCustomerSites();
       if (res.success) {
-        toast.success("Saved successfully!");
+        toast.success(modal.type === "delete" ? (res?.message || "Job deleted successfully!") : "Saved successfully!");
       }
       closeModal();
     } catch (error) {
@@ -884,6 +995,7 @@ export default function RosterPage() {
           <span className="vr-badge bg-unpublished">Unpublish</span>
           <span className="vr-badge bg-rejected">Rejected</span>
           <span className="vr-badge bg-missed">Missed</span>
+          <span className="vr-badge bg-cancelled">Cancelled</span>
           <span className="vr-badge bg-mock">Mock</span>
           <span className="vr-badge bg-op-notes">OpNotes</span>
           <span className="vr-badge bg-uncoverd">Uncovered</span>
@@ -964,31 +1076,62 @@ export default function RosterPage() {
                       ) : (
                         <div className="vr-shift-container">
                           {dayShifts.map((shift) => {
-                            const status = shift.job_status ? shift.job_status.replace('_', '-') : 'pending';
+                            const isCancelled = isShiftCancelled(shift);
+                            const rawJobStatus = String(shift.job_status || "").toLowerCase().trim();
+                            const rawStatusField = String(shift.status || "").toLowerCase().trim();
+                            const isDeleted =
+                              rawJobStatus === "deleted" ||
+                              rawJobStatus === "delete" ||
+                              rawStatusField === "deleted" ||
+                              rawStatusField === "delete" ||
+                              Number(shift.is_deleted) === 1 ||
+                              shift.is_deleted === true ||
+                              Boolean(shift.deleted_at);
+                            const cancelledLabel = isDeleted ? "Deleted" : "Cancelled";
+
+                            const status = isCancelled
+                              ? "cancelled"
+                              : shift.job_status
+                              ? shift.job_status.replace('_', '-')
+                              : 'pending';
                             const hasNote = Boolean(extractOperationNoteText(shift));
-                            const isAccepted = Boolean(shift.accepted_by);
+                            const contractorName =
+                              shift.contractor?.name ||
+                              shift.contractor?.contractor?.company_name ||
+                              shift.contractor?.company_name ||
+                              (shift.contractor?.first_name ? `${shift.contractor.first_name} ${shift.contractor.last_name || ""}`.trim() : null) ||
+                              (shift.accepted_by ? `Contractor #${shift.accepted_by}` : null);
+                            const isAccepted = Boolean(shift.accepted_by || shift.contractor);
 
                             const shiftDuration = Number(shift.hours || 0) || (shift.endDate && shift.startDate ? (shift.endDate - shift.startDate) / 3600000 : 0);
                             const invoiceType = Number(shift.contractor_invoice);
                             const isConfirmed = String(shift.job_status || "").toLowerCase() === "confirmed";
                             const isPending = String(shift.job_status || "").toLowerCase() === "pending";
+                            const isPendingOrConfirmed = isPending || isConfirmed;
+                            const isSignedIn =
+                              Number(shift.signin_status) === 1 ||
+                              shift.signin_status === true ||
+                              shift.signin_status === "1" ||
+                              Number(shift.roster_activity?.signin_status) === 1 ||
+                              shift.roster_activity?.signin_status === true ||
+                              shift.roster_activity?.signin_status === "1";
 
                             // Contractor Zero Invoice Breakdown: Contractor + Invoice 0 + Confirmed + Duration > 12
-                            const isContractorZeroInvoiceBreakdown = userRole === "contractor" && invoiceType === 0 && isConfirmed && shiftDuration > 12;
-                            const isContractorZeroInvoiceBreakdownText = userRole === "contractor" && invoiceType === 0 && isPending;
+                            const isContractorZeroInvoiceBreakdown = !isCancelled && userRole === "contractor" && invoiceType === 0 && isConfirmed && shiftDuration > 12;
+                            const isContractorZeroInvoiceBreakdownText = !isCancelled && userRole === "contractor" && invoiceType === 0 && isPending;
 
                             // Assign Staff Button: Shown when staff not assigned AND (Admin OR Invoice 1 OR (Invoice 0 & Confirmed & Duration <= 12))
-                            const showAssignButton = !shift.assigned_to && (
+                            const showAssignButton = !isCancelled && !shift.assigned_to && (
                               userRole === "admin" ||
                               invoiceType === 1 ||
                               (userRole === "contractor" && invoiceType === 0 && isConfirmed && shiftDuration <= 12)
                             );
 
                             // Remove Accepted Button: Shown if pending and accepted_by is set, and user is admin or contractor
-                            const showRemoveButton = isPending && isAccepted && (userRole === "admin" || userRole === "contractor");
+                            const showRemoveButton = !isCancelled && isPending && isAccepted && (userRole === "admin" || userRole === "contractor");
 
                             return (
-                              <div key={shift.id} className={`vr-shift-card bg-${status}`}>
+                              <div key={shift.id} className={`vr-shift-card bg-${status} ${isCancelled ? "is-cancelled" : ""}`}>
                                 {hasNote && <div className="vr-note-dot"></div>}
                                 {isContractorZeroInvoiceBreakdown && (
                                   <span className="vr-breakdown-indicator" title="Requires Job Breakdown (>12h, Invoice 0)">
@@ -996,7 +1139,17 @@ export default function RosterPage() {
                                   </span>
                                 )}
                                 <div className="vr-shift-time">
-                                  {isContractorZeroInvoiceBreakdown ? (
+                                  {isCancelled ? (
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: "4px" }}>
+                                      <span style={{ textDecoration: "line-through", opacity: 0.9, fontSize: "11px", whiteSpace: "nowrap" }}>
+                                        {format(shift.startDate, "HH:mm")} - {format(shift.endDate, "HH:mm")}
+                                      </span>
+                                      <span className="vr-cancelled-badge" title={`This job has been ${cancelledLabel.toLowerCase()}`}>
+                                        <i className="fa-solid fa-ban" style={{ color: "#fca5a5" }}></i>
+                                        {/* {cancelledLabel} */}
+                                      </span>
+                                    </div>
+                                  ) : isContractorZeroInvoiceBreakdown ? (
                                     <span
                                       className="d-block w-100"
                                       style={{ color: '#082f49', fontWeight: 800, cursor: 'pointer', fontSize: '10.5px', lineHeight: '1.3', whiteSpace: 'normal', textTransform: 'uppercase' }}
@@ -1019,45 +1172,104 @@ export default function RosterPage() {
                                       {format(shift.startDate, "HH:mm")} - {format(shift.endDate, "HH:mm")}
                                       {/* Contractor Accepted Indicator */}
                                       {isAccepted && (
-                                        <span className="vr-accepted-icon" title="Accepted by Contractor">
-                                          <i className="fa fa-handshake-o fas fa-handshake"></i>
-                                        </span>
+                                        <div
+                                          style={{
+                                            marginLeft: "auto",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: "flex-end",
+                                            lineHeight: 1,
+                                            maxWidth: "55%",
+                                          }}
+                                        >
+                                          {contractorName && (
+                                            <span
+                                              style={{
+                                                fontSize: "4.5px",
+                                                // fontWeight: 800,
+                                                color: "#ffffff",
+                                                // background: "rgba(0, 0, 0, 0.3)",
+                                                // backdropFilter: "blur(2px)",
+                                                // padding: "1px 5px",
+                                                // borderRadius: "4px",
+                                                marginBottom: "2px",
+                                                whiteSpace: "nowrap",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                maxWidth: "85px",
+                                                textAlign: "right",
+                                                letterSpacing: "0.2px",
+                                                display: "inline-block",
+                                              }}
+                                              title={`Accepted by: ${contractorName}`}
+                                            >
+                                              {contractorName}
+                                            </span>
+                                          )}
+                                          <span
+                                            className="vr-accepted-icon"
+                                            title={`Accepted by Contractor: ${contractorName || 'Contractor'}`}
+                                            style={{ margin: 0 }}
+                                          >
+                                            <i className="fa fa-handshake-o fas fa-handshake"></i>
+                                          </span>
+                                        </div>
                                       )}
                                     </>
                                   )}
                                 </div>
                                 {!isContractorZeroInvoiceBreakdown && (
                                   <div className="vr-shift-guard">
-                                    {shift?.guards?.name || "Unassigned"}
+                                    {isCancelled ? (
+                                      <span style={{ color: "#fee2e2", fontStyle: "italic", fontWeight: 700, fontSize: "10px" }}>
+                                        <i className="fa-solid fa-circle-xmark me-1"></i>
+                                        {shift?.guards?.name ? `${cancelledLabel} (${shift.guards.name})` : `${cancelledLabel} Job`}
+                                      </span>
+                                    ) : (
+                                      shift?.guards?.name || "Unassigned"
+                                    )}
                                   </div>
                                 )}
-                                <div className="vr-shift-actions">
+                                <div
+                                  className="vr-shift-actions"
+                                  onWheel={(e) => {
+                                    if (e.deltaY !== 0) {
+                                      e.stopPropagation();
+                                      e.currentTarget.scrollLeft += e.deltaY;
+                                    }
+                                  }}
+                                >
                                   <button title="Activity" onClick={() => openModalAction(site, shift, day.dateLabel, "activity")}>
                                     <i className="fa fa-list"></i>
                                   </button>
                                   <button title="Details" onClick={() => openModalAction(site, shift, day.dateLabel, "details")}>
                                     <i className="fa fa-info"></i>
                                   </button>
-                                  {userRole === "admin" && !shift.assigned_to && (
+                                  {!isCancelled && userRole === "admin" && isPendingOrConfirmed && !isSignedIn && (
                                     <button title="Time Edit" onClick={() => openModalAction(site, shift, day.dateLabel, "time")}>
                                       <i className="fa fa-edit fas fa-edit"></i>
                                     </button>
                                   )}
-                                  {isContractorZeroInvoiceBreakdown && (
+                                  {!isCancelled && isContractorZeroInvoiceBreakdown && (
                                     <button title="Breakdown Shift" onClick={() => openModalAction(site, shift, day.dateLabel, "shift_breakdown")}>
                                       <i className="fa-solid fa-scissors"></i>
                                     </button>
                                   )}
-                                  {showAssignButton && (
+                                  {!isCancelled && showAssignButton && (
                                     <button title="Assign" onClick={() => openModalAction(site, shift, day.dateLabel, "admin_assign")}>
                                       <i className="fa fa-user-plus"></i>
                                     </button>
                                   )}
-                                  {showRemoveButton && (
+                                  {!isCancelled && showRemoveButton && (
                                     <button title="Remove from Job" onClick={() => openModalAction(site, shift, day.dateLabel, "remove_accepted")}>
                                       <i className="fa-solid fa-user-xmark text-danger"></i>
                                     </button>
                                   )}
+                                   {!isCancelled && userRole === "admin" && isPendingOrConfirmed && !isSignedIn && (
+                                    <button className="vr-action-delete" title="Delete Job" onClick={() => openModalAction(site, shift, day.dateLabel, "delete")}>
+                                      <i className="fa-solid fa-trash text-danger"></i>
+                                    </button>
+                                  )} 
                                 </div>
                               </div>
                             );
@@ -1096,6 +1308,43 @@ export default function RosterPage() {
       {modal?.type === "details" && <DetailsModal modal={modal} closeModal={closeModal} guardShiftsList={guardShiftsList} totalGuardHours={totalGuardHours} />}
       {modal?.type === "shift_breakdown" && <ShiftBreakdownModal modal={modal} closeModal={closeModal} onSuccess={fetchCustomerSites} staffOptions={staffData?.guards || []} />}
 
+      {modal?.type === "delete" && (
+        <div className="vr-modal-backdrop" onClick={closeModal}>
+          <div className="vr-modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "480px" }}>
+            <div className="vr-modal-header" style={{ background: "linear-gradient(120deg, #450a0a, #7f1d1d)" }}>
+              <h3 style={{ color: "#fff", display: "flex", alignItems: "center", gap: "8px" }}>
+                <i className="fa-solid fa-triangle-exclamation" style={{ color: "#fca5a5" }}></i>
+                Delete / Cancel Job
+              </h3>
+              <button onClick={closeModal}><i className="fa fa-times"></i></button>
+            </div>
+            <div className="vr-modal-content">
+              <div className="alert alert-danger d-flex align-items-center gap-2 mb-3" style={{ fontSize: "13px" }}>
+                <i className="fa-solid fa-circle-exclamation flex-shrink-0"></i>
+                <span>Are you sure you want to delete this job? This will cancel the associated payment hold and remove the shift.</span>
+              </div>
+              <div className="vr-modal-summary" style={{ marginBottom: "15px" }}>
+                <div><strong>Site:</strong> {modal.site?.displayName}</div>
+                <div><strong>Date:</strong> {modal.dateStr}</div>
+                <div><strong>Job:</strong> {modal.shift?.startDate && modal.shift?.endDate ? `${format(modal.shift.startDate, "HH:mm")} - ${format(modal.shift.endDate, "HH:mm")}` : "N/A"}</div>
+                <div><strong>Status:</strong> {modal.shift?.job_status || "Pending"}</div>
+              </div>
+            </div>
+            <div className="vr-modal-footer">
+              <button className="vr-btn-cancel" onClick={closeModal} disabled={saveLoading}>Cancel</button>
+              <button
+                className="vr-btn-confirm"
+                style={{ backgroundColor: "#ef4444", borderColor: "#ef4444" }}
+                onClick={handleSave}
+                disabled={saveLoading}
+              >
+                {saveLoading ? "Deleting..." : "Yes, Delete Job"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {modal?.type === "admin_assign" && (
         <div className="vr-modal-backdrop" onClick={closeModal}>
           <div className="vr-modal-container" onClick={(e) => e.stopPropagation()}>
@@ -1113,11 +1362,12 @@ export default function RosterPage() {
                 <label>Select Staff Member</label>
                 <Select
                   options={guardOptions}
+                  isLoading={contractorGuardsLoading}
                   value={guardOptions.find((opt) => opt.value === selectedUserId) || null}
                   onChange={(selectedOption) =>
                     setSelectedUserId(selectedOption ? selectedOption.value : "")
                   }
-                  placeholder="Search or select a staff..."
+                  placeholder={contractorGuardsLoading ? "Loading staff..." : "Search or select a staff..."}
                   isClearable
                   isSearchable
                   menuPortalTarget={document.body}

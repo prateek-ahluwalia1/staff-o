@@ -985,7 +985,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       document_list,
       document_types: form.document_types || [],
       job_instruction: form.description || "",
-      contractor_invoice: stateCheckResult ? 1 : 0,
+      contractor_invoice: isAdmin ? 1 : (stateCheckResult ? 1 : 0),
     };
 
     if (stateCheckResult === false) {
@@ -1225,6 +1225,7 @@ export default function AddJob({ modalMode, onClose, initialSite, initialDate })
       if (isAdmin) {
         const postRes = await submitJob("api/job-post", {
           ...payload,
+          contractor_invoice: 1,
           payment_intent_id: "admin_override_no_payment",
           posting_type: postingMode,
           assigned_staff_id: postingMode === "assign" ? assignedStaff : null

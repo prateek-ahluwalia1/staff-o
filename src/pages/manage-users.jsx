@@ -665,6 +665,7 @@ const ManageUsers = () => {
   }), []);
 
   const [formData, setFormData] = useState(defaultFormState);
+  const [emailServerError, setEmailServerError] = useState("");
 
   const staffParentContractorId = Number(
     formData?.user_id ??
@@ -757,6 +758,7 @@ const ManageUsers = () => {
 
   const handleProfileFormChange = useCallback((e) => {
     const { id, value } = e.target;
+    setEmailServerError("");
     setFormData(prev => ({
       ...prev,
       [id]: value,
@@ -939,6 +941,7 @@ const ManageUsers = () => {
     setIsModalOpen(false);
     setEditingUser(null);
     setIsViewMode(false);
+    setEmailServerError("");
   };
 
   // Lock background scroll when any modal is open
@@ -1643,9 +1646,10 @@ const ManageUsers = () => {
 
     if (activeTab !== "staff") delete payload.user_id;
 
+    setEmailServerError("");
     try {
       const res = await submit(url, payload, { method });
-      if (res.success) {
+      if (res?.success) {
         toast.success(
           editingUser
             ? "User updated successfully!"
@@ -1706,6 +1710,10 @@ const ManageUsers = () => {
           setActiveModalTab("documents");
         } else {
           closeModal();
+        }
+      } else {
+        if (/already|taken|exist/i.test(res?.error) || res?.data?.errors?.email) {
+          setEmailServerError("Email already exists.");
         }
       }
     } catch (err) {
@@ -2765,6 +2773,7 @@ const ManageUsers = () => {
                     onChangePhone={handleOpenPhoneModal}
                     isPhoneVerified={false}
                     isStaffooStaff={activeTab === "staff" && staffParentContractorId === 1}
+                    emailServerError={emailServerError}
                     footer={<></>}
                   />
                 ) : activeModalTab === "documents" ? (

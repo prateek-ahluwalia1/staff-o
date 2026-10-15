@@ -4,6 +4,88 @@ import { apiURL } from "../utils/exports";
 import { toast } from "react-toastify";
 import { logOut } from "../store/slices/authSlice";
 
+export const extractErrorMessage = (json, fallback = "An error occurred") => {
+  if (!json) return fallback;
+  if (typeof json === "string") {
+    if (/email.*(already|taken|exist)|(already|taken|exist).*email/i.test(json)) {
+      return "Email already exists.";
+    }
+    return json;
+  }
+
+  // 1. Locate errors container if present
+  let errorsContainer = null;
+  if (json.errors && typeof json.errors === "object") {
+    errorsContainer = json.errors;
+  } else if (json.data?.errors && typeof json.data.errors === "object") {
+    errorsContainer = json.data.errors;
+  } else if (
+    json.data &&
+    typeof json.data === "object" &&
+    !Array.isArray(json.data) &&
+    (json.data.email || json.data.phone || json.data.password || json.data.name)
+  ) {
+    errorsContainer = json.data;
+  } else if (json.error && typeof json.error === "object") {
+    errorsContainer = json.error;
+  }
+
+  if (errorsContainer) {
+    if (Array.isArray(errorsContainer) && errorsContainer.length > 0) {
+      const first = errorsContainer[0];
+      const msg = typeof first === "string" ? first : first?.message || first?.msg;
+      if (msg) {
+        if (/email.*(already|taken|exist)|(already|taken|exist).*email/i.test(msg)) {
+          return "Email already exists.";
+        }
+        return msg;
+      }
+    } else if (typeof errorsContainer === "object") {
+      // Prioritize email error if present
+      const emailKey = Object.keys(errorsContainer).find((k) => /email/i.test(k));
+      if (emailKey) {
+        const val = errorsContainer[emailKey];
+        const msg = Array.isArray(val) ? val[0] : typeof val === "string" ? val : null;
+        if (msg) {
+          if (/already|taken|exist/i.test(msg)) {
+            return "Email already exists.";
+          }
+          return msg;
+        }
+      }
+
+      // Check all other keys in errorsContainer
+      for (const key of Object.keys(errorsContainer)) {
+        const val = errorsContainer[key];
+        const msg = Array.isArray(val) ? val[0] : typeof val === "string" ? val : null;
+        if (msg) {
+          if (/email/i.test(key) && /already|taken|exist/i.test(msg)) {
+            return "Email already exists.";
+          }
+          return msg;
+        }
+      }
+    }
+  }
+
+  // 2. Check main message or error string
+  const mainMsg =
+    typeof json.error === "string"
+      ? json.error
+      : typeof json.message === "string"
+      ? json.message
+      : null;
+
+  if (mainMsg) {
+    if (/email.*(already|taken|exist)|(already|taken|exist).*email/i.test(mainMsg)) {
+      return "Email already exists.";
+    }
+    return mainMsg;
+  }
+
+  return fallback;
+};
+
 const useSubmit = ({ isAuth = false, BaseURL = apiURL } = {}) => {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.auth.token);
@@ -76,23 +158,17 @@ const useSubmit = ({ isAuth = false, BaseURL = apiURL } = {}) => {
         const json = await res.json();
 
         if (!res.ok) {
-          let errorMsg = json?.error || json?.message;
-          if (!errorMsg && json?.errors && typeof json.errors === "object") {
-            const firstErrorKey = Object.keys(json.errors)[0];
-            if (firstErrorKey && Array.isArray(json.errors[firstErrorKey])) {
-              errorMsg = json.errors[firstErrorKey][0];
-            }
-          }
+          const errorMsg = extractErrorMessage(json, "An error occurred");
           console.error("Submit API error:", errorMsg);
-          if (!silentErrorToast) toast.error(errorMsg || "An error occurred");
+          if (!silentErrorToast) toast.error(errorMsg);
           return { success: false, error: errorMsg, status: res.status, data: json };
         }
 
         // 👇 NEW: Check for logical success:false even with HTTP 200
         if (json && json.success === false) {
-          const errorMsg = json.message || json.error;
+          const errorMsg = extractErrorMessage(json, "An error occurred");
           if (!silentErrorToast) toast.error(errorMsg);
-          setData(json);   // still expose the full response to the caller
+          setData(json); // still expose the full response to the caller
           return { success: false, error: errorMsg, data: json };
         }
 

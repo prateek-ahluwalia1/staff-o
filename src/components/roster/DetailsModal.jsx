@@ -53,6 +53,13 @@ export default function DetailsModal({
 
   const hasGuard = Boolean(shift?.guards && shift?.guards?.name);
 
+  const contractorName =
+    shift?.contractor?.name ||
+    shift?.contractor?.contractor?.company_name ||
+    shift?.contractor?.company_name ||
+    (shift?.contractor?.first_name ? `${shift.contractor.first_name} ${shift.contractor.last_name || ""}`.trim() : null) ||
+    (shift?.accepted_by ? `Contractor #${shift.accepted_by}` : null);
+
   const [activeTab, setActiveTab] = useState(hasGuard ? "guard" : "shift");
 
   const visibleTabs = SIDEBAR_TABS.filter((tab) => {
@@ -132,16 +139,44 @@ export default function DetailsModal({
             />
             <InfoRow
               label="Job Status"
-              value={
-                <span className={`shift-status ${shift?.job_status === "confirmed" ? "confirmed" : "pending"}`}>
-                  {shift?.job_status || "N/A"}
-                </span>
-              }
+              value={(() => {
+                const rawSt = String(shift?.job_status || shift?.status || "").toLowerCase().trim();
+                const isCanc =
+                  ["cancelled", "canceled", "deleted", "cancel", "delete"].includes(rawSt) ||
+                  Number(shift?.is_cancelled) === 1 ||
+                  Number(shift?.is_deleted) === 1 ||
+                  Boolean(shift?.deleted_at) ||
+                  Boolean(shift?.cancelled_at);
+                if (isCanc) {
+                  return (
+                    <span className="shift-status cancelled">
+                      <i className="fa-solid fa-ban me-1"></i>
+                      {rawSt.includes("delete") ? "Deleted" : "Cancelled"}
+                    </span>
+                  );
+                }
+                return (
+                  <span className={`shift-status ${shift?.job_status === "confirmed" ? "confirmed" : "pending"}`}>
+                    {shift?.job_status || "N/A"}
+                  </span>
+                );
+              })()}
             />
             <InfoRow
               label="Hours"
               value={shift?.hours ? `${shift.hours} hrs` : "N/A"}
             />
+            {contractorName && (
+              <InfoRow
+                label="Contractor"
+                value={
+                  <span style={{ color: "#0A7C6E", fontWeight: 600 }}>
+                    <i className="fa fa-handshake-o fas fa-handshake me-1"></i>
+                    {contractorName}
+                  </span>
+                }
+              />
+            )}
           </div>
         );
 
@@ -366,6 +401,11 @@ export default function DetailsModal({
           background: #fff3cd;
           color: #856404;
         }
+        .shift-status.cancelled {
+          background: #fee2e2;
+          color: #b91c1c;
+          border: 1px solid rgba(185, 28, 28, 0.2);
+        }
 
         .schedule-header {
           display: flex;
@@ -509,6 +549,12 @@ export default function DetailsModal({
                 </div>
                 <div style={{ fontWeight: 600, fontSize: 13, textAlign: "center" }}>{shift.guards.name}</div>
                 <div style={{ fontSize: 11, color: "#888", textAlign: "center" }}>{site?.displayName}</div>
+                {contractorName && (
+                  <div style={{ fontSize: 11, color: "#0A7C6E", fontWeight: 600, marginTop: 4, textAlign: "center" }}>
+                    <i className="fa fa-handshake-o fas fa-handshake me-1"></i>
+                    {contractorName}
+                  </div>
+                )}
               </div>
             )}
 

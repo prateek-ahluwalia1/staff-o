@@ -2,11 +2,21 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { startOfWeek, endOfWeek, format, parse } from "date-fns";
+import { startOfWeek, endOfWeek, format, parse, isValid } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import useSubmit from "../hooks/useSubmit";
 import Loader from "../components/Loader";
+import SignInOutDetails from "../components/roster/SignInOutDetails";
+
+function combineDateAndTime(dateObj, timeValue) {
+  if (!dateObj || !timeValue) return null;
+  const parts = String(timeValue).split(":");
+  if (parts.length < 2) return null;
+  const merged = new Date(dateObj);
+  merged.setHours(Number(parts[0] || 0), Number(parts[1] || 0), 0, 0);
+  return isValid(merged) ? merged : null;
+}
 
 // ---------- Helper Components ----------
 
@@ -153,7 +163,11 @@ export default function MyJobApplications() {
     normalizedUserType === "customer" ||
     normalizedUserType === "client" ||
     normalizedUserType === "employer";
+  const isAdmin = normalizedUserType === "admin";
+  const canManageJob = isAdmin || isClient;
+
   const { submit, loading, data: submitData } = useSubmit({ isAuth: true });
+  const { submit: submitAction, loading: actionLoading } = useSubmit({ isAuth: true });
 
   // Filters state – now defaults to current week (Monday to Sunday)
   const [startDate, setStartDate] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -171,6 +185,11 @@ export default function MyJobApplications() {
   const [selectedApp, setSelectedApp] = useState(null);
   const [showPaymentAlertModal, setShowPaymentAlertModal] = useState(false);
   const hasAutoOpenedPaymentModal = useRef(false);
+
+  // Edit & Delete modal states
+  const [editModalApp, setEditModalApp] = useState(null);
+  const [editForm, setEditForm] = useState({ date: null, startTime: "", endTime: "" });
+  const [deleteModalApp, setDeleteModalApp] = useState(null);
 
   const fetchCustomerSites = useCallback(
     (page = 1) => {
@@ -273,7 +292,7 @@ export default function MyJobApplications() {
         } catch (e) { }
       }
 
-      // ── Document label mapping – only these two are used in your system ──
+      // ── Document label mapping ──
       const DOC_LABELS = {
         working_with_children: "Working With Children Check",
         white_card: "White Card",
@@ -282,26 +301,75 @@ export default function MyJobApplications() {
         rsa_certificate: "RSA Certificate",
       };
 
-      let documents = [];
-      if (shift.document_list) {
-        try {
-          const parsed = JSON.parse(shift.document_list);
-          if (Array.isArray(parsed)) {
-            documents = parsed.map(
-              (code) => DOC_LABELS[code.toLowerCase()] || code.replace(/_/g, " ")
-            );
+      const parseDocArray = (raw) => {
+        if (!raw) return [];
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === "string") {
+          const trimmed = raw.trim();
+          if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+            try {
+              const p = JSON.parse(trimmed);
+              if (Array.isArray(p)) return p;
+            } catch (e) {}
           }
-        } catch (e) { }
-      }
+          if (trimmed.includes(",")) {
+            return trimmed.split(",").map((s) => s.trim()).filter(Boolean);
+          }
+          return [trimmed];
+        }
+        return [];
+      };
 
-      const isAcceptedByContractor = !!shift.accepted_by;
-      const contractorName = shift.contractor?.name || null;
+      const rawDocList =
+        shift.document_types ||
+        shift.document_list ||
+        shift.documents ||
+        shift.required_documents ||
+        shift.rawShift?.document_types ||
+        shift.rawShift?.document_list ||
+        shift.site?.document_types ||
+        shift.site?.document_list;
+
+      const docArray = parseDocArray(rawDocList);
+      let documents = docArray
+        .map((item) => {
+          if (!item) return null;
+          const code =
+            typeof item === "string"
+              ? item
+              : item.document_type || item.code || item.name || item.document_name || String(item);
+          if (!code || typeof code !== "string") return null;
+          const cleanCode = code.trim().toLowerCase();
+          return DOC_LABELS[cleanCode] || code.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+        })
+        .filter(Boolean);
+
+      const rawContractor = shift.contractor || shift.rawShift?.contractor || null;
+      const contractorName =
+        rawContractor?.name ||
+        (rawContractor?.first_name
+          ? `${rawContractor.first_name} ${rawContractor.last_name || ""}`.trim()
+          : null) ||
+        rawContractor?.company_name ||
+        rawContractor?.business_name ||
+        null;
+
+      const isAcceptedByContractor = Boolean(
+        (shift.accepted_by != null &&
+          shift.accepted_by !== "null" &&
+          shift.accepted_by !== "" &&
+          shift.accepted_by !== 0 &&
+          shift.accepted_by !== "0") ||
+        rawContractor?.id != null ||
+        contractorName
+      );
+
       const appliedVia = shift.guards?.name || "Unassigned";
 
       // Profile images
       const customerProfileImage = shift.customer?.profile_image || null;
       const guardProfileImage = shift.guards?.profile_image || null;
-      const contractorProfileImage = shift.contractor?.profile_image || null;
+      const contractorProfileImage = rawContractor?.profile_image || null;
 
       const isContractorInvoice =
         Number(shift.contractor_invoice) === 1 ||
@@ -378,6 +446,8 @@ export default function MyJobApplications() {
         createdAt: formattedCreatedAt,
         isAcceptedByContractor,
         contractorName,
+        contractor: rawContractor,
+        accepted_by: shift.accepted_by,
         documents,
         customerProfileImage,
         guardProfileImage,
@@ -408,10 +478,149 @@ export default function MyJobApplications() {
   const closeModal = () => setSelectedApp(null);
   const handleClosePaymentAlertModal = () => setShowPaymentAlertModal(false);
 
+  const canEditOrDeleteJob = useCallback(
+    (app) => {
+      if (!canManageJob || !app) return false;
+      const rawStatus = (app.rawShift?.job_status || "").toLowerCase().trim();
+      const computedStatus = (app.status || "").toLowerCase().trim();
+      return (
+        rawStatus === "pending" ||
+        rawStatus === "confirmed" ||
+        computedStatus === "pending" ||
+        computedStatus === "confirmed" ||
+        computedStatus === "waiting for payment"
+      );
+    },
+    [canManageJob]
+  );
+
+  const parseDateTimeSafe = (dateStr) => {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date && !isNaN(dateStr.getTime())) return dateStr;
+    const str = String(dateStr).trim();
+    let p = parse(str, "yyyy-MM-dd HH:mm", new Date());
+    if (isValid(p)) return p;
+    p = parse(str, "yyyy-MM-dd HH:mm:ss", new Date());
+    if (isValid(p)) return p;
+    p = parse(str, "MM-dd-yyyy HH:mm", new Date());
+    if (isValid(p)) return p;
+    const d = new Date(str);
+    if (isValid(d)) return d;
+    return null;
+  };
+
+  const handleOpenEditModal = (app) => {
+    const sDate = parseDateTimeSafe(app.rawShift?.start) || new Date();
+    const eDate =
+      parseDateTimeSafe(app.rawShift?.end) ||
+      new Date(sDate.getTime() + 8 * 60 * 60 * 1000);
+
+    setEditForm({
+      date: sDate,
+      startTime: format(sDate, "HH:mm"),
+      endTime: format(eDate, "HH:mm"),
+    });
+    setEditModalApp(app);
+  };
+
+  const computedEditDuration = useMemo(() => {
+    if (!editForm.date || !editForm.startTime || !editForm.endTime) return null;
+    const startDT = combineDateAndTime(editForm.date, editForm.startTime);
+    let endDT = combineDateAndTime(editForm.date, editForm.endTime);
+    if (!startDT || !endDT) return null;
+    const isOvernight = endDT <= startDT;
+    if (isOvernight) {
+      endDT = new Date(endDT.getTime() + 24 * 60 * 60 * 1000);
+    }
+    const diffHrs = (endDT.getTime() - startDT.getTime()) / (1000 * 60 * 60);
+    return {
+      hours: Number(diffHrs.toFixed(2)),
+      isOvernight,
+    };
+  }, [editForm]);
+
+  const handleSaveEdit = async () => {
+    if (!editModalApp) return;
+    if (!editForm.date || !editForm.startTime || !editForm.endTime) {
+      toast.error("Please provide date, start time, and end time.");
+      return;
+    }
+
+    const startDT = combineDateAndTime(editForm.date, editForm.startTime);
+    let endDT = combineDateAndTime(editForm.date, editForm.endTime);
+    if (!startDT || !endDT) {
+      toast.error("Invalid date or time entered.");
+      return;
+    }
+
+    if (endDT <= startDT) {
+      endDT = new Date(endDT.getTime() + 24 * 60 * 60 * 1000);
+    }
+
+    const diffHours = (endDT.getTime() - startDT.getTime()) / (1000 * 60 * 60);
+    if (diffHours <= 0) {
+      toast.error("End time must be after start time.");
+      return;
+    }
+
+    const payload = {
+      id: editModalApp.id,
+      start: format(startDT, "MM-dd-yyyy HH:mm"),
+      end: format(endDT, "MM-dd-yyyy HH:mm"),
+      admin_id: userId,
+    };
+
+    const res = await submitAction("api/update-roster-time", payload, { method: "POST" });
+    if (res && res.success !== false) {
+      toast.success(res.message || "Job times updated successfully!");
+      setEditModalApp(null);
+      if (selectedApp?.id === editModalApp.id) {
+        setSelectedApp(null);
+      }
+      fetchCustomerSites(currentPage);
+    }
+  };
+
+  const handleOpenDeleteModal = (app) => {
+    setDeleteModalApp(app);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModalApp) return;
+
+    const jobId =
+      deleteModalApp.id ||
+      deleteModalApp.job_id ||
+      deleteModalApp.rawShift?.id ||
+      deleteModalApp.rawShift?.job_id;
+
+    if (!jobId) {
+      toast.error("Job ID not found for this job.");
+      return;
+    }
+
+    const payload = {
+      job_id: jobId,
+    };
+
+    const res = await submitAction("api/payment/cancel", payload, { method: "POST" });
+    if (res && res.success !== false) {
+      toast.success(res.message || "Job deleted successfully!");
+      setDeleteModalApp(null);
+      if (selectedApp?.id === deleteModalApp.id) {
+        setSelectedApp(null);
+      }
+      fetchCustomerSites(currentPage);
+    }
+  };
+
   // Lock background scroll when either modal is open
   useEffect(() => {
     const isAnyModalOpen = Boolean(
-      selectedApp || (isClient && showPaymentAlertModal && waitingForPaymentJobs.length > 0)
+      selectedApp ||
+      (isClient && showPaymentAlertModal && waitingForPaymentJobs.length > 0) ||
+      editModalApp ||
+      deleteModalApp
     );
     if (isAnyModalOpen) {
       document.body.style.overflow = "hidden";
@@ -421,7 +630,7 @@ export default function MyJobApplications() {
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [selectedApp, showPaymentAlertModal, waitingForPaymentJobs.length, isClient]);
+  }, [selectedApp, showPaymentAlertModal, waitingForPaymentJobs.length, isClient, editModalApp, deleteModalApp]);
 
   const handlePayNow = useCallback(
     (appOrJob) => {
@@ -792,24 +1001,28 @@ export default function MyJobApplications() {
           .card-actions-group {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             width: 100%;
+            flex-wrap: wrap;
           }
 
           .card-actions-group .details-btn,
-          .card-actions-group .pay-now-btn {
+          .card-actions-group .pay-now-btn,
+          .card-actions-group .job-edit-btn,
+          .card-actions-group .job-delete-btn {
             border-radius: 30px !important;
-            padding: 0 14px !important;
-            font-size: 12.5px !important;
+            padding: 0 10px !important;
+            font-size: 11.5px !important;
             font-weight: 700 !important;
-            height: 36px !important;
+            height: 34px !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
             white-space: nowrap !important;
-            flex: 1 1 0% !important;
-            width: 100% !important;
+            flex: 1 1 auto !important;
             text-decoration: none !important;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s;
           }
 
           .details-btn {
@@ -825,6 +1038,34 @@ export default function MyJobApplications() {
             border-color: var(--teal-dark) !important;
             box-shadow: 0 6px 14px -2px rgba(10,124,110,0.45);
             color: #fff !important;
+          }
+
+          .job-edit-btn {
+            background: #f0fdf9 !important;
+            border: 1px solid #99f6e4 !important;
+            color: #0f766e !important;
+            box-shadow: 0 2px 6px -1px rgba(15, 118, 110, 0.15);
+          }
+          .job-edit-btn:hover {
+            transform: translateY(-1px);
+            background: #0f766e !important;
+            border-color: #0f766e !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px -2px rgba(15, 118, 110, 0.35);
+          }
+
+          .job-delete-btn {
+            background: #fff1f2 !important;
+            border: 1px solid #fecdd3 !important;
+            color: #e11d48 !important;
+            box-shadow: 0 2px 6px -1px rgba(225, 29, 72, 0.15);
+          }
+          .job-delete-btn:hover {
+            transform: translateY(-1px);
+            background: #e11d48 !important;
+            border-color: #e11d48 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px -2px rgba(225, 29, 72, 0.35);
           }
 
           .pay-now-btn {
@@ -1140,11 +1381,23 @@ export default function MyJobApplications() {
                       <span>{app.location}</span>
                     </div>
 
-                    {app.isAcceptedByContractor && userType === "admin" && (
-                      <div className="mb-1">
-                        <span className="contractor-badge">
-                          <i className="fa-solid fa-building-shield"></i> Resource Partner
-                          {app.contractorName && `: ${app.contractorName}`}
+                    {Boolean(
+                      app.isAcceptedByContractor ||
+                      app.contractorName ||
+                      app.contractor ||
+                      (app.rawShift?.accepted_by != null &&
+                        app.rawShift?.accepted_by !== "null" &&
+                        app.rawShift?.accepted_by !== "")
+                    ) && (
+                      <div className="mb-2">
+                        <span className="contractor-badge" title="Accepted by Contractor">
+                          <i className="fa-solid fa-building-shield"></i> Accepted by:{" "}
+                          <strong>
+                            {app.contractorName ||
+                              app.contractor?.name ||
+                              app.rawShift?.contractor?.name ||
+                              `Contractor #${app.rawShift?.accepted_by || app.accepted_by || app.contractor?.id}`}
+                          </strong>
                         </span>
                       </div>
                     )}
@@ -1203,6 +1456,32 @@ export default function MyJobApplications() {
                         >
                           Details
                         </button>
+                        {canManageJob && canEditOrDeleteJob(app) && (
+                          <>
+                            <button
+                              type="button"
+                              className="btn btn-sm job-edit-btn"
+                              title="Edit Shift Times"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenEditModal(app);
+                              }}
+                            >
+                              <i className="fa-solid fa-pen-to-square me-1"></i> Edit
+                            </button>
+                             <button
+                              type="button"
+                              className="btn btn-sm job-delete-btn"
+                              title="Delete / Cancel Job"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDeleteModal(app);
+                              }}
+                            >
+                              <i className="fa-solid fa-trash-can me-1"></i> Delete
+                            </button> 
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1319,6 +1598,26 @@ export default function MyJobApplications() {
                       },
                     ]
                     : []),
+                  ...(Boolean(
+                    selectedApp.isAcceptedByContractor ||
+                    selectedApp.contractorName ||
+                    selectedApp.contractor ||
+                    (selectedApp.rawShift?.accepted_by != null &&
+                      selectedApp.rawShift?.accepted_by !== "null" &&
+                      selectedApp.rawShift?.accepted_by !== "")
+                  )
+                    ? [
+                        {
+                          icon: "fa-building-shield",
+                          label: "Contractor",
+                          value:
+                            selectedApp.contractorName ||
+                            selectedApp.contractor?.name ||
+                            selectedApp.rawShift?.contractor?.name ||
+                            `Contractor #${selectedApp.rawShift?.accepted_by || selectedApp.accepted_by || selectedApp.contractor?.id}`,
+                        },
+                      ]
+                    : []),
                 ].map((stat) => (
                   <div className="quick-stat-chip" key={stat.label}>
                     <i className={`fa-solid ${stat.icon}`}></i>
@@ -1358,6 +1657,25 @@ export default function MyJobApplications() {
                     <InfoRow icon="fa-arrow-right-from-bracket" label="End Time" value={selectedApp.endDisplay} transform={false} />
                     <InfoRow icon="fa-hourglass-half" label="Total Hours" value={selectedApp.rawShift.hours} />
                     <InfoRow icon="fa-calendar-plus" label="Created At" value={selectedApp.createdAt} />
+                    {Boolean(
+                      selectedApp.isAcceptedByContractor ||
+                      selectedApp.contractorName ||
+                      selectedApp.contractor ||
+                      (selectedApp.rawShift?.accepted_by != null &&
+                        selectedApp.rawShift?.accepted_by !== "null" &&
+                        selectedApp.rawShift?.accepted_by !== "")
+                    ) && (
+                      <InfoRow
+                        icon="fa-building-shield"
+                        label="Accepted By"
+                        value={
+                          selectedApp.contractorName ||
+                          selectedApp.contractor?.name ||
+                          selectedApp.rawShift?.contractor?.name ||
+                          `Contractor #${selectedApp.rawShift?.accepted_by || selectedApp.accepted_by || selectedApp.contractor?.id}`
+                        }
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -1382,31 +1700,62 @@ export default function MyJobApplications() {
                     </div>
                   </div>
                 )}
-                {(userType !== "customer" && userType !== "staff") && (
-                  <div className="col-md-6">
-                    <div className="info-panel h-100">
-                      <h5>
-                        <span className="info-panel-icon" style={{ background: "#dcfce7", color: "#16a34a" }}>
-                          <i className="fa-solid fa-shield-halved"></i>
-                        </span>
-                        Assignment Details
-                      </h5>
-                      <div className="d-flex align-items-center gap-2 mb-3">
-                        <ProfileImage src={selectedApp.guardProfileImage} name={selectedApp.appliedVia} size={40} />
+                <div className={(userType !== "customer" && userType !== "staff") ? "col-md-6" : "col-12"}>
+                  <div className="info-panel h-100">
+                    <h5>
+                      <span className="info-panel-icon" style={{ background: "#dcfce7", color: "#16a34a" }}>
+                        <i className="fa-solid fa-shield-halved"></i>
+                      </span>
+                      Assignment Details
+                    </h5>
+                    <div className="d-flex align-items-center gap-2 mb-3">
+                      <ProfileImage src={selectedApp.guardProfileImage} name={selectedApp.appliedVia} size={40} />
+                      <div className="d-flex flex-column" style={{ minWidth: 0 }}>
+                        <span className="text-muted small" style={{ fontSize: "11px" }}>Assigned Staff</span>
                         <span className="fw-bold">{selectedApp.appliedVia}</span>
                       </div>
-                      {/* <InfoRow icon="fa-user-shield" label="Assigned To" value={selectedApp.appliedVia} /> */}
-                      {userType === "admin" && <InfoRow icon="fa-money-bill" label="Job Amount" value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"} />}
-                      {selectedApp.rawShift.contractor && userType === "admin" && (
-                        <InfoRow
-                          icon="fa-building-user"
-                          label="Resource Partner"
-                          value={selectedApp.rawShift.contractor.name || "N/A"}
-                        />
-                      )}
                     </div>
+
+                    {Boolean(
+                      selectedApp.isAcceptedByContractor ||
+                      selectedApp.contractorName ||
+                      selectedApp.contractor ||
+                      (selectedApp.rawShift?.accepted_by != null &&
+                        selectedApp.rawShift?.accepted_by !== "null" &&
+                        selectedApp.rawShift?.accepted_by !== "")
+                    ) && (
+                      <div className="pt-2 mt-2 border-top">
+                        <div className="d-flex align-items-center gap-2 mt-1">
+                          <ProfileImage
+                            src={selectedApp.contractorProfileImage || selectedApp.rawShift?.contractor?.profile_image}
+                            name={selectedApp.contractorName || selectedApp.contractor?.name || selectedApp.rawShift?.contractor?.name || "Contractor"}
+                            size={36}
+                          />
+                          <div className="d-flex flex-column" style={{ minWidth: 0 }}>
+                            <span className="text-muted small" style={{ fontSize: "11px" }}>
+                              <i className="fa-solid fa-building-shield me-1" style={{ color: "#7c3aed" }}></i>
+                              Accepted by (Contractor)
+                            </span>
+                            <span className="fw-bold text-dark" style={{ fontSize: "13.5px" }}>
+                              {selectedApp.contractorName ||
+                                selectedApp.contractor?.name ||
+                                selectedApp.rawShift?.contractor?.name ||
+                                `Contractor #${selectedApp.rawShift?.accepted_by || selectedApp.accepted_by || selectedApp.contractor?.id}`}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {userType === "admin" && (
+                      <InfoRow
+                        icon="fa-money-bill"
+                        label="Job Amount"
+                        value={selectedApp.rawShift.job_amount ? `$${selectedApp.rawShift.job_amount}` : "N/A"}
+                      />
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* ---------- DESCRIPTION (NEW) ---------- */}
@@ -1422,7 +1771,39 @@ export default function MyJobApplications() {
                 </div>
               )}
               {/* ---------- REQUIRED DOCUMENTS (pill badges) ---------- */}
-              {selectedApp.documents && selectedApp.documents.length > 0 && (
+              
+
+              {/* ---------- SIGN IN / OUT DETAILS (CONFIRMED JOBS) ---------- */}
+              {Boolean(
+                selectedApp.status?.toLowerCase() === "confirmed" ||
+                selectedApp.status?.toLowerCase() === "completed" ||
+                selectedApp.rawShift?.job_status?.toLowerCase() === "confirmed" ||
+                selectedApp.rawShift?.job_status?.toLowerCase() === "completed" ||
+                selectedApp.rawShift?.roster_activity?.signin_time ||
+                selectedApp.rawShift?.signin_time ||
+                selectedApp.rawShift?.signin_status ||
+                selectedApp.rawShift?.roster_activity?.signin_status
+              ) && (
+                <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light mb-4">
+                  <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
+                    <i className="fa-solid fa-clock-rotate-left me-2" style={{ color: '#0A7C6E' }}></i>
+                    Sign In/Out Details
+                  </h5>
+                  <SignInOutDetails
+                    rosterId={selectedApp.rawShift?.id || selectedApp.id}
+                    guardId={
+                      selectedApp.rawShift?.guards?.id ||
+                      selectedApp.rawShift?.assigned_to ||
+                      selectedApp.rawShift?.guard_id ||
+                      selectedApp.rawShift?.accepted_by
+                    }
+                    shift={selectedApp.rawShift}
+                    site={selectedApp.rawShift?.site}
+                  />
+                </div>
+              )}
+
+      {selectedApp.documents && selectedApp.documents.length > 0 && (
                 <div className="mt-4 p-4 bg-white rounded-4 shadow-sm border border-light mb-4">
                   <h5 className="fw-bold d-flex align-items-center mb-3 pb-2 border-bottom" style={{ fontSize: '16px', color: '#1e293b' }}>
                     <i className="fa-solid fa-file-shield me-2" style={{ color: '#0A7C6E' }}></i>
@@ -1447,12 +1828,33 @@ export default function MyJobApplications() {
                   </div>
                 </div>
               )}
+
             </div>
 
             <div
-              className="modal-footer-custom d-flex justify-content-end align-items-center gap-2 flex-nowrap"
+              className="modal-footer-custom d-flex justify-content-end align-items-center gap-2 flex-wrap"
               style={{ padding: "16px 24px" }}
             >
+              {canManageJob && canEditOrDeleteJob(selectedApp) && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal(selectedApp)}
+                    className="btn job-edit-btn px-3 rounded-pill fw-semibold shadow-sm"
+                    style={{ height: "36px" }}
+                  >
+                    <i className="fa-solid fa-pen-to-square me-1"></i> Edit Times
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenDeleteModal(selectedApp)}
+                    className="btn job-delete-btn px-3 rounded-pill fw-semibold shadow-sm"
+                    style={{ height: "36px" }}
+                  >
+                    <i className="fa-solid fa-trash-can me-1"></i> Delete Job
+                  </button>
+                </>
+              )}
               {isClient && selectedApp.status === "Waiting for Payment" && (
                 <button
                   type="button"
@@ -1705,6 +2107,354 @@ export default function MyJobApplications() {
                 onClick={handleClosePaymentAlertModal}
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------- EDIT JOB TIMES MODAL (Admin & Client) ---------- */}
+      {canManageJob && editModalApp && (
+        <div
+          className="modal-overlay modal-overlay-anim"
+          onClick={() => !actionLoading && setEditModalApp(null)}
+          style={{
+            zIndex: 99999,
+            backgroundColor: "rgba(10,20,35,0.65)",
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            className="modal-content modal-content-anim border-0"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: "580px",
+              background: "#ffffff",
+              borderRadius: "20px",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              boxShadow: "0 25px 60px -15px rgba(10,25,48,0.45)",
+            }}
+          >
+            {/* Header */}
+            <div
+              className="modal-header-custom d-flex justify-content-between align-items-center"
+              style={{ padding: "20px 24px" }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: "19px",
+                  fontWeight: "700",
+                  letterSpacing: "0.2px",
+                  color: "#fff",
+                  position: "relative",
+                  zIndex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <i className="fa-solid fa-pen-to-square" style={{ color: "#2dd4bf" }}></i>
+                Edit Job Times
+              </h3>
+              <button
+                onClick={() => !actionLoading && setEditModalApp(null)}
+                className="modal-close-btn"
+                disabled={actionLoading}
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="modal-body" style={{ padding: "24px", overflowY: "auto", maxHeight: "75vh" }}>
+              {/* Job summary chip */}
+              <div
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "14px",
+                  padding: "14px 18px",
+                  marginBottom: "20px",
+                }}
+              >
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <h6 className="fw-bold mb-0 text-dark" style={{ fontSize: "15px" }}>
+                    {editModalApp.title}
+                  </h6>
+                  <span
+                    className="badge"
+                    style={{
+                      backgroundColor: "rgba(10, 124, 110, 0.1)",
+                      color: "#0A7C6E",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                    }}
+                  >
+                    #{editModalApp.id} • {editModalApp.status}
+                  </span>
+                </div>
+                <div className="text-muted small">
+                  <i className="fa-solid fa-location-dot me-1 text-danger"></i>
+                  {editModalApp.location}
+                </div>
+              </div>
+
+              {/* Form fields */}
+              <div className="row g-3">
+                <div className="col-12">
+                  <label className="form-label fw-bold small text-muted text-uppercase mb-1">
+                    <i className="fa-regular fa-calendar-days me-1 text-teal"></i> Shift Date
+                  </label>
+                  <DatePicker
+                    selected={editForm.date}
+                    onChange={(date) => setEditForm((prev) => ({ ...prev, date }))}
+                    dateFormat="dd/MM/yyyy"
+                    className="form-control"
+                    placeholderText="Select date"
+                  />
+                </div>
+
+                <div className="col-sm-6">
+                  <label className="form-label fw-bold small text-muted text-uppercase mb-1">
+                    <i className="fa-regular fa-clock me-1 text-teal"></i> Start Time (24h)
+                  </label>
+                  <input
+                    type="time"
+                    className="form-control fw-semibold"
+                    value={editForm.startTime}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, startTime: e.target.value }))
+                    }
+                    style={{ height: "42px", fontSize: "14px" }}
+                  />
+                </div>
+
+                <div className="col-sm-6">
+                  <label className="form-label fw-bold small text-muted text-uppercase mb-1">
+                    <i className="fa-regular fa-clock me-1 text-teal"></i> End Time (24h)
+                  </label>
+                  <input
+                    type="time"
+                    className="form-control fw-semibold"
+                    value={editForm.endTime}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, endTime: e.target.value }))
+                    }
+                    style={{ height: "42px", fontSize: "14px" }}
+                  />
+                </div>
+              </div>
+
+              {/* Live duration calculation banner */}
+              {computedEditDuration && (
+                <div
+                  className="mt-3 p-3 rounded-3 d-flex align-items-center justify-content-between flex-wrap gap-2"
+                  style={{
+                    background: computedEditDuration.isOvernight ? "#eff6ff" : "#f0fdf9",
+                    border: `1px solid ${computedEditDuration.isOvernight ? "#bfdbfe" : "#a7f3d0"}`,
+                  }}
+                >
+                  <div className="d-flex align-items-center gap-2">
+                    <i
+                      className={`fa-solid ${
+                        computedEditDuration.isOvernight ? "fa-moon text-primary" : "fa-clock text-teal"
+                      }`}
+                    ></i>
+                    <span className="small fw-bold text-dark">
+                      Duration: {computedEditDuration.hours} hrs
+                      {computedEditDuration.isOvernight && " (Overnight Shift)"}
+                    </span>
+                  </div>
+                  {computedEditDuration.hours < 4 && (
+                    <span className="badge bg-warning-subtle text-warning border border-warning-subtle" style={{ fontSize: "11px" }}>
+                      Min 4 hrs recommended
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div
+              className="modal-footer-custom d-flex justify-content-end align-items-center gap-2"
+              style={{ padding: "16px 24px", borderTop: "1px solid #eef2f7" }}
+            >
+              <button
+                type="button"
+                onClick={() => !actionLoading && setEditModalApp(null)}
+                className="btn btn-light px-4 rounded-pill fw-semibold"
+                disabled={actionLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                className="btn btn-primary-custom px-4 rounded-pill fw-semibold shadow-sm"
+                disabled={actionLoading}
+              >
+                {actionLoading ? (
+                  <>
+                    <i className="fa-solid fa-spinner fa-spin me-2"></i> Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="fa-solid fa-check me-1"></i> Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------- DELETE JOB CONFIRMATION MODAL (Admin & Client) ---------- */}
+      {canManageJob && deleteModalApp && (
+        <div
+          className="modal-overlay modal-overlay-anim"
+          onClick={() => !actionLoading && setDeleteModalApp(null)}
+          style={{
+            zIndex: 99999,
+            backgroundColor: "rgba(10,20,35,0.65)",
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            className="modal-content modal-content-anim border-0"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              background: "#ffffff",
+              borderRadius: "20px",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              boxShadow: "0 25px 60px -15px rgba(10,25,48,0.45)",
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                background: "linear-gradient(120deg, #450a0a, #7f1d1d 70%, #991b1b)",
+                padding: "20px 24px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: "19px",
+                  fontWeight: "700",
+                  letterSpacing: "0.2px",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <i className="fa-solid fa-triangle-exclamation" style={{ color: "#fca5a5" }}></i>
+                Delete / Cancel Job
+              </h3>
+              <button
+                onClick={() => !actionLoading && setDeleteModalApp(null)}
+                className="modal-close-btn"
+                disabled={actionLoading}
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="modal-body" style={{ padding: "24px" }}>
+              <p className="text-dark fw-medium mb-3" style={{ fontSize: "14.5px" }}>
+                Are you sure you want to cancel and delete this job?
+              </p>
+
+              {/* Warning card */}
+              <div
+                className="p-3 mb-3 rounded-3"
+                style={{
+                  background: "#fff1f2",
+                  border: "1px solid #fecdd3",
+                  color: "#9f1239",
+                  fontSize: "13px",
+                }}
+              >
+                <i className="fa-solid fa-circle-exclamation me-2"></i>
+                This action will cancel the job hold/payment intent and permanently remove this shift.
+              </div>
+
+              {/* Job details box */}
+              <div
+                className="p-3 rounded-3"
+                style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
+              >
+                <div className="fw-bold text-dark mb-1" style={{ fontSize: "14px" }}>
+                  {deleteModalApp.title}
+                </div>
+                <div className="text-muted small mb-2">
+                  <i className="fa-solid fa-location-dot me-1 text-danger"></i>
+                  {deleteModalApp.location}
+                </div>
+                <div className="d-flex justify-content-between small text-muted pt-2 border-top">
+                  <span>
+                    <i className="fa-regular fa-calendar-days me-1"></i>
+                    {deleteModalApp.formattedDate}
+                  </span>
+                  <span>
+                    <i className="fa-regular fa-clock me-1"></i>
+                    {deleteModalApp.timeWindow || deleteModalApp.pillText}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div
+              className="modal-footer-custom d-flex justify-content-end align-items-center gap-2"
+              style={{ padding: "16px 24px", borderTop: "1px solid #eef2f7" }}
+            >
+              <button
+                type="button"
+                onClick={() => !actionLoading && setDeleteModalApp(null)}
+                className="btn btn-light px-4 rounded-pill fw-semibold"
+                disabled={actionLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="btn btn-danger px-4 rounded-pill fw-semibold shadow-sm"
+                style={{ backgroundColor: "#e11d48", borderColor: "#e11d48" }}
+                disabled={actionLoading}
+              >
+                {actionLoading ? (
+                  <>
+                    <i className="fa-solid fa-spinner fa-spin me-2"></i> Deleting...
+                  </>
+                ) : (
+                  <>
+                    <i className="fa-solid fa-trash-can me-1"></i> Yes, Delete Job
+                  </>
+                )}
               </button>
             </div>
           </div>

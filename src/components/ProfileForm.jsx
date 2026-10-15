@@ -21,6 +21,7 @@ export default function ProfileForm({
   submitText = "Save Changes",
   showErrors = false,
   isStaffooStaff = false,
+  emailServerError = "",
 }) {
   const parseDisplayDate = (str) => {
     if (!str || typeof str !== "string") return null;
@@ -191,24 +192,21 @@ export default function ProfileForm({
                   </span>
                   <input
                     type="email"
-                    className={`form-control border bg-light ps-2 shadow-none ${showErrors && !formData.email ? 'shake-red' : ''}`}
+                    name="email"
+                    className={`form-control border bg-light ps-2 shadow-none ${(showErrors && !formData.email) || emailServerError ? 'shake-red' : ''}`}
                     id="email"
                     placeholder="user@example.com"
                     value={formData.email || ""}
                     onChange={onChange}
-                    readOnly={isEdit}
-                    disabled={isEdit}
                     required
                     style={{
                       borderRadius: "0 0.375rem 0.375rem 0",
-                      cursor: isEdit ? "not-allowed" : "text",
-                      opacity: isEdit ? 0.8 : 1,
                     }}
                   />
                 </div>
-                {isEdit ? (
-                  <div className="text-muted small mt-1">
-                    <i className="fa-solid fa-lock me-1"></i> Email cannot be changed.
+                {emailServerError ? (
+                  <div className="text-danger small mt-1">
+                    <i className="fa-solid fa-circle-exclamation me-1"></i>{emailServerError}
                   </div>
                 ) : (
                   showErrors && !formData.email && (

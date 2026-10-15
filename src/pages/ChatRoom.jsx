@@ -113,12 +113,13 @@ const ChatRoom = () => {
 
   // Resolve user picker endpoint with high pagination limit so active and inactive users are all fetched
   const userEndpoint = useMemo(() => {
+    if (category === "admin") return "api/admin/support-admin";
     if (userType === "admin") {
       if (category === "staff") return "api/admin/get-staff?per_page=1000&limit=1000";
       if (category === "customers") return "api/admin/get-customers?per_page=1000&limit=1000";
       if (category === "contractors") return "api/admin/get-contractors?per_page=1000&limit=1000";
     }
-    return "api/admin?per_page=1000&limit=1000";
+    return "api/admin/support-admin";
   }, [userType, category]);
 
   const { data: usersData, loading: loadingUsers } = useFetch(userEndpoint, {
@@ -318,8 +319,16 @@ const ChatRoom = () => {
       if (Array.isArray(res)) return res;
       if (Array.isArray(res.guards)) return res.guards;
       if (res.data && Array.isArray(res.data.guards)) return res.data.guards;
+      if (Array.isArray(res.admins)) return res.admins;
+      if (res.data && Array.isArray(res.data.admins)) return res.data.admins;
+      if (Array.isArray(res.support_admins)) return res.support_admins;
+      if (res.data && Array.isArray(res.data.support_admins)) return res.data.support_admins;
+      if (Array.isArray(res.users)) return res.users;
+      if (res.data && Array.isArray(res.data.users)) return res.data.users;
       if (Array.isArray(res.data)) return res.data;
       if (res.data && Array.isArray(res.data.data)) return res.data.data;
+      if (res.data && typeof res.data === "object" && res.data.id) return [res.data];
+      if (typeof res === "object" && res.id) return [res];
       return [];
     };
 
@@ -532,17 +541,19 @@ const ChatRoom = () => {
     [token, dispatch, refetchConversations],
   );
 
-  // Non-admin: List of admins (Staffoo Admin Support + any admins from api/admin + past conversations)
+  // List of admins (from api/admin/support-admin + past conversations)
   const adminUsersList = useMemo(() => {
-    if (userType === "admin") return [];
+    if (userType === "admin" && category !== "admin") return [];
     const list = [];
     const seen = new Set();
 
-    // Staffoo Admin Support (id: 1)
-    seen.add("1");
-    list.push(DEFAULT_ADMIN);
+    // Exclude current logged in user so they don't see themselves in the admin list
+    const myIdStr = String(currentUser?.id || "");
+    if (myIdStr) {
+      seen.add(myIdStr);
+    }
 
-    // Users fetched from api/admin
+    // Users fetched from api/admin/support-admin
     (allUsers || []).forEach((u) => {
       const uData = u?.data || u;
       if (uData && uData.id) {
@@ -575,12 +586,17 @@ const ChatRoom = () => {
       }
     });
 
-    return list;
-  }, [userType, allUsers, conversations]);
+    // If list is empty and user is not admin, fallback to DEFAULT_ADMIN
+    if (list.length === 0 && userType !== "admin") {
+      list.push(DEFAULT_ADMIN);
+    }
 
-  // Non-admin conversation list: maps each admin to existing conversation or a new conversation stub
-  const nonAdminConvs = useMemo(() => {
-    if (userType === "admin") return [];
+    return list;
+  }, [userType, category, allUsers, conversations, currentUser?.id]);
+
+  // Support admin conversation list: maps each admin to existing conversation or a new conversation stub
+  const adminConvs = useMemo(() => {
+    if (userType === "admin" && category !== "admin") return [];
     const mapped = adminUsersList.map((admin) => {
       const existingConv = (conversations || []).find(
         (c) => String(c?.user?.id) === String(admin.id),
@@ -608,7 +624,7 @@ const ChatRoom = () => {
         (u.phone && u.phone.toLowerCase().includes(q))
       );
     });
-  }, [userType, adminUsersList, conversations, search]);
+  }, [userType, category, adminUsersList, conversations, search]);
 
   const filteredConvs = useMemo(() => {
     return (conversations || []).filter((conv) => {
@@ -626,9 +642,11 @@ const ChatRoom = () => {
     });
   }, [conversations, staffLookup, search, getStaffAffiliation]);
 
-  // When admin: display filtered existing conversations.
-  // When non-admin: display list of admins.
-  const displayConvs = userType === "admin" ? filteredConvs : nonAdminConvs;
+  const isSupportAdminView = category === "admin" || userType !== "admin";
+
+  // When viewing admin support: display list of support admins.
+  // When admin viewing other categories (staff, customers, contractors): display filtered existing conversations.
+  const displayConvs = isSupportAdminView ? adminConvs : filteredConvs;
 
   const handleSelectConv = useCallback(
     (conv) => {
@@ -652,14 +670,14 @@ const ChatRoom = () => {
     [activeConversation, dispatch, fetchMessages, markMessagesAsRead],
   );
 
-  // Non-admin support flow: auto-select existing admin chat or auto-initialize support thread
+  // Support flow: auto-select existing admin chat or auto-initialize support thread
   useEffect(() => {
-    if (userType && userType !== "admin") {
+    if (isSupportAdminView) {
       if (!activeConversation && displayConvs.length > 0) {
         handleSelectConv(displayConvs[0]);
       }
     }
-  }, [userType, displayConvs, activeConversation, handleSelectConv]);
+  }, [isSupportAdminView, displayConvs, activeConversation, handleSelectConv]);
 
   const askDeleteMessage = (message) => {
     setMessageToDelete(message);
@@ -1183,7 +1201,7 @@ const ChatRoom = () => {
               </span>
             </div>
 
-            {userType === "admin" && (
+            {userType === "admin" && category !== "admin" && (
               <div className="position-relative" ref={pickerRef}>
               <button
                 className="chatroom-plus-btn"
@@ -1382,7 +1400,7 @@ const ChatRoom = () => {
           <div className="px-3 py-2">
             <input
               className="form-control form-control-sm bg-light border-0 rounded-3"
-              placeholder={userType === "admin" ? "Search conversations..." : "Search support admins..."}
+              placeholder={isSupportAdminView ? "Search support admins..." : "Search conversations..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -1390,11 +1408,11 @@ const ChatRoom = () => {
 
           {/* Conversation list */}
           <div className="chatroom-conv-list">
-            {loadingConv && userType === "admin" ? (
+            {loadingConv && !isSupportAdminView ? (
               <div className="p-3 text-center text-muted small">Loading conversations…</div>
             ) : displayConvs.length === 0 ? (
               <div className="p-4 text-center text-muted small" style={{ textTransform: "none" }}>
-                {userType !== "admin"
+                {isSupportAdminView
                   ? (search ? "No support admins match your search." : (loadingUsers ? "Loading support admins…" : "No support admins available."))
                   : (search ? "No conversations match your search." : "No conversations yet. Press + to start a chat with active or inactive users.")}
               </div>

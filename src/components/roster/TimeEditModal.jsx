@@ -1,5 +1,7 @@
 import React from "react";
 import { format } from "date-fns";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const CompactTimePicker = ({ value, onChange }) => {
   const h = value ? value.split(":")[0] : "";
@@ -114,9 +116,9 @@ export default function TimeEditModal({
       >
         <div style={{ padding: "24px 28px", borderBottom: "1px solid #eef2f7", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>Edit Job Times</h3>
+            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700 }}>Edit Job Times & Date</h3>
             <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: "0.95rem", textTransform: "none" }}>
-              Update the times for this roster entry. Site, date, and staff assignment stay unchanged.
+              Update the date and times for this roster entry. Site and staff assignment stay unchanged.
             </p>
           </div>
           <button
@@ -139,9 +141,8 @@ export default function TimeEditModal({
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", padding: "24px 28px", overflowY: "auto" }}>
 
-          {/* Box 1 Container - Added height: 100% */}
+          {/* Box 1 Container */}
           <div style={{ minWidth: 0, height: "100%" }}>
-            {/* Added height: 100% and boxSizing: border-box */}
             <div style={{ background: "#f8fafc", borderRadius: "18px", padding: "22px", border: "1px solid #e2e8f0", height: "100%", boxSizing: "border-box" }}>
               <div style={{ marginBottom: "20px" }}>
                 <div style={{ fontSize: "1rem", fontWeight: 600, color: "#6b7280" }}>Site</div>
@@ -157,45 +158,76 @@ export default function TimeEditModal({
 
               <div style={{ display: "grid", gap: "16px" }}>
                 <div>
-                  <div style={{ fontSize: "1rem", fontWeight: 600, color: "#6b7280", marginBottom: "6px" }}>Date</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#111827" }}>{modal?.dateStr || "No date"}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: "1rem", fontWeight: 600, color: "#6b7280", marginBottom: "6px" }}>Current timing</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f766e" }}>
+                  <div style={{ fontSize: "1rem", fontWeight: 600, color: "#6b7280", marginBottom: "6px" }}>Current schedule</div>
+                  <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "#111827" }}>{modal?.dateStr || "No date"}</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 700, color: "#0f766e", marginTop: "4px" }}>
                     {shift?.startDate && shift?.endDate ? `${format(shift.startDate, "HH:mm")} – ${format(shift.endDate, "HH:mm")}` : "Not available"}
                   </div>
                 </div>
-                {/* <div>
-                  <div style={{ fontSize: "1rem", fontWeight: 600, color: "#6b7280", marginBottom: "6px" }}>Staff Assignment</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#111827" }}>{shift?.guards?.name || "Unassigned"}</div>
-                </div> */}
               </div>
             </div>
           </div>
 
-          {/* Box 2 Container - Added height: 100% */}
+          {/* Box 2 Container */}
           <div style={{ minWidth: 0, height: "100%" }}>
-            {/* Added height: 100% and boxSizing: border-box */}
             <div style={{ background: "#ffffff", borderRadius: "18px", padding: "22px", border: "1px solid #e5e8ef", height: "100%", boxSizing: "border-box" }}>
-              <div style={{ marginBottom: "16px", fontSize: "0.95rem", fontWeight: 900, color: "#111827", }}>Edit schedule</div>
+              <div style={{ marginBottom: "16px", fontSize: "0.95rem", fontWeight: 900, color: "#111827" }}>Edit schedule</div>
               <div style={{ display: "grid", gap: "16px" }}>
-                <label style={{ fontSize: "0.9rem", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "block" }}>Start time (24-Hour Format)</label>
-                <CompactTimePicker
-                  value={editForm.startTime}
-                  onChange={(val) => {
-                    clearTimeEditError?.();
-                    setEditForm((prev) => ({ ...prev, startTime: val }));
-                  }}
-                />
-                <label style={{ fontSize: "0.9rem", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "block" }}>End time (24-Hour Format)</label>
-                <CompactTimePicker
-                  value={editForm.endTime}
-                  onChange={(val) => {
-                    clearTimeEditError?.();
-                    setEditForm((prev) => ({ ...prev, endTime: val }));
-                  }}
-                />
+                <div>
+                  <label style={{ fontSize: "0.9rem", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <i className="fa-regular fa-calendar-days" style={{ color: "#0A7C6E" }}></i> Shift Date
+                  </label>
+                  <DatePicker
+                    selected={editForm.date || (shift?.startDate ? new Date(shift.startDate) : new Date())}
+                    onChange={(d) => {
+                      clearTimeEditError?.();
+                      setEditForm((prev) => ({ ...prev, date: d }));
+                    }}
+                    dateFormat="dd/MM/yyyy"
+                    className="form-control"
+                    placeholderText="dd/mm/yyyy"
+                    customInput={
+                      <input
+                        style={{
+                          width: "100%",
+                          height: "44px",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "12px",
+                          padding: "0 14px",
+                          fontSize: "0.95rem",
+                          fontWeight: "600",
+                          color: "#111827",
+                          backgroundColor: "#fff",
+                          cursor: "pointer",
+                        }}
+                      />
+                    }
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.9rem", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <i className="fa-regular fa-clock" style={{ color: "#0A7C6E" }}></i> Start time (24-Hour Format)
+                  </label>
+                  <CompactTimePicker
+                    value={editForm.startTime}
+                    onChange={(val) => {
+                      clearTimeEditError?.();
+                      setEditForm((prev) => ({ ...prev, startTime: val }));
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.9rem", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <i className="fa-regular fa-clock" style={{ color: "#0A7C6E" }}></i> End time (24-Hour Format)
+                  </label>
+                  <CompactTimePicker
+                    value={editForm.endTime}
+                    onChange={(val) => {
+                      clearTimeEditError?.();
+                      setEditForm((prev) => ({ ...prev, endTime: val }));
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -208,7 +240,7 @@ export default function TimeEditModal({
               {timeEditError}
             </div>
           ) : (
-            <div style={{ color: "#6b7280", fontSize: "0.92rem", textTransform: "none" }}>Only time values may be changed here.</div>
+            <div style={{ color: "#6b7280", fontSize: "0.92rem", textTransform: "none" }}>Date and time values may be changed here.</div>
           )}
           <div style={{ display: "flex", gap: "12px" }}>
             <button

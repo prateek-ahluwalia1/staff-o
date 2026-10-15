@@ -508,6 +508,7 @@ const ManageStaff = () => {
   );
 
   const [formData, setFormData] = useState(defaultFormState);
+  const [emailServerError, setEmailServerError] = useState("");
 
   const staffDocuments = useMemo(() => {
     if (!editingUser) return [];
@@ -551,6 +552,7 @@ const ManageStaff = () => {
   // ---- ProfileForm change handler ----
   const handleProfileFormChange = useCallback((e) => {
     const { id, value } = e.target;
+    setEmailServerError("");
     setFormData((prev) => ({
       ...prev,
       [id]: value,
@@ -655,6 +657,7 @@ const ManageStaff = () => {
     setIsModalOpen(false);
     setEditingUser(null);
     setIsViewMode(false);
+    setEmailServerError("");
   };
 
   // --- Document helpers ---
@@ -1240,9 +1243,10 @@ const ManageStaff = () => {
       delete payload.is_control_room_license;
     }
 
+    setEmailServerError("");
     try {
       const res = await submit(url, payload, { method });
-      if (res.success) {
+      if (res?.success) {
         toast.success(editingUser ? "Staff member updated successfully!" : "Staff member created successfully!");
         refetch();
         const createdUser = res.data?.user || res.data?.guard || res.data || res.user || (res.id ? res : { id: res.data?.id, ...payload });
@@ -1278,6 +1282,10 @@ const ManageStaff = () => {
         };
         setEditingUser(userToSet);
         setActiveModalTab("documents");
+      } else {
+        if (/already|taken|exist/i.test(res?.error) || res?.data?.errors?.email) {
+          setEmailServerError("Email already exists.");
+        }
       }
     } catch (err) {
       toast.error(err.message || "Submission failed");
@@ -1961,6 +1969,7 @@ const ManageStaff = () => {
                       userType="staff"
                       onChangePhone={() => { }}
                       isPhoneVerified={false}
+                      emailServerError={emailServerError}
                       footer={<></>}
                     />
                   ) : activeModalTab === "documents" ? (

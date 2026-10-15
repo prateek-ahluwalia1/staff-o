@@ -450,6 +450,7 @@ const StaffooStaff = () => {
         date_of_birth: "", origin_country: "", is_control_room_license: 0,
     }), []);
     const [formData, setFormData] = useState(defaultFormState);
+    const [emailServerError, setEmailServerError] = useState("");
     const [showErrors, setShowErrors] = useState(false);
     const [showDocErrors, setShowDocErrors] = useState(false);
 
@@ -500,6 +501,7 @@ const StaffooStaff = () => {
 
     const handleProfileFormChange = useCallback((e) => {
         const { id, value } = e.target;
+        setEmailServerError("");
         setFormData(prev => ({ ...prev, [id]: value, ...(id === "address" ? { coordinates: "", city: "", state: "", country: "" } : {}) }));
     }, []);
 
@@ -621,7 +623,7 @@ const StaffooStaff = () => {
         }
         setIsModalOpen(true);
     };
-    const closeModal = () => { setIsModalOpen(false); setEditingUser(null); setIsViewMode(false); };
+    const closeModal = () => { setIsModalOpen(false); setEditingUser(null); setIsViewMode(false); setEmailServerError(""); };
 
     const openDocumentModal = (doc) => {
         setSelectedDoc(doc);
@@ -1049,9 +1051,10 @@ const StaffooStaff = () => {
         delete payload.password;
         payload.user_id = 1;
         payload.is_control_room_license = formData.is_control_room_license ? 1 : 0;
+        setEmailServerError("");
         try {
             const res = await submit(url, payload, { method });
-            if (res.success) {
+            if (res?.success) {
                 toast.success(editingUser ? "Staff member updated successfully!" : "Staff member created successfully!");
                 refetch();
                 const createdUser = res.data?.user || res.data?.guard || res.data || res.user || (res.id ? res : { id: res.data?.id, ...payload });
@@ -1087,6 +1090,10 @@ const StaffooStaff = () => {
                 };
                 setEditingUser(userToSet);
                 setActiveModalTab("documents");
+            } else {
+                if (/already|taken|exist/i.test(res?.error) || res?.data?.errors?.email) {
+                    setEmailServerError("Email already exists.");
+                }
             }
         } catch (err) { toast.error(err.message || "Submission failed"); }
     };
@@ -1493,6 +1500,7 @@ const StaffooStaff = () => {
                                             onChangePhone={() => { }}
                                             isPhoneVerified={false}
                                             isStaffooStaff={true}
+                                            emailServerError={emailServerError}
                                             footer={<></>}
                                         />
                                     ) : activeModalTab === "documents" ? (

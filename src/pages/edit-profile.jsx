@@ -466,6 +466,7 @@ export default function EditProfile() {
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [activeTab, setActiveTab] = useState("personal");
+  const [emailServerError, setEmailServerError] = useState("");
 
   const isOperatingState = useCallback((stateStr) => {
     if (!stateStr) return true;
@@ -1169,7 +1170,7 @@ export default function EditProfile() {
 
       const payload = new FormData();
       Object.keys(formData).forEach((key) => {
-        if (key === "profile_image" || key === "email") return;
+        if (key === "profile_image") return;
         if (userType === "admin" && (key === "name" || key === "phone" || key === "gender" || key === "date_of_birth" || key === "staff_document_type" || key === "security_license_no" || key === "is_control_room_license")) return;
         if ((userType !== "staff" || !isStaffooStaff) && (key === "is_control_room_license" || key === "staff_document_type" || key === "date_of_birth" || key === "origin_country")) return;
 
@@ -1186,8 +1187,15 @@ export default function EditProfile() {
         }
       });
 
+      setEmailServerError("");
       const res = await submit(`api/user-update/${updateUserId}`, payload, { method: "POST" });
-      if (res === undefined) return;
+      if (!res || res.success === false) {
+        if (/already|taken|exist/i.test(res?.error) || res?.data?.errors?.email) {
+          setEmailServerError("Email already exists.");
+        }
+        return;
+      }
+      toast.success("Profile updated successfully!");
       refetch();
 
       if (userType === "admin") {
@@ -2181,9 +2189,14 @@ export default function EditProfile() {
           showPhoneOtp={true}
           showErrors={showErrors}
           isStaffooStaff={isStaffooStaff}
+          emailServerError={emailServerError}
           onChange={(e) => {
             const { id, name, value } = e.target;
             const fieldId = id || name;
+
+            if (fieldId === "email" && emailServerError) {
+              setEmailServerError("");
+            }
 
             if (fieldId === "address") {
               if (isSelectingAddress.current) return;

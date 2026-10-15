@@ -76,6 +76,13 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
   const shift = modal?.shift;
   const site = modal?.site;
 
+  const contractorName =
+    shift?.contractor?.name ||
+    shift?.contractor?.contractor?.company_name ||
+    shift?.contractor?.company_name ||
+    (shift?.contractor?.first_name ? `${shift.contractor.first_name} ${shift.contractor.last_name || ""}`.trim() : null) ||
+    (shift?.accepted_by ? `Contractor #${shift.accepted_by}` : null);
+
   const visibleTabs = SIDEBAR_TABS.filter((tab) => {
     if (!guardId && (tab.id === "operation_notes" || tab.id === "rating")) {
       return false;
@@ -276,6 +283,55 @@ export default function ActivityDashboardModal({ modal, closeModal }) {
                   <div style={{ marginTop: 4, color: "#888" }}>
                     {shift?.guards?.name || "Unassigned"}
                   </div>
+                  {contractorName && (
+                    <div
+                      style={{
+                        marginTop: 4,
+                        color: "#0A7C6E",
+                        fontWeight: 600,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                        fontSize: "11.5px",
+                      }}
+                      title={`Accepted by Contractor: ${contractorName}`}
+                    >
+                      <i className="fa fa-handshake-o fas fa-handshake" style={{ fontSize: "12px", color: "#0A7C6E" }}></i>
+                      <span>{contractorName}</span>
+                    </div>
+                  )}
+                  {(() => {
+                    const rawSt = String(shift?.job_status || shift?.status || "").toLowerCase().trim();
+                    const isCanc =
+                      ["cancelled", "canceled", "deleted", "cancel", "delete"].includes(rawSt) ||
+                      Number(shift?.is_cancelled) === 1 ||
+                      Number(shift?.is_deleted) === 1 ||
+                      Boolean(shift?.deleted_at) ||
+                      Boolean(shift?.cancelled_at);
+                    if (!isCanc) return null;
+                    return (
+                      <div style={{ marginTop: 6 }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            background: "#fee2e2",
+                            color: "#b91c1c",
+                            border: "1px solid rgba(185, 28, 28, 0.2)",
+                            padding: "2px 8px",
+                            borderRadius: "4px",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          <i className="fa-solid fa-ban" style={{ fontSize: "10px" }}></i>
+                          {rawSt.includes("delete") ? "Deleted Job" : "Cancelled Job"}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}

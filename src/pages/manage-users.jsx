@@ -1806,6 +1806,107 @@ const ManageUsers = () => {
     }
   };
 
+  const [togglingApprovalId, setTogglingApprovalId] = useState(null);
+
+  const isUserApproved = (user) => {
+    if (!user) return false;
+    const candidates = [
+      user.admin_approved,
+      user.is_approved,
+      user.approved,
+      user.customer?.admin_approved,
+      user.customer?.is_approved,
+      user.contractor?.admin_approved,
+      user.contractor?.is_approved,
+      user.staff?.admin_approved,
+      user.staff?.is_approved,
+    ];
+    const raw = candidates.find((v) => v !== undefined && v !== null);
+    return [1, "1", true, "true"].includes(raw);
+  };
+
+  const handleToggleApproval = async (user) => {
+    if (!user?.id) return;
+    const nextApproved = isUserApproved(user) ? 0 : 1;
+    setTogglingApprovalId(user.id);
+    const res = await submit(
+      `api/user-approved-status/${user.id}`,
+      { admin_approved: nextApproved },
+      { method: "POST", headers: { id: user.id } }
+    );
+    setTogglingApprovalId(null);
+    if (!res || res.success === false) return;
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === user.id
+          ? {
+              ...u,
+              admin_approved: nextApproved,
+              is_approved: nextApproved,
+              customer: u.customer ? { ...u.customer, admin_approved: nextApproved } : u.customer,
+              contractor: u.contractor ? { ...u.contractor, admin_approved: nextApproved } : u.contractor,
+              staff: u.staff ? { ...u.staff, admin_approved: nextApproved } : u.staff,
+            }
+          : u
+      )
+    );
+    toast.success(`User ${nextApproved ? "approved" : "unapproved"} successfully!`);
+    refetch();
+  };
+
+  const USER_TYPE_LABELS = { customer: "Client", contractor: "Resource Partner", staff: "Staff" };
+
+  const getCurrentUserType = () => (activeTab === "sub_contractor" ? "contractor" : activeTab);
+
+  const getChangeTypeOptions = (currentType) =>
+    ["customer", "contractor", "staff"].filter((t) => t !== currentType);
+
+  const [changingTypeId, setChangingTypeId] = useState(null);
+  const [changeTypeTarget, setChangeTypeTarget] = useState(null); // { user, newType }
+
+  // Lock background scroll when the change-type confirm modal is open
+  useEffect(() => {
+    if (changeTypeTarget) {
+      document.body.style.overflow = "hidden";
+    } else if (!isModalOpen && !showDocModal && !isDeleteModalOpen && !showPhoneModal) {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      if (!isModalOpen && !showDocModal && !isDeleteModalOpen && !showPhoneModal) {
+        document.body.style.overflow = "unset";
+      }
+    };
+  }, [changeTypeTarget, isModalOpen, showDocModal, isDeleteModalOpen, showPhoneModal]);
+
+  const requestChangeUserType = (user, newType) => {
+    const currentType = getCurrentUserType();
+    if (!user?.id || !newType || newType === currentType) return;
+    setChangeTypeTarget({ user, newType });
+  };
+
+  const closeChangeTypeModal = () => {
+    if (changingTypeId) return;
+    setChangeTypeTarget(null);
+  };
+
+  const confirmChangeUserType = async () => {
+    if (!changeTypeTarget) return;
+    const { user, newType } = changeTypeTarget;
+
+    setChangingTypeId(user.id);
+    const res = await submit(
+      "api/change-user-type",
+      { user_id: user.id, user_type: newType },
+      { method: "POST" }
+    );
+    setChangingTypeId(null);
+    setChangeTypeTarget(null);
+    if (!res || res.success === false) return;
+
+    toast.success(`User type changed to ${USER_TYPE_LABELS[newType]} successfully!`);
+    refetch();
+  };
+
   const openDeleteModal = (user) => {
     setDeleteTarget(user);
     setIsDeleteModalOpen(true);
@@ -2540,8 +2641,10 @@ const ManageUsers = () => {
                   <th style={{ textAlign: "left" }}>Phone</th>
                 )}
                 <th style={{ textAlign: "left" }}>Status</th>
+                <th style={{ textAlign: "center" }}>Approved</th>
                 <th style={{ textAlign: "left" }}>Location</th>
                 <th style={{ textAlign: "left" }}>Created At</th>
+                <th style={{ textAlign: "center" }}>Change Type</th>
                 <th style={{ textAlign: "center" }}>Actions</th>
               </tr>
             </thead>
@@ -2602,6 +2705,19 @@ const ManageUsers = () => {
                           {status.charAt(0).toUpperCase() + status.slice(1)}
                         </span>
                       </td>
+                      <td style={{ textAlign: "center" }}>
+                        <div className="form-check form-switch d-flex justify-content-center m-0">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            role="switch"
+                            title={isUserApproved(user) ? "Approved" : "Not Approved"}
+                            checked={isUserApproved(user)}
+                            disabled={togglingApprovalId === user.id}
+                            onChange={() => handleToggleApproval(user)}
+                          />
+                        </div>
+                      </td>
                       <td>
                         {userCity && displayState ? (
                           <>
@@ -2620,6 +2736,28 @@ const ManageUsers = () => {
                         <span className="small">
                           {normalizeToDisplay(user.created_at) || "—"}
                         </span>
+                      </td>
+                      <td style={{ textAlign: "center" }}>
+                        <select
+                          className="form-select form-select-sm"
+                          style={{ fontSize: "0.78rem", minWidth: "140px" }}
+                          value=""
+                          disabled={changingTypeId === user.id}
+                          onChange={(e) => {
+                            const newType = e.target.value;
+                            e.target.value = "";
+                            requestChangeUserType(user, newType);
+                          }}
+                        >
+                          <option value="" disabled>
+                            {changingTypeId === user.id ? "Changing..." : "Change Type"}
+                          </option>
+                          {getChangeTypeOptions(getCurrentUserType()).map((t) => (
+                            <option key={t} value={t}>
+                              {USER_TYPE_LABELS[t]}
+                            </option>
+                          ))}
+                        </select>
                       </td>
                       <td style={{ textAlign: "center" }}>
                         <div className="d-flex gap-2 justify-content-center">
@@ -2651,7 +2789,7 @@ const ManageUsers = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
+                  <td colSpan={9} className="text-center py-5 text-muted" style={{ textTransform: "none" }}>
                     <i className="fa-solid fa-users-slash d-block fs-3 mb-2 opacity-50"></i>
                     No records found{selectedState !== 'all' ? ` for ${AUSTRALIAN_STATE_PILLS.find(p => p.value === selectedState)?.label || selectedState}` : ""}{debouncedSearch ? ` matching "${debouncedSearch}"` : ""}.
                   </td>
@@ -3495,6 +3633,51 @@ const ManageUsers = () => {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CHANGE TYPE CONFIRM MODAL */}
+      {changeTypeTarget && (
+        <div className="confirm-modal-backdrop" onClick={closeChangeTypeModal}>
+          <div className="confirm-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-modal-header px-4 py-3 d-flex align-items-center gap-3">
+              <span className="confirm-modal-icon">
+                <i className="fa-solid fa-right-left"></i>
+              </span>
+              <div>
+                <h5 className="mb-0 fw-bold">Confirm Type Change</h5>
+                <div className="small text-muted">
+                  This will move the user to a different record type.
+                </div>
+              </div>
+            </div>
+            <div className="px-4 py-4">
+              <p className="mb-0 text-dark">
+                Change <strong>{changeTypeTarget.user?.name || "this user"}</strong>'s type to{" "}
+                <strong>{USER_TYPE_LABELS[changeTypeTarget.newType]}</strong>?
+              </p>
+            </div>
+            <div className="px-4 py-3 border-top d-flex justify-content-end gap-2 bg-light">
+              <button
+                type="button"
+                className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
+                onClick={closeChangeTypeModal}
+                disabled={changingTypeId === changeTypeTarget.user?.id}
+                style={{ minHeight: "44px" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-dark rounded-pill px-4 fw-bold shadow-sm"
+                onClick={confirmChangeUserType}
+                disabled={changingTypeId === changeTypeTarget.user?.id}
+                style={{ minHeight: "44px" }}
+              >
+                {changingTypeId === changeTypeTarget.user?.id ? "Changing..." : "Yes, Change"}
+              </button>
             </div>
           </div>
         </div>

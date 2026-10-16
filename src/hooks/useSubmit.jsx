@@ -94,7 +94,7 @@ const useSubmit = ({ isAuth = false, BaseURL = apiURL } = {}) => {
 
   const submit = useCallback(
     async (endpoint, body, options = {}) => {
-      const { method = "POST", silentErrorToast = false, responseType = "json" } = options;
+      const { method = "POST", silentErrorToast = false, responseType = "json", headers: extraHeaders } = options;
       const isFormData = body instanceof FormData;
 
       setLoading(true);
@@ -112,6 +112,10 @@ const useSubmit = ({ isAuth = false, BaseURL = apiURL } = {}) => {
 
         if (isAuth && token) {
           headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        if (extraHeaders && typeof extraHeaders === "object") {
+          Object.assign(headers, extraHeaders);
         }
 
         const fetchOptions = {

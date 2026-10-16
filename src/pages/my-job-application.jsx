@@ -601,6 +601,7 @@ export default function MyJobApplications() {
 
     const payload = {
       job_id: jobId,
+      user_id: userId,
     };
 
     const res = await submitAction("api/payment/cancel", payload, { method: "POST" });

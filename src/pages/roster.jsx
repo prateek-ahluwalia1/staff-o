@@ -742,6 +742,7 @@ export default function RosterPage() {
 
         const payload = {
           job_id: jobId,
+          user_id: userId,
         };
         res = await saveUserAssignment(`api/payment/cancel`, payload, { method: "POST" });
       } else if (modal.type === "admin_assign" && modal.shift) {
@@ -1144,10 +1145,39 @@ export default function RosterPage() {
                                       <span style={{ textDecoration: "line-through", opacity: 0.9, fontSize: "11px", whiteSpace: "nowrap" }}>
                                         {format(shift.startDate, "HH:mm")} - {format(shift.endDate, "HH:mm")}
                                       </span>
-                                      <span className="vr-cancelled-badge" title={`This job has been ${cancelledLabel.toLowerCase()}`}>
-                                        <i className="fa-solid fa-ban" style={{ color: "#fca5a5" }}></i>
-                                        {/* {cancelledLabel} */}
-                                      </span>
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          flexDirection: "column",
+                                          alignItems: "flex-end",
+                                          lineHeight: 1,
+                                          maxWidth: "55%",
+                                        }}
+                                      >
+                                        {userRole === "admin" && shift.accepted_by != null && contractorName && (
+                                          <span
+                                            style={{
+                                              fontSize: "4.5px",
+                                              color: "#ffffff",
+                                              marginBottom: "2px",
+                                              whiteSpace: "nowrap",
+                                              overflow: "hidden",
+                                              textOverflow: "ellipsis",
+                                              maxWidth: "85px",
+                                              textAlign: "right",
+                                              letterSpacing: "0.2px",
+                                              display: "inline-block",
+                                            }}
+                                            title={`Accepted by: ${contractorName}`}
+                                          >
+                                            {contractorName}
+                                          </span>
+                                        )}
+                                        <span className="vr-cancelled-badge" title={`This job has been ${cancelledLabel.toLowerCase()}`}>
+                                          <i className="fa-solid fa-ban" style={{ color: "#fca5a5" }}></i>
+                                          {/* {cancelledLabel} */}
+                                        </span>
+                                      </div>
                                     </div>
                                   ) : isContractorZeroInvoiceBreakdown ? (
                                     <span

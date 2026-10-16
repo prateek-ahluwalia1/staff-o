@@ -6618,7 +6618,7 @@ public function request_charge_rate(Request $request)
     ]);
 
     try {
-        $contractor = DB::table('users')->with('contractor')->where('id', $request->user_id)->first();
+        $contractor = User::with('contractor')->where('id', $request->user_id)->first();
 
         if (!$contractor) {
             return response()->json([

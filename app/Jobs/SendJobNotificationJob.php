@@ -664,7 +664,7 @@ class SendJobNotificationJob implements ShouldQueue
 
             // if (!empty($guard->phone)) {
             //     try {
-            //         // $sms = send_sms($guard->phone, $message);
+            //         $sms = send_sms($guard->phone, $message);
 
             //         Log::info("SMS sent successfully.", [
             //             'guard_id' => $guard->id,
@@ -681,7 +681,7 @@ class SendJobNotificationJob implements ShouldQueue
             //     }
             // }
 
-            // $this->sendEmail($guard, $title, $message, $eligibleJobs, $isConsolidated);
+            $this->sendEmail($guard, $title, $message, $eligibleJobs, $isConsolidated);
 
             $notificationCount++;
             Log::info("Notified guard #{$guard->id} for " . $eligibleJobs->count() . " eligible job(s)", [

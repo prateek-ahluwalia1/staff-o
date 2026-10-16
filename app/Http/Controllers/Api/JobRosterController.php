@@ -1066,6 +1066,13 @@ private function sendStaffActivationNotification(User $user): void
                     ], 200);
                 }
 
+                if (!is_null($roster->job_status) && $roster->job_status == 'cancelled') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This job has been cancelled.'
+                    ], 200);
+                }
+
                 // Check if accepted_by is already set (contractor accepted)
                 // if (!is_null($roster->accepted_by) && $roster->accepted_by != '') {
                 //     return response()->json([
@@ -4544,6 +4551,7 @@ private function sendStaffActivationNotification(User $user): void
                 ->whereNull('assigned_to')
                 ->whereNull('accepted_by')
                 ->where('start', '>', now())
+                ->where('job_status', '!=', 'cancelled')
                 ->orderBy('created_at', 'desc');
 
             // ─── STATE FILTER ───
@@ -5753,6 +5761,13 @@ public function contractor_accept_job(Request $request, $id)
                 'success' => false,
                 'message' => 'This job has already been assigned to a staff member.',
                 'data' => null,
+            ], 200);
+        }
+
+        if (!is_null($roster->job_status) && $roster->job_status == 'cancelled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This job has been cancelled.'
             ], 200);
         }
  

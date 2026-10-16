@@ -167,7 +167,7 @@ class GeneralController extends Controller
         }
     }
 
-    public function changeUserType(Request $request): JsonResponse
+public function changeUserType(Request $request): JsonResponse
 {
     // User id comes from payload
     $userId = $request->input('user_id');
@@ -300,11 +300,35 @@ class GeneralController extends Controller
 
         DB::commit();
 
+        // ── 5. Build profile-completion guidance for the new role ────────
+        $profileSteps = $this->getProfileCompletionSteps($newType);
+
+        // ── 6. Send email to the user about the type change ──────────────
+        try {
+            if (!empty($user->email)) {
+                Mail::to($user->email)->queue(
+                    new UserTypeChangedMail(
+                        userName:     $user->name ?? 'User',
+                        oldType:      $oldType,
+                        newType:      $newType,
+                        profileSteps: $profileSteps,
+                        loginUrl:     config('app.frontend_url', config('app.url')) . '/login',
+                    )
+                );
+            }
+        } catch (\Exception $mailEx) {
+            // Don't fail the whole request if mail fails — log it
+            \Log::error('UserTypeChangedMail failed: ' . $mailEx->getMessage(), [
+                'user_id' => $user->id,
+            ]);
+        }
+
         return response()->json([
-            'success'  => true,
-            'message'  => "User type changed from '{$oldType}' to '{$newType}' successfully",
-            'old_type' => $oldType,
-            'new_type' => $newType,
+            'success'       => true,
+            'message'       => "User type changed from '{$oldType}' to '{$newType}' successfully",
+            'old_type'      => $oldType,
+            'new_type'      => $newType,
+            'profile_steps' => $profileSteps,   // ← frontend can render this as a guide
         ], 200);
 
     } catch (\Exception $e) {
@@ -315,6 +339,136 @@ class GeneralController extends Controller
             'message' => 'Failed to change user type',
             'error'   => $e->getMessage(),
         ], 500);
+    }
+}
+
+/**
+ * Return the list of steps required for the user to complete their profile
+ * under the new role.
+ */
+private function getProfileCompletionSteps(string $userType): array
+{
+    switch ($userType) {
+
+        case 'customer':
+            return [
+                [
+                    'key'         => 'personal_details',
+                    'title'       => 'Complete your personal details',
+                    'description' => 'Add your name, contact number, and billing address.',
+                    'route'       => '/profile/personal-details',
+                    'required'    => true,
+                ],
+                [
+                    'key'         => 'company_details',
+                    'title'       => 'Add company details',
+                    'description' => 'Provide your ABN / ACN and company name for invoicing.',
+                    'route'       => '/profile/company-details',
+                    'required'    => true,
+                ],
+                [
+                    'key'         => 'add_site',
+                    'title'       => 'Add your first site',
+                    'description' => 'Register the site(s) where you need security services.',
+                    'route'       => '/sites/create',
+                    'required'    => true,
+                ],
+                [
+                    'key'         => 'payment_method',
+                    'title'       => 'Add a payment method',
+                    'description' => 'Save a card so bookings can be confirmed.',
+                    'route'       => '/profile/payment-methods',
+                    'required'    => true,
+                ],
+            ];
+
+        case 'contractor':
+            return [
+                [
+                    'key'         => 'personal_details',
+                    'title'       => 'Complete your personal details',
+                    'description' => 'Add your name, contact number, and business address.',
+                    'route'       => '/profile/personal-details',
+                    'required'    => true,
+                ],
+                [
+                    'key'         => 'company_details',
+                    'title'       => 'Add your company / ABN',
+                    'description' => 'Provide your ABN, business name, and insurance details.',
+                    'route'       => '/profile/company-details',
+                    'required'    => true,
+                ],
+                [
+                    'key'         => 'states_allowed',
+                    'title'       => 'Select the states you operate in',
+                    'description' => 'Choose which Australian states your guards can work in.',
+                    'route'       => '/profile/states',
+                    'required'    => true,
+                ],
+                [
+                    'key'         => 'charge_rates',
+                    'title'       => 'Set your charge rates',
+                    'description' => 'Configure the rates you charge for each job level.',
+                    'route'       => '/profile/charge-rates',
+                    'required'    => true,
+                ],
+                [
+                    'key'         => 'add_staff',
+                    'title'       => 'Add your staff / guards',
+                    'description' => 'Invite or register guards who will work under you.',
+                    'route'       => '/staff/create',
+                    'required'    => true,
+                ],
+                [
+                    'key'         => 'bank_details',
+                    'title'       => 'Add payout bank details',
+                    'description' => 'Provide bank account details so payouts can be made.',
+                    'route'       => '/profile/bank-details',
+                    'required'    => true,
+                ],
+            ];
+
+        case 'staff':
+            return [
+                [
+                    'key'         => 'personal_details',
+                    'title'       => 'Complete your personal details',
+                    'description' => 'Add your name, contact number, and home address.',
+                    'route'       => '/profile/personal-details',
+                    'required'    => true,
+                ],
+                [
+                    'key'         => 'upload_documents',
+                    'title'       => 'Upload required documents',
+                    'description' => 'Upload your security licence, white card, and any other required documents.',
+                    'route'       => '/profile/documents',
+                    'required'    => true,
+                ],
+                [
+                    'key'         => 'complete_inductions',
+                    'title'       => 'Complete induction modules',
+                    'description' => 'Read and pass all induction questionnaires assigned to you.',
+                    'route'       => '/inductions',
+                    'required'    => true,
+                ],
+                [
+                    'key'         => 'bank_details',
+                    'title'       => 'Add bank details for payouts',
+                    'description' => 'Provide bank account details so you can be paid for shifts.',
+                    'route'       => '/profile/bank-details',
+                    'required'    => true,
+                ],
+                [
+                    'key'         => 'availability',
+                    'title'       => 'Set your availability',
+                    'description' => 'Mark the days and hours you are available for shifts.',
+                    'route'       => '/profile/availability',
+                    'required'    => false,
+                ],
+            ];
+
+        default:
+            return [];
     }
 }
 }

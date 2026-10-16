@@ -8503,7 +8503,7 @@ public function stats(Request $request)
 
             // Pagination
             $perPage = $request->get('per_page', 15);
-            $sites = $query->orderByDesc('start')->paginate($perPage);
+            $sites = $query->orderByDesc('created_at')->paginate($perPage);
 
             return response()->json([
                 'success' => true,

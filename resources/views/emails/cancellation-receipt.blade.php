@@ -75,7 +75,7 @@
     </table>
 
     @if($refundAmount > 0)
-    <p>A refund of <strong>A${{ number_format($refundAmount, 2) }}</strong> has been issued to your original payment method. Please allow 5–10 business days for the refund to appear.</p>
+    <p>A refund of <strong>A${{ number_format($refundAmount, 2) }}</strong> has been issued to your original payment method.</p>
     @else
     <p>No refund is applicable as the cancellation fee covers the full amount charged.</p>
     @endif

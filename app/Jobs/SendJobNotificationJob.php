@@ -45,6 +45,7 @@ class SendJobNotificationJob implements ShouldQueue
             ->whereNull('assigned_to')
             ->whereNull('accepted_by')
             ->where('start', '>=', now())
+            ->where('job_status', '!=', 'cancelled')
             ->get();
 
         if ($unassignedJobs->isEmpty()) {

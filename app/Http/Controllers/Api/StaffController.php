@@ -166,13 +166,20 @@ class StaffController extends Controller
                         }
                     }
                 }
-            }else{
+            }else {
                 $securityLicenseDoc = $documents->firstWhere('document_type', 'security_license');
-                // $firstAidDoc = $documents->firstWhere('document_type', 'first_aid');
-                
-                $hasSecurityLicenseWithExpiry = $securityLicenseDoc && !empty($securityLicenseDoc->document_expiry);
-                // $hasFirstAidWithExpiry = $firstAidDoc && !empty($firstAidDoc->document_expiry);
-                
+
+                $hasSecurityLicenseWithExpiry = false;
+
+                if ($securityLicenseDoc && !empty($securityLicenseDoc->document_expiry)) {
+                    if ($securityLicenseDoc->document_expiry === 'current, pending renewal') {
+                        $hasSecurityLicenseWithExpiry = true;
+                    } else {
+                        $expiryDate = \Carbon\Carbon::parse($securityLicenseDoc->document_expiry);
+                        $hasSecurityLicenseWithExpiry = $expiryDate->isFuture();
+                    }
+                }
+
                 $oldStatus = $user->is_active;
                 $newStatus = ($baseScore >= $baseWeight && $hasSecurityLicenseWithExpiry) ? 1 : 0;
 
@@ -185,26 +192,31 @@ class StaffController extends Controller
                 if ($user->is_active !== $newStatus) {
                     $user->is_active = $newStatus;
                     $user->save();
-                    
-                if ($totalDocuments > 0) {
-                    $filledDocuments = $documents->filter(function ($doc) {
-                        // 1. Ensure the document number is not empty
-                        if (empty($doc->document_no)) {
+
+                    if ($totalDocuments > 0) {
+                        $filledDocuments = $documents->filter(function ($doc) {
+                            // 1. Ensure the document number is not empty
+                            if (empty($doc->document_no)) {
+                                return false;
+                            }
+
+                            // 2. Check if the expiry date exists and is valid
+                            if (!empty($doc->document_expiry)) {
+                                // Handle the pending renewal special value
+                                if ($doc->document_expiry === 'current, pending renewal') {
+                                    return true;
+                                }
+
+                                $expiryDate = \Carbon\Carbon::parse($doc->document_expiry);
+                                return $expiryDate->isFuture();
+                            }
+
+                            // No expiry date but document_no exists — treat as not filled (per original logic)
                             return false;
-                        }
-                
-                        // 2. Check if the expiry date exists and is in the future
-                        if (!empty($doc->document_expiry)) {
-                            $expiryDate = \Carbon\Carbon::parse($doc->document_expiry);
-                            return $expiryDate->isFuture();
-                        }
-                
-                        // Return false if there is no expiry date but your logic requires one
-                        return false; 
-                    })->count();
-                
-                    $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
-                }
+                        })->count();
+
+                        $documentScore = ($filledDocuments / $totalDocuments) * $documentWeight;
+                    }
 
                     if ($newStatus == 1 && $oldStatus != 1) {
                         $notificationData = [
@@ -219,7 +231,6 @@ class StaffController extends Controller
                         }
                     }
                 }
-
             }
         } else {
             if ($totalDocuments > 0) {

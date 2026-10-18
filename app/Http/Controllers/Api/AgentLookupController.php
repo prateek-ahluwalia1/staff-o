@@ -488,8 +488,14 @@ class AgentLookupController extends Controller
      */
     private function requireOtp(Request $request, User $user)
     {
+        $log = fn (string $outcome, array $extra = []) => \Illuminate\Support\Facades\Log::info(
+            '[Agent] OTP gate check: ' . $outcome,
+            $extra + ['user_id' => $user->id, 'endpoint' => $request->path()]
+        );
+
         try {
             if (!app(\App\Services\OtpService::class)->gateEnabled()) {
+                $log('skipped — gate disabled in notification_settings');
                 return null;
             }
 
@@ -502,14 +508,21 @@ class AgentLookupController extends Controller
             if ($phone === '') {
                 // No channel phone to key verification off (e.g. a direct
                 // test call) — don't block, just skip the gate.
+                $log('skipped — no phone in request payload', ['args_keys' => array_keys($args)]);
                 return null;
             }
 
             $chat = \App\Models\WhatsappChat::where('phone', $phone)->first();
 
             if ($chat && $chat->isVerifiedFor($user->id)) {
+                $log('passed — chat already verified', ['phone' => $this->maskEmail($phone)]);
                 return null;
             }
+
+            $log('challenged — requesting OTP', [
+                'phone'      => $this->maskEmail($phone),
+                'chat_found' => (bool) $chat,
+            ]);
 
             return response()->json([
                 'result' => 'This is specific account detail, so to keep it secure I need to verify it\'s you first — '

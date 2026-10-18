@@ -22,7 +22,7 @@ class ProfileCompletionReminder extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Action Required: Complete Your Profile - ' . config('app.name'),
+            subject: 'Action Required: Complete Your Profile - Staffoo',
         );
     }
 

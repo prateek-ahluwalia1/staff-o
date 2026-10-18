@@ -148,7 +148,7 @@ class ProfileCompletionService
             ));
 
             $user->is_active = $newState;
-            $user->profile_completion_percentage = $result['percentage'];
+            // $user->profile_completion_percentage = $result['percentage'];
             $user->save();
 
             if ($newState === 1 && function_exists('send_push_notification')) {
@@ -173,7 +173,7 @@ class ProfileCompletionService
                 }
             }
         } elseif ((int) $user->profile_completion_percentage !== $result['percentage']) {
-            $user->profile_completion_percentage = $result['percentage'];
+            // $user->profile_completion_percentage = $result['percentage'];
             $user->save();
         }
 

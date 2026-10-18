@@ -142,10 +142,10 @@ class ProfileCompletionService
         $old      = (int) $user->is_active;
 
         if ($old !== $newState) {
-            dispatch(new \App\Jobs\SendAccountStatusEmailJob(
-                $user,
-                $newState === 1 ? 'active' : 'inactive'
-            ));
+            // dispatch(new \App\Jobs\SendAccountStatusEmailJob(
+            //     $user,
+            //     $newState === 1 ? 'active' : 'inactive'
+            // ));
 
             $user->is_active = $newState;
             // $user->profile_completion_percentage = $result['percentage'];

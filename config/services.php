@@ -78,4 +78,14 @@ return [
         // Generate with:  php -r "echo bin2hex(random_bytes(32));"
         'function_secret'      => env('RETELL_FUNCTION_SECRET'),
     ],
+
+    // NEW — WhatsApp notification system (account/job/payment events +
+    // identity OTP gate). Per-event on/off and admin numbers now live in
+    // the notification_settings / notification_recipients tables and are
+    // managed from the admin panel; this is only a fallback used before
+    // any admin numbers have been configured there.
+    'whatsapp_notifications' => [
+        // Comma-separated phone numbers, e.g. "+61400000000,+61400000001"
+        'admin_fallback_numbers' => env('WHATSAPP_ADMIN_FALLBACK_NUMBERS', ''),
+    ],
 ];

@@ -1193,6 +1193,26 @@ private function sendStaffActivationNotification(User $user): void
                         send_push_notification($notification_data);
                     }
 
+                    // NEW — WhatsApp: tell the client the job's accepted, and
+                    // tell the staff member (who just accepted directly) to
+                    // confirm their availability. Never blocks the accept.
+                    try {
+                        $clientUser = \App\Models\User::find($roster->created_by);
+                        if ($clientUser) {
+                            \App\Services\WhatsappNotificationService::fire('job.accepted_client', [$clientUser], [
+                                'name'       => $clientUser->name,
+                                'site'       => $roster->address ?? null,
+                                'guard_name' => $guard->name ?? null,
+                            ]);
+                        }
+                        \App\Services\WhatsappNotificationService::fire('job.staff_confirm', [$user], [
+                            'name' => $user->name,
+                            'site' => $roster->address ?? null,
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::error('[WhatsApp] accept_asap_job hook failed: ' . $e->getMessage());
+                    }
+
                     return response()->json([
                         'success' => true,
                         'message' => 'Job accept successfully.',
@@ -1318,6 +1338,24 @@ private function sendStaffActivationNotification(User $user): void
                     DB::table('job_rosters')->where('id', $id)->update([
                     'payment_status' => 'paid'
                     ]);
+
+                    // NEW — payment fully captured at sign-in: WhatsApp the
+                    // client, the resource partner (if any) and admin.
+                    // Never blocks sign-in.
+                    try {
+                        $payNotifyRecipients = array_filter([
+                            \App\Models\User::find($job->created_by),
+                            $job->accepted_by ? \App\Models\User::find($job->accepted_by) : null,
+                        ]);
+                        $payNotifyRecipients[] = ['group' => 'admin.daily_summary'];
+
+                        \App\Services\WhatsappNotificationService::fire('payment.completed', $payNotifyRecipients, [
+                            'site' => $job->site->site_name ?? null,
+                            'who'  => 'job payment',
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::error('[WhatsApp] payment.completed (signin capture) hook failed: ' . $e->getMessage());
+                    }
                 }
 
             } catch (\Exception $e) {
@@ -1427,6 +1465,24 @@ private function sendStaffActivationNotification(User $user): void
                     ];
                     send_push_notification($notification_data);
                 }
+
+                // NEW — WhatsApp the client and the resource partner/contractor
+                // (if this job was taken via a contractor) that the guard has
+                // signed in. Never blocks sign-in.
+                try {
+                    $signinRecipients = array_filter([
+                        \App\Models\User::find($roster->created_by),
+                        $roster->accepted_by ? \App\Models\User::find($roster->accepted_by) : null,
+                    ]);
+
+                    \App\Services\WhatsappNotificationService::fire('job.signin', $signinRecipients, [
+                        'guard_name' => $guard->name ?? null,
+                        'site'       => $job->site->site_name ?? null,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error('[WhatsApp] job.signin hook failed: ' . $e->getMessage());
+                }
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Clocked-in Successfully!'
@@ -1899,6 +1955,23 @@ private function sendStaffActivationNotification(User $user): void
                 send_push_notification($notification_data);
             }
 
+            // NEW — WhatsApp the client and the resource partner/contractor
+            // that the guard has signed out / completed the job. Never
+            // blocks sign-out.
+            try {
+                $signoutRecipients = array_filter([
+                    \App\Models\User::find($roster->created_by),
+                    $roster->accepted_by ? \App\Models\User::find($roster->accepted_by) : null,
+                ]);
+
+                \App\Services\WhatsappNotificationService::fire('job.signout', $signoutRecipients, [
+                    'guard_name' => $guard->name ?? null,
+                    'site'       => DB::table('sites')->where('id', $roster->site_id)->value('site_name'),
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('[WhatsApp] job.signout hook failed: ' . $e->getMessage());
+            }
+
             if ($roster->payment_intent_id) {
             $transaction = Transaction::where('payment_intent_id', $roster->payment_intent_id)->first();
     
@@ -1960,8 +2033,28 @@ private function sendStaffActivationNotification(User $user): void
         
                 if ($balanceIntent->status === 'succeeded') {
                     $this->sendBalanceInvoice($transaction->fresh(), $balanceIntent->id);
+
+                    // NEW — final balance charged: WhatsApp client, the
+                    // resource partner on the job (if any) and admin.
+                    // Never blocks the charge.
+                    try {
+                        $jobIds      = json_decode($transaction->job_roster_id, true) ?? [];
+                        $firstRoster = !empty($jobIds) ? DB::table('job_rosters')->whereIn('id', $jobIds)->first() : null;
+
+                        $balanceRecipients = array_filter([
+                            \App\Models\User::find($transaction->user_id),
+                            $firstRoster && $firstRoster->accepted_by ? \App\Models\User::find($firstRoster->accepted_by) : null,
+                        ]);
+                        $balanceRecipients[] = ['group' => 'admin.daily_summary'];
+
+                        \App\Services\WhatsappNotificationService::fire('payment.completed', $balanceRecipients, [
+                            'who' => 'final balance payment',
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::error('[WhatsApp] payment.completed (balance charge) hook failed: ' . $e->getMessage());
+                    }
                 }
-        
+
             } catch (\Stripe\Exception\CardException $e) {
                 // Card failed off-session — e.g. expired, insufficient funds, or
                 // bank demands 3DS re-authentication. Flag for manual follow-up.
@@ -6062,7 +6155,43 @@ public function contractor_accept_job(Request $request, $id)
                 send_push_notification($guardNotificationData);
             }
         }
- 
+
+        // NEW — WhatsApp equivalents of the notifications just above:
+        // client always told it's accepted; contractor told to assign a
+        // guard if one wasn't supplied in this same call; guard told they
+        // have a new job if one was assigned. Never blocks the accept.
+        try {
+            $hasGuard = $request->has('guard_id') && !empty($request->guard_id);
+
+            $clientModel = \App\Models\User::find($updatedRoster->created_by);
+            if ($clientModel) {
+                \App\Services\WhatsappNotificationService::fire('job.accepted_client', [$clientModel], [
+                    'name'       => $clientModel->name,
+                    'site'       => $updatedRoster->address ?? null,
+                    'guard_name' => $hasGuard ? $guardName : null,
+                ]);
+            }
+
+            if ($hasGuard) {
+                $guardUserModel = \App\Models\User::find($request->guard_id);
+                if ($guardUserModel) {
+                    \App\Services\WhatsappNotificationService::fire('job.guard_assigned', [$guardUserModel], [
+                        'name'  => $guardUserModel->name,
+                        'site'  => $updatedRoster->address ?? null,
+                        'start' => $startTime,
+                        'end'   => $endTime,
+                    ]);
+                }
+            } else {
+                \App\Services\WhatsappNotificationService::fire('job.accepted_contractor', [$contractor], [
+                    'name' => $contractor->name ?? 'Contractor',
+                    'site' => $updatedRoster->address ?? null,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('[WhatsApp] contractor_accept_job hook failed: ' . $e->getMessage());
+        }
+
         // ============ SEND EMAILS ============
  
         // 1. Send email to Guard (only if guard_id is provided)

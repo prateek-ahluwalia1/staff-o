@@ -31,6 +31,9 @@ use App\Http\Controllers\IvrController2;
 use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\WhatsappWebhookController;
 use App\Http\Controllers\Api\RetellFunctionController;
+use App\Http\Controllers\Api\RetellIdentityController;
+use App\Http\Controllers\Api\RetellAccountController;
+use App\Http\Controllers\Api\Admin\NotificationSettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -93,6 +96,17 @@ Route::middleware('retell.secret')->prefix('retell')->group(function () {
 
     Route::post('/resend-verification', [AgentLookupController::class, 'resendVerification'])
         ->name('retell.resend-verification');
+
+    // NEW — email-OTP identity gate for detailed chat answers (shifts, pay).
+    Route::post('/verify-identity-request', [RetellIdentityController::class, 'requestOtp'])
+        ->name('retell.verify-identity-request');
+
+    Route::post('/verify-identity-confirm', [RetellIdentityController::class, 'confirmOtp'])
+        ->name('retell.verify-identity-confirm');
+
+    // NEW — create an account straight from the chat assistant.
+    Route::post('/create-account', [RetellAccountController::class, 'createAccount'])
+        ->name('retell.create-account');
 });
 
 // Route::prefix('user')->group(function () {
@@ -364,6 +378,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::any('send-invoice',  [JobRosterController::class, 'sendInvoice']);
         Route::get('invoice/history/{transaction_id}', [JobRosterController::class, 'getEmailHistoryByTransaction']);
+
+        // NEW — superadmin on/off switchboard for every automated WhatsApp
+        // notification, plus managing which admin numbers get the
+        // admin-facing ones (daily summary, chat job requests, payments).
+        Route::get('notification-settings', [NotificationSettingsController::class, 'index']);
+        Route::patch('notification-settings/{id}/toggle', [NotificationSettingsController::class, 'toggleSetting']);
+        Route::post('notification-recipients', [NotificationSettingsController::class, 'storeRecipient']);
+        Route::patch('notification-recipients/{id}', [NotificationSettingsController::class, 'updateRecipient']);
+        Route::delete('notification-recipients/{id}', [NotificationSettingsController::class, 'destroyRecipient']);
         
         Route::get('/', [GeneralController::class, 'getAdmins']);
         Route::get('/support-admin', [GeneralController::class, 'getSupportAdmin']);

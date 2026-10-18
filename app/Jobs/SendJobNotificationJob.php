@@ -683,6 +683,22 @@ class SendJobNotificationJob implements ShouldQueue
 
             $this->sendEmail($guard, $title, $message, $eligibleJobs, $isConsolidated);
 
+            // NEW — WhatsApp the same "job available" alert to RPs / staff.
+            // Toggle off via the "job.posted" notification setting.
+            try {
+                $firstJob = $eligibleJobs instanceof \Illuminate\Support\Collection
+                    ? $eligibleJobs->sortByDesc('created_at')->first()
+                    : $eligibleJobs;
+
+                \App\Services\WhatsappNotificationService::fire('job.posted', [$guard], [
+                    'name'  => $guard->name,
+                    'site'  => $firstJob->address ?? ($firstJob->site->site_name ?? null),
+                    'start' => isset($firstJob->start) ? \Carbon\Carbon::parse($firstJob->start)->format('d M, g:i A') : null,
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('[WhatsApp] job.posted hook failed: ' . $e->getMessage());
+            }
+
             $notificationCount++;
             Log::info("Notified guard #{$guard->id} for " . $eligibleJobs->count() . " eligible job(s)", [
                 'eligible_job_ids' => $eligibleJobIds,

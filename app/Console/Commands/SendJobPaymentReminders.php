@@ -72,6 +72,17 @@ class SendJobPaymentReminders extends Command
                             send_push_notification($notificationData);
                         }
                     }
+                // NEW — WhatsApp the same due-payment reminder. Toggle off
+                // via the "payment.due" notification setting.
+                try {
+                    \App\Services\WhatsappNotificationService::fire('payment.due', [$client->phone ?? null], [
+                        'name' => $client->name ?? 'Client',
+                        'site' => $jobRows[0]['site'] ?? null,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error('[WhatsApp] payment.due hook failed: ' . $e->getMessage());
+                }
+
                 $this->info("Sent payment reminder to {$client->email} for " . count($jobRows) . ' job(s).');
             } catch (\Exception $e) {
                 Log::error('Failed to send client payment reminder', [

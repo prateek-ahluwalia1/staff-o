@@ -159,6 +159,19 @@ class ProfileCompletionService
                     'page'               => 'account-verified',
                 ]);
             }
+
+            // NEW — WhatsApp the user the moment their account activates.
+            // Wrapped so a WhatsApp failure can never affect activation itself.
+            if ($newState === 1) {
+                try {
+                    \App\Services\WhatsappNotificationService::fire('account.activated', [$user], [
+                        'name'         => $user->name,
+                        'account_type' => $result['account_type'] ?? null,
+                    ]);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('[WhatsApp] account.activated hook failed: ' . $e->getMessage());
+                }
+            }
         } elseif ((int) $user->profile_completion_percentage !== $result['percentage']) {
             $user->profile_completion_percentage = $result['percentage'];
             $user->save();

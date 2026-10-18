@@ -65,6 +65,17 @@ class RetellFunctionController extends Controller
             Mail::to(config('services.retell.escalation_email'))
                 ->send(new JobRequestMail($data));
 
+            // NEW — ping admin numbers on WhatsApp too, so a job request taken
+            // via chat isn't missed if nobody's watching email right then.
+            try {
+                \App\Services\WhatsappNotificationService::fire('job.chat_request', [['group' => 'admin.daily_summary']], [
+                    'client_email' => $data['email'],
+                    'site_name'    => $data['site_name'],
+                ]);
+            } catch (\Throwable $e) {
+                Log::error('[WhatsApp] job.chat_request hook failed: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'result' => "Job request sent through. The team will set it up and email the "
                     . "payment link to {$data['email']}, usually within the hour.",

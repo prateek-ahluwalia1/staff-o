@@ -219,6 +219,10 @@ class AgentLookupController extends Controller
             return $this->notFound($request);
         }
 
+        if ($otp = $this->requireOtp($request, $user)) {
+            return $otp;
+        }
+
         $upcoming = JobRoster::where('assigned_to', $user->id)
             ->where('job_status', '!=', 'cancelled')
             ->where('start', '>=', Carbon::now())
@@ -278,6 +282,10 @@ class AgentLookupController extends Controller
 
         if (!$user) {
             return $this->notFound($request);
+        }
+
+        if ($otp = $this->requireOtp($request, $user)) {
+            return $otp;
         }
 
         $type = $this->profiles->accountType($user);
@@ -463,6 +471,57 @@ class AgentLookupController extends Controller
                 : 'I\'ll need the email address you registered with to look that up — what is it?',
             'data'   => ['found' => false],
         ]);
+    }
+
+    /**
+     * NEW — security gate: this account's specific shifts / pay details are
+     * only read out once the caller has verified via the emailed OTP code
+     * (see RetellIdentityController). General questions (account_status,
+     * why_no_jobs) stay ungated — only this "detailed" tier is protected.
+     *
+     * Controlled by the "security.otp_gate" notification setting, so it can
+     * be switched off instantly from the admin panel if it ever misbehaves.
+     *
+     * Returns a ready-to-return JSON response if verification is still
+     * needed, or null if the caller is already verified and the lookup
+     * should proceed as normal.
+     */
+    private function requireOtp(Request $request, User $user)
+    {
+        try {
+            if (!app(\App\Services\OtpService::class)->gateEnabled()) {
+                return null;
+            }
+
+            $args  = $request->input('args', []) + $request->all();
+            $phone = trim((string) ($args['phone']
+                ?? $request->input('call.metadata.phone')
+                ?? $request->input('metadata.phone')
+                ?? ''));
+
+            if ($phone === '') {
+                // No channel phone to key verification off (e.g. a direct
+                // test call) — don't block, just skip the gate.
+                return null;
+            }
+
+            $chat = \App\Models\WhatsappChat::where('phone', $phone)->first();
+
+            if ($chat && $chat->isVerifiedFor($user->id)) {
+                return null;
+            }
+
+            return response()->json([
+                'result' => 'This is specific account detail, so to keep it secure I need to verify it\'s you first — '
+                    . 'I\'m sending a 6-digit code to your registered email now.',
+                'data'   => ['requires_otp' => true, 'user_id' => $user->id],
+            ]);
+        } catch (\Throwable $e) {
+            // Never let the security gate itself break a lookup that was
+            // otherwise working.
+            \Illuminate\Support\Facades\Log::error('[Agent] OTP gate check failed: ' . $e->getMessage());
+            return null;
+        }
     }
 
     private function weeklyHours(User $user): array

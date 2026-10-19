@@ -1026,7 +1026,21 @@ public function updateGuardDocuments(Request $request)
         try {
             $user = User::findOrFail($id);
 
-            $rules = [
+            if($id == 1){
+               $rules = [
+                'name' => 'sometimes|required|string|max:255',
+                'password' => 'nullable|confirmed|min:6',
+                'is_active' => 'sometimes|boolean',
+                'staff_document_type' => 'nullable|string',
+                'address' => 'nullable',
+                'city' => 'nullable|string',
+                'state' => 'nullable|string',
+                'country' => 'nullable|string',
+                'coordinates' => 'nullable|string',
+                'states_allowed' => 'nullable|json'            
+                ];
+            }else{
+                $rules = [
                 'name' => 'sometimes|required|string|max:255',
                 'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
                 'password' => 'nullable|confirmed|min:6',
@@ -1039,6 +1053,8 @@ public function updateGuardDocuments(Request $request)
                 'coordinates' => 'nullable|string',
                 'states_allowed' => 'nullable|json'            
                 ];
+            }
+          
 
             if ($user->user_type === 'customer') {
                 $rules = array_merge($rules, [
@@ -1131,19 +1147,34 @@ public function updateGuardDocuments(Request $request)
                 $data['password'] = Hash::make($data['password']);
             }
 
-            $user->update(collect($data)->only([
-                'name',
-                'email',
-                'password',
-                'is_active',
-                'city',
-                'state',
-                'country',
-                'address',
-                'phone',
-                'coordinates',
-                'states_allowed'
-            ])->toArray());
+            if(isset($id) && $id == 1){
+                $user->update(collect($data)->only([
+                    'name',
+                    'password',
+                    'is_active',
+                    'city',
+                    'state',
+                    'country',
+                    'address',
+                    'phone',
+                    'coordinates',
+                    'states_allowed'
+                ])->toArray());
+            }else{
+                $user->update(collect($data)->only([
+                    'name',
+                    'email',
+                    'password',
+                    'is_active',
+                    'city',
+                    'state',
+                    'country',
+                    'address',
+                    'phone',
+                    'coordinates',
+                    'states_allowed'
+                ])->toArray());
+            }
 
             if (empty($user->staffo_id) || $user->staffo_id == null ){
                     $user->staffo_id = 'STAFO' . $user->id;

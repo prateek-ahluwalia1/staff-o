@@ -6248,7 +6248,7 @@ public function contractor_accept_job(Request $request, $id)
                 'roster_id'       => $updatedRoster->id,
             ];
             Mail::send('emails.admin_job_accepted', $adminEmailData, function ($message) {
-                $message->to('shahbazkhan062@gmail.com')
+                $message->to('admin@staffoo.com.au')
                         ->subject('Job Accepted - Admin Notification');
             });
         } catch (\Exception $e) {

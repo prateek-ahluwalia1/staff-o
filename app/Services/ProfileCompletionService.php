@@ -149,13 +149,13 @@ class ProfileCompletionService
         $old      = (int) $user->is_active;
 
         if ($old !== $newState) {
-            dispatch(new \App\Jobs\SendAccountStatusEmailJob(
-                $user,
-                $newState === 1 ? 'active' : 'inactive'
-            ));
+            // dispatch(new \App\Jobs\SendAccountStatusEmailJob(
+            //     $user,
+            //     $newState === 1 ? 'active' : 'inactive'
+            // ));
 
             $user->is_active = $newState;
-            $user->profile_completion_percentage = $result['percentage'];
+            // $user->profile_completion_percentage = $result['percentage'];
             $user->save();
 
             if ($newState === 1 && function_exists('send_push_notification')) {
@@ -180,7 +180,7 @@ class ProfileCompletionService
                 }
             }
         } elseif ((int) $user->profile_completion_percentage !== $result['percentage']) {
-            $user->profile_completion_percentage = $result['percentage'];
+            // $user->profile_completion_percentage = $result['percentage'];
             $user->save();
         }
 

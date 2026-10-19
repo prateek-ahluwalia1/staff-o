@@ -27,12 +27,21 @@ class Kernel extends ConsoleKernel
             ->weekly()
             ->mondays()
             ->at('08:00');
-        $schedule->command('jobs:send-payment-reminders')->everySixHours();        
+        $schedule->command('jobs:send-payment-reminders')->everySixHours();
+        // NEW — one WhatsApp digest a day to the configured admin numbers
+        // (job postings + new accounts in the last 24h). Toggle off from
+        // the superadmin panel via the "admin.daily_summary" setting.
+        $schedule->command('whatsapp:send-admin-daily-summary')->dailyAt('08:00');
+        // $schedule->command('profiles:send-reminders --gap=2 --min-age=2')
+        //      ->dailyAt('09:00')
+        //      ->withoutOverlapping()
+        //      ->onOneServer();
         $schedule->command('profiles:send-reminders --gap=2 --min-age=2')
-             ->dailyAt('09:00')
-             ->withoutOverlapping()
-             ->onOneServer();
-        // $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);
+             ->everyMinute()
+             ->withoutOverlapping(5)   // 5-minute lock
+             ->onOneServer()
+             ->runInBackground(); 
+         // $schedule->command('app:sync-public-holidays')->twiceYearly(1, 1);
 
 
 

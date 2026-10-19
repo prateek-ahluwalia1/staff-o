@@ -1298,6 +1298,49 @@ private function sendStaffActivationNotification(User $user): void
             }
 
             $roster_data = JobRoster::where('id', $id)->first();
+            $job_start_time = $roster_data->start;
+            $job_start_time = strtotime($job_start_time);
+
+            if ($request->has('signin_time')) {
+                $current_time = $request->input('signin_time');
+                $current_time = strtotime($current_time);
+            } else {
+                $current_time = time();
+            }
+            $diff = round(($job_start_time - $current_time) / 60, 2);
+
+            if ($request->input('location') == null || $request->input('location') == '') {
+
+                return response()->json(['success' => false, 'message' => 'Please send coordinates.', 'code' => 404]);
+            }
+
+            $coordsString = $job->guards->current_coordinates;
+            
+            if ($job->guards->current_coordinates == null ||  $job->guards->current_coordinates == '') {
+                return response()->json(['success' => false, 'message' => 'Staff coordinates not set.', 'code' => 404]);
+            }
+                
+            $coordinates = explode(',', $coordsString);
+
+            if ($job->site->coordinates == null ||  $job->site->coordinates == '') {
+                return response()->json(['success' => false, 'message' => 'Location coordinates not set.', 'code' => 404]);
+            }
+
+            $coordinates1 = explode(',', $job->site->coordinates);
+
+            $distance = $this->distance(trim($coordinates[0]), trim($coordinates[1]), trim($coordinates1[0]), trim($coordinates1[1]));
+            if ($job->site->signin_radius > 0) {
+                $signin_radius = $job->site->signin_radius / 1000;
+            } else {
+                $signin_radius = 0.50;
+            }
+            if ($distance > $signin_radius) {
+                return response()->json(['success' => false, 'error' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'message' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'code' => 404]);
+            }
+            $is_already_signin = JobRosterActivity::where(['job_roster_id' => $id])->first();
+            if (!empty($is_already_signin)) {
+                return response()->json(['success' => false, 'error' => 'You are already signin in this job!', 'message' => 'You are already signin in this job!', 'code' => 404]);
+            }
 
             try {
 
@@ -1365,50 +1408,6 @@ private function sendStaffActivationNotification(User $user): void
                 ->update([
                     'status' => 'failed'
                 ]);
-            }
-
-            $job_start_time = $roster_data->start;
-            $job_start_time = strtotime($job_start_time);
-
-            if ($request->has('signin_time')) {
-                $current_time = $request->input('signin_time');
-                $current_time = strtotime($current_time);
-            } else {
-                $current_time = time();
-            }
-            $diff = round(($job_start_time - $current_time) / 60, 2);
-
-            if ($request->input('location') == null || $request->input('location') == '') {
-
-                return response()->json(['success' => false, 'message' => 'Please send coordinates.', 'code' => 404]);
-            }
-
-            $coordsString = $job->guards->current_coordinates;
-            
-            if ($job->guards->current_coordinates == null ||  $job->guards->current_coordinates == '') {
-                return response()->json(['success' => false, 'message' => 'Staff coordinates not set.', 'code' => 404]);
-            }
-                
-            $coordinates = explode(',', $coordsString);
-
-            if ($job->site->coordinates == null ||  $job->site->coordinates == '') {
-                return response()->json(['success' => false, 'message' => 'Location coordinates not set.', 'code' => 404]);
-            }
-
-            $coordinates1 = explode(',', $job->site->coordinates);
-
-            $distance = $this->distance(trim($coordinates[0]), trim($coordinates[1]), trim($coordinates1[0]), trim($coordinates1[1]));
-            if ($job->site->signin_radius > 0) {
-                $signin_radius = $job->site->signin_radius / 1000;
-            } else {
-                $signin_radius = 0.50;
-            }
-            if ($distance > $signin_radius) {
-                return response()->json(['success' => false, 'error' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'message' => 'You are ' . number_format($distance, 2) . ' km away from your job!', 'code' => 404]);
-            }
-            $is_already_signin = JobRosterActivity::where(['job_roster_id' => $id])->first();
-            if (!empty($is_already_signin)) {
-                return response()->json(['success' => false, 'error' => 'You are already signin in this job!', 'message' => 'You are already signin in this job!', 'code' => 404]);
             }
 
             $field = 'selfie';

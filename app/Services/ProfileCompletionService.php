@@ -109,7 +109,14 @@ class ProfileCompletionService
             }
         }
 
-        $shouldBeActive = $base['complete'] && $docsOk
+        // Email verification gates activation for every account type. Without
+        // this, a client's base score (name/email/user_type already filled at
+        // registration) is "complete" the moment they sign up, so the cron
+        // could flip them active — and fire the account.activated WhatsApp —
+        // before they've ever clicked the verification link.
+        $emailVerified = (bool) $user->is_email_approved;
+
+        $shouldBeActive = $emailVerified && $base['complete'] && $docsOk
             && ($accountType !== 'contractor' || ($missingRatedStates === [] ));
 
         return [

@@ -323,6 +323,20 @@ class AuthController extends Controller
                     Mail::to($user->email)->send(new StaffOnboardingMail());
                 }
 
+                // Clients need no documents, so email verification IS their
+                // activation — don't make them wait for the nightly
+                // SendProfileReminders cron to flip is_active and fire the
+                // account.activated WhatsApp. Staff and resource partners are
+                // left to that same cron, since theirs still depends on
+                // documents/forms/charge rates being completed.
+                if ($user->user_type === 'customer') {
+                    try {
+                        app(\App\Services\ProfileCompletionService::class)->syncStatus($user);
+                    } catch (\Throwable $e) {
+                        Log::error('[AuthController] client activation sync failed: ' . $e->getMessage());
+                    }
+                }
+
                 return view('guard-welcome', ['guard' => $user]);
 
             } else {

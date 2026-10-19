@@ -19,6 +19,7 @@ import {
   isDocumentValidationApplicable,
   isDocumentNumberInText,
   isExpiryDateInText,
+  isPendingRenewalExpiry,
   extractDocumentText,
 } from "../utils/documentValidator";
 
@@ -1805,7 +1806,10 @@ export default function EditProfile() {
 
     if (rawText) {
       const hasDocNumber = isDocumentNumberInText(rawText, docNo);
-      const hasExpiry = isWhiteCard ? true : isExpiryDateInText(rawText, docExpiry);
+      const hasExpiry =
+        isWhiteCard || isPendingRenewalExpiry(docExpiry)
+          ? true
+          : isExpiryDateInText(rawText, docExpiry);
 
       if (!hasDocNumber && !hasExpiry) {
         const errMsg = `Document Number "${docNo}" and Expiry Date "${docExpiry}" were not found in the uploaded document.`;

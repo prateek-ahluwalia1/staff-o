@@ -277,6 +277,33 @@ export function isExpiryDateInText(rawText, expiryDate) {
 }
 
 /**
+ * Known sentinel phrases a user can enter in the Expiry Date field to indicate
+ * a license/document is currently valid but awaiting renewal paperwork, rather
+ * than providing an actual expiry date found in the document. When one of these
+ * is entered, OCR expiry-date matching is bypassed (the document can still be
+ * uploaded and the document number is still verified as normal).
+ */
+const PENDING_RENEWAL_PHRASES = [
+  "current, pending renewal",
+  "current pending renewal",
+  "pending renewal",
+];
+
+/**
+ * Checks whether the user-entered expiry value is a "pending renewal" sentinel
+ * (as opposed to an actual date), so the OCR expiry-date check can be bypassed.
+ *
+ * @param {string} expiryValue - The user-entered expiry date/value.
+ * @returns {boolean}
+ */
+export function isPendingRenewalExpiry(expiryValue) {
+  if (!expiryValue) return false;
+  const normalized = String(expiryValue).trim().toLowerCase();
+  if (!normalized) return false;
+  return PENDING_RENEWAL_PHRASES.some((phrase) => normalized === phrase || normalized.includes(phrase));
+}
+
+/**
  * Determines whether automated document content validation applies to this document.
  * Returns true if the document type or name maps to any known category (Staff or Contractor)
  * or if a document number is provided for verification.

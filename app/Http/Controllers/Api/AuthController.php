@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\{User, Customer, Contractor, Staff, Document, DocumentCategory, Questionnaire};
+use App\Services\InductionAssignmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Hash, DB, Log};
 use Illuminate\Support\Facades\Http;
@@ -108,6 +109,9 @@ class AuthController extends Controller
             //     $guard_documents->save();
             // }
 
+            // Resource partners get the inductions authored for that audience.
+            InductionAssignmentService::assignToUser($user->id, 'resource_partner');
+
             return response()->json([
                 'token' => $user->createToken('api')->plainTextToken,
                 'user' => $user
@@ -121,35 +125,8 @@ class AuthController extends Controller
                 'dob' => $data['dob'] ?? null
             ]);
 
-            $inductions = Questionnaire::all();
-
-            $now = Carbon::now();
-            $inductionHistoryData = [];
-            $guardQuestionnaireDetailsData = [];
-
-            foreach ($inductions as $induction) {
-                $inductionHistoryData[] = [
-                    'guard_id' => $user->id,
-                    'induction_id' => $induction->id,
-                    'state' => "Victoria",
-                    'read_status' => 0,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-
-                $guardQuestionnaireDetailsData[] = [
-                    'guard_id' => $user->id,
-                    'questionnaire_id' => $induction->id,
-                    'marks' => 0,
-                    'certificate_path' => null,
-                    'expiry_date' => null,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
-            
-            DB::table('induction_history')->insert($inductionHistoryData);
-            DB::table('guard_questionnaire_details')->insert($guardQuestionnaireDetailsData);
+            // Only inductions authored for the "staff" audience get assigned here.
+            InductionAssignmentService::assignToUser($user->id, 'staff');
 
             return response()->json([
                 'message' => 'Staff registered under Capital Security',

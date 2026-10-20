@@ -9,6 +9,7 @@ use App\Models\DocumentCategory;
 use App\Models\Questionnaire;
 use App\Models\Staff;
 use App\Models\User;
+use App\Services\InductionAssignmentService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -589,35 +590,9 @@ class AdminStaffController extends Controller
                 }
             }
 
-            // Create induction records
-            $inductions = Questionnaire::all();
-            $now = Carbon::now();
-            $inductionHistoryData = [];
-            $guardQuestionnaireDetailsData = [];
-
-            foreach ($inductions as $induction) {
-                $inductionHistoryData[] = [
-                    'guard_id' => $user->id,
-                    'induction_id' => $induction->id,
-                    'state' => "Victoria",
-                    'read_status' => 0,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-
-                $guardQuestionnaireDetailsData[] = [
-                    'guard_id' => $user->id,
-                    'questionnaire_id' => $induction->id,
-                    'marks' => 0,
-                    'certificate_path' => null,
-                    'expiry_date' => null,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
-            
-            DB::table('induction_history')->insert($inductionHistoryData);
-            DB::table('guard_questionnaire_details')->insert($guardQuestionnaireDetailsData);
+            // Create induction records — only the "staff" audience inductions,
+            // same as a self-registered staff account gets.
+            InductionAssignmentService::assignToUser($user->id, 'staff');
 
             DB::commit();
 

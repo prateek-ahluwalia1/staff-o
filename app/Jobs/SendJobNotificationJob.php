@@ -7,6 +7,7 @@ use App\Models\JobRoster;
 use App\Models\User;
 use App\Models\Site;
 use App\Events\DynamicUserNotification;
+use App\Services\InductionAssignmentService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -548,7 +549,9 @@ class SendJobNotificationJob implements ShouldQueue
             ->whereNotNull('notification_token')
             ->select('id', 'name', 'email', 'phone', 'coordinates', 'current_coordinates', 'notification_token')
             ->get()
-            ->filter(fn($g) => $this->isWithinRadius($siteCoords, $g->current_coordinates, $radiusKm));
+            ->filter(fn($g) => $this->isWithinRadius($siteCoords, $g->current_coordinates, $radiusKm))
+            // Guards with an unfinished (or failed) "staff" induction don't get job notifications.
+            ->filter(fn($g) => InductionAssignmentService::hasCompletedRequiredInductions($g->id, 'staff'));
 
         if (!$jobs || $jobs->isEmpty()) {
             return [];
@@ -594,7 +597,9 @@ class SendJobNotificationJob implements ShouldQueue
             ->where('user_type', 'staff')
             ->whereNotNull('notification_token')
             ->select('id', 'name', 'email', 'phone', 'notification_token')
-            ->get();
+            ->get()
+            // Guards with an unfinished (or failed) "staff" induction don't get job notifications.
+            ->filter(fn($g) => InductionAssignmentService::hasCompletedRequiredInductions($g->id, 'staff'));
 
         if (!$jobs || $jobs->isEmpty()) {
             return [];
@@ -762,6 +767,8 @@ class SendJobNotificationJob implements ShouldQueue
             ->select('id', 'name', 'email', 'phone', 'notification_token', 'states_allowed')
             ->get()
             ->filter(fn($partner) => $this->userHasStatePermission($partner, $siteState))
+            // Resource partners with an unfinished (or failed) induction don't get job notifications.
+            ->filter(fn($partner) => InductionAssignmentService::hasCompletedRequiredInductions($partner->id, 'resource_partner'))
             ->values();
 
         Log::info("Found {$partners->count()} resource partners with state permission.", [

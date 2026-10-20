@@ -10,4 +10,8 @@ class GuardQuestionnaireDetails extends Model
     use HasFactory;
     protected $table = 'guard_questionnaire_details';
 
+      protected $casts = [
+        'answers' => 'array',
+    ];
+
 }

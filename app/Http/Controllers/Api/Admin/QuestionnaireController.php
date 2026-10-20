@@ -28,6 +28,7 @@ class QuestionnaireController extends Controller
         $questionnaire->admin_id = $request->admin_id;
         $questionnaire->questionnaire = $request->questionnaire;
         $questionnaire->sub_heading = $request->sub_heading;
+        $questionnaire->type = in_array($request->type, ['staff', 'resource_partner']) ? $request->type : 'staff';
 
         $questionnaire->save();
 
@@ -128,19 +129,30 @@ public function assignQuestionnair(Request $request){
                 
         foreach ($assignedQuestionnaire as $key => $question) {
             $questionnaire = Questionnaire::find($question['questionnaire_id']);
-            $question->title = $questionnaire->title; 
-            $question->questionnaire = $questionnaire['questionnaire'];
-            
-            if($question){
-                if($question->marks >= 80){
-                    $assignedQuestionnaire[$key]->status = 'passed';
-                }else{
-                    $assignedQuestionnaire[$key]->status = 'failed';
-                }
-            }else{
-                $assignedQuestionnaire[$key]->status = 'pending';
-            }
+            $question->title = $questionnaire->title;
+            $question->type = $questionnaire->type;
 
+            // Strip the correct answer before sending questions to the
+            // person taking the test — only the question/options go out.
+            $question->questionnaire = collect($questionnaire['questionnaire'] ?? [])
+                ->map(function ($q) {
+                    if (is_array($q)) {
+                        unset($q['answer']);
+                    }
+                    return $q;
+                })
+                ->values()
+                ->all();
+
+            // Not attempted yet (no stored answers) => pending, regardless
+            // of the default 0 marks a fresh assignment starts with.
+            if (empty($question->answers)) {
+                $assignedQuestionnaire[$key]->status = 'pending';
+            } elseif ($question->marks >= 80) {
+                $assignedQuestionnaire[$key]->status = 'passed';
+            } else {
+                $assignedQuestionnaire[$key]->status = 'failed';
+            }
         }
         if(!empty($assignedQuestionnaire)){
             return response()->json([
@@ -158,14 +170,52 @@ public function assignQuestionnair(Request $request){
     }
 
   public function submitQNA(Request $request){
-    
+
      $guardQNADetails = GuardQuestionnaireDetails::find($request->questionnaire_id);
-     $guardQNADetails->marks = $request->marks;
-     $guardQNADetails->update();
-     $guardQNADetails->refresh();
+     if (!$guardQNADetails) {
+         return response()->json(['success' => false, 'message' => 'Induction not found'], 404);
+     }
+
      $guard = User::find($request->guard_id);
      $testDetails = Questionnaire::find($guardQNADetails->questionnaire_id);
-     if($request->marks >= 80){
+
+     // Marks are computed here from the submitted answers rather than
+     // trusted from the client, so a passing score can't just be sent
+     // straight from the browser.
+     $submittedAnswers = $request->input('answers', []);
+     $questions = $testDetails->questionnaire ?? [];
+
+     $scorable = 0;
+     $correct = 0;
+
+     foreach ($questions as $index => $question) {
+         if (!is_array($question)) {
+             continue;
+         }
+         // "Short Question" responses are free text and can't be
+         // auto-graded, so they don't count toward the score.
+         if (($question['type'] ?? '') === 'Short Question') {
+             continue;
+         }
+         if (!array_key_exists('answer', $question)) {
+             continue;
+         }
+
+         $scorable++;
+         $given = $submittedAnswers[$index] ?? null;
+         if ($given !== null && (string) $given === (string) $question['answer']) {
+             $correct++;
+         }
+     }
+
+     $marks = $scorable > 0 ? (int) round(($correct / $scorable) * 100) : 0;
+
+     $guardQNADetails->marks = $marks;
+     $guardQNADetails->answers = $submittedAnswers;
+     $guardQNADetails->update();
+     $guardQNADetails->refresh();
+
+     if($marks >= 80){
          $config_title = 'STAFFOO';
          $from = 'no-reply@staffoo.com.au';
          $headers  = 'MIME-Version: 1.0' . "\r\n";
@@ -418,6 +468,9 @@ public function assignQuestionnair(Request $request){
 
      return response()->json([
          'success' => true,
+         'marks' => $marks,
+         'status' => $marks >= 80 ? 'passed' : 'failed',
+         'certificate_path' => $guardQNADetails->certificate_path,
      ]);
  }
   function updateReadStatus(Request $request)

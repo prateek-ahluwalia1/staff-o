@@ -533,6 +533,7 @@ class AdminStaffController extends Controller
                                         }
                                     }
                                     
+                                    
                                     Document::whereIn('id', $common_doc_ids)
                                                 ->update(['document_category' => $new_document_category]);
                                 }

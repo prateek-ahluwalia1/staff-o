@@ -445,4 +445,5 @@ private function getProfileCompletionSteps(string $userType): array
             return [];
     }
 }
+
 }

@@ -153,6 +153,7 @@ public function assignQuestionnair(Request $request){
             } else {
                 $assignedQuestionnaire[$key]->status = 'failed';
             }
+            
         }
         if(!empty($assignedQuestionnaire)){
             return response()->json([

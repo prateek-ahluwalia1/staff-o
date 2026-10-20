@@ -13,6 +13,7 @@ use App\Models\Contractor;
 use App\Models\Document;
 use App\Models\Questionnaire;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class GeneralController extends Controller
@@ -471,4 +472,257 @@ private function getProfileCompletionSteps(string $userType): array
             return [];
     }
 }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Company Documents (Business Folders & Files)
+    |--------------------------------------------------------------------------
+    */
+
+    public function createBusinessFolder(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'folder'    => 'required|string|max:255',
+            'parent_id' => 'nullable|integer|exists:business_folder,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $data = [
+            'folder'     => $request->folder,
+            'parent_id'  => !empty($request->parent_id) ? $request->parent_id : null,
+            'created_by' => optional($request->user())->id ?: $request->created_by,
+        ];
+
+        $id = DB::table('business_folder')->insertGetId($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Folder created!',
+            'data'    => array_merge(['id' => $id], $data),
+        ]);
+    }
+
+    public function getBusinessFolder(Request $request)
+    {
+        $records = DB::table('business_folder')
+            ->whereNull('parent_id')
+            ->select('id', 'folder', 'parent_id', 'created_at')
+            ->orderBy('folder')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $records,
+        ]);
+    }
+
+    public function createBusinessFile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'folder_id'   => 'required|integer|exists:business_folder,id',
+            'name'        => 'required|string|max:255',
+            'file'        => 'nullable|file|max:51200', // 50MB
+            'expiry_date' => 'nullable|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $data = [
+            'folder_id'   => $request->folder_id,
+            'expiry_date' => $request->filled('expiry_date') ? $request->expiry_date : null,
+            'created_by'  => optional($request->user())->id ?: $request->created_by,
+            'name'        => $request->name,
+        ];
+
+        $existing = !empty($request->id)
+            ? DB::table('business_files')->where('id', $request->id)->first()
+            : null;
+
+        if ($request->hasFile('file')) {
+            $uploadedFile = $request->file('file');
+            $path = $uploadedFile->store('business-documents', 'public');
+
+            $data['file_link'] = $path;
+            $data['file_size'] = $this->formatFileSize($uploadedFile->getSize());
+
+            // Remove the old stored file when replacing it during an edit
+            if ($existing && !empty($existing->file_link)) {
+                Storage::disk('public')->delete($existing->file_link);
+            }
+        } elseif ($request->filled('file_link')) {
+            $data['file_link'] = $request->file_link;
+            $data['file_size'] = $request->file_size;
+        } elseif ($existing) {
+            $data['file_link'] = $existing->file_link;
+            $data['file_size'] = $existing->file_size;
+        }
+
+        if ($existing) {
+            DB::table('business_files')->where('id', $request->id)->update($data);
+            $id = $existing->id;
+        } else {
+            if (empty($data['file_link'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please choose a file to upload.',
+                ], 422);
+            }
+            $id = DB::table('business_files')->insertGetId($data);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'File saved!',
+            'data'    => array_merge(['id' => $id], $data),
+        ]);
+    }
+
+    public function getAllBusinessfile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'folder_id' => 'required|integer|exists:business_folder,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $folder = DB::table('business_folder')->where('id', $request->folder_id)->first();
+
+        $files = DB::table('business_files')->where('folder_id', $request->folder_id)
+            ->leftJoin('users', 'users.id', '=', 'business_files.created_by')
+            ->select('business_files.*', 'users.name as created_by_name')
+            ->orderByDesc('business_files.created_at')
+            ->get();
+
+        $folders = DB::table('business_folder')->where('parent_id', $request->folder_id)
+            ->leftJoin('users', 'users.id', '=', 'business_folder.created_by')
+            ->select('business_folder.*', 'users.name as created_by_name')
+            ->orderBy('business_folder.folder')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'folder'  => $folder,
+            'files'   => $files,
+            'folders' => $folders,
+        ]);
+    }
+
+    public function getSpecificBusinessfile(Request $request, $id)
+    {
+        $record = DB::table('business_files')
+            ->leftJoin('users', 'users.id', '=', 'business_files.created_by')
+            ->select('business_files.*', 'users.name as created_by_name')
+            ->where('business_files.id', $id)
+            ->first();
+
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $record,
+        ]);
+    }
+
+    public function deleteBusinessFile(Request $request)
+    {
+        if (empty($request->id)) {
+            return response()->json([
+                'success' => false,
+                'msg' => 'Record not found',
+            ]);
+        }
+
+        $file = DB::table('business_files')->where('id', $request->id)->first();
+
+        if (!$file) {
+            return response()->json([
+                'success' => false,
+                'msg' => 'Record not found',
+            ]);
+        }
+
+        if (!empty($file->file_link)) {
+            Storage::disk('public')->delete($file->file_link);
+        }
+
+        DB::table('business_files')->where('id', $request->id)->delete();
+
+        return response()->json([
+            'success' => true,
+            'msg' => 'File deleted',
+        ]);
+    }
+
+    public function renameFolderName(Request $request)
+    {
+        $folder = DB::table('business_folder')->where('id', $request->id)->first();
+
+        if (!empty($folder)) {
+            DB::table('business_folder')
+                ->where('id', $request->id)
+                ->update(['folder' => $request->folder]);
+
+            return response()->json(['success' => true, 'message' => 'Folder name updated!']);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Folder not found!']);
+    }
+
+    public function deleteFolder(Request $request)
+    {
+        $folder = DB::table('business_folder')->where('id', $request->id)->first();
+
+        if (empty($folder)) {
+            return response()->json(['success' => false, 'message' => 'Folder not found!']);
+        }
+
+        // Only one level deep, matching how folders are browsed in the UI
+        $childFolderIds = DB::table('business_folder')->where('parent_id', $request->id)->pluck('id');
+        $folderIds = $childFolderIds->push($request->id);
+
+        $filesToDelete = DB::table('business_files')->whereIn('folder_id', $folderIds)->get();
+        foreach ($filesToDelete as $file) {
+            if (!empty($file->file_link)) {
+                Storage::disk('public')->delete($file->file_link);
+            }
+        }
+
+        DB::table('business_files')->whereIn('folder_id', $folderIds)->delete();
+        DB::table('business_folder')->where('parent_id', $request->id)->delete();
+        DB::table('business_folder')->where('id', $request->id)->delete();
+
+        return response()->json(['success' => true, 'message' => 'Folder Deleted!']);
+    }
+
+    private function formatFileSize($bytes)
+    {
+        if ($bytes >= 1048576) {
+            return round($bytes / 1048576, 2) . ' MB';
+        }
+        if ($bytes >= 1024) {
+            return round($bytes / 1024, 2) . ' KB';
+        }
+        return $bytes . ' B';
+    }
 }

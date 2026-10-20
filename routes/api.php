@@ -402,6 +402,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/visa-check-copy', [VisaController::class, 'createCopy']);
         Route::get('/visa-result/{id}', [VisaController::class, 'result']);
         Route::post('/visa-expiry-check', [VisaController::class, 'visaExpiryCheck']);
+
+        // Company Documents (business folders & files)
+        Route::post('business-folder/create', [GeneralController::class, 'createBusinessFolder']);
+        Route::get('business-folder/list', [GeneralController::class, 'getBusinessFolder']);
+        Route::post('business-folder/rename', [GeneralController::class, 'renameFolderName']);
+        Route::post('business-folder/delete', [GeneralController::class, 'deleteFolder']);
+
+        Route::post('business-file/save', [GeneralController::class, 'createBusinessFile']);
+        Route::get('business-file/list', [GeneralController::class, 'getAllBusinessfile']);
+        Route::get('business-file/{id}', [GeneralController::class, 'getSpecificBusinessfile']);
+        Route::post('business-file/delete', [GeneralController::class, 'deleteBusinessFile']);
     });
 
     Route::prefix('payment')->group(function () {
@@ -471,4 +482,3 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/agora/token', [AgoraController::class, 'generateToken']);
     Route::post('/agora/channel', [AgoraController::class, 'createChannel']);
-    

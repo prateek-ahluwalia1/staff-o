@@ -557,26 +557,27 @@ function photoUrl(string $imgPath): string {
       </div>
 
     {{-- ── Signature ── --}}
-    <div class="sec-heading">Signature</div>
-    <div class="sig-wrap">
-      @if(!empty($sig))
-       @php
-        $sigimgUrl  = !empty($imgPath) ? photoUrl($sig) : '';
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $sigimgUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $imageData = curl_exec($ch);
-        curl_close($ch);
+    {{-- ── Signature ── --}}
+<div class="sec-heading">Signature</div>
+<div class="sig-wrap">
+  @if(!empty($sig))
+    @php
+      $sigImgUrl = photoUrl($sig);
+      $ch = curl_init();
+      curl_setopt($ch, CURLOPT_URL, $sigImgUrl);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+      $sigImageData = curl_exec($ch);
+      curl_close($ch);
 
-        $sigbase64 = base64_encode($imageData);
-      @endphp
-        <img src="data:image/png;base64,{{ $base64 }}" alt="Image">
-      @else
-        <div class="sig-placeholder">
-          <div class="sig-placeholder-inner">No signature captured</div>
-        </div>
-      @endif
+      $sigbase64 = base64_encode($sigImageData);
+    @endphp
+    <img src="data:image/png;base64,{{ $sigbase64 }}" alt="Signature">
+  @else
+    <div class="sig-placeholder">
+      <div class="sig-placeholder-inner">No signature captured</div>
     </div>
+  @endif
+</div>
 
   </div>{{-- /incident-body --}}
 </div>{{-- /incident-block --}}

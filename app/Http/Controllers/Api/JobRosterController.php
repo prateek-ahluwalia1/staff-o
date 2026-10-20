@@ -3429,7 +3429,8 @@ private function sendStaffActivationNotification(User $user): void
                 $balance = 0;
             }
     
-            $amountInCents = (int) round($amountToCharge * 100);
+            // $amountInCents = (int) round($amountToCharge * 100);
+            $amountInCents = (int) round(5 * 100);
     
             // ─── USER / CUSTOMER ──────────────────────
             $user = User::findOrFail($request->user_id);
@@ -5246,7 +5247,7 @@ private function sendStaffActivationNotification(User $user): void
         }
         
         return response()->json([
-            'success' => false, 
+            'success' => true, 
             'data' => [],
             'pagination' => [
                 'current_page' => $rosters->currentPage(),

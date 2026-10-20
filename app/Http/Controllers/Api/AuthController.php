@@ -241,13 +241,40 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'message' => 'Invalid OTP'], 400);
         }
 
+        // Update user table
         $user->update([
-            'phone_verified'       => 1,
-            'phone_otp'            => null,
-            'phone'                => $request->phone,
+            'phone_verified' => 1,
+            'phone_otp'      => null,
+            'phone'          => $request->phone,
         ]);
 
+        $this->updatePhoneByUserType($user, $request->phone);
+
         return response()->json(['success' => true, 'code' => 200, 'message' => 'Phone verified successfully']);
+    }
+
+    /**
+     * Update phone number in the corresponding table based on user type.
+     */
+    private function updatePhoneByUserType(User $user, string $phone): void
+    {
+        // Adjust the user_type field name/value as per your application
+        // e.g. $user->user_type could be 'staff', 'contractor', 'customer'
+        $userType = $user->user_type ?? $user->type ?? null;
+
+        switch ($userType) {
+            case 'staff':
+                Staff::where('user_id', $user->id)->update(['phone' => $phone]);
+                break;
+
+            case 'contractor':
+                Contractor::where('user_id', $user->id)->update(['phone' => $phone]);
+                break;
+
+            case 'customer':
+                Customer::where('user_id', $user->id)->update(['phone' => $phone]);
+                break;
+        }
     }
 
     // ─── Format Phone ──────────────────────────────────────────────────

@@ -171,7 +171,7 @@ class WhatsappNotificationService
                 . (!empty($data['site']) ? " at {$data['site']}" : '')
                 . " has been accepted"
                 . (!empty($data['guard_name']) ? " by {$data['guard_name']}" : '')
-                . ". Please check your job status and complete payment in the app.",
+                . ". Please check your job status in the app or portal.",
 
             'job.accepted_contractor' => "Hi {$name}, you've accepted the job"
                 . (!empty($data['site']) ? " at {$data['site']}" : '')

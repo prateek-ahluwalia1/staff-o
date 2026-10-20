@@ -1386,10 +1386,15 @@ private function sendStaffActivationNotification(User $user): void
                     // client, the resource partner (if any) and admin.
                     // Never blocks sign-in.
                     try {
-                        $payNotifyRecipients = array_filter([
+                        $payNotifyCandidates = array_filter([
                             \App\Models\User::find($job->created_by),
                             $job->accepted_by ? \App\Models\User::find($job->accepted_by) : null,
                         ]);
+
+                        $payNotifyRecipients = array_values(array_filter(
+                            $payNotifyCandidates,
+                            fn ($u) => in_array($u->user_type, ['customer', 'contractor'], true)
+                        ));
                         $payNotifyRecipients[] = ['group' => 'admin.daily_summary'];
 
                         \App\Services\WhatsappNotificationService::fire('payment.completed', $payNotifyRecipients, [
@@ -1469,10 +1474,15 @@ private function sendStaffActivationNotification(User $user): void
                 // (if this job was taken via a contractor) that the guard has
                 // signed in. Never blocks sign-in.
                 try {
-                    $signinRecipients = array_filter([
+                    $signinCandidates = array_filter([
                         \App\Models\User::find($roster->created_by),
                         $roster->accepted_by ? \App\Models\User::find($roster->accepted_by) : null,
                     ]);
+
+                    $signinRecipients = array_values(array_filter(
+                        $signinCandidates,
+                        fn ($u) => in_array($u->user_type, ['customer', 'contractor'], true)
+                    ));
 
                     \App\Services\WhatsappNotificationService::fire('job.signin', $signinRecipients, [
                         'guard_name' => $guard->name ?? null,

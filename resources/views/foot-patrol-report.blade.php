@@ -141,11 +141,15 @@
 
   /* PHOTOS */
   .photo-wrapper { margin-top: 4px; }
-  .photo-row { display: flex; flex-wrap: wrap; gap: 12px; }
+  .photo-row { font-size: 0; }  /* kills whitespace gaps between inline-blocks */
   .photo-cell-wrap {
+    display: inline-block;
     width: 140px;
     vertical-align: top;
     text-align: center;
+    font-size: 12px;           /* restore font-size for children */
+    margin-right: 12px;
+    margin-bottom: 8px;
   }
   .photo-cell-wrap img {
     width: 128px;

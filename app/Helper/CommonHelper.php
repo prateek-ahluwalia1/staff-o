@@ -179,7 +179,7 @@ function send_push_notification($data){
 
      function getUserName($id)
     {
-        $user = User::where('id', $id)->first();
+        $user = User::find($id);
         if($user){
             return $user->name;
         }else{

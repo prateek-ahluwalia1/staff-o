@@ -47,7 +47,7 @@ class JobRosterActiviteController extends Controller
 
             $roster = JobRoster::where('id', $request->roster_id)->first();
             if($roster){
-                $staff = !empty($roster->assined_to) ? getUserName($roster->assined_to) : null;
+                $staff = !empty($roster->assigned_to) ? getUserName($roster->assigned_to) : null;
                 $loaction = !empty($roster->site_id) ? getSiteName($roster->site_id) : null;
                 $shift_start = !empty($roster->start) ? usaToAusDateTime($roster->start) : '';
                 $shift_end = !empty($roster->end) ? usaToAusDateTime($roster->end) : '';

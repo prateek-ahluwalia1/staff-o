@@ -904,7 +904,7 @@ class SendJobNotificationJob implements ShouldQueue
             isset($parts[0]) ? (float) $parts[0] : null,
             isset($parts[1]) ? (float) $parts[1] : null,
         ];
-        
+
     }
 
     private function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float
@@ -918,4 +918,5 @@ class SendJobNotificationJob implements ShouldQueue
 
         return $R * 2 * atan2(sqrt($a), sqrt(1 - $a));
     }
+    
 }

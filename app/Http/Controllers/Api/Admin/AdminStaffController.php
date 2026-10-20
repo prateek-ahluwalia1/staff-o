@@ -380,7 +380,7 @@ class AdminStaffController extends Controller
     public function staffooStaff(Request $request)
     {
         $query = User::where('user_type', 'staff')->where('is_active', 1)
-        // ->where('user_id', 1)
+        ->where('user_id', 1)
         ->with('staff');
 
         // Search functionality

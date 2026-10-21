@@ -1,14 +1,87 @@
 /**
- * Browser-based PDF Text Extraction & OCR Engine using PDF.js and Tesseract.js
- * Runs 100% in the client browser without sending files to external third-party OCR services.
+ * PDF Text Extraction & OCR Engine using PDF.js, Google Cloud Vision (via our
+ * backend), and Tesseract.js as a local fallback.
  */
+
+import { apiURL } from "./exports";
 
 const PDFJS_SCRIPT_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
 const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 const TESSERACT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
 
+// Backend endpoint that proxies an uploaded image to the Google Cloud Vision
+// API (DOCUMENT_TEXT_DETECTION) so the Vision API key never reaches the
+// browser. See the matching Laravel controller/route for this project.
+const GOOGLE_VISION_ENDPOINT = `${apiURL}api/ocr/google-vision`;
+const GOOGLE_VISION_TIMEOUT_MS = 30000;
+
 let pdfjsLoadingPromise = null;
 let tesseractLoadingPromise = null;
+
+/**
+ * Reads the Bearer auth token out of the app's redux-persist storage
+ * (persisted under the "auth" key — see src/store/store.js) so this plain
+ * utility module can authenticate the Vision OCR request without needing
+ * React/Redux hooks, which aren't usable outside components.
+ */
+function getStoredAuthToken() {
+  try {
+    if (typeof localStorage === "undefined") return null;
+    const raw = localStorage.getItem("persist:auth");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.token) return null;
+    // redux-persist stores each slice value JSON-stringified.
+    return JSON.parse(parsed.token) || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
+ * Sends an image file to our backend, which proxies it to the Google Cloud
+ * Vision API for OCR. Runs server-side so the Vision API key stays secret.
+ *
+ * Returns the extracted text, or null on any failure (missing/unreachable
+ * endpoint, network error, provider error) so the caller can fall back to
+ * the in-browser Tesseract pipeline instead of blocking the upload.
+ */
+async function runGoogleVisionOcr(file, onProgress) {
+  if (typeof fetch === "undefined") return null;
+
+  try {
+    if (onProgress) onProgress("Reading document image (cloud OCR)...");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const token = getStoredAuthToken();
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const res = await withTimeout(
+      fetch(GOOGLE_VISION_ENDPOINT, {
+        method: "POST",
+        headers,
+        body: formData,
+        credentials: "include",
+      }),
+      GOOGLE_VISION_TIMEOUT_MS,
+      "Cloud OCR request timed out"
+    );
+
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    if (!json || json.success === false || typeof json.text !== "string") return null;
+
+    return json.text;
+  } catch (_) {
+    // Endpoint not deployed yet, offline, CORS, provider outage, etc. —
+    // treated as "unavailable", not a hard failure.
+    return null;
+  }
+}
 
 /**
  * Dynamically loads an external script tag if not already loaded.
@@ -155,6 +228,86 @@ function rotateToCanvas(imgOrCanvas, degrees, maxDim) {
   return canvas;
 }
 
+/**
+ * Preprocesses a canvas for OCR: upscales small images, converts to
+ * grayscale, and binarizes with an Otsu threshold (automatic black/white
+ * cutoff). ID/license card photos are frequently low-resolution, glare-y,
+ * or have a busy background pattern (holograms, watermarks, security
+ * microprint) that Tesseract otherwise tries to read as text, producing
+ * garbled output. A clean, high-contrast black-on-white image reads far
+ * more reliably than the raw color photo.
+ */
+function preprocessCanvasForOcr(canvas) {
+  const MIN_DIM = 1200;
+  let srcCanvas = canvas;
+
+  // Upscale small images so character strokes have enough pixels to be
+  // recognized reliably.
+  const maxSrcDim = Math.max(canvas.width, canvas.height);
+  if (maxSrcDim > 0 && maxSrcDim < MIN_DIM) {
+    const scale = MIN_DIM / maxSrcDim;
+    const scaled = document.createElement("canvas");
+    scaled.width = Math.round(canvas.width * scale);
+    scaled.height = Math.round(canvas.height * scale);
+    const sctx = scaled.getContext("2d");
+    sctx.imageSmoothingEnabled = true;
+    sctx.imageSmoothingQuality = "high";
+    sctx.drawImage(canvas, 0, 0, scaled.width, scaled.height);
+    srcCanvas = scaled;
+  }
+
+  const ctx = srcCanvas.getContext("2d");
+  const { width, height } = srcCanvas;
+  if (!width || !height) return srcCanvas;
+
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  const n = width * height;
+
+  // Grayscale (perceptual luminance) + histogram for Otsu threshold.
+  const gray = new Uint8ClampedArray(n);
+  const histogram = new Array(256).fill(0);
+  for (let i = 0, p = 0; i < n; i++, p += 4) {
+    const g = Math.round(0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2]);
+    gray[i] = g;
+    histogram[g]++;
+  }
+
+  // Otsu's method: pick the threshold that maximizes between-class variance,
+  // i.e. the cutoff that best separates "ink" from "background".
+  let sum = 0;
+  for (let t = 0; t < 256; t++) sum += t * histogram[t];
+  let sumB = 0;
+  let wB = 0;
+  let maxVar = 0;
+  let threshold = 127;
+  for (let t = 0; t < 256; t++) {
+    wB += histogram[t];
+    if (wB === 0) continue;
+    const wF = n - wB;
+    if (wF === 0) break;
+    sumB += t * histogram[t];
+    const mB = sumB / wB;
+    const mF = (sum - sumB) / wF;
+    const varBetween = wB * wF * (mB - mF) * (mB - mF);
+    if (varBetween > maxVar) {
+      maxVar = varBetween;
+      threshold = t;
+    }
+  }
+
+  // Write back as a binarized (black-on-white) image.
+  for (let i = 0, p = 0; i < n; i++, p += 4) {
+    const v = gray[i] >= threshold ? 255 : 0;
+    data[p] = v;
+    data[p + 1] = v;
+    data[p + 2] = v;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return srcCanvas;
+}
+
 let tesseractWorkerPromise = null;
 let activeProgressHandler = null;
 let activeProgressLabel = "";
@@ -266,7 +419,7 @@ export async function runOcrOnImage(imageSource, onProgress) {
       if (onProgress) {
         onProgress(`Checking document orientation${degrees ? ` (${degrees}°)` : ""}...`);
       }
-      const quickCanvas = rotateToCanvas(imgSource, degrees, QUICK_CHECK_MAX_DIM);
+      const quickCanvas = preprocessCanvasForOcr(rotateToCanvas(imgSource, degrees, QUICK_CHECK_MAX_DIM));
       const attempt = await recognizeOnce(quickCanvas, null, `${degrees}°`, QUICK_CHECK_TIMEOUT_MS);
       results.push({ degrees, ...attempt });
       // A clearly excellent reading needs no further checking.
@@ -281,7 +434,7 @@ export async function runOcrOnImage(imageSource, onProgress) {
     if (onProgress) {
       onProgress(`Reading document image${winner.degrees ? ` (${winner.degrees}°)` : ""}...`);
     }
-    const fullResCanvas = rotateToCanvas(imgSource, winner.degrees);
+    const fullResCanvas = preprocessCanvasForOcr(rotateToCanvas(imgSource, winner.degrees));
     const finalAttempt = await recognizeOnce(fullResCanvas, onProgress, winner.degrees ? `${winner.degrees}°` : undefined);
 
     const finalText =
@@ -398,6 +551,21 @@ export async function extractDocumentText(file, onProgress) {
 
     if (isImage) {
       if (onProgress) onProgress("Reading image document...");
+
+      // 1. Try Google Cloud Vision first (server-side OCR) — far more
+      // accurate than in-browser OCR on real-world ID/license photos
+      // (glare, busy backgrounds, skew, low resolution).
+      const visionText = await runGoogleVisionOcr(file, onProgress);
+      if (visionText && visionText.trim().length >= 10) {
+        return {
+          success: true,
+          text: visionText,
+          method: "google-vision",
+        };
+      }
+
+      // 2. Fall back to in-browser OCR (Tesseract.js) if Vision is not
+      // configured/reachable, or returned too little text to be useful.
       const ocrResult = await runOcrOnImage(file, onProgress);
       return {
         success: true,

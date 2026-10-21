@@ -91,6 +91,15 @@ export function isDocumentNumberInText(rawText, docNumber) {
   // 1. Direct case-insensitive substring match
   if (textLower.includes(numLower)) return true;
 
+  // 1a. Dash-insensitive match: strip hyphens/dashes (including OCR'd dash
+  // variants like en/em dash and the minus sign) from both sides so a
+  // document number entered without dashes still matches text extracted
+  // with dashes, or vice versa, e.g. "Z3910250S" vs "Z39-102-50S".
+  const dashPattern = /[-‐-―−]/g;
+  const textNoDash = textLower.replace(dashPattern, "");
+  const numNoDash = numLower.replace(dashPattern, "");
+  if (numNoDash && textNoDash.includes(numNoDash)) return true;
+
   // 2. Alphanumeric match (ignoring whitespace, hyphens, slashes, periods, colons, hash, commas)
   const textAlpha = textLower.replace(/[^a-z0-9]/g, "");
   const numAlpha = numLower.replace(/[^a-z0-9]/g, "");

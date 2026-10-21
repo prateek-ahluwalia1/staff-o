@@ -210,6 +210,22 @@ export const DEFAULT_DOCUMENT_RULES = {
       "agent",
       "operator",
       "corporation",
+      "victoria police",
+      "nsw police",
+      "office of fair trading",
+      "consumer and business services",
+      "cbs",
+      "cbos",
+      "licensing nt",
+      "access canberra",
+      "wa police",
+      "queensland",
+      "western australia",
+      "south australia",
+      "tasmania",
+      "australian capital territory",
+      "northern territory",
+      "new south wales",
     ],
     minSupportingMatches: 0,
     disqualifiers: [],
@@ -234,6 +250,16 @@ export const DEFAULT_DOCUMENT_RULES = {
       "accident compensation",
       "injury insurance",
       "workplace injury rehabilitation",
+      "workcover wa",
+      "worksafe wa",
+      "safe work australia",
+      "worksafe nt",
+      "nt worksafe",
+      "workcover queensland",
+      "workcover qld",
+      "worksafe tasmania",
+      "workcover tasmania",
+      "worksafe act",
     ],
     supportingKeywords: [
       "certificate of currency",
@@ -248,6 +274,14 @@ export const DEFAULT_DOCUMENT_RULES = {
       "insured",
       "cover",
       "claim number",
+      "queensland",
+      "western australia",
+      "south australia",
+      "tasmania",
+      "australian capital territory",
+      "northern territory",
+      "new south wales",
+      "victoria",
     ],
     minSupportingMatches: 1,
     disqualifiers: [],
@@ -280,6 +314,10 @@ export const DEFAULT_DOCUMENT_RULES = {
       "certificate of license",
       "register of licensed providers",
       "labour hire services act",
+      "queensland",
+      "victoria",
+      "south australia",
+      "australian capital territory",
     ],
     minSupportingMatches: 1,
     disqualifiers: [],
@@ -435,6 +473,17 @@ export const DEFAULT_DOCUMENT_RULES = {
       "transport and main roads",
       "department of state growth",
       "access canberra",
+      "service sa",
+      "department for infrastructure and transport",
+      "mylicence",
+      "motor vehicle registry",
+      "mvr",
+      "nt government",
+      "western australia",
+      "south australia",
+      "northern territory",
+      "tasmania",
+      "queensland",
     ],
     minSupportingMatches: 1,
     disqualifiers: ["passport"],
@@ -474,6 +523,10 @@ export const DEFAULT_DOCUMENT_RULES = {
       "signature",
       "magnetic",
       "transport",
+      "service sa",
+      "department for infrastructure and transport",
+      "motor vehicle registry",
+      "mvr",
     ],
     minSupportingMatches: 1,
     disqualifiers: ["passport"],
@@ -485,32 +538,63 @@ export const DEFAULT_DOCUMENT_RULES = {
     coreKeywords: [
       "security licence",
       "security license",
+      "security activities",
+      "security industry licence",
+      "security industry license",
+      "security industry licence new south wales",
+      "security individual licence",
+      "security individual license",
+      "individual security licence",
+      "individual security license",
       "private security individual licence",
       "private security individual license",
-      "security operative",
-      "security guard",
-      "crowd controller",
-      "unarmed guard",
-      "armed guard",
-      "bodyguard",
-      "monitoring centre operator",
-      "private security",
-      "security provider",
-      "security officer",
       "private security licence",
       "private security license",
-      "security employee",
-      "class 1",
-      "class 2",
-      "sub-class",
-      "security activities",
+      "individual licence",
+      "individual license",
+      "crowd controller",
+      "crowd control licence",
+      "crowd control license",
+      "crowd controller licence",
+      "crowd controller license",
+      "security guard licence",
+      "security guard license",
+      "unarmed guard",
+      "security operative",
+      // Queensland (Security Providers Act 1993)
+      "security provider licence",
+      "security provider license",
+      "security providers act",
+      // Western Australia (Security and Related Activities (Control) Act 1996)
+      "security officer licence",
+      "security officer license",
+      "security officer's licence",
+      "security officer's license",
+      "security and related activities",
+      // South Australia (Security and Investigation Industry Act 1995)
+      "security agent licence",
+      "security agent license",
+      "security agent's licence",
+      "security agent's license",
+      "security agents licence",
+      "security agents license",
+      "security and investigation agent",
+      "security and investigation industry",
+      // Tasmania (Security and Investigations Agents Act 2002)
+      "security industry agent licence",
+      "security industry agent license",
+      "security and investigation agent licence",
+      "security and investigation agent license",
+      "security and investigations agent licence",
+      "security and investigations agent license",
+      // ACT (Security Industry Act 2003) & NT (Private Security Act) mostly use
+      // the generic "security licence" wording already covered above.
+      "security firm licence",
+      "security firm license",
     ],
     supportingKeywords: [
-      "licence number",
       "license number",
-      "licence no",
-      "license no",
-      "lrd",
+      "licence number",
       "licensing & regulation division",
       "licensing and regulation division",
       "sled",
@@ -520,14 +604,35 @@ export const DEFAULT_DOCUMENT_RULES = {
       "nsw police",
       "office of fair trading",
       "consumer and business services",
+      "cbs",
       "cbos",
       "licensing nt",
       "access canberra",
       "wa police",
-      "expiry",
+      "department of mines, industry regulation and safety",
+      "expirys",
+      "expires",
       "date of expiry",
       "authorised",
       "authorized",
+      "activities:",
+      "crowd controller",
+      "security guard",
+      "control room operator",
+      "monitoring centre operator",
+      "licence no",
+      "license no",
+      "card number",
+      "card no",
+      "class",
+      "new south wales",
+      "nsw government",
+      "queensland",
+      "western australia",
+      "south australia",
+      "tasmania",
+      "australian capital territory",
+      "northern territory",
     ],
     minSupportingMatches: 1,
     disqualifiers: [
@@ -1517,7 +1622,6 @@ export const resolveStateCode = (category, doc) => {
 };
 
 const hasAny = (text, phrases) => phrases.some((p) => text.includes(p.toLowerCase()));
-const countMatches = (text, phrases) => phrases.filter((p) => text.includes(p.toLowerCase())).length;
 
 /**
  * Detects if the document unambiguously belongs to a DIFFERENT Australian state.
@@ -1588,6 +1692,12 @@ export const evaluateDocumentText = (rawText, docType, docCategory, docName = ""
     return { isValid: true, docDisplayName, stateName };
   }
 
+  // Working With Children Check: skip keyword/disqualifier matching entirely.
+  // Only the minimum-content and generic-only checks above still apply.
+  if (typeKey === "working_with_children") {
+    return { isValid: true, docDisplayName, stateName };
+  }
+
   // 1. Check Disqualifiers (e.g. driver license or passport inside public liability)
   if (Array.isArray(rule.disqualifiers) && rule.disqualifiers.length > 0) {
     for (const disq of rule.disqualifiers) {
@@ -1602,8 +1712,11 @@ export const evaluateDocumentText = (rawText, docType, docCategory, docName = ""
     }
   }
 
-  // 2. Check Core Keywords
-  const hasCore = hasAny(normText, rule.coreKeywords);
+  // 2. Check for ANY keyword match (core OR supporting) - a single match is enough.
+  const allKeywords = [
+    ...(Array.isArray(rule.coreKeywords) ? rule.coreKeywords : []),
+    ...(Array.isArray(rule.supportingKeywords) ? rule.supportingKeywords : []),
+  ];
 
   // Special case for Master License: combination of security licence + business/master/firm
   const hasMasterCombination =
@@ -1615,7 +1728,9 @@ export const evaluateDocumentText = (rawText, docType, docCategory, docName = ""
       normText.includes("agent") ||
       normText.includes("operator"));
 
-  if (!hasCore && !hasMasterCombination) {
+  const hasAnyKeyword = hasAny(normText, allKeywords);
+
+  if (!hasAnyKeyword && !hasMasterCombination) {
     const errorMsg =
       rule.errorMessage ||
       `This file does not appear to be a valid ${docDisplayName}${stateName ? ` for ${stateName}` : ""}. Please select the correct document.`;
@@ -1627,35 +1742,19 @@ export const evaluateDocumentText = (rawText, docType, docCategory, docName = ""
     };
   }
 
-  // 3. Check Supporting Keywords
-  if (rule.minSupportingMatches > 0 && Array.isArray(rule.supportingKeywords) && rule.supportingKeywords.length > 0) {
-    const supportingCount = countMatches(normText, rule.supportingKeywords);
-    if (supportingCount < rule.minSupportingMatches) {
-      const errorMsg =
-        rule.errorMessage ||
-        `This file does not contain sufficient details to verify as a valid ${docDisplayName}. Please upload the complete document.`;
-      return {
-        isValid: false,
-        error: errorMsg,
-        docDisplayName,
-        stateName,
-      };
-    }
-  }
-
   // 4. State Conflict Check (only for Australian state-specific documents when state is specified)
-  if (stateCode && STATE_SPECIFIC_DOC_TYPES.includes(typeKey)) {
-    const opposingState = detectOpposingStateConflict(normText, stateCode);
-    if (opposingState) {
-      const opposingStateName = STATE_NAMES[opposingState];
-      return {
-        isValid: false,
-        error: `This file appears to be a ${docDisplayName} for ${opposingStateName}, not ${stateName}. Please select the correct document for ${stateName}.`,
-        docDisplayName,
-        stateName,
-      };
-    }
-  }
+  // if (stateCode && STATE_SPECIFIC_DOC_TYPES.includes(typeKey)) {
+  //   const opposingState = detectOpposingStateConflict(normText, stateCode);
+  //   if (opposingState) {
+  //     const opposingStateName = STATE_NAMES[opposingState];
+  //     return {
+  //       isValid: false,
+  //       error: `This file appears to be a ${docDisplayName} for ${opposingStateName}, not ${stateName}. Please select the correct document for ${stateName}.`,
+  //       docDisplayName,
+  //       stateName,
+  //     };
+  //   }
+  // }
 
   return { isValid: true, docDisplayName, stateName };
 };

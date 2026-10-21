@@ -1167,7 +1167,7 @@ const ManageUsers = () => {
           currentDocCategory,
           currentDocName,
           (msg) => setDocValidationStatus(msg),
-          { state: userState }
+          { state: userState, documentNumber: (docForm.document_no || "").trim() }
         );
 
         if (!valRes.isValid) {
@@ -1538,6 +1538,7 @@ const ManageUsers = () => {
     // Verify document number and expiry date against uploaded document
     let rawText = docForm.extracted_text || "";
     if (!rawText && docForm.file) {
+      // A new file was just selected — OCR it directly.
       setDocValidating(true);
       setDocValidationStatus("Checking document contents...");
       try {
@@ -1548,6 +1549,35 @@ const ManageUsers = () => {
         }
       } catch (_) {}
       finally {
+        setDocValidating(false);
+      }
+    } else if (!rawText && !docForm.file && (docForm.file_url || docForm.file_path || selectedDoc?.file)) {
+      // No new file was selected — this is an edit of an existing,
+      // already-uploaded document (e.g. just correcting the number/expiry).
+      // Fetch the existing file from the server so it can still be OCR'd and
+      // re-verified, instead of silently skipping the check or blocking the
+      // user from ever updating metadata without re-uploading.
+      setDocValidating(true);
+      setDocValidationStatus("Checking existing document contents...");
+      try {
+        const existingPath = docForm.file_url || docForm.file_path || selectedDoc?.file;
+        const fileUrl = /^https?:\/\//i.test(existingPath)
+          ? existingPath
+          : `${apiURL}staff_documents/${existingPath}`;
+        const resp = await fetch(fileUrl);
+        if (resp.ok) {
+          const blob = await resp.blob();
+          const fileName = existingPath.split("/").pop() || "document";
+          const existingFile = new File([blob], fileName, { type: blob.type });
+          const ext = await extractDocumentText(existingFile, (msg) => setDocValidationStatus(msg));
+          if (ext?.success && ext.text) {
+            rawText = ext.text;
+            setDocForm((prev) => ({ ...prev, extracted_text: rawText }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to re-check existing document:", err);
+      } finally {
         setDocValidating(false);
       }
     }
@@ -1577,7 +1607,7 @@ const ManageUsers = () => {
         toast.error(`Expiry Date "${docExpiry}" was not found in the document.`);
         return;
       }
-    } else if (docForm.file || docForm.file_path) {
+    } else if (docForm.file || docForm.file_path || selectedDoc?.file) {
       const errMsg = `Could not verify Document Number "${docNo}" in the uploaded document. Please upload a clear document image or PDF.`;
       setDocValidationError(errMsg);
       toast.error("Could not verify document number. Please upload a clearer file.");

@@ -235,6 +235,7 @@ const Sidebar = memo(function Sidebar() {
     { to: "/partner-contracts", icon: "fa-solid fa-file-signature", label: "Partner Contracts" },
     { to: "/my-job-applications", icon: "fa-solid fa-list-check", label: "All Jobs" },
     { to: "/payment-history", icon: "fa-solid fa-vault", label: "Financials" },
+    { to: "/company-documents", icon: "fa-solid fa-folder-open", label: "Company Documents" },
     { to: "/edit-profile", icon: "fa-solid fa-gear", label: "Settings" },
   ];
 

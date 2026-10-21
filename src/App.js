@@ -69,6 +69,7 @@ const TimeSheet = lazy(() => import("./pages/TimeSheet"));
 const JobTracker = lazy(() => import("./pages/JobTracker"));
 const VisaManagement = lazy(() => import("./pages/VisaManagement"));
 const WFMTools = lazy(() => import("./pages/wfm-tools"));
+const CompanyDocuments = lazy(() => import("./pages/CompanyDocuments"));
 const LeaveManagement = lazy(() => import("./pages/LeaveManagement"));
 const PaySlip = lazy(() => import("./pages/PaySlip"));
 const Induction = lazy(() => import("./pages/Induction"));
@@ -665,6 +666,7 @@ function AppContent() {
                     <Route path="/rates/pay" element={<RatesList />} />
                     <Route path="/rates/contractor" element={<ProtectedRoute allowedRoles={["admin"]}><ContractorRates /></ProtectedRoute>} />
                     <Route path="/wfm-tools" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><WFMTools /></ProtectedRoute>} />
+                    <Route path="/company-documents" element={<ProtectedRoute allowedRoles={["admin"]}><CompanyDocuments /></ProtectedRoute>} />
                     <Route path="/leave" element={<ProtectedRoute allowedRoles={["admin", "contractor"]}><LeaveManagement /></ProtectedRoute>} />
                     <Route path="/holidays" element={<ProtectedRoute allowedRoles={["admin"]}><PublicHolidays /></ProtectedRoute>} />
                     <Route path="/staff-management" element={<ProtectedRoute allowedRoles={["admin"]}><StafooStaff /></ProtectedRoute>} />

@@ -41,6 +41,37 @@ export {
 };
 
 /**
+ * Computes the Levenshtein (edit) distance between two short strings.
+ * Used to tolerate a stray OCR misread (one wrong/missing/extra character)
+ * when matching a user-entered document number against extracted text.
+ */
+function levenshteinDistance(a, b) {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+
+  let prevRow = new Array(n + 1);
+  for (let j = 0; j <= n; j++) prevRow[j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    const currRow = new Array(n + 1);
+    currRow[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      currRow[j] = Math.min(
+        prevRow[j] + 1, // deletion
+        currRow[j - 1] + 1, // insertion
+        prevRow[j - 1] + cost // substitution
+      );
+    }
+    prevRow = currRow;
+  }
+
+  return prevRow[n];
+}
+
+/**
  * Verifies whether a document number is present in the extracted document text.
  * Handles case-insensitivity, stripped punctuation/spaces, dashed numbers,
  * common OCR character substitutions (e.g. 0/O, 1/I/L, 8/B, 5/S), and spaced text.
@@ -120,6 +151,34 @@ export function isDocumentNumberInText(rawText, docNumber) {
   const numDigitsOcr = numOcrNorm.replace(/[^0-9]/g, "");
   if (numDigitsOcr.length >= 3 && textDigitsOcr.includes(numDigitsOcr)) {
     return true;
+  }
+
+  // 9. Fuzzy tolerance for a stray OCR misread (e.g. one digit read as a
+  // visually similar but different digit, a skipped/doubled character, etc).
+  // Run against BOTH the raw alphanumeric strings and the OCR-confusion-
+  // normalized ones from step 7/8 — normalizing first collapses known
+  // look-alike swaps (0/O, 1/I/L, 2/Z, 5/S, 6/G, 7/T, 8/B) so only genuine
+  // misreads count against the edit-distance budget, catching cases like
+  // "879-209-30S" read as "879-200-305" (an S→5 swap, already tolerated,
+  // PLUS a genuine 9→0 misread) that raw-string comparison alone would miss.
+  // Only applied to longer numbers (>=6 chars) to avoid false positives on
+  // short ones; allows 1 edit for numbers under 10 characters, 2 for longer.
+  if (numAlpha.length >= 6) {
+    const maxDistance = numAlpha.length >= 10 ? 2 : 1;
+
+    const fuzzyMatch = (haystack, needle) => {
+      for (const winLen of [needle.length - 1, needle.length, needle.length + 1]) {
+        if (winLen <= 0 || winLen > haystack.length) continue;
+        for (let i = 0; i <= haystack.length - winLen; i++) {
+          const window = haystack.substr(i, winLen);
+          if (levenshteinDistance(window, needle) <= maxDistance) return true;
+        }
+      }
+      return false;
+    };
+
+    if (fuzzyMatch(textAlpha, numAlpha)) return true;
+    if (numOcrNorm.length >= 6 && fuzzyMatch(textOcrNorm, numOcrNorm)) return true;
   }
 
   return false;
@@ -413,6 +472,12 @@ export async function validateDocument(
 
   const extractedText = extraction.text || "";
 
+  // Note: extraction.rotationDegrees (set in ocrEngine.js) tells us whether the
+  // photo was sideways/upside-down and had to be auto-rotated to be read. We
+  // don't reject on that — users shouldn't be forced to upload in one exact
+  // orientation — so extractedText above is already the correctly-rotated
+  // reading and just flows into the normal keyword validation below.
+
   // 2. Evaluate against category & state keyword rules (if mapped)
   if (typeKey) {
     if (onProgress) {
@@ -444,6 +509,15 @@ export async function validateDocument(
     const matchesDocNumber = isDocumentNumberInText(extractedText, docNumber);
 
     if (!matchesDocNumber) {
+      // Surface what OCR actually read so this is debuggable without extra
+      // tooling — open the browser console to see what text was extracted
+      // and compare it against the number that was entered.
+      if (typeof console !== "undefined" && console.warn) {
+        console.warn(
+          `[documentValidator] Document Number "${docNumber}" not found. OCR (${extraction.method}) extracted:\n`,
+          extractedText
+        );
+      }
       return {
         shouldValidate: true,
         isValid: false,

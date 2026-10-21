@@ -88,4 +88,8 @@ return [
         // Comma-separated phone numbers, e.g. "+61400000000,+61400000001"
         'admin_fallback_numbers' => env('WHATSAPP_ADMIN_FALLBACK_NUMBERS', ''),
     ],
+
+    'google_vision' => [
+    'key' => env('GOOGLE_VISION_API_KEY'),
+     ],
 ];

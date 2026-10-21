@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\CallController;
 use App\Http\Controllers\Api\LeaveManagementController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\RtmController;
+use App\Http\Controllers\Api\OcrController;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Api\AgentLookupController;
 
@@ -210,6 +211,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/conversation/{userId}', [RtmController::class, 'getConversation']);
     });
     
+    Route::post('/ocr/google-vision', [OcrController::class, 'googleVision']);
     //create new staff
     Route::any('create-staff',  [StaffController::class, 'createStaff'])->name('create.staff');
     Route::any('update-staff/{id}',  [StaffController::class, 'updateStaff'])->name('update.staff');

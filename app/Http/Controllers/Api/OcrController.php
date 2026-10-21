@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -53,15 +53,32 @@ class OcrController extends Controller
             );
 
             if (!$response->successful()) {
-                Log::warning('Google Vision OCR request failed', ['body' => $response->body()]);
-                return response()->json(['success' => false, 'message' => 'OCR provider request failed.'], 502);
+                Log::warning('Google Vision OCR request failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'OCR provider request failed.',
+                    // Surfaced only when APP_DEBUG=true (local/staging) so you
+                    // can see Google's exact reason without digging through
+                    // logs. Never exposed when APP_DEBUG=false (production).
+                    'debug' => config('app.debug') ? [
+                        'status' => $response->status(),
+                        'body' => $response->json() ?? $response->body(),
+                    ] : null,
+                ], 502);
             }
 
             $data = $response->json();
 
             if (isset($data['responses'][0]['error'])) {
                 Log::warning('Google Vision OCR returned an error', $data['responses'][0]['error']);
-                return response()->json(['success' => false, 'message' => 'OCR provider returned an error.'], 502);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'OCR provider returned an error.',
+                    'debug' => config('app.debug') ? $data['responses'][0]['error'] : null,
+                ], 502);
             }
 
             $text = $data['responses'][0]['fullTextAnnotation']['text'] ?? '';
@@ -71,8 +88,12 @@ class OcrController extends Controller
                 'text' => $text,
             ]);
         } catch (\Throwable $e) {
-            Log::error('Google Vision OCR exception: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'OCR request failed.'], 500);
+            Log::error('Google Vision OCR exception: ' . $e->getMessage(), ['exception' => $e]);
+            return response()->json([
+                'success' => false,
+                'message' => 'OCR request failed.',
+                'debug' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
         }
     }
 }

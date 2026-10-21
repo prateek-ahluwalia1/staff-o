@@ -31,6 +31,10 @@ import HowToApply from "./pages/forstaff/How-to-apply";
 import Postajob from "./pages/forclients/Postajob";
 import Howitworks from "./pages/forclients/Howitworks";
 import { createRequire } from 'module';
+import { createRequire } from 'module';
+
+var require = createRequire(import.meta.url);
+var module = { exports: {} };
 
 var require = createRequire(import.meta.url);
 var module = { exports: {} };

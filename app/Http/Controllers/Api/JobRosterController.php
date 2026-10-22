@@ -51,6 +51,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Services\ContractService;
 use App\Mail\ContractSignatureRequestMail;
 use App\Mail\ContractSignedMail;
+use App\Services\InductionAssignmentService;
 
 class JobRosterController extends Controller
 {   
@@ -4650,6 +4651,29 @@ private function sendStaffActivationNotification(User $user): void
                 return response()->json(['success' => false, 'message' => 'User not found'], 404);
             }
 
+            // ─── INDUCTION GATE ───
+            // Staff and resource partners can't see cover jobs until they've
+            // passed (80+/100) every induction assigned to them.
+            $inductionType = $user->user_type === 'staff'
+                ? 'staff'
+                : ($user->user_type === 'contractor' ? 'resource_partner' : null);
+
+            if ($inductionType && !InductionAssignmentService::hasCompletedRequiredInductions($user->id, $inductionType)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Complete your induction to view available cover jobs.',
+                    'code' => 200,
+                    'data' => [
+                        'jobs' => [
+                            'data' => [],
+                            'total' => 0,
+                            'last_page' => 1,
+                        ],
+                        'induction_required' => true,
+                    ],
+                ], 200);
+            }
+
             $query = JobRoster::with(['site'])
                 ->whereNull('assigned_to')
                 ->whereNull('accepted_by')
@@ -4762,7 +4786,8 @@ private function sendStaffActivationNotification(User $user): void
                 'message' => 'Available jobs retrieved successfully.',
                 'code' => 200,
                 'data' => [
-                    'jobs' => $formattedJobs, 
+                    'jobs' => $formattedJobs,
+                    'induction_required' => false,
                 ]
             ], 200);
 
@@ -4835,6 +4860,15 @@ private function sendStaffActivationNotification(User $user): void
         $siteState = $jobs->first()->site->state ?? null;
         $Guards = $this->getStaffooGuardsByRadius($siteCoordinates, 15, $siteState);
         $partners = $this->getResourcePartners($jobs->first()->site_id);
+
+        // Skip anyone who hasn't passed (80+/100) every induction assigned to
+        // their audience — no job notification until induction is completed.
+        $Guards = $Guards
+            ->filter(fn($guard) => InductionAssignmentService::hasCompletedRequiredInductions($guard->id, 'staff'))
+            ->values();
+        $partners = $partners
+            ->filter(fn($partner) => InductionAssignmentService::hasCompletedRequiredInductions($partner->id, 'resource_partner'))
+            ->values();
 
         if ($jobs->first()->job_type === 'Control Room Operator') {
             $Guards = collect($Guards)->filter(function ($guard) {

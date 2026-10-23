@@ -77,14 +77,11 @@ class InductionAssignmentService
      */
     public static function hasCompletedRequiredInductions(int $userId, string $type = 'staff'): bool
     {
-        $incomplete = DB::table('guard_questionnaire_details as gqd')
-            ->join('questionnaires as q', 'q.id', '=', 'gqd.questionnaire_id')
-            ->where('gqd.guard_id', $userId)
-            ->where('q.type', $type)
-            ->where(function ($q) {
-                $q->whereNull('gqd.marks')
-                ->orWhere('gqd.marks', '<', 80);
-            })
+        $incomplete = DB::table('guard_questionnaire_details')
+            ->join('questionnaires', 'questionnaires.id', '=', 'guard_questionnaire_details.questionnaire_id')
+            ->where('guard_questionnaire_details.guard_id', $userId)
+            ->where('questionnaires.type', $type)
+            ->where('guard_questionnaire_details.marks', '<', 80)
             ->exists();
 
         return !$incomplete;

@@ -2062,7 +2062,7 @@ public function updateGuardDocuments(Request $request)
 
             if ($fileName) {
                 // Update staff table based on type
-         $staff = Staff::where('user_id', $request->user_id)->first();
+                $staff = Staff::where('user_id', $request->user_id)->first();
                 
                 if (!$staff) {
                     return response()->json([

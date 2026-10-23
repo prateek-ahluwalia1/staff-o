@@ -25,7 +25,7 @@ export default function Induction() {
     const { data: contractorResponse } = useFetch("api/admin/get-contractors?per_page=500&limit=500", { isAuth: true });
     const { data: historyResponse, loading: historyLoading, refetch: refetchHistory } = useFetch("", { isAuth: true, immediate: false });
 
-    // Which audience's inductions are being browsed: "staff" or "resource_partner".
+    // Which audience's inductions are being browsed: "staff" or "contractor".
     const [activeAudience, setActiveAudience] = useState("staff");
 
     const { submit: submitSave, loading: isSaving } = useSubmit({ isAuth: true });
@@ -83,10 +83,10 @@ export default function Induction() {
 
     const inductions = listResponse?.data || listResponse || [];
 
-    // Only ever two audiences — anything not explicitly "resource_partner" is "staff".
+    // Only ever two audiences — anything not explicitly "contractor" is "staff".
     const filteredInductions = useMemo(() => {
         return inductions.filter((induction) => {
-            const audience = induction.type === "resource_partner" ? "resource_partner" : "staff";
+            const audience = induction.type === "contractor" ? "contractor" : "staff";
             return audience === activeAudience;
         });
     }, [inductions, activeAudience]);
@@ -204,7 +204,7 @@ export default function Induction() {
         if (type === 'create') {
             if (induction) {
                 setFormTitle(induction.title || "");
-                setFormType(induction.type === "resource_partner" ? "resource_partner" : "staff");
+                setFormType(induction.type === "contractor" ? "contractor" : "staff");
                 setFormSubtitles(induction.sub_heading?.length ? induction.sub_heading : [""]);
 
                 const mappedQuestions = induction.questionnaire?.length
@@ -466,10 +466,10 @@ export default function Induction() {
         </div>
     );
 
-    const shareAudience = selectedInduction?.type === "resource_partner" ? "resource_partner" : "staff";
-    const shareOptions = shareAudience === "resource_partner" ? contractorOptions : staffOptions;
-    const shareList = shareAudience === "resource_partner" ? contractorList : staffList;
-    const shareAudienceLabel = shareAudience === "resource_partner" ? "Resource Partners" : "Staff";
+    const shareAudience = selectedInduction?.type === "contractor" ? "contractor" : "staff";
+    const shareOptions = shareAudience === "contractor" ? contractorOptions : staffOptions;
+    const shareList = shareAudience === "contractor" ? contractorList : staffList;
+    const shareAudienceLabel = shareAudience === "contractor" ? "Resource Partners" : "Staff";
 
     const renderShareModal = () => (
         <div className="modal-overlay-premium" onClick={closeModal}>
@@ -541,7 +541,7 @@ export default function Induction() {
                                 <label className="form-label fw-bold small text-muted">Audience</label>
                                 <select className="form-select clean-input" value={formType} onChange={(e) => setFormType(e.target.value)}>
                                     <option value="staff">Staff</option>
-                                    <option value="resource_partner">Resource Partner</option>
+                                    <option value="contractor">Resource Partner</option>
                                 </select>
                                 <div className="form-text" style={{ textTransform: "none" }}>
                                     Decides who this induction is automatically assigned to on registration.
@@ -1031,8 +1031,8 @@ export default function Induction() {
                 </button>
                 <button
                     type="button"
-                    className={`induction-audience-tab ${activeAudience === "resource_partner" ? "active" : ""}`}
-                    onClick={() => setActiveAudience("resource_partner")}
+                    className={`induction-audience-tab ${activeAudience === "contractor" ? "active" : ""}`}
+                    onClick={() => setActiveAudience("contractor")}
                 >
                     Resource Partner
                 </button>
@@ -1055,12 +1055,12 @@ export default function Induction() {
                                         <span
                                             className="induction-type-badge"
                                             style={{
-                                                color: induction.type === "resource_partner" ? "#7c3aed" : "#0A7C6E",
-                                                background: induction.type === "resource_partner" ? "rgba(124,58,237,0.12)" : "rgba(10,124,110,0.12)",
+                                                color: induction.type === "contractor" ? "#7c3aed" : "#0A7C6E",
+                                                background: induction.type === "contractor" ? "rgba(124,58,237,0.12)" : "rgba(10,124,110,0.12)",
                                             }}
                                         >
                                             <span className="dot"></span>
-                                            {induction.type === "resource_partner" ? "Resource Partner" : "Staff"}
+                                            {induction.type === "contractor" ? "Resource Partner" : "Staff"}
                                         </span>
                                     </div>
                                     {induction.sub_heading && induction.sub_heading.length > 0 && (
@@ -1092,9 +1092,9 @@ export default function Induction() {
                         <div className="col-12">
                             <div className="induction-empty text-center">
                                 <i className="fa fa-clipboard-list mb-3 d-block"></i>
-                                <h6 className="fw-bold text-dark mb-1">No {activeAudience === "resource_partner" ? "Resource Partner" : "Staff"} inductions yet</h6>
+                                <h6 className="fw-bold text-dark mb-1">No {activeAudience === "contractor" ? "Resource Partner" : "Staff"} inductions yet</h6>
                                 <p className="text-muted small mb-4" style={{ textTransform: "none" }}>
-                                    Create your first {activeAudience === "resource_partner" ? "resource partner" : "staff"} induction questionnaire to start onboarding.
+                                    Create your first {activeAudience === "contractor" ? "resource partner" : "staff"} induction questionnaire to start onboarding.
                                 </p>
                                 <button className="btn btn-teal-premium" onClick={() => openModal("create")}>
                                     <i className="fa fa-plus"></i> Create Induction

@@ -249,7 +249,7 @@ public function changeUserType(Request $request): JsonResponse
                 Contractor::create(['user_id' => $user->id]);
 
                 // Resource partners get the inductions authored for that audience.
-                InductionAssignmentService::assignToUser($user->id, 'resource_partner');
+                InductionAssignmentService::assignToUser($user->id, 'contractor');
                 break;
 
             case 'staff':
@@ -445,5 +445,4 @@ private function getProfileCompletionSteps(string $userType): array
             return [];
     }
 }
-
 }

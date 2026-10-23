@@ -28,7 +28,7 @@ class QuestionnaireController extends Controller
         $questionnaire->admin_id = $request->admin_id;
         $questionnaire->questionnaire = $request->questionnaire;
         $questionnaire->sub_heading = $request->sub_heading;
-        $questionnaire->type = in_array($request->type, ['staff', 'resource_partner']) ? $request->type : 'staff';
+        $questionnaire->type = in_array($request->type, ['staff', 'contractor']) ? $request->type : 'staff';
 
         $questionnaire->save();
 
@@ -153,7 +153,6 @@ public function assignQuestionnair(Request $request){
             } else {
                 $assignedQuestionnaire[$key]->status = 'failed';
             }
-            
         }
         if(!empty($assignedQuestionnaire)){
             return response()->json([

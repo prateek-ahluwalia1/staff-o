@@ -4654,9 +4654,7 @@ private function sendStaffActivationNotification(User $user): void
             // ─── INDUCTION GATE ───
             // Staff and resource partners can't see cover jobs until they've
             // passed (80+/100) every induction assigned to them.
-            $inductionType = $user->user_type === 'staff'
-                ? 'staff'
-                : ($user->user_type === 'contractor' ? 'resource_partner' : null);
+            $inductionType = in_array($user->user_type, ['staff', 'contractor'], true) ? $user->user_type : null;
 
             if ($inductionType && !InductionAssignmentService::hasCompletedRequiredInductions($user->id, $inductionType)) {
                 return response()->json([
@@ -4867,7 +4865,7 @@ private function sendStaffActivationNotification(User $user): void
             ->filter(fn($guard) => InductionAssignmentService::hasCompletedRequiredInductions($guard->id, 'staff'))
             ->values();
         $partners = $partners
-            ->filter(fn($partner) => InductionAssignmentService::hasCompletedRequiredInductions($partner->id, 'resource_partner'))
+            ->filter(fn($partner) => InductionAssignmentService::hasCompletedRequiredInductions($partner->id, 'contractor'))
             ->values();
 
         if ($jobs->first()->job_type === 'Control Room Operator') {

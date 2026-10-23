@@ -110,7 +110,7 @@ class AuthController extends Controller
             // }
 
             // Resource partners get the inductions authored for that audience.
-            InductionAssignmentService::assignToUser($user->id, 'resource_partner');
+            InductionAssignmentService::assignToUser($user->id, 'contractor');
 
             return response()->json([
                 'token' => $user->createToken('api')->plainTextToken,
@@ -733,7 +733,6 @@ class AuthController extends Controller
     // Reset Password
     public function reset(Request $request)
     {
-        
         try {
             $request->validate([
                 'password' => 'required|min:8|confirmed',

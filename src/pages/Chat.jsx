@@ -7,7 +7,6 @@ import { setConversations } from "../store/slices/chatSlice";
 import chat1img from "../assets/images/chat1.png";
 import chat2img from "../assets/images/chat2.png";
 import chat3img from "../assets/images/chat3.png";
-import inductionimg from "../assets/images/induction.png";
 
 const ALL_CATEGORIES = [
   {
@@ -312,18 +311,6 @@ const Chat = () => {
             />
           </div>
         ))}
-        {userType === "admin" && (
-          <div className="col">
-            <Card
-              title="Induction"
-              description="Access induction materials and resources"
-              accent="linear-gradient(135deg, #f59e0b, #fbbf24)"
-              image={inductionimg}
-              type="chat"
-              onClick={() => navigate(`/induction`)}
-            />
-          </div>
-        )}
       </div>
 
       {/* Fallback for non-admins (should not be rendered due to redirect) */}

@@ -383,6 +383,12 @@ export function isPendingRenewalExpiry(expiryValue) {
  * @param {string} [documentNumber] - document_no from form
  */
 export function isDocumentValidationApplicable(userType, docType, docCategory, docName, documentNumber = null) {
+  // Working With Children Check: no online OCR/content check at all — accept
+  // whatever file is uploaded (admin reviews it manually).
+  const resolvedTypeKey = resolveDocumentTypeKey(docType, docName);
+  if (resolvedTypeKey === "working_with_children") {
+    return false;
+  }
   return true;
 }
 

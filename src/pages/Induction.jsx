@@ -22,7 +22,11 @@ export default function Induction() {
 
     const { data: listResponse, loading: listLoading, refetch: refetchList } = useFetch("api/questionnaire-list", { isAuth: true });
     const { data: staffResponse } = useFetch("api/admin/get-staffoo-staff", { isAuth: true });
+    const { data: contractorResponse } = useFetch("api/admin/get-contractors?per_page=500&limit=500", { isAuth: true });
     const { data: historyResponse, loading: historyLoading, refetch: refetchHistory } = useFetch("", { isAuth: true, immediate: false });
+
+    // Which audience's inductions are being browsed: "staff" or "resource_partner".
+    const [activeAudience, setActiveAudience] = useState("staff");
 
     const { submit: submitSave, loading: isSaving } = useSubmit({ isAuth: true });
     const { submit: submitDelete, loading: isDeleting } = useSubmit({ isAuth: true });
@@ -61,7 +65,31 @@ export default function Induction() {
         ];
     }, [staffList]);
 
+    const contractorList = useMemo(() => {
+        return contractorResponse?.data?.data || contractorResponse?.data || [];
+    }, [contractorResponse]);
+
+    const contractorOptions = useMemo(() => {
+        const options = contractorList.map(contractor => ({
+            value: contractor.id,
+            label: `${contractor.name}${contractor?.contractor?.company_name ? ` (${contractor.contractor.company_name})` : ""}`
+        }));
+
+        return [
+            { value: "all", label: "Select All Resource Partners" },
+            ...options
+        ];
+    }, [contractorList]);
+
     const inductions = listResponse?.data || listResponse || [];
+
+    // Only ever two audiences — anything not explicitly "resource_partner" is "staff".
+    const filteredInductions = useMemo(() => {
+        return inductions.filter((induction) => {
+            const audience = induction.type === "resource_partner" ? "resource_partner" : "staff";
+            return audience === activeAudience;
+        });
+    }, [inductions, activeAudience]);
     const historyRows = getHistoryRows(historyResponse);
 
     const [historyPage, setHistoryPage] = useState(1);
@@ -110,6 +138,7 @@ export default function Induction() {
     const [selectedInduction, setSelectedInduction] = useState(null);
 
     const [formTitle, setFormTitle] = useState("");
+    const [formType, setFormType] = useState("staff");
     const [formSubtitles, setFormSubtitles] = useState([""]);
     const [formAttachment, setFormAttachment] = useState(null);
     const [formQuestions, setFormQuestions] = useState([
@@ -175,6 +204,7 @@ export default function Induction() {
         if (type === 'create') {
             if (induction) {
                 setFormTitle(induction.title || "");
+                setFormType(induction.type === "resource_partner" ? "resource_partner" : "staff");
                 setFormSubtitles(induction.sub_heading?.length ? induction.sub_heading : [""]);
 
                 const mappedQuestions = induction.questionnaire?.length
@@ -197,6 +227,7 @@ export default function Induction() {
                 setFormAttachment(null);
             } else {
                 setFormTitle("");
+                setFormType(activeAudience);
                 setFormSubtitles([""]);
                 setFormAttachment(null);
                 setFormQuestions([{ id: Date.now(), type: "MCQs", question: "", optiona: "", optionb: "", optionc: "", optiond: "", answer: "1", file: null, file_url: "", file_path: "" }]);
@@ -261,6 +292,7 @@ export default function Induction() {
 
         if (selectedInduction?.id) formData.append("id", selectedInduction.id);
         formData.append("title", formTitle);
+        formData.append("type", formType);
         if (userId) formData.append("admin_id", userId);
 
         formSubtitles.forEach((sub, i) => formData.append(`sub_heading[${i}]`, sub));
@@ -434,11 +466,16 @@ export default function Induction() {
         </div>
     );
 
+    const shareAudience = selectedInduction?.type === "resource_partner" ? "resource_partner" : "staff";
+    const shareOptions = shareAudience === "resource_partner" ? contractorOptions : staffOptions;
+    const shareList = shareAudience === "resource_partner" ? contractorList : staffList;
+    const shareAudienceLabel = shareAudience === "resource_partner" ? "Resource Partners" : "Staff";
+
     const renderShareModal = () => (
         <div className="modal-overlay-premium" onClick={closeModal}>
             <div className="modal-content-premium modal-pop-in" style={{ maxWidth: '550px', width: '100%' }} onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header-premium d-flex justify-content-between align-items-center p-3 p-md-4">
-                    <h5 className="m-0 fw-bold text-white">Assign Induction to Staff</h5>
+                    <h5 className="m-0 fw-bold text-white">Assign Induction to {shareAudienceLabel}</h5>
                     <ModalCloseButton onClick={closeModal} />
                 </div>
                 <div className="p-3 p-md-4">
@@ -447,14 +484,14 @@ export default function Induction() {
                         <Select options={stateOptions} value={stateOptions.find((o) => o.value === shareState) || null} onChange={(selectedOption) => setShareState(selectedOption ? selectedOption.value : "")} placeholder="Choose a state..." isClearable styles={customSelectStyles} menuPortalTarget={document.body} menuPosition={'fixed'} />
                     </div>
                     <div className="mb-4">
-                        <label className="form-label text-muted small fw-bold">Select Staff Members *</label>
-                        <Select isMulti options={staffOptions} value={staffOptions.filter((o) => o.value !== "all" && selectedStaff.includes(o.value))} onChange={(selectedOptions) => {
+                        <label className="form-label text-muted small fw-bold">Select {shareAudienceLabel} *</label>
+                        <Select isMulti options={shareOptions} value={shareOptions.filter((o) => o.value !== "all" && selectedStaff.includes(o.value))} onChange={(selectedOptions) => {
                             if (!selectedOptions) { setSelectedStaff([]); return; }
                             const hasSelectAll = selectedOptions.some(option => option.value === "all");
-                            if (hasSelectAll) { setSelectedStaff(staffList.map(staff => staff.id)); }
+                            if (hasSelectAll) { setSelectedStaff(shareList.map(person => person.id)); }
                             else { setSelectedStaff(selectedOptions.map(option => option.value)); }
-                        }} placeholder="Search and select staff..." styles={customSelectStyles} closeMenuOnSelect={false} menuPortalTarget={document.body} menuPosition={'fixed'} />
-                        {selectedStaff.length > 0 && <div className="mt-2 small text-primary">{selectedStaff.length} staff member{selectedStaff.length !== 1 ? 's' : ''} selected</div>}
+                        }} placeholder={`Search and select ${shareAudienceLabel.toLowerCase()}...`} styles={customSelectStyles} closeMenuOnSelect={false} menuPortalTarget={document.body} menuPosition={'fixed'} />
+                        {selectedStaff.length > 0 && <div className="mt-2 small text-primary">{selectedStaff.length} selected</div>}
                     </div>
                     <div className="text-end d-flex flex-wrap justify-content-end gap-2">
                         <button className="btn btn-light px-4 rounded-pill" onClick={closeModal}>Cancel</button>
@@ -499,6 +536,16 @@ export default function Induction() {
                             <div className="mb-4">
                                 <label className="form-label fw-bold text-dark small">Main Induction Title</label>
                                 <input type="text" className="form-control form-control-lg clean-input fw-bold text-dark" placeholder="Staffoo code of conduct" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} />
+                            </div>
+                            <div className="mb-4">
+                                <label className="form-label fw-bold small text-muted">Audience</label>
+                                <select className="form-select clean-input" value={formType} onChange={(e) => setFormType(e.target.value)}>
+                                    <option value="staff">Staff</option>
+                                    <option value="resource_partner">Resource Partner</option>
+                                </select>
+                                <div className="form-text" style={{ textTransform: "none" }}>
+                                    Decides who this induction is automatically assigned to on registration.
+                                </div>
                             </div>
                             <div className="row">
                                 <div className="col-12 col-md-8 col-lg-7">
@@ -689,6 +736,63 @@ export default function Induction() {
                     font-size: 14px;
                     margin: 0;
                     text-transform: none;
+                }
+
+                /* Audience tabs */
+                .induction-audience-tabs {
+                    display: flex;
+                    gap: 8px;
+                    background: #fff;
+                    border: 1px solid var(--line-soft);
+                    border-radius: 14px;
+                    padding: 6px;
+                    width: fit-content;
+                    margin-bottom: 1.5rem;
+                    box-shadow: 0 2px 10px rgba(15,23,42,0.05);
+                }
+                .induction-audience-tab {
+                    border: none;
+                    background: transparent;
+                    color: var(--muted);
+                    font-weight: 700;
+                    font-size: 13px;
+                    padding: 9px 20px;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    transition: all 0.15s;
+                }
+                .induction-audience-tab:hover { background: var(--line-soft); }
+                .induction-audience-tab.active {
+                    background: var(--teal);
+                    color: #fff;
+                }
+
+                /* Induction type badge (kept intentionally free of Bootstrap's
+                   bg-*/text-* utilities, whose !important rules were
+                   overriding the inline color and rendering the label
+                   invisible against its own background). align-self is the
+                   fix that keeps it from stretching to the card's full width
+                   under its flex-column parent. */
+                .induction-type-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    width: fit-content;
+                    align-self: flex-start;
+                    font-weight: 700;
+                    font-size: 11px;
+                    letter-spacing: 0.03em;
+                    text-transform: uppercase;
+                    white-space: nowrap;
+                    padding: 5px 12px;
+                    border-radius: 999px;
+                }
+                .induction-type-badge .dot {
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 50%;
+                    background: currentColor;
+                    flex-shrink: 0;
                 }
 
                 /* Induction cards */
@@ -916,19 +1020,49 @@ export default function Induction() {
                 </div>
             </div>
 
+            {/* Audience tabs */}
+            <div className="induction-audience-tabs">
+                <button
+                    type="button"
+                    className={`induction-audience-tab ${activeAudience === "staff" ? "active" : ""}`}
+                    onClick={() => setActiveAudience("staff")}
+                >
+                    Staff
+                </button>
+                <button
+                    type="button"
+                    className={`induction-audience-tab ${activeAudience === "resource_partner" ? "active" : ""}`}
+                    onClick={() => setActiveAudience("resource_partner")}
+                >
+                    Resource Partner
+                </button>
+            </div>
+
             {/* Cards grid */}
             {listLoading ? (
                 <Loader />
             ) : (
                 <div className="row g-4">
-                    {inductions.length > 0 ? inductions.map((induction) => (
+                    {filteredInductions.length > 0 ? filteredInductions.map((induction) => (
                         <div className="col-12 col-md-6 col-xl-4" key={induction.id}>
                             <div className="induction-card card p-3 p-xl-4 d-flex flex-column">
                                 <div className="card-accent-bar"></div>
                                 <div className="card-body p-0 d-flex flex-column flex-grow-1 mt-1">
-                                    <h5 className="card-title fw-bold mb-3 lh-base" style={{ wordWrap: 'break-word' }}>
+                                    <h5 className="card-title fw-bold mb-2 lh-base" style={{ wordWrap: 'break-word' }}>
                                         {induction.title || "Untitled Questionnaire"}
                                     </h5>
+                                    <div className="d-inline-block mb-3">
+                                        <span
+                                            className="induction-type-badge"
+                                            style={{
+                                                color: induction.type === "resource_partner" ? "#7c3aed" : "#0A7C6E",
+                                                background: induction.type === "resource_partner" ? "rgba(124,58,237,0.12)" : "rgba(10,124,110,0.12)",
+                                            }}
+                                        >
+                                            <span className="dot"></span>
+                                            {induction.type === "resource_partner" ? "Resource Partner" : "Staff"}
+                                        </span>
+                                    </div>
                                     {induction.sub_heading && induction.sub_heading.length > 0 && (
                                         <div className="mb-3">
                                             {induction.sub_heading.slice(0, 2).map((sub, idx) => (
@@ -958,8 +1092,10 @@ export default function Induction() {
                         <div className="col-12">
                             <div className="induction-empty text-center">
                                 <i className="fa fa-clipboard-list mb-3 d-block"></i>
-                                <h6 className="fw-bold text-dark mb-1">No inductions yet</h6>
-                                <p className="text-muted small mb-4" style={{ textTransform: "none" }}>Create your first induction questionnaire to start onboarding staff.</p>
+                                <h6 className="fw-bold text-dark mb-1">No {activeAudience === "resource_partner" ? "Resource Partner" : "Staff"} inductions yet</h6>
+                                <p className="text-muted small mb-4" style={{ textTransform: "none" }}>
+                                    Create your first {activeAudience === "resource_partner" ? "resource partner" : "staff"} induction questionnaire to start onboarding.
+                                </p>
                                 <button className="btn btn-teal-premium" onClick={() => openModal("create")}>
                                     <i className="fa fa-plus"></i> Create Induction
                                 </button>

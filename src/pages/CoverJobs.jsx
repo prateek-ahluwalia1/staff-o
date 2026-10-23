@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import { toast } from 'react-toastify';
 import useFetch from '../hooks/useFetch';
@@ -39,6 +40,7 @@ const getPageNumbers = (currentPage, totalPages) => {
 };
 
 const CoverJobs = () => {
+    const navigate = useNavigate();
     const { userdata } = useSelector((state) => state.auth);
     const { isExpanded } = useSelector((state) => state.sidebar);
     const userId = userdata?.data?.id || userdata?.id;
@@ -98,6 +100,7 @@ const CoverJobs = () => {
     const jobs = data?.data?.jobs?.data || [];
     const totalJobs = data?.data?.jobs?.total || 0;
     const lastPage = data?.data?.jobs?.last_page || 1;
+    const inductionRequired = Boolean(data?.data?.induction_required);
 
     const contractorStaffOptions = (staffData?.guards || []).map((staff) => ({
         value: String(staff.id),
@@ -430,6 +433,43 @@ const CoverJobs = () => {
                     .cover-hero { padding: 26px 20px 40px; border-radius: 18px; }
                     .cover-hero h1 { font-size: 22px; }
                 }
+
+                .induction-gate-card {
+                    background: #fffbeb;
+                    border: 1px solid #fde68a;
+                    border-radius: 18px;
+                    padding: 36px 28px;
+                    text-align: center;
+                }
+                .induction-gate-card i.gate-icon {
+                    font-size: 40px;
+                    color: #d97706;
+                    margin-bottom: 14px;
+                    display: block;
+                }
+                .induction-gate-card h5 {
+                    color: #92400e;
+                    font-weight: 800;
+                    margin-bottom: 8px;
+                }
+                .induction-gate-card p {
+                    color: #92400e;
+                    font-size: 14px;
+                    text-transform: none;
+                    max-width: 480px;
+                    margin: 0 auto 18px;
+                    line-height: 1.6;
+                }
+                .induction-gate-btn {
+                    border: none;
+                    border-radius: 30px;
+                    padding: 10px 24px;
+                    font-weight: 700;
+                    font-size: 13.5px;
+                    background: #0A7C6E;
+                    color: #fff;
+                }
+                .induction-gate-btn:hover { background: #075e53; }
             `}</style>
 
             <div className="dashboard-main cover-jobs-page px-3 px-md-4">
@@ -438,9 +478,31 @@ const CoverJobs = () => {
                         <span className="dot"></span> Available
                     </span>
                     <h1>Cover Jobs</h1>
-                    <p>{totalJobs} open job{totalJobs !== 1 ? 's' : ''} waiting for you</p>
+                    <p>
+                        {inductionRequired
+                            ? 'Complete your induction to start viewing cover jobs.'
+                            : `${totalJobs} open job${totalJobs !== 1 ? 's' : ''} waiting for you`}
+                    </p>
                 </div>
 
+                {inductionRequired ? (
+                    <div className="induction-gate-card">
+                        <i className="fa-solid fa-triangle-exclamation gate-icon"></i>
+                        <h5>Induction not completed</h5>
+                        <p>
+                            You need to complete and pass (80/100) your assigned induction before cover
+                            jobs are shown to you. Head to your profile's Induction tab to get started.
+                        </p>
+                        <button
+                            type="button"
+                            className="induction-gate-btn"
+                            onClick={() => navigate('/edit-profile')}
+                        >
+                            Go to Induction <i className="fa-solid fa-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                ) : (
+                <>
                 <div
                     className={`row row-cols-1 row-cols-md-2 row-cols-lg-3 ${
                         isExpanded ? "row-cols-xl-3" : "row-cols-xl-4"
@@ -562,6 +624,8 @@ const CoverJobs = () => {
                             <i className="fa-solid fa-chevron-right"></i>
                         </button>
                     </div>
+                )}
+                </>
                 )}
             </div>
 

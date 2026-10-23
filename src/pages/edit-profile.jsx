@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { setUser } from "../store/slices/authSlice";
 import Loader from "../components/Loader";
 import DocumentTable from "../components/DocumentTable";
-// import InductionTab from "../components/InductionTab";
+import InductionTab from "../components/InductionTab";
 import ProfileForm from "../components/ProfileForm";
 import AvatarUpload from "../components/AvatarUpload";
 import SettingsHeaderContent from "../components/SettingsHeaderContent";
@@ -2294,14 +2294,14 @@ export default function EditProfile() {
             Verification Forms
           </button>
         )}
-        {/* {(userType === "staff" || userType === "contractor") && (
+        {(userType === "staff" || userType === "contractor") && (
           <button
             className={`tab-btn ${activeTab === "induction" ? "active" : "inactive"}`}
             onClick={() => handleTabClick("induction")}
           >
             Induction
           </button>
-        )} */}
+        )}
       </div>
 
       {/* Tab Content */}
@@ -2364,9 +2364,9 @@ export default function EditProfile() {
         <StaffOnboardingForms submit={submit} userId={userId} />
       )}
 
-      {/* {activeTab === "induction" && (userType === "staff" || userType === "contractor") && (
+      {activeTab === "induction" && (userType === "staff" || userType === "contractor") && (
         <InductionTab userId={userId} />
-      )} */}
+      )}
 
       {activeTab === "rates" && userType === "contractor" && (
         <ContractorRatesView

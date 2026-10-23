@@ -1875,7 +1875,6 @@ const StaffOnboardingForms = ({ submit, userId, onProfileUpdate }) => {
 
             const res = await submit("api/upload-staff-file", formData, {
                 method: "POST",
-                headers: { "Content-Type": "multipart/form-data" },
             });
             if (res?.success || res?.file_path) {
                 const uploadedPath = res?.file_path || res?.data?.file_path || file.name;

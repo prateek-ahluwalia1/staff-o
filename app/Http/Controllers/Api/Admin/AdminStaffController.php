@@ -380,15 +380,15 @@ class AdminStaffController extends Controller
     public function staffooStaff(Request $request)
     {
         $query = User::where('user_type', 'staff')->where('is_active', 1)
-            ->where('user_id', 1)
-            ->with('staff');
+        ->where('user_id', 1)
+        ->with('staff');
 
         // Search functionality
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%");
+                  ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -396,23 +396,17 @@ class AdminStaffController extends Controller
         if ($request->has('city')) {
             $query->where('city', $request->city);
         }
-
+        
         if ($request->has('state')) {
             $query->where('state', $request->state);
         }
-
+        
         if ($request->has('country')) {
             $query->where('country', $request->country);
         }
 
-        $query->orderBy('id', 'desc');
-
-        // If limit is provided → paginate, otherwise return all
-        if ($request->filled('limit')) {
-            $staff = $query->paginate((int) $request->limit);
-        } else {
-            $staff = $query->get();
-        }
+        // Pagination
+        $staff = $query->orderBy('id', 'desc')->paginate($request->get('per_page', 1000));
 
         return response()->json([
             'success' => true,
@@ -420,6 +414,7 @@ class AdminStaffController extends Controller
             'message' => 'Staffoo Staff retrieved successfully'
         ]);
     }
+
 
     public function createStaff(Request $request)
     {
@@ -537,7 +532,7 @@ class AdminStaffController extends Controller
                                             $common_doc_ids[] = $old_docs[$doc_type]->id;
                                         }
                                     }
-
+                                    
                                     
                                     Document::whereIn('id', $common_doc_ids)
                                                 ->update(['document_category' => $new_document_category]);
